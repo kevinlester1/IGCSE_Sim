@@ -1,0 +1,1446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Logic Gate Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --card-color: #1f2937;
+            --border-color: #374151;
+            --text-color: #d1d5db;
+            --text-muted: #9ca3af;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --output-on: #22c55e;
+            --output-off: #ef4444;
+            --wire-color: #6b7280;
+        }
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overscroll-behavior: none;
+        }
+        #canvas-container {
+            cursor: grab;
+        }
+        #canvas-container:active {
+            cursor: grabbing;
+        }
+        .gate-symbol-svg path {
+            stroke: var(--text-color);
+            stroke-width: 2;
+            fill: none;
+        }
+        .gate-symbol-svg circle {
+            stroke: var(--text-color);
+            stroke-width: 2;
+            fill: var(--card-color);
+        }
+        .gate-symbol-svg text {
+            fill: var(--text-muted);
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            user-select: none;
+        }
+        .input-btn, .output-display {
+            transition: all 0.2s ease-in-out;
+        }
+        .input-btn.active {
+            background-color: var(--output-on);
+            border-color: var(--output-on);
+            color: #ffffff;
+        }
+        .input-btn:not(.active) {
+            background-color: var(--output-off);
+            border-color: var(--output-off);
+            color: #ffffff;
+        }
+        .output-display.active {
+            background-color: var(--output-on);
+            border-color: var(--output-on);
+        }
+        .output-display:not(.active) {
+            background-color: var(--output-off);
+            border-color: var(--output-off);
+        }
+        #canvas {
+            position: absolute;
+            transform-origin: 0 0;
+            background-image:
+                linear-gradient(var(--border-color) 1px, transparent 1px),
+                linear-gradient(to right, var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .draggable-gate {
+            position: absolute;
+            cursor: move;
+            user-select: none;
+            z-index: 10;
+            transition: border-color 0.2s;
+        }
+        .draggable-gate.selected {
+            border-color: var(--accent-color) !important;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+        .node {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-color: var(--bg-color);
+            border: 2px solid var(--wire-color);
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 11;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .node:hover {
+            border-color: var(--accent-color);
+        }
+        .node.output-node {
+            right: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        .node.input-node.a {
+            left: -8px; top: 20px;
+        }
+        .node.input-node.b {
+             left: -8px; bottom: 20px;
+        }
+        /* Specific for NOT and INPUT/OUTPUT */
+        .node.input-node.single {
+            left: -8px;
+            top: 50%; transform: translateY(-50%);
+        }
+        .node.active {
+            background-color: var(--output-on);
+            border-color: var(--output-on);
+        }
+        #wires-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 5;
+            transform-origin: 0 0;
+        }
+        .wire {
+            stroke: var(--wire-color);
+            stroke-width: 3;
+            fill: none;
+            transition: stroke 0.2s;
+            pointer-events: all;
+        }
+        .wire:hover {
+            stroke: var(--accent-color);
+            cursor: pointer;
+        }
+        .wire.active {
+            stroke: var(--output-on);
+        }
+        .temp-wire {
+            stroke: var(--accent-color);
+            stroke-width: 3;
+            stroke-dasharray: 5,5;
+        }
+
+        .tab-btn {
+            padding: 8px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            color: var(--accent-color);
+            border-bottom-color: var(--accent-color);
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: flex; /* or block depending on content */
+        }
+
+        .palette-item {
+             padding: 4px 8px;
+             background-color: var(--border-color);
+             border-radius: 4px;
+             cursor: grab;
+             user-select: none;
+             transition: background-color 0.2s;
+        }
+        .palette-item:hover {
+            background-color: #4b5563;
+        }
+        .palette-item:active {
+            cursor: grabbing;
+        }
+
+
+        /* Custom scrollbar for webkit browsers */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="w-screen h-screen flex flex-col md:flex-row text-sm">
+
+    <!-- Left Panel: Contextual Sidebar -->
+    <aside class="w-full md:w-96 h-1/3 md:h-full bg-gray-900 flex-shrink-0 overflow-y-auto">
+        <div id="gate-explorer-panel">
+            <div class="p-4 border-b border-gray-700">
+                <h1 class="text-xl font-bold text-white">Logic Gate Explorer</h1>
+                <p class="text-gray-400">Click on the input buttons to see how each gate works.</p>
+            </div>
+            <div id="gates-container" class="p-4 space-y-4">
+                <!-- Gate details will be injected here -->
+            </div>
+        </div>
+        
+        <div id="expression-help-panel" class="hidden">
+            <div class="p-4 border-b border-gray-700">
+                 <h1 class="text-xl font-bold text-white">Expression Help</h1>
+                 <p class="text-gray-400">How to write logic expressions.</p>
+            </div>
+             <div class="p-4 text-gray-300">
+                <h3 class="font-bold text-white mb-2">Supported Operators:</h3>
+                <ul class="list-disc list-inside space-y-1 text-xs bg-gray-800 p-3 rounded-md">
+                    <li><span class="font-mono text-blue-400">AND</span>: &amp;, &amp;&amp;, and, *</li>
+                    <li><span class="font-mono text-blue-400">OR</span>: |, ||, or, +</li>
+                    <li><span class="font-mono text-blue-400">NOT</span>: !, not, ~</li>
+                    <li><span class="font-mono text-blue-400">XOR</span>: ^, xor</li>
+                    <li><span class="font-mono text-blue-400">NAND</span>: nand</li>
+                    <li><span class="font-mono text-blue-400">NOR</span>: nor</li>
+                    <li><span class="font-mono text-blue-400">XNOR</span>: xnor</li>
+                </ul>
+                <h3 class="font-bold text-white mt-4 mb-2">Variables:</h3>
+                 <p class="text-xs mb-2">Use single uppercase letters (A, B, C...).</p>
+                <h3 class="font-bold text-white mt-4 mb-2">Grouping:</h3>
+                 <p class="text-xs mb-2">Use parentheses <span class="font-mono text-blue-400">( )</span> to group expressions and define order of operations.</p>
+                <h3 class="font-bold text-white mt-4 mb-2">Examples:</h3>
+                <ul class="list-none space-y-1 text-xs bg-gray-800 p-3 rounded-md font-mono">
+                    <li>A AND B</li>
+                    <li>(A & B) | C</li>
+                    <li>!(A ^ B)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="p-4 border-t border-gray-700">
+             <div id="builder-help" class="p-4 bg-gray-800 rounded-lg shadow-lg border border-gray-700 text-gray-300">
+                <h3 class="font-bold text-white mb-2">How to Use Circuit Builder:</h3>
+                <ol class="list-decimal list-inside space-y-1 text-xs">
+                    <li>Drag gates from the toolbar onto the grid.</li>
+                    <li>Click a gate to select it, then press `Delete` or `Backspace` to remove it.</li>
+                    <li>Click an output node (right side), then an input node (left side) to connect them.</li>
+                    <li>Click a wire to delete it.</li>
+                    <li>Use 'INPUT' components to control signals. Click their body to toggle state.</li>
+                    <li>Use 'OUTPUT' component (LED) to see final results.</li>
+                    <li><span class="font-bold">Pan:</span> Hold Middle Mouse Button and drag.</li>
+                    <li><span class="font-bold">Zoom:</span> Use the Mouse Wheel.</li>
+                </ol>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Right Panel: Main Content -->
+    <main class="flex-1 flex flex-col bg-gray-800 overflow-hidden">
+        <!-- Tab Navigation -->
+        <div class="flex-shrink-0 bg-gray-900 border-b border-gray-700 flex items-center">
+            <button id="tab-builder" class="tab-btn active">Circuit Builder</button>
+            <button id="tab-expression" class="tab-btn">Expression Analyzer</button>
+        </div>
+
+        <!-- Tab Content Area -->
+        <div id="tab-content-builder" class="tab-content active flex-1 flex-col overflow-hidden">
+            <!-- Toolbar -->
+            <div class="flex-shrink-0 bg-gray-900 p-2 flex items-center justify-between border-b border-gray-700">
+                <div class="flex items-center gap-2">
+                    <h2 class="text-lg font-bold text-white px-2">Circuit Builder</h2>
+                    <div id="palette" class="flex flex-wrap gap-2">
+                        <!-- Draggable items will be injected here -->
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="generate-expr-btn" class="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">Generate Expression</button>
+                    <button id="generate-table-btn" class="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Generate Table</button>
+                    <button id="clear-canvas-btn" class="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">Clear Canvas</button>
+                </div>
+            </div>
+
+            <!-- Canvas -->
+            <div id="canvas-container" class="flex-1 relative overflow-hidden bg-gray-800">
+                 <div id="canvas" class="w-[3000px] h-[3000px]">
+                    <svg id="wires-svg" class="w-[3000px] h-[3000px]"></svg>
+                    <!-- Gates will be dropped here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-expression" class="tab-content flex-1 flex-col overflow-hidden">
+            <!-- Expression Input Toolbar -->
+             <div class="flex-shrink-0 bg-gray-900 p-2 flex flex-col gap-2 border-b border-gray-700">
+                <div id="expression-palette" class="flex flex-wrap items-center gap-2 text-white font-mono text-xs">
+                    <span>Variables:</span>
+                    <div class="palette-item" draggable="true" data-value="A">A</div>
+                    <div class="palette-item" draggable="true" data-value="B">B</div>
+                    <div class="palette-item" draggable="true" data-value="C">C</div>
+                    <span class="ml-4">Operators:</span>
+                    <div class="palette-item" draggable="true" data-value=" AND " title="AND Gate">&middot;</div>
+                    <div class="palette-item" draggable="true" data-value=" OR " title="OR Gate">+</div>
+                    <div class="palette-item" draggable="true" data-value="NOT " title="NOT Gate">&not;</div>
+                    <div class="palette-item" draggable="true" data-value=" XOR " title="XOR Gate">&oplus;</div>
+                    <div class="palette-item" draggable="true" data-value=" NAND " title="NAND Gate">NAND</div>
+                    <div class="palette-item" draggable="true" data-value=" NOR " title="NOR Gate">NOR</div>
+                    <div class="palette-item" draggable="true" data-value=" XNOR " title="XNOR Gate">XNOR</div>
+                    <div class="palette-item" draggable="true" data-value="(">(</div>
+                    <div class="palette-item" draggable="true" data-value=")">)</div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <label for="expression-input" class="text-lg font-bold text-white px-2">f(x) =</label>
+                    <input type="text" id="expression-input" placeholder="Drag components here or type, e.g., (A AND B) OR C" class="flex-grow bg-gray-700 text-white px-3 py-2 rounded-md border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <button id="analyze-expression-btn" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">Analyze</button>
+                </div>
+            </div>
+            <!-- Expression Output -->
+            <div id="expression-output" class="flex-1 flex p-4 overflow-auto">
+                <div id="expression-truth-table-container" class="w-full bg-gray-900 p-4 rounded-lg border border-gray-700 overflow-auto">
+                     <h3 class="text-lg font-bold text-white mb-2">Truth Table</h3>
+                     <div id="expression-truth-table" class="text-gray-400">Enter an expression to see its truth table.</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Modal -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-4xl border border-gray-600">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="modal-title" class="text-xl font-bold text-white">Modal Title</h2>
+                <button id="close-modal-btn" class="text-gray-400 hover:text-white text-3xl leading-none">&times;</button>
+            </div>
+            <div id="modal-content" class="max-h-[70vh] overflow-y-auto">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Element selectors
+            const gatesContainer = document.getElementById('gates-container');
+            const paletteContainer = document.getElementById('palette');
+            const canvasContainer = document.getElementById('canvas-container');
+            const canvas = document.getElementById('canvas');
+            const wiresSvg = document.getElementById('wires-svg');
+            const clearCanvasBtn = document.getElementById('clear-canvas-btn');
+            const generateTableBtn = document.getElementById('generate-table-btn');
+            const generateExprBtn = document.getElementById('generate-expr-btn');
+            const modal = document.getElementById('modal');
+            const closeModalBtn = document.getElementById('close-modal-btn');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title');
+
+            // Tab selectors
+            const tabBuilder = document.getElementById('tab-builder');
+            const tabExpression = document.getElementById('tab-expression');
+            const contentBuilder = document.getElementById('tab-content-builder');
+            const contentExpression = document.getElementById('tab-content-expression');
+            const gateExplorerPanel = document.getElementById('gate-explorer-panel');
+            const expressionHelpPanel = document.getElementById('expression-help-panel');
+            const builderHelp = document.getElementById('builder-help');
+            
+            // Expression Analyzer selectors
+            const analyzeExpressionBtn = document.getElementById('analyze-expression-btn');
+            const expressionInput = document.getElementById('expression-input');
+            const expressionTruthTable = document.getElementById('expression-truth-table');
+            const expressionPalette = document.getElementById('expression-palette');
+
+
+            // State variables
+            let circuitElements = {};
+            let wires = [];
+            let nextId = 0;
+            let selectedGateId = null;
+            let wiringState = {
+                isWiring: false,
+                startElementId: null,
+                startNode: null,
+                tempWire: null
+            };
+            let view = {
+                zoom: 1,
+                panX: 0,
+                panY: 0,
+                isPanning: false,
+                lastPanX: 0,
+                lastPanY: 0,
+            };
+
+            const gateDefinitions = {
+                AND: {
+                    logic: (a, b) => a && b,
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M20 10 H50 A30 30 0 0 1 50 70 H20 Z" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text><path d="M80 40 H95" /><path d="M0 20 H20" /><path d="M0 60 H20" /></svg>`,
+                    expression: "Q = A &middot; B"
+                },
+                OR: {
+                    logic: (a, b) => a || b,
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M20 10 C40 20, 40 60, 20 70 Q60 40, 80 40" /><path d="M0 20 H22" /><path d="M0 60 H22" /><path d="M80 40 H95" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text></svg>`,
+                    expression: "Q = A + B"
+                },
+                NOT: {
+                    logic: a => !a,
+                    inputs: ['A'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M20 10 L20 70 L60 40 Z" /><circle cx="70" cy="40" r="5" /><path d="M0 40 H20" /><path d="M75 40 H95" /><text x="5" y="45">A</text><text x="80" y="45">Q</text></svg>`,
+                    expression: "Q = &not;A"
+                },
+                NAND: {
+                    logic: (a, b) => !(a && b),
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M20 10 H50 A30 30 0 0 1 50 70 H20 Z" /><circle cx="85" cy="40" r="5" /><path d="M0 20 H20" /><path d="M0 60 H20" /><path d="M90 40 H95" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text></svg>`,
+                    expression: "Q = &not;(A &middot; B)"
+                },
+                NOR: {
+                    logic: (a, b) => !(a || b),
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M20 10 C40 20, 40 60, 20 70 Q60 40, 80 40" /><circle cx="85" cy="40" r="5" /><path d="M0 20 H22" /><path d="M0 60 H22" /><path d="M90 40 H95" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text></svg>`,
+                    expression: "Q = &not;(A + B)"
+                },
+                XOR: {
+                    logic: (a, b) => a !== b,
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M25 10 C45 20, 45 60, 25 70 Q65 40, 85 40" /><path d="M18 10 C38 20, 38 60, 18 70" /><path d="M0 20 H20" /><path d="M0 60 H20" /><path d="M85 40 H95" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text></svg>`,
+                    expression: "Q = A &oplus; B"
+                },
+                XNOR: {
+                    logic: (a, b) => a === b,
+                    inputs: ['A', 'B'],
+                    symbol: `<svg viewBox="0 0 100 80" class="w-16 h-12 gate-symbol-svg"><path d="M25 10 C45 20, 45 60, 25 70 Q65 40, 85 40" /><path d="M18 10 C38 20, 38 60, 18 70" /><circle cx="90" cy="40" r="5" /><path d="M0 20 H20" /><path d="M0 60 H20" /><path d="M95 40 H100" /><text x="5" y="25">A</text><text x="5" y="65">B</text><text x="83" y="45">Q</text></svg>`,
+                    expression: "Q = &not;(A &oplus; B)"
+                },
+            };
+
+            const circuitComponents = {
+                'INPUT A': { type: 'INPUT', name: 'A', logic: (state) => state, inputs: [], symbol: `<div class="w-16 h-16 flex items-center justify-center rounded-lg text-white font-bold text-lg">A</div>`, customClass: 'bg-blue-600', state: false },
+                'INPUT B': { type: 'INPUT', name: 'B', logic: (state) => state, inputs: [], symbol: `<div class="w-16 h-16 flex items-center justify-center rounded-lg text-white font-bold text-lg">B</div>`, customClass: 'bg-blue-600', state: false },
+                'INPUT C': { type: 'INPUT', name: 'C', logic: (state) => state, inputs: [], symbol: `<div class="w-16 h-16 flex items-center justify-center rounded-lg text-white font-bold text-lg">C</div>`, customClass: 'bg-blue-600', state: false },
+                OUTPUT: { type: 'OUTPUT', logic: (a) => a, inputs: ['A'], symbol: `<div class="w-16 h-16 rounded-full border-4 border-gray-600 bg-gray-800 transition-all duration-200"></div>`, customClass: '' },
+                ...gateDefinitions
+            }
+            
+            // --- Tab Management ---
+            function switchTab(tabName) {
+                const tabs = [tabBuilder, tabExpression];
+                const contents = [contentBuilder, contentExpression];
+                const sidebars = [gateExplorerPanel, expressionHelpPanel];
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                contents.forEach(c => c.classList.remove('active'));
+                sidebars.forEach(s => s.classList.add('hidden'));
+
+                if(tabName === 'builder') {
+                    tabBuilder.classList.add('active');
+                    contentBuilder.classList.add('active');
+                    gateExplorerPanel.classList.remove('hidden');
+                    builderHelp.classList.remove('hidden');
+                } else if(tabName === 'expression') {
+                    tabExpression.classList.add('active');
+                    contentExpression.classList.add('active');
+                    expressionHelpPanel.classList.remove('hidden');
+                    builderHelp.classList.add('hidden');
+                }
+            }
+
+            tabBuilder.addEventListener('click', () => switchTab('builder'));
+            tabExpression.addEventListener('click', () => switchTab('expression'));
+
+
+            // --- Individual Gate Explorer ---
+            function createGateExplorerCard(name, def) {
+                const card = document.createElement('div');
+                card.className = 'bg-gray-800 p-4 rounded-lg shadow-md border border-gray-700';
+                
+                const numInputs = def.inputs.length;
+                const inputs = def.inputs.reduce((acc, inputName) => ({...acc, [inputName]: false}), {});
+
+                const header = `<h3 class="text-lg font-bold text-white mb-2">${name} Gate</h3>`;
+                
+                const diagram = document.createElement('div');
+                diagram.className = 'flex items-center justify-around mb-3';
+                diagram.innerHTML = `
+                    <div class="flex flex-col gap-y-2">
+                        ${def.inputs.map(input => `<button class="input-btn w-10 h-10 rounded-md border-2 font-bold" data-input="${input}">${input}</button>`).join('')}
+                    </div>
+                    ${def.symbol}
+                    <div class="output-display w-10 h-10 rounded-full border-2"></div>
+                `;
+
+                const info = `<div class="text-center text-gray-400">
+                    <p class="font-mono bg-gray-900 inline-block px-2 py-1 rounded-md">${def.expression}</p>
+                </div>`;
+                
+                const truthTable = document.createElement('table');
+                truthTable.className = 'w-full mt-3 text-center border-collapse text-xs';
+                const tHead = `<thead><tr><th class="border border-gray-600 p-1">${def.inputs.join('</th><th class="border border-gray-600 p-1">')}</th><th class="border border-gray-600 p-1">Q</th></tr></thead>`;
+                
+                let tBodyContent = '';
+                const numRows = Math.pow(2, numInputs);
+                for (let i = 0; i < numRows; i++) {
+                    const inputValues = [];
+                    let rowHtml = '';
+                    for (let j = numInputs - 1; j >= 0; j--) {
+                        const val = (i >> j) & 1;
+                        inputValues.push(Boolean(val));
+                        rowHtml += `<td class="border border-gray-600 p-1">${val}</td>`;
+                    }
+                    const output = def.logic(...inputValues);
+                    rowHtml += `<td class="border border-gray-600 p-1 font-bold">${+output}</td>`;
+                    tBodyContent += `<tr>${rowHtml}</tr>`;
+                }
+                
+                truthTable.innerHTML = tHead + `<tbody>${tBodyContent}</tbody>`;
+
+                card.innerHTML = header;
+                card.appendChild(diagram);
+                card.innerHTML += info;
+                card.appendChild(truthTable);
+                gatesContainer.appendChild(card);
+                
+                const outputDisplay = card.querySelector('.output-display');
+                
+                const updateOutput = () => {
+                    const inputBooleans = Object.values(inputs);
+                    const output = def.logic(...inputBooleans);
+                    outputDisplay.classList.toggle('active', output);
+                };
+
+                card.querySelectorAll('.input-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const inputName = btn.dataset.input;
+                        inputs[inputName] = !inputs[inputName];
+                        btn.classList.toggle('active', inputs[inputName]);
+                        updateOutput();
+                    });
+                    btn.classList.toggle('active', inputs[btn.dataset.input]);
+                });
+                
+                updateOutput();
+            }
+
+            // --- Canvas Viewport Controls ---
+            function updateViewTransform() {
+                canvas.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+            }
+
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = canvasContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                
+                const zoomFactor = 1.1;
+                const oldZoom = view.zoom;
+                
+                if (e.deltaY < 0) { // Zoom in
+                    view.zoom *= zoomFactor;
+                } else { // Zoom out
+                    view.zoom /= zoomFactor;
+                }
+                view.zoom = Math.max(0.2, Math.min(3, view.zoom));
+
+                view.panX = mouseX - (mouseX - view.panX) * (view.zoom / oldZoom);
+                view.panY = mouseY - (mouseY - view.panY) * (view.zoom / oldZoom);
+
+                updateViewTransform();
+            });
+
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.button === 1) { // Middle mouse button
+                    e.preventDefault();
+                    view.isPanning = true;
+                    view.lastPanX = e.clientX;
+                    view.lastPanY = e.clientY;
+                    canvasContainer.style.cursor = 'grabbing';
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (view.isPanning) {
+                    const dx = e.clientX - view.lastPanX;
+                    const dy = e.clientY - view.lastPanY;
+                    view.panX += dx;
+                    view.panY += dy;
+                    view.lastPanX = e.clientX;
+                    view.lastPanY = e.clientY;
+                    updateViewTransform();
+                }
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (e.button === 1) {
+                    view.isPanning = false;
+                    canvasContainer.style.cursor = 'grab';
+                }
+            });
+
+            // --- Circuit Builder ---
+            function createPaletteItem(name, def) {
+                const item = document.createElement('div');
+                item.className = 'px-3 py-1 bg-gray-700 text-white rounded-md cursor-pointer hover:bg-gray-600 transition-colors';
+                item.textContent = name;
+                item.draggable = true;
+                item.dataset.type = name;
+                item.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', name);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+                paletteContainer.appendChild(item);
+            }
+
+            function createDraggableGate(type, x, y) {
+                const def = circuitComponents[type];
+                if (!def) return;
+
+                const id = nextId++;
+                const gateEl = document.createElement('div');
+                gateEl.id = `gate-${id}`;
+                gateEl.className = `draggable-gate p-4 rounded-lg shadow-lg border-2 border-gray-600 bg-gray-800 ${def.customClass || ''}`;
+                gateEl.style.left = `${x}px`;
+                gateEl.style.top = `${y}px`;
+                gateEl.dataset.id = id;
+                gateEl.dataset.type = type;
+
+                let contentHTML = def.symbol;
+                if (def.expression) {
+                    contentHTML += `<div class="text-center text-xs text-gray-400 font-mono mt-1">${def.expression}</div>`;
+                }
+                gateEl.innerHTML = contentHTML;
+                
+                const outputNode = document.createElement('div');
+                outputNode.className = 'node output-node';
+                outputNode.dataset.type = 'output';
+                gateEl.appendChild(outputNode);
+
+                if(def.inputs.length > 0) {
+                     def.inputs.forEach((inputName) => {
+                        const inputNode = document.createElement('div');
+                        let className = inputName.toLowerCase();
+                        if (def.inputs.length === 1) className = 'single';
+                        inputNode.className = `node input-node ${className}`;
+                        inputNode.dataset.type = 'input';
+                        inputNode.dataset.name = inputName;
+                        gateEl.appendChild(inputNode);
+                    });
+                }
+                
+                canvas.appendChild(gateEl);
+                
+                circuitElements[id] = {
+                    id, type, el: gateEl,
+                    inputs: def.inputs.reduce((acc, name) => ({...acc, [name]: { value: false, from: null } }), {}),
+                    output: false,
+                    state: def.state !== undefined ? def.state : null
+                };
+                
+                makeDraggable(gateEl);
+                addNodeListeners(gateEl);
+                
+                gateEl.addEventListener('click', (e) => {
+                     if (e.target.classList.contains('node')) return;
+                     const def = circuitComponents[type];
+
+                     if (def.type === 'INPUT') {
+                         const element = circuitElements[id];
+                         element.state = !element.state;
+                         gateEl.classList.toggle('bg-green-500', element.state);
+                         gateEl.classList.toggle('bg-blue-600', !element.state);
+                         evaluateCircuit();
+                     } else {
+                        setSelectedGate(id);
+                     }
+                });
+            }
+
+            function makeDraggable(el) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                el.onmousedown = dragMouseDown;
+
+                function dragMouseDown(e) {
+                    if (e.target.classList.contains('node') || e.button !== 0) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+
+                function elementDrag(e) {
+                    e.preventDefault();
+                    pos1 = (pos3 - e.clientX) / view.zoom;
+                    pos2 = (pos4 - e.clientY) / view.zoom;
+                    pos3 = e.clientX;
+                    pos4 = e.clientY;
+                    el.style.top = (el.offsetTop - pos2) + "px";
+                    el.style.left = (el.offsetLeft - pos1) + "px";
+                    updateWiresForElement(el.dataset.id);
+                }
+
+                function closeDragElement() {
+                    document.onmouseup = null;
+                    document.onmousemove = null;
+                }
+            }
+
+            function addNodeListeners(gateEl) {
+                gateEl.querySelectorAll('.node').forEach(node => {
+                    node.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const id = gateEl.dataset.id;
+                        const type = node.dataset.type;
+
+                        if (type === 'output' && !wiringState.isWiring) {
+                            startWiring(id, node);
+                        } else if (type === 'input' && wiringState.isWiring) {
+                            finishWiring(id, node);
+                        }
+                    });
+                });
+            }
+
+            function startWiring(elementId, startNode) {
+                wiringState.isWiring = true;
+                wiringState.startElementId = elementId;
+                wiringState.startNode = startNode;
+                
+                wiringState.tempWire = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                wiringState.tempWire.setAttribute('class', 'temp-wire');
+                wiresSvg.appendChild(wiringState.tempWire);
+                
+                document.addEventListener('mousemove', onWiringMouseMove);
+                document.addEventListener('click', cancelWiringOnClick, true);
+            }
+
+            function onWiringMouseMove(e) {
+                if (!wiringState.isWiring) return;
+                const startPos = getAbsNodePosition(wiringState.startElementId, wiringState.startNode);
+                
+                const canvasRect = canvas.getBoundingClientRect();
+                const endX = (e.clientX - canvasRect.left) / view.zoom;
+                const endY = (e.clientY - canvasRect.top) / view.zoom;
+
+                wiringState.tempWire.setAttribute('x1', startPos.x);
+                wiringState.tempWire.setAttribute('y1', startPos.y);
+                wiringState.tempWire.setAttribute('x2', endX);
+                wiringState.tempWire.setAttribute('y2', endY);
+            }
+            
+            function finishWiring(endElementId, endNode) {
+                const startEl = circuitElements[wiringState.startElementId];
+                const endEl = circuitElements[endElementId];
+                const inputName = endNode.dataset.name;
+
+                if (startEl.id === endEl.id || !endEl || !inputName) {
+                    cancelWiring();
+                    return;
+                }
+                
+                if (endEl.inputs[inputName].from !== null) {
+                    const oldFromId = endEl.inputs[inputName].from;
+                    wires = wires.filter(w => !(w.from === oldFromId && w.to === endEl.id && w.toNode === inputName));
+                }
+
+                endEl.inputs[inputName].from = startEl.id;
+                wires.push({ from: startEl.id, to: endEl.id, toNode: inputName });
+                
+                drawAllWires();
+                evaluateCircuit();
+                cancelWiring();
+            }
+            
+            function cancelWiring() {
+                if (wiringState.tempWire) {
+                    wiringState.tempWire.remove();
+                }
+                document.removeEventListener('mousemove', onWiringMouseMove);
+                document.removeEventListener('click', cancelWiringOnClick, true);
+                wiringState.isWiring = false;
+            }
+
+            function cancelWiringOnClick(e) {
+                if(wiringState.isWiring && !e.target.classList.contains('node')) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    cancelWiring();
+                }
+            }
+            
+            function getAbsNodePosition(elementId, nodeOrSelector) {
+                const el = document.getElementById(`gate-${elementId}`);
+                const node = typeof nodeOrSelector === 'string' ? el.querySelector(nodeOrSelector) : nodeOrSelector;
+                if (!node || !el) return null;
+
+                const nodeRect = node.getBoundingClientRect();
+                const canvasRect = canvas.getBoundingClientRect();
+                
+                return {
+                    x: (nodeRect.left + nodeRect.width / 2 - canvasRect.left) / view.zoom,
+                    y: (nodeRect.top + nodeRect.height / 2 - canvasRect.top) / view.zoom
+                };
+            }
+            
+            function drawAllWires() {
+                wiresSvg.innerHTML = '';
+                wires.forEach(wire => {
+                    const startPos = getAbsNodePosition(wire.from, '.output-node');
+                    const endPos = getAbsNodePosition(wire.to, `.input-node[data-name="${wire.toNode}"]`);
+                    
+                    if (startPos && endPos) {
+                        const lineGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        const fromEl = circuitElements[wire.from];
+
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', `M ${startPos.x} ${startPos.y} L ${endPos.x} ${endPos.y}`);
+                        path.setAttribute('class', 'wire');
+
+                        const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        hitbox.setAttribute('d', `M ${startPos.x} ${startPos.y} L ${endPos.x} ${endPos.y}`);
+                        hitbox.style.stroke = 'transparent';
+                        hitbox.style.strokeWidth = '10';
+                        hitbox.style.fill = 'none';
+                        hitbox.style.pointerEvents = 'stroke';
+                        hitbox.style.cursor = 'pointer';
+
+                        hitbox.dataset.from = wire.from;
+                        hitbox.dataset.to = wire.to;
+                        hitbox.dataset.tonode = wire.toNode;
+
+                        if(fromEl) path.classList.toggle('active', fromEl.output);
+                        
+                        lineGroup.appendChild(path);
+                        lineGroup.appendChild(hitbox);
+                        wiresSvg.appendChild(lineGroup);
+                    }
+                });
+            }
+
+            function updateWiresForElement(id) {
+                drawAllWires();
+            }
+            
+            function evaluateCircuit() {
+                const orderedElements = getExecutionOrder(circuitElements, Object.values(circuitElements).filter(el => el.type.startsWith('INPUT')));
+                
+                const elementsToEvaluate = [
+                    ...Object.values(circuitElements).filter(el => el.type.startsWith('INPUT')),
+                    ...orderedElements
+                ];
+                
+                for(const el of elementsToEvaluate) {
+                     const def = circuitComponents[el.type];
+                    if (el.type.startsWith('INPUT')) {
+                        el.output = def.logic(el.state);
+                    } else {
+                        const inputValues = def.inputs.map(inputName => {
+                            const fromId = el.inputs[inputName].from;
+                            return fromId !== null ? (circuitElements[fromId]?.output || false) : false;
+                        });
+                        el.output = def.logic(...inputValues);
+                    }
+                }
+                updateCircuitVisuals();
+            }
+
+
+            function updateCircuitVisuals() {
+                Object.values(circuitElements).forEach(el => {
+                    el.el.querySelector('.output-node')?.classList.toggle('active', el.output);
+                    Object.keys(el.inputs).forEach(inputName => {
+                        const fromId = el.inputs[inputName].from;
+                        const inputValue = fromId !== null ? (circuitElements[fromId]?.output || false) : false;
+                        el.el.querySelector(`.input-node[data-name="${inputName}"]`)?.classList.toggle('active', inputValue);
+                    });
+
+                    if (el.type === 'OUTPUT') {
+                        const led = el.el.querySelector('div');
+                        if (el.output) {
+                            led.style.backgroundColor = 'var(--output-on)';
+                            led.style.borderColor = '#6ee7b7';
+                            led.style.boxShadow = '0 0 15px var(--output-on)';
+                        } else {
+                            led.style.backgroundColor = 'var(--bg-color)';
+                            led.style.borderColor = 'var(--border-color)';
+                            led.style.boxShadow = 'none';
+                        }
+                    }
+                });
+                drawAllWires();
+            }
+            
+            function clearCanvas() {
+                const gateElements = canvas.querySelectorAll('.draggable-gate');
+                gateElements.forEach(el => el.remove());
+                wiresSvg.innerHTML = '';
+                circuitElements = {};
+                wires = [];
+                nextId = 0;
+                setSelectedGate(null);
+            }
+
+            function setSelectedGate(id) {
+                if (selectedGateId !== null && circuitElements[selectedGateId]) {
+                    circuitElements[selectedGateId].el.classList.remove('selected');
+                }
+                selectedGateId = id;
+                if (selectedGateId !== null && circuitElements[selectedGateId]) {
+                    circuitElements[selectedGateId].el.classList.add('selected');
+                }
+            }
+
+            function deleteGate(id) {
+                if (id === null) return;
+                const gateToRemove = circuitElements[id];
+                if (!gateToRemove) return;
+
+                // Remove wires connected to this gate
+                wires = wires.filter(w => w.from != id && w.to != id);
+
+                // Nullify inputs of other gates that were connected to this gate's output
+                Object.values(circuitElements).forEach(el => {
+                    Object.keys(el.inputs).forEach(inputName => {
+                        if (el.inputs[inputName].from == id) {
+                            el.inputs[inputName].from = null;
+                        }
+                    });
+                });
+
+                gateToRemove.el.remove();
+                delete circuitElements[id];
+                
+                if (selectedGateId == id) {
+                    selectedGateId = null;
+                }
+
+                drawAllWires();
+                evaluateCircuit();
+            }
+
+
+            function getExpression(elementId, memo = {}) {
+                if (memo[elementId]) return memo[elementId];
+
+                const element = circuitElements[elementId];
+                if (!element) return '?';
+
+                const def = circuitComponents[element.type];
+                if (def.type === 'INPUT') {
+                    const name = def.name;
+                    memo[elementId] = name;
+                    return name;
+                }
+                
+                if (!def || def.inputs.length === 0) return '';
+
+                const inputExpressions = def.inputs.map(inputName => {
+                    const fromId = element.inputs[inputName].from;
+                    return fromId !== null ? getExpression(fromId, memo) : 'Unconnected';
+                });
+
+                let result = '';
+                switch (element.type) {
+                    case 'AND': result = `(${inputExpressions[0]} AND ${inputExpressions[1]})`; break;
+                    case 'OR': result = `(${inputExpressions[0]} OR ${inputExpressions[1]})`; break;
+                    case 'NOT': result = `NOT(${inputExpressions[0]})`; break;
+                    case 'NAND': result = `NAND(${inputExpressions[0]}, ${inputExpressions[1]})`; break;
+                    case 'NOR': result = `NOR(${inputExpressions[0]}, ${inputExpressions[1]})`; break;
+                    case 'XOR': result = `(${inputExpressions[0]} XOR ${inputExpressions[1]})`; break;
+                    case 'XNOR': result = `XNOR(${inputExpressions[0]}, ${inputExpressions[1]})`; break;
+                    default: result = '?';
+                }
+                
+                memo[elementId] = result;
+                return result;
+            }
+
+            function displayCircuitExpression() {
+                modalTitle.textContent = 'Circuit Logic Expression';
+                const circuitOutputs = Object.values(circuitElements)
+                    .filter(el => el.type === 'OUTPUT')
+                    .sort((a,b) => a.id - b.id);
+
+                if (circuitOutputs.length === 0) {
+                    modalContent.innerHTML = `<p class="text-gray-400">Please add at least one OUTPUT component to generate a logic expression.</p>`;
+                    return;
+                }
+
+                let expressionsHtml = '<div class="space-y-4 text-base font-mono">';
+                const expressionMemo = {};
+                circuitOutputs.forEach((outputEl, i) => {
+                    const inputA = outputEl.inputs['A'];
+                    let expression = 'Unconnected';
+                    if (inputA && inputA.from !== null) {
+                        expression = getExpression(inputA.from, expressionMemo);
+                    }
+                    expressionsHtml += `<div><span class="text-blue-400">OUT ${i + 1}</span> = ${expression}</div>`;
+                });
+                expressionsHtml += '</div>';
+
+                modalContent.innerHTML = expressionsHtml;
+            }
+
+            function getExecutionOrder(circuitElements, circuitInputs) {
+                const executionOrder = [];
+                const evaluated = new Set(circuitInputs.map(el => el.id));
+                const remaining = new Set(Object.values(circuitElements).filter(el => !el.type.startsWith('INPUT')));
+                let changedInLoop = true;
+                
+                while(remaining.size > 0 && changedInLoop) {
+                    changedInLoop = false;
+                    const toEvaluateNext = [];
+
+                    for(const gate of remaining) {
+                        const inputsReady = Object.values(gate.inputs).every(input => input.from === null || evaluated.has(input.from));
+                        if(inputsReady) {
+                            toEvaluateNext.push(gate);
+                        }
+                    }
+                    
+                    if(toEvaluateNext.length > 0) {
+                        toEvaluateNext.sort((a, b) => a.id - b.id);
+                        for(const gate of toEvaluateNext) {
+                            executionOrder.push(gate);
+                            evaluated.add(gate.id);
+                            remaining.delete(gate);
+                            changedInLoop = true;
+                        }
+                    }
+                }
+                if (remaining.size > 0) {
+                     console.error("Circular dependency detected. Cannot fully resolve execution order.");
+                     executionOrder.push(...Array.from(remaining).sort((a,b) => a.id - b.id));
+                }
+
+                return executionOrder;
+            }
+
+            function generateCircuitTruthTable() {
+                modalTitle.textContent = 'Circuit Truth Table';
+                const circuitInputs = Object.values(circuitElements)
+                    .filter(el => el.type.startsWith('INPUT'))
+                    .sort((a, b) => circuitComponents[a.type].name.localeCompare(circuitComponents[b.type].name));
+
+                if (circuitInputs.length === 0) {
+                    modalContent.innerHTML = `<p class="text-gray-400">Please add at least one INPUT to generate a truth table.</p>`;
+                    return;
+                }
+
+                const executionOrder = getExecutionOrder(circuitElements, circuitInputs);
+                const intermediateGates = executionOrder.filter(el => el.type !== 'OUTPUT');
+                const finalOutputs = executionOrder.filter(el => el.type === 'OUTPUT');
+
+                const allHeaders = [...circuitInputs, ...intermediateGates, ...finalOutputs];
+                const expressionMemo = {};
+
+                let tableHtml = `<table class="w-full text-center border-collapse text-xs"><thead><tr>`;
+                allHeaders.forEach((el) => {
+                    let label = '';
+                    if (el.type.startsWith('INPUT')) {
+                        label = circuitComponents[el.type].name;
+                    } else if (el.type === 'OUTPUT') {
+                        const outputIndex = finalOutputs.indexOf(el) + 1;
+                        const inputA = el.inputs['A'];
+                        let expression = 'Unconnected';
+                        if (inputA && inputA.from !== null) {
+                            expression = getExpression(inputA.from, expressionMemo);
+                        }
+                        label = `OUT ${outputIndex}<br><span class="font-normal text-gray-400 text-[10px]">${expression}</span>`;
+                    } else {
+                        label = getExpression(el.id, expressionMemo);
+                    }
+                    tableHtml += `<th class="border border-gray-600 p-2 font-mono">${label}</th>`;
+                });
+                tableHtml += `</tr></thead><tbody>`;
+
+                const numRows = Math.pow(2, circuitInputs.length);
+                for (let i = 0; i < numRows; i++) {
+                    let rowHtml = '<tr>';
+                    const tempOutputs = {};
+
+                    // Set input values for this row
+                    for (let j = 0; j < circuitInputs.length; j++) {
+                        const val = (i >> (circuitInputs.length - 1 - j)) & 1;
+                        circuitInputs[j].state = Boolean(val);
+                        tempOutputs[circuitInputs[j].id] = circuitInputs[j].state;
+                    }
+
+                    // Evaluate in order
+                    const orderedElements = [...circuitInputs, ...executionOrder];
+                    for(const el of orderedElements) {
+                        const def = circuitComponents[el.type];
+                        if (el.type.startsWith('INPUT')) {
+                            el.output = tempOutputs[el.id];
+                        } else {
+                             const inputValues = def.inputs.map(inputName => {
+                                const fromId = el.inputs[inputName].from;
+                                return fromId !== null ? tempOutputs[fromId] : false;
+                            });
+                            el.output = def.logic(...inputValues);
+                            tempOutputs[el.id] = el.output;
+                        }
+                    }
+
+                    // Populate row with results
+                    allHeaders.forEach(el => {
+                        rowHtml += `<td class="border border-gray-600 p-2 font-mono">${+el.output}</td>`;
+                    });
+
+                    rowHtml += '</tr>';
+                    tableHtml += rowHtml;
+                }
+                tableHtml += `</tbody></table>`;
+                modalContent.innerHTML = tableHtml;
+            }
+
+            // --- Event Listeners & Initialization ---
+            clearCanvasBtn.addEventListener('click', clearCanvas);
+            
+            generateTableBtn.addEventListener('click', () => {
+                generateCircuitTruthTable();
+                modal.classList.remove('hidden');
+            });
+            
+            generateExprBtn.addEventListener('click', () => {
+                displayCircuitExpression();
+                modal.classList.remove('hidden');
+            });
+
+            closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            Object.entries(gateDefinitions).forEach(([name, def]) => createGateExplorerCard(name, def));
+            Object.entries(circuitComponents).forEach(([name, def]) => createPaletteItem(name, def));
+
+            canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
+            canvasContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('text/plain');
+                const rect = canvasContainer.getBoundingClientRect();
+                const x = (e.clientX - rect.left - view.panX) / view.zoom;
+                const y = (e.clientY - rect.top - view.panY) / view.zoom;
+                createDraggableGate(type, x, y);
+            });
+
+            wiresSvg.addEventListener('click', (e) => {
+                if (e.target.tagName === 'path' && e.target.style.cursor === 'pointer') {
+                    const fromId = e.target.dataset.from;
+                    const toId = e.target.dataset.to;
+                    const toNodeName = e.target.dataset.tonode;
+
+                    wires = wires.filter(w => !( w.from == fromId && w.to == toId && w.toNode === toNodeName ));
+                    
+                    const toElement = circuitElements[toId];
+                    if (toElement && toElement.inputs[toNodeName]) {
+                        toElement.inputs[toNodeName].from = null;
+                    }
+
+                    drawAllWires();
+                    evaluateCircuit();
+                }
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    if (selectedGateId !== null) {
+                        deleteGate(selectedGateId);
+                    }
+                }
+            });
+
+            canvasContainer.addEventListener('click', (e) => {
+                if (e.target === canvasContainer || e.target === canvas) {
+                    setSelectedGate(null);
+                }
+            });
+
+
+            // --- Expression Analyzer Logic ---
+
+            function analyzeExpression() {
+                const expression = expressionInput.value;
+                if (!expression.trim()) {
+                    expressionTruthTable.innerHTML = `<div class="text-gray-400">Enter an expression to see its truth table.</div>`;
+                    return;
+                }
+                try {
+                    const { tableHtml } = generateExpressionTruthTable(expression);
+                    expressionTruthTable.innerHTML = tableHtml;
+                } catch (error) {
+                    expressionTruthTable.innerHTML = `<div class="text-red-400">Error: ${error.message}</div>`;
+                    console.error("Expression analysis error:", error);
+                }
+            }
+
+            function astNodeToString(node) {
+                if (!node) return '';
+                if (node.type === 'variable') return node.name;
+                if (node.type === 'operator') {
+                    const opMap = {
+                        'AND': 'AND', '&&': 'AND', '*': 'AND',
+                        'OR': 'OR', '||': 'OR', '+': 'OR',
+                        'XOR': 'XOR', '^': 'XOR',
+                        'NOT': 'NOT', '!': 'NOT', '~': 'NOT',
+                        'NAND': 'NAND', 'NOR': 'NOR', 'XNOR': 'XNOR'
+                    };
+                    const op = opMap[node.op] || node.op;
+
+                    if (node.operand) {
+                        return `${op}(${astNodeToString(node.operand)})`;
+                    } else {
+                        return `(${astNodeToString(node.left)} ${op} ${astNodeToString(node.right)})`;
+                    }
+                }
+                return '';
+            }
+            
+            function parseExpressionToAST(expression) {
+                const tokenRegex = /(\bAND\b|\bOR\b|\bNOT\b|\bXOR\b|\bNAND\b|\bNOR\b|\bXNOR\b|&&|\|\||!|~|\^|\*|\+|\(|\)|[A-Z])/gi;
+                const tokens = expression.match(tokenRegex)?.map(t => t.toUpperCase()) || [];
+                if (tokens.length === 0) {
+                    const trimmed = expression.trim();
+                    if (trimmed !== '') {
+                        const isNumeric = !isNaN(parseFloat(trimmed)) && isFinite(trimmed);
+                        if (!isNumeric) throw new Error("Invalid characters in expression.");
+                    }
+                }
+
+                let index = 0;
+
+                function parseOr() {
+                    let left = parseXor();
+                    while (index < tokens.length && (tokens[index].match(/OR|\|\||\+|NOR/))) {
+                        const op = tokens[index]; index++;
+                        const right = parseXor();
+                        left = { type: 'operator', op, left, right };
+                    }
+                    return left;
+                }
+                function parseXor() {
+                    let left = parseAnd();
+                    while (index < tokens.length && (tokens[index].match(/XOR|\^|XNOR/))) {
+                        const op = tokens[index]; index++;
+                        const right = parseAnd();
+                        left = { type: 'operator', op, left, right };
+                    }
+                    return left;
+                }
+                function parseAnd() {
+                    let left = parseNot();
+                    while (index < tokens.length && (tokens[index].match(/AND|\&\&|\*|NAND/))) {
+                        const op = tokens[index]; index++;
+                        const right = parseNot();
+                        left = { type: 'operator', op, left, right };
+                    }
+                    return left;
+                }
+                function parseNot() {
+                    if (tokens[index]?.match(/NOT|!|~/)) {
+                        const op = tokens[index]; index++;
+                        const operand = parseNot();
+                        return { type: 'operator', op, operand };
+                    }
+                    return parseAtom();
+                }
+                function parseAtom() {
+                    const token = tokens[index];
+                    if (token === '(') {
+                        index++;
+                        const result = parseOr();
+                        if (tokens[index] !== ')') { throw new Error("Mismatched parentheses"); }
+                        index++;
+                        return result;
+                    }
+                    if (token?.match(/^[A-Z]$/)) {
+                        index++;
+                        return { type: 'variable', name: token };
+                    }
+                    throw new Error(`Unexpected token: ${token}`);
+                }
+                
+                if (tokens.length === 0) return null;
+                const ast = parseOr();
+                if (index < tokens.length) { throw new Error(`Unexpected token at end: ${tokens[index]}`); }
+                return ast;
+            }
+
+            function evaluateAST(node, scope, intermediateResults) {
+                if (!node) return false;
+                const nodeStr = astNodeToString(node);
+                if (intermediateResults.hasOwnProperty(nodeStr)) {
+                    return intermediateResults[nodeStr];
+                }
+                
+                let result;
+                if (node.type === 'variable') {
+                    result = !!scope[node.name];
+                } else if (node.type === 'operator') {
+                    if (node.operand) {
+                        const operandVal = evaluateAST(node.operand, scope, intermediateResults);
+                        result = !operandVal;
+                    } else {
+                        const leftVal = evaluateAST(node.left, scope, intermediateResults);
+                        const rightVal = evaluateAST(node.right, scope, intermediateResults);
+                        switch (node.op) {
+                            case 'AND': case '&&': case '*': result = leftVal && rightVal; break;
+                            case 'OR': case '||': case '+': result = leftVal || rightVal; break;
+                            case 'XOR': case '^': result = leftVal !== rightVal; break;
+                            case 'NAND': result = !(leftVal && rightVal); break;
+                            case 'NOR': result = !(leftVal || rightVal); break;
+                            case 'XNOR': result = (leftVal === rightVal); break;
+                        }
+                    }
+                }
+                
+                intermediateResults[nodeStr] = result;
+                return result;
+            }
+
+            function generateExpressionTruthTable(expression) {
+                const tokenRegexForVars = /(\bAND\b|\bOR\b|\bNOT\b|\bXOR\b|\bNAND\b|\bNOR\b|\bXNOR\b|&&|\|\||!|~|\^|\*|\+|\(|\)|[A-Z])/gi;
+                const allTokens = expression.match(tokenRegexForVars) || [];
+                const variables = [...new Set(allTokens.filter(token => /^[A-Z]$/i.test(token)))].map(v => v.toUpperCase()).sort();
+                
+                const ast = parseExpressionToAST(expression);
+
+                const headersMap = new Map();
+                function collectHeaders(node) {
+                    if (!node) return;
+                    if (node.operand) {
+                        collectHeaders(node.operand);
+                    } else if (node.left && node.right) {
+                        collectHeaders(node.left);
+                        collectHeaders(node.right);
+                    }
+                    if (node.type === 'operator') {
+                        headersMap.set(astNodeToString(node), node);
+                    }
+                }
+                
+                if (ast) {
+                    collectHeaders(ast);
+                } else if (variables.length === 0) {
+                     const isNumeric = !isNaN(parseFloat(expression)) && isFinite(expression);
+                     if(!isNumeric && expression.trim() !== '') throw new Error("No variables or valid operators found.");
+                }
+
+                const intermediateHeaders = Array.from(headersMap.keys());
+                const allHeaders = [...variables, ...intermediateHeaders];
+
+                let tableHtml = `<table class="w-full text-center border-collapse text-sm"><thead><tr>`;
+                allHeaders.forEach(h => tableHtml += `<th class="border border-gray-600 p-2 font-mono">${h}</th>`);
+                if (allHeaders.length === 0) {
+                    tableHtml += `<th class="border border-gray-600 p-2 font-bold">Q</th>`;
+                }
+                tableHtml += `</tr></thead><tbody>`;
+
+                const numRows = variables.length > 0 ? Math.pow(2, variables.length) : 1;
+                
+                for (let i = 0; i < numRows; i++) {
+                    const scope = {};
+                    let rowHtml = '<tr>';
+                    for (let j = 0; j < variables.length; j++) {
+                        const val = (i >> (variables.length - 1 - j)) & 1;
+                        scope[variables[j]] = val;
+                    }
+                    
+                    const intermediateResults = {};
+                    evaluateAST(ast, scope, intermediateResults);
+
+                    allHeaders.forEach(header => {
+                        let value;
+                        if (scope.hasOwnProperty(header)) {
+                            value = scope[header];
+                        } else {
+                            value = intermediateResults[header];
+                        }
+                        rowHtml += `<td class="border border-gray-600 p-2">${value !== undefined ? +value : ''}</td>`;
+                    });
+                     if (allHeaders.length === 0) {
+                        const constResult = evaluateAST(ast, {}, {});
+                        rowHtml += `<td class="border border-gray-600 p-2">${+constResult}</td>`;
+                    }
+                    tableHtml += rowHtml + '</tr>';
+                }
+
+                tableHtml += `</tbody></table>`;
+                return { tableHtml };
+            }
+
+            // --- Drag and Drop for Expression Input ---
+            expressionPalette.addEventListener('dragstart', (e) => {
+                if(e.target.classList.contains('palette-item')) {
+                    e.dataTransfer.setData('text/plain', e.target.dataset.value);
+                }
+            });
+
+            expressionInput.addEventListener('dragover', (e) => {
+                e.preventDefault();
+            });
+
+            expressionInput.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const textToInsert = e.dataTransfer.getData('text/plain');
+                const input = e.target;
+                const start = input.selectionStart;
+                const end = input.selectionEnd;
+                
+                const currentValue = input.value;
+                input.value = currentValue.substring(0, start) + textToInsert + currentValue.substring(end);
+                
+                const newCursorPos = start + textToInsert.length;
+                input.selectionStart = input.selectionEnd = newCursorPos;
+                input.focus();
+            });
+
+
+            analyzeExpressionBtn.addEventListener('click', analyzeExpression);
+            expressionInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') analyzeExpression();
+            });
+
+        });
+    </script>
+</body>
+</html>
+

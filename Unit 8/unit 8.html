@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GCSE Computer Science Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom animation for memory blocks appearing */
+        @keyframes pop-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        .memory-block {
+            animation: pop-in 0.3s ease-out forwards;
+        }
+        /* Custom animation for value updates */
+        @keyframes flash-update {
+            0%, 100% { background-color: inherit; }
+            50% { background-color: #fefcbf; } /* A light yellow flash */
+        }
+        .flash {
+            animation: flash-update 0.7s ease-in-out;
+        }
+        /* Custom scrollbar for a cleaner look */
+        textarea::-webkit-scrollbar, .problem-area::-webkit-scrollbar, .sim-output::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track, .problem-area::-webkit-scrollbar-track, .sim-output::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb, .problem-area::-webkit-scrollbar-thumb, .sim-output::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, .problem-area::-webkit-scrollbar-thumb:hover, .sim-output::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Accordion styles */
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-in-out;
+        }
+        .accordion-button svg {
+            transition: transform 0.3s ease-in-out;
+        }
+        input:checked ~ .accordion-button svg {
+            transform: rotate(180deg);
+        }
+        input:checked ~ .accordion-content {
+            max-height: 1000px; /* Adjust as needed */
+        }
+        /* Tab styles */
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-button.active {
+            border-bottom-color: #4f46e5;
+            color: #4f46e5;
+        }
+        /* Drag and drop styles */
+        .draggable {
+            cursor: grab;
+            user-select: none;
+        }
+        .drop-zone {
+            transition: background-color 0.2s ease-in-out;
+        }
+        .drop-zone.drag-over {
+            background-color: #e0e7ff;
+            border-style: dashed;
+        }
+        .dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+        /* Simulation line highlight */
+        .highlight-line {
+            background-color: #fefcbf;
+            transition: background-color 0.2s;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8 min-h-screen">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-900">GCSE Computer Science Hub</h1>
+            <p class="mt-2 text-lg text-slate-600">Interactive Learning for Pseudocode &amp; SDLC</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="border-b border-slate-200 mb-8">
+            <nav class="-mb-px flex space-x-6 overflow-x-auto" aria-label="Tabs">
+                <button class="tab-button active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg" data-tab="sdlc">
+                    1: SDLC
+                </button>
+                 <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="abstraction">
+                    2: Abstraction
+                </button>
+                 <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="decomposition">
+                    3: Decomposition
+                </button>
+                <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="algorithms">
+                    4: Algorithms
+                </button>
+                 <button class="tab-button whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg text-slate-500 hover:text-slate-700 hover:border-slate-300" data-tab="simulators">
+                    5: Simulators
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="tab-container">
+             <!-- System Development Life Cycle Tab -->
+            <div id="sdlc" class="tab-content active">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-1">The Program Development Life Cycle</h2>
+                    <p class="text-slate-600 mb-6">This is a structured process used by a developer to build high-quality software. The "Waterfall" model has four key stages, completed in order.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-6">
+                        <!-- Left Column: Stages -->
+                        <div>
+                            <h3 class="text-xl font-semibold mb-4 text-slate-800">The Four Stages</h3>
+                            <div class="space-y-4">
+                                <!-- Stage 1: Analysis -->
+                                <div class="border border-slate-200 rounded-lg">
+                                    <input type="checkbox" id="sdlc-1" class="hidden">
+                                    <label for="sdlc-1" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-red-50 rounded-t-lg">
+                                        <span class="font-semibold text-lg text-red-800">1. Analysis</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </label>
+                                    <div class="accordion-content p-4 border-t border-red-200 bg-red-50">
+                                        <p class="text-slate-700">This stage is about understanding the problem. Before writing any code, you must be clear on what the software needs to do.</p>
+                                        <ul class="list-disc list-inside mt-3 space-y-2 text-slate-700">
+                                            <li><strong>Problem Identification:</strong> Clearly define the problem the software will solve.</li>
+                                            <li><strong>Identify Requirements:</strong> Create a specific list of what the software must do.</li>
+                                            <li><strong>Abstraction:</strong> Remove unnecessary details to focus on the essential parts of the problem.</li>
+                                            <li><strong>Decomposition:</strong> Break down the large problem into smaller, more manageable parts.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <!-- Stage 2: Design -->
+                                <div class="border border-slate-200 rounded-lg">
+                                    <input type="checkbox" id="sdlc-2" class="hidden">
+                                    <label for="sdlc-2" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-orange-50 rounded-t-lg">
+                                        <span class="font-semibold text-lg text-orange-800">2. Design</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </label>
+                                    <div class="accordion-content p-4 border-t border-orange-200 bg-orange-50">
+                                        <p class="text-slate-700">In this stage, you plan *how* the software will meet the requirements. This is the blueprint for the program.</p>
+                                        <ul class="list-disc list-inside mt-3 space-y-2 text-slate-700">
+                                            <li><strong>Structure Diagrams:</strong> Visually break down the system into its component parts.</li>
+                                            <li><strong>Flowcharts:</strong> Create diagrams to show the flow and logic of algorithms.</li>
+                                            <li><strong>Pseudocode:</strong> Write out the logic of the program in a human-readable format.</li>
+                                            <li><strong>Decomposition:</strong> Break down the problem into inputs, processes, outputs, and storage.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <!-- Stage 3: Coding -->
+                                <div class="border border-slate-200 rounded-lg">
+                                    <input type="checkbox" id="sdlc-3" class="hidden">
+                                    <label for="sdlc-3" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-sky-50 rounded-t-lg">
+                                        <span class="font-semibold text-lg text-sky-800">3. Coding / Development</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </label>
+                                    <div class="accordion-content p-4 border-t border-sky-200 bg-sky-50">
+                                        <p class="text-slate-700">This is the stage where the program is actually written using a programming language, based on the plans from the Design stage.</p>
+                                        <ul class="list-disc list-inside mt-3 space-y-2 text-slate-700">
+                                            <li><strong>Writing Program Code:</strong> Translating the design into a functional program.</li>
+                                            <li><strong>Iterative Testing:</strong> Programmers test their code as they write it.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <!-- Stage 4: Testing -->
+                                <div class="border border-slate-200 rounded-lg">
+                                    <input type="checkbox" id="sdlc-4" class="hidden">
+                                    <label for="sdlc-4" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-green-50 rounded-t-lg">
+                                        <span class="font-semibold text-lg text-green-800">4. Testing</span>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                    </label>
+                                    <div class="accordion-content p-4 border-t border-green-200 bg-green-50">
+                                        <p class="text-slate-700">Once the code is complete, it is formally tested to ensure it works as expected and meets all the requirements.</p>
+                                        <ul class="list-disc list-inside mt-3 space-y-2 text-slate-700">
+                                            <li><strong>Create a Test Plan:</strong> A plan is created with specific test data and the expected outcomes.</li>
+                                            <li><strong>Execute Tests:</strong> The program is run with the test data.</li>
+                                            <li><strong>Compare Results:</strong> The actual output is compared to the expected output.</li>
+                                            <li><strong>Fix and Re-test:</strong> Any bugs are fixed, and the software is tested again.</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Column: Example -->
+                        <div>
+                             <h3 class="text-xl font-semibold mb-4 text-slate-800">Example: School Canteen Ordering App</h3>
+                             <div class="space-y-4">
+                                <!-- Example Stage 1: Analysis -->
+                                <div class="p-4 bg-red-50/50 rounded-lg border border-red-200">
+                                    <h4 class="text-lg font-semibold text-red-800 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        1. Analysis
+                                    </h4>
+                                    <p class="text-slate-700 mt-2">The problem is that canteen queues are too long. We need an app to let students pre-order food.</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-700">
+                                        <li><strong>Requirements:</strong> View menu, add items to basket, pay. Canteen needs to see orders.</li>
+                                        <li><strong>Abstraction:</strong> We only need the student's name and their order.</li>
+                                        <li><strong>Decomposition:</strong> Break into: User Login, Menu Display, Order Processing, Payment.</li>
+                                    </ul>
+                                </div>
+                                <!-- Example Stage 2: Design -->
+                                <div class="p-4 bg-orange-50/50 rounded-lg border border-orange-200">
+                                    <h4 class="text-lg font-semibold text-orange-800 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"></polygon><line x1="12" y1="22" x2="12" y2="12"></line><line x1="22" y1="8.5" x2="12" y2="12"></line><line x1="2" y1="8.5" x2="12" y2="12"></line></svg>
+                                        2. Design
+                                    </h4>
+                                    <p class="text-slate-700 mt-2">We plan the app's structure and logic. We create a blueprint for the coders.</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-700">
+                                        <li><strong>UI Sketch:</strong> Draw a simple layout for the menu and checkout pages.</li>
+                                        <li><strong>Flowchart:</strong> Diagram the steps from logging in to confirming an order.</li>
+                                        <li><strong>Pseudocode:</strong> `totalCost <- 0; FOR EACH item in basket; totalCost <- totalCost + item.price; END FOR`.</li>
+                                    </ul>
+                                </div>
+                                <!-- Example Stage 3: Coding -->
+                                <div class="p-4 bg-sky-50/50 rounded-lg border border-sky-200">
+                                    <h4 class="text-lg font-semibold text-sky-800 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                                        3. Coding
+                                    </h4>
+                                    <p class="text-slate-700 mt-2">Developers use a language like Python or JavaScript to build the app from the design.</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-700">
+                                        <li>Build the login screen.</li>
+                                        <li>Create the page that shows the menu items.</li>
+                                        <li>Write the shopping basket code, translating the pseudocode.</li>
+                                    </ul>
+                                </div>
+                                <!-- Example Stage 4: Testing -->
+                                <div class="p-4 bg-green-50/50 rounded-lg border border-green-200">
+                                    <h4 class="text-lg font-semibold text-green-800 flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                        4. Testing
+                                    </h4>
+                                    <p class="text-slate-700 mt-2">We check if the app works correctly and find any bugs.</p>
+                                    <ul class="list-disc list-inside mt-2 space-y-1 text-slate-700">
+                                        <li><strong>Test Plan:</strong> Test adding 3 items. Expected result: Total cost is correct.</li>
+                                        <li><strong>Normal Data:</strong> Test with typical orders (e.g., 2 items).</li>
+                                        <li><strong>Extreme Data:</strong> Test with an empty basket and a very large order.</li>
+                                        <li><strong>Erroneous Data:</strong> Test ordering 1.5 sandwiches. The app shouldn't crash.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abstraction Simulator Tab -->
+            <div id="abstraction" class="tab-content">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-2">Abstraction: Finding What's Important</h2>
+                    <p class="text-slate-600 mb-6">Abstraction is removing unnecessary detail to focus on the essential features of a problem. Read the problem below and drag the key information to the "Essential Information" box.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Problem Description -->
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h3 class="text-xl font-semibold mb-2">Problem: Cinema Booking System</h3>
+                            <p class="text-slate-700 mb-4">You are tasked with identifying the key requirements for a new computer program that will allow customers to book cinema tickets online. The program needs to handle movie selection, ticket quantities, and calculate the final price.</p>
+                            <div id="problem-source" class="problem-area space-y-3 drop-zone h-[400px] overflow-y-auto p-2 rounded">
+                                <!-- Draggable items will be populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Essential Information -->
+                        <div>
+                            <div class="bg-green-50 p-4 rounded-lg border-2 border-green-200 h-full">
+                                <h3 class="text-xl font-semibold mb-2 text-green-800 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                    Essential Information
+                                </h3>
+                                <div id="essential-drop-zone" class="drop-zone min-h-[350px] p-2 rounded">
+                                    <p id="essential-placeholder" class="text-slate-500 text-center mt-16">Drag required info here</p>
+                                </div>
+                            </div>
+                            <button id="check-abstraction-btn" class="mt-4 w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-md">Check My Answer</button>
+                            <p id="abstraction-feedback" class="text-center mt-2 font-medium h-6"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <!-- Decomposition Simulator Tab -->
+            <div id="decomposition" class="tab-content">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-2">Decomposition: Breaking Down a Problem</h2>
+                    <p class="text-slate-600 mb-6">Decomposition is breaking a complex problem into smaller, ordered steps. Arrange the steps for making a cup of tea into the correct sequence.</p>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Unordered Steps -->
+                        <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                            <h3 class="text-xl font-semibold mb-2 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="3" x2="12" y2="21"></line><line x1="3" y1="12" x2="21" y2="12"></line></svg>
+                                Unordered Steps
+                            </h3>
+                            <div id="decomposition-source" class="problem-area space-y-3 drop-zone h-[400px] overflow-y-auto p-2 rounded">
+                                <!-- Draggable items will be populated by JS -->
+                            </div>
+                        </div>
+
+                        <!-- Correct Sequence -->
+                        <div>
+                            <div class="bg-blue-50 p-4 rounded-lg border-2 border-blue-200 h-full">
+                                <h3 class="text-xl font-semibold mb-2 text-blue-800 flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                                    Correct Sequence
+                                </h3>
+                                <div id="decomposition-drop-zone" class="drop-zone min-h-[350px] p-2 rounded space-y-3">
+                                    <p id="decomposition-placeholder" class="text-slate-500 text-center mt-16">Drag steps here in order</p>
+                                </div>
+                            </div>
+                            <button id="check-decomposition-btn" class="mt-4 w-full py-3 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all shadow-md">Check My Sequence</button>
+                            <p id="decomposition-feedback" class="text-center mt-2 font-medium h-6"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Algorithms & Pseudocode Tab -->
+            <div id="algorithms" class="tab-content">
+                <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-2">Algorithms & Pseudocode</h2>
+                    <p class="text-slate-600 mb-6">An <strong>algorithm</strong> is a step-by-step set of instructions to solve a problem. <strong>Pseudocode</strong> is a way to write algorithms using structured English, focusing on logic without worrying about the specific syntax of a programming language.</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Left Column: Data Types and Keywords -->
+                        <div>
+                             <h3 class="text-xl font-semibold mb-4 text-slate-800">Building Blocks</h3>
+                            <!-- Data Types -->
+                            <div class="border border-slate-200 rounded-lg mb-6">
+                                <input type="checkbox" id="algo-1" class="hidden" checked>
+                                <label for="algo-1" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-slate-50 rounded-t-lg">
+                                    <span class="font-semibold text-lg text-slate-800">Common Data Types</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </label>
+                                <div class="accordion-content p-4 border-t border-slate-200">
+                                    <ul class="space-y-3 text-slate-700">
+                                        <li><strong>INTEGER:</strong> A whole number. <code class="bg-slate-200 px-1 rounded text-sm">10</code>, <code class="bg-slate-200 px-1 rounded text-sm">-5</code>, <code class="bg-slate-200 px-1 rounded text-sm">0</code></li>
+                                        <li><strong>REAL:</strong> A number with a decimal point. <code class="bg-slate-200 px-1 rounded text-sm">19.99</code>, <code class="bg-slate-200 px-1 rounded text-sm">-0.5</code></li>
+                                        <li><strong>BOOLEAN:</strong> A value that can only be TRUE or FALSE.</li>
+                                        <li><strong>CHAR:</strong> A single character. <code class="bg-slate-200 px-1 rounded text-sm">'A'</code>, <code class="bg-slate-200 px-1 rounded text-sm">'%'</code>, <code class="bg-slate-200 px-1 rounded text-sm">'7'</code></li>
+                                        <li><strong>STRING:</strong> A sequence of characters (text). <code class="bg-slate-200 px-1 rounded text-sm">"Hello World"</code></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- Keywords -->
+                            <div class="border border-slate-200 rounded-lg">
+                                <input type="checkbox" id="algo-2" class="hidden">
+                                <label for="algo-2" class="accordion-button flex justify-between items-center p-4 cursor-pointer bg-slate-50 rounded-t-lg">
+                                    <span class="font-semibold text-lg text-slate-800">Keywords & Symbols</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                </label>
+                                <div class="accordion-content p-4 border-t border-slate-200">
+                                    <table class="w-full text-left text-sm">
+                                        <thead class="bg-slate-100">
+                                            <tr><th class="p-2 rounded-tl-md">Symbol/Keyword</th><th class="p-2 rounded-tr-md">Meaning</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b"><td class="p-2 font-mono"><-</td><td class="p-2">Assignment (e.g., <code class="bg-slate-200 p-1 rounded">score <- 0</code>)</td></tr>
+                                            <tr class="border-b"><td class="p-2">INPUT</td><td class="p-2">Get input from the user</td></tr>
+                                            <tr class="border-b"><td class="p-2">OUTPUT</td><td class="p-2">Display information to the user</td></tr>
+                                            <tr class="border-b"><td class="p-2 font-mono">=, <>, >, <, >=, <=</td><td class="p-2">Comparison Operators</td></tr>
+                                            <tr class="border-b"><td class="p-2">IF...THEN...ELSE...ENDIF</td><td class="p-2">Selection statement</td></tr>
+                                            <tr><td class="p-2">FOR, WHILE, REPEAT UNTIL</td><td class="p-2">Iteration (looping) statements</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Control Structures -->
+                        <div>
+                             <h3 class="text-xl font-semibold mb-4 text-slate-800">Control Structures</h3>
+                             <div class="space-y-4">
+                                <div class="p-4 bg-indigo-50/50 rounded-lg border border-indigo-200">
+                                    <h4 class="text-lg font-semibold text-indigo-800">1. Sequence</h4>
+                                    <p class="text-slate-700 mt-1">Instructions are executed one after another, in the order they are written.</p>
+                                    <pre class="bg-white mt-2 p-2 rounded border border-indigo-100 text-sm"><code>OUTPUT "Enter price:"
+INPUT itemPrice
+total <- itemPrice * 1.2</code></pre>
+                                </div>
+                                <div class="p-4 bg-yellow-50/50 rounded-lg border border-yellow-200">
+                                    <h4 class="text-lg font-semibold text-yellow-800">2. Selection (IF statements)</h4>
+                                    <p class="text-slate-700 mt-1">A choice is made between different paths of execution based on a condition (TRUE/FALSE).</p>
+                                     <pre class="bg-white mt-2 p-2 rounded border border-yellow-100 text-sm"><code>INPUT age
+IF age >= 18 THEN
+  OUTPUT "Adult"
+ELSE
+  OUTPUT "Child"
+ENDIF</code></pre>
+                                </div>
+                                <div class="p-4 bg-teal-50/50 rounded-lg border border-teal-200">
+                                    <h4 class="text-lg font-semibold text-teal-800">3. Iteration (Loops)</h4>
+                                    <p class="text-slate-700 mt-1">A block of code is repeated a certain number of times or until a condition is met.</p>
+                                    <p class="font-semibold text-teal-700 mt-3">FOR Loop (Count-controlled):</p>
+                                    <pre class="bg-white mt-1 p-2 rounded border border-teal-100 text-sm"><code>FOR i <- 1 TO 5
+  OUTPUT "Hello"
+NEXT i
+// Outputs "Hello" 5 times</code></pre>
+                                    <p class="font-semibold text-teal-700 mt-3">WHILE Loop (Condition-controlled):</p>
+                                     <pre class="bg-white mt-1 p-2 rounded border border-teal-100 text-sm"><code>count <- 0
+WHILE count < 3 DO
+  OUTPUT "Looping"
+  count <- count + 1
+ENDWHILE</code></pre>
+                                </div>
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Structure Simulators Tab -->
+            <div id="simulators" class="tab-content">
+                 <div class="bg-white p-6 rounded-2xl shadow-lg">
+                    <h2 class="text-2xl font-semibold mb-2">Control Structure Simulators</h2>
+                    <p class="text-slate-600 mb-6">See how different control structures change the flow of an algorithm. Click "Run" to see a step-by-step execution.</p>
+                    
+                    <div class="space-y-8">
+                        <!-- Sequence Simulator -->
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="text-xl font-semibold mb-2 text-indigo-800">1. Sequence Simulation</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-slate-600 mb-2">Code runs from top to bottom, one line at a time.</p>
+                                    <pre id="sequenceCode" class="bg-slate-100 p-3 rounded-md text-sm font-mono border"><code>OUTPUT "Step 1"
+OUTPUT "Step 2"
+OUTPUT "Step 3"</code></pre>
+                                    <button id="runSequenceBtn" class="mt-3 w-full py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition-all">Run Sequence</button>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-md border">
+                                     <h4 class="font-semibold text-slate-700">Output:</h4>
+                                     <div id="sequenceOutput" class="mt-2 text-sm font-mono text-slate-800 sim-output h-24 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Selection Simulator -->
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="text-xl font-semibold mb-2 text-yellow-800">2. Selection (IF) Simulation</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-slate-600 mb-2">The code takes a different path based on a condition.</p>
+                                    <pre id="selectionCode" class="bg-slate-100 p-3 rounded-md text-sm font-mono border"><code>INPUT age
+IF age >= 18 THEN
+  OUTPUT "Access Granted"
+ELSE
+  OUTPUT "Access Denied"
+ENDIF
+OUTPUT "Finished"</code></pre>
+                                    <div class="mt-3 flex gap-2">
+                                        <input type="number" id="selectionInput" placeholder="Enter age" class="w-full border-slate-300 rounded-md shadow-sm text-center">
+                                        <button id="runSelectionBtn" class="w-full py-2 bg-yellow-500 text-white font-bold rounded-lg hover:bg-yellow-600 transition-all">Run Selection</button>
+                                    </div>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-md border">
+                                     <h4 class="font-semibold text-slate-700">Execution Log:</h4>
+                                     <div id="selectionOutput" class="mt-2 text-sm font-mono text-slate-800 sim-output h-32 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Iteration (FOR) Simulator -->
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="text-xl font-semibold mb-2 text-teal-800">3. Iteration (FOR Loop) Simulation</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-slate-600 mb-2">A block of code is repeated a fixed number of times.</p>
+                                    <pre id="iterationCode" class="bg-slate-100 p-3 rounded-md text-sm font-mono border"><code>OUTPUT "Starting loop..."
+FOR i <- 1 TO 3
+  OUTPUT "Hello"
+NEXT i
+OUTPUT "Loop finished."</code></pre>
+                                    <button id="runIterationBtn" class="mt-3 w-full py-2 bg-teal-600 text-white font-bold rounded-lg hover:bg-teal-700 transition-all">Run FOR Loop</button>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-md border">
+                                     <h4 class="font-semibold text-slate-700">Execution Log:</h4>
+                                     <div id="iterationOutput" class="mt-2 text-sm font-mono text-slate-800 sim-output h-32 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Iteration (WHILE) Simulator -->
+                        <div class="border border-slate-200 rounded-lg p-4">
+                            <h3 class="text-xl font-semibold mb-2 text-cyan-800">4. Iteration (WHILE Loop) Simulation</h3>
+                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-slate-600 mb-2">A block of code is repeated as long as a condition is true.</p>
+                                    <pre id="whileCode" class="bg-slate-100 p-3 rounded-md text-sm font-mono border"><code>count <- 0
+WHILE count < 3 DO
+  OUTPUT "Looping..."
+  count <- count + 1
+ENDWHILE
+OUTPUT "Finished."</code></pre>
+                                    <button id="runWhileBtn" class="mt-3 w-full py-2 bg-cyan-600 text-white font-bold rounded-lg hover:bg-cyan-700 transition-all">Run WHILE Loop</button>
+                                </div>
+                                <div class="bg-slate-100 p-3 rounded-md border">
+                                     <h4 class="font-semibold text-slate-700">Execution Log:</h4>
+                                     <div id="whileOutput" class="mt-2 text-sm font-mono text-slate-800 sim-output h-32 overflow-y-auto"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                 </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // --- Tab Navigation Logic ---
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const tabContents = document.querySelectorAll('.tab-content');
+        let activeTab = 'sdlc';
+
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active', 'text-indigo-600');
+                    btn.classList.add('text-slate-500', 'hover:text-slate-700', 'hover:border-slate-300');
+                });
+                tabContents.forEach(content => content.classList.remove('active'));
+
+                button.classList.add('active', 'text-indigo-600');
+                button.classList.remove('text-slate-500', 'hover:text-slate-700', 'hover:border-slate-300');
+                activeTab = button.getAttribute('data-tab');
+                document.getElementById(activeTab).classList.add('active');
+                
+                if (activeTab === 'abstraction') initAbstractionSim();
+                if (activeTab === 'decomposition') initDecompositionSim();
+            });
+        });
+        document.querySelector(`.tab-button[data-tab='${activeTab}']`).click();
+
+
+        // --- Abstraction Simulator Logic ---
+        const problemSource = document.getElementById('problem-source');
+        const essentialDropZone = document.getElementById('essential-drop-zone');
+        const essentialPlaceholder = document.getElementById('essential-placeholder');
+        const checkAbstractionBtn = document.getElementById('check-abstraction-btn');
+        const abstractionFeedback = document.getElementById('abstraction-feedback');
+
+        const problemData = [
+            { text: "A cinema needs a program to sell tickets.", essential: true },
+            { text: "The cinema has 3 screens, and is open 7 days a week.", essential: false },
+            { text: "The program must know the film title for a booking.", essential: true },
+            { text: "The cinema has a new red carpet in the foyer.", essential: false},
+            { text: "It must also store the number of tickets required.", essential: true },
+            { text: "The cinema manager's name is Dave.", essential: false },
+            { text: "Ticket price for an adult is £10.", essential: true },
+            { text: "The most popular film last year was 'Space Adventure 5'.", essential: false },
+            { text: "Ticket price for a child is £6.", essential: true },
+            { text: "The booking system should calculate the total cost.", essential: true },
+            { text: "The cinema's phone number is 555-1234.", essential: false},
+            { text: "The popcorn is often too salty.", essential: false },
+            { text: "Snacks are sold separately at the concessions stand.", essential: false},
+        ];
+
+        function createDraggable(item, idPrefix) {
+            const el = document.createElement('div');
+            el.textContent = item.text;
+            if (item.essential !== undefined) el.dataset.essential = item.essential;
+            if (item.order !== undefined) el.dataset.order = item.order;
+            el.draggable = true;
+            el.id = `${idPrefix}-${Math.random().toString(36).substr(2, 9)}`;
+            el.className = 'draggable bg-white p-3 rounded-md border border-slate-300 shadow-sm';
+            return el;
+        }
+
+        function initAbstractionSim() {
+            problemSource.innerHTML = '';
+            essentialDropZone.innerHTML = '';
+            essentialDropZone.appendChild(essentialPlaceholder);
+            essentialPlaceholder.style.display = 'block';
+            abstractionFeedback.textContent = '';
+            abstractionFeedback.className = "text-center mt-2 font-medium h-6";
+            problemData.sort(() => Math.random() - 0.5).forEach(item => {
+                problemSource.appendChild(createDraggable(item, 'abs-item'));
+            });
+        }
+        
+        checkAbstractionBtn.addEventListener('click', () => {
+            let correct = 0;
+            let incorrect = 0;
+            abstractionFeedback.textContent = '';
+            const essentialItems = essentialDropZone.querySelectorAll('.draggable');
+            
+            essentialItems.forEach(item => {
+                item.classList.remove('bg-green-100', 'border-green-400', 'bg-red-100', 'border-red-400');
+                if (item.dataset.essential === 'true') {
+                    correct++;
+                    item.classList.add('bg-green-100', 'border-green-400');
+                } else {
+                    incorrect++;
+                     item.classList.add('bg-red-100', 'border-red-400');
+                }
+            });
+
+            const totalEssential = problemData.filter(i => i.essential).length;
+            
+            if (incorrect > 0) {
+                 abstractionFeedback.textContent = "Not quite! Some non-essential items were included.";
+                 abstractionFeedback.className = "text-center mt-2 font-medium h-6 text-red-600";
+            } else if (correct < totalEssential) {
+                abstractionFeedback.textContent = "Good start, but some essential items are missing.";
+                abstractionFeedback.className = "text-center mt-2 font-medium h-6 text-amber-600";
+            } else {
+                 abstractionFeedback.textContent = "Perfect! You've identified all essential information.";
+                 abstractionFeedback.className = "text-center mt-2 font-medium h-6 text-green-600";
+            }
+        });
+        
+        // --- Decomposition Simulator Logic ---
+        const decompSource = document.getElementById('decomposition-source');
+        const decompDropZone = document.getElementById('decomposition-drop-zone');
+        const decompPlaceholder = document.getElementById('decomposition-placeholder');
+        const checkDecompBtn = document.getElementById('check-decomposition-btn');
+        const decompFeedback = document.getElementById('decomposition-feedback');
+        
+        const decompositionData = [
+            { text: "Boil water in the kettle.", order: 1 },
+            { text: "Put a tea bag in a mug.", order: 2 },
+            { text: "Pour boiling water into the mug.", order: 3 },
+            { text: "Add milk (optional).", order: 4 },
+            { text: "Add sugar (optional).", order: 5 },
+            { text: "Stir the tea.", order: 6 },
+            { text: "Remove the tea bag.", order: 7 }
+        ];
+
+        function initDecompositionSim() {
+            decompSource.innerHTML = '';
+            decompDropZone.innerHTML = '';
+            decompDropZone.appendChild(decompPlaceholder);
+            decompPlaceholder.style.display = 'block';
+            decompFeedback.textContent = '';
+            decompFeedback.className = "text-center mt-2 font-medium h-6";
+             decompositionData.sort(() => Math.random() - 0.5).forEach(item => {
+                decompSource.appendChild(createDraggable(item, 'dec-item'));
+            });
+        }
+        
+        checkDecompBtn.addEventListener('click', () => {
+            const sequencedItems = decompDropZone.querySelectorAll('.draggable');
+            let isCorrect = true;
+            
+            if (sequencedItems.length !== decompositionData.length) {
+                isCorrect = false;
+            }
+
+            sequencedItems.forEach((item, index) => {
+                item.classList.remove('bg-green-100', 'border-green-400', 'bg-red-100', 'border-red-400');
+                const expectedOrder = index + 1;
+                if (parseInt(item.dataset.order) === expectedOrder) {
+                    item.classList.add('bg-green-100', 'border-green-400');
+                } else {
+                    item.classList.add('bg-red-100', 'border-red-400');
+                    isCorrect = false;
+                }
+            });
+
+            if(isCorrect && sequencedItems.length > 0) {
+                decompFeedback.textContent = "Excellent! The sequence is perfect.";
+                decompFeedback.className = "text-center mt-2 font-medium h-6 text-green-600";
+            } else {
+                 decompFeedback.textContent = "Not quite right. Check the highlighted steps.";
+                 decompFeedback.className = "text-center mt-2 font-medium h-6 text-red-600";
+            }
+        });
+
+        // --- Shared Drag and Drop Logic ---
+        let draggedItem = null;
+
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('draggable')) {
+                draggedItem = e.target;
+                setTimeout(() => e.target.classList.add('dragging'), 0);
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+             if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const dropZone = e.target.closest('.drop-zone');
+            if (dropZone) {
+                const afterElement = getDragAfterElement(dropZone, e.clientY);
+                if (afterElement == null) {
+                    if (draggedItem) dropZone.appendChild(draggedItem);
+                } else {
+                    if (draggedItem) dropZone.insertBefore(draggedItem, afterElement);
+                }
+            }
+        });
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        document.addEventListener('dragenter', e => {
+             e.preventDefault();
+             const dropZone = e.target.closest('.drop-zone');
+             if (dropZone) dropZone.classList.add('drag-over');
+        });
+
+        document.addEventListener('dragleave', e => {
+             const dropZone = e.target.closest('.drop-zone');
+             if (dropZone) dropZone.classList.remove('drag-over');
+        });
+
+        document.addEventListener('drop', e => {
+            e.preventDefault();
+            const dropZone = e.target.closest('.drop-zone');
+            if(dropZone) {
+                dropZone.classList.remove('drag-over');
+                 if(dropZone.id === 'essential-drop-zone') essentialPlaceholder.style.display = 'none';
+                 if(dropZone.id === 'decomposition-drop-zone') decompPlaceholder.style.display = 'none';
+
+                 if (essentialDropZone.children.length === 1 && essentialDropZone.contains(essentialPlaceholder)) {
+                    essentialPlaceholder.style.display = 'block';
+                }
+                 if (decompDropZone.children.length === 1 && decompDropZone.contains(decompPlaceholder)) {
+                    decompPlaceholder.style.display = 'block';
+                }
+            }
+        });
+        
+        // --- Control Structure Simulators ---
+        const runSequenceBtn = document.getElementById('runSequenceBtn');
+        const sequenceCodeEl = document.getElementById('sequenceCode');
+        const sequenceOutputEl = document.getElementById('sequenceOutput');
+        
+        const runSelectionBtn = document.getElementById('runSelectionBtn');
+        const selectionInput = document.getElementById('selectionInput');
+        const selectionCodeEl = document.getElementById('selectionCode');
+        const selectionOutputEl = document.getElementById('selectionOutput');
+        
+        const runIterationBtn = document.getElementById('runIterationBtn');
+        const iterationCodeEl = document.getElementById('iterationCode');
+        const iterationOutputEl = document.getElementById('iterationOutput');
+        
+        const runWhileBtn = document.getElementById('runWhileBtn');
+        const whileCodeEl = document.getElementById('whileCode');
+        const whileOutputEl = document.getElementById('whileOutput');
+
+        const delay = (ms) => new Promise(res => setTimeout(res, ms));
+        
+        async function runSimulation(btn, codeEl, outputEl, logicFunc) {
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            outputEl.innerHTML = '';
+            
+            const codeLines = codeEl.innerText.split('\n');
+            const codeElements = codeLines.map((line, index) => {
+                const div = document.createElement('div');
+                div.textContent = line;
+                return div;
+            });
+
+            codeEl.innerHTML = '';
+            codeElements.forEach(el => codeEl.appendChild(el));
+            
+            await logicFunc(codeElements, outputEl);
+
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+        }
+
+        async function highlightAndLog(el, outputEl, text, time = 500) {
+            el.classList.add('highlight-line');
+            const logEntry = document.createElement('p');
+            logEntry.innerHTML = text;
+            outputEl.appendChild(logEntry);
+            outputEl.scrollTop = outputEl.scrollHeight;
+            await delay(time);
+            el.classList.remove('highlight-line');
+        }
+
+        // Sequence Logic
+        runSequenceBtn.addEventListener('click', () => {
+            runSimulation(runSequenceBtn, sequenceCodeEl, sequenceOutputEl, async (lines, output) => {
+                for (const lineEl of lines) {
+                    await highlightAndLog(lineEl, output, `Executing: ${lineEl.textContent.trim()}`);
+                }
+            });
+        });
+
+        // Selection Logic
+        runSelectionBtn.addEventListener('click', () => {
+            const age = parseInt(selectionInput.value, 10);
+            if(isNaN(age)) {
+                selectionOutputEl.innerHTML = `<p class="text-red-500">Please enter a valid age.</p>`;
+                return;
+            }
+            
+            runSimulation(runSelectionBtn, selectionCodeEl, selectionOutputEl, async (lines, output) => {
+                await highlightAndLog(lines[0], output, `INPUT is set to <b class="text-blue-600">${age}</b>`);
+
+                await highlightAndLog(lines[1], output, `Checking condition: <b class="text-blue-600">${age} >= 18</b> ...`);
+                
+                if (age >= 18) {
+                    await highlightAndLog(lines[1], output, `Condition is <b class="text-green-600">TRUE</b>. Executing THEN block.`);
+                    await highlightAndLog(lines[2], output, `Executing: ${lines[2].textContent.trim()}`);
+                    await highlightAndLog(lines[3], output, `Skipping ELSE block.`, 200);
+                } else {
+                    await highlightAndLog(lines[1], output, `Condition is <b class="text-red-600">FALSE</b>. Skipping to ELSE block.`);
+                    await highlightAndLog(lines[2], output, `Skipping...`, 200);
+                    await highlightAndLog(lines[3], output, `Executing ELSE block.`);
+                    await highlightAndLog(lines[4], output, `Executing: ${lines[4].textContent.trim()}`);
+                }
+                await highlightAndLog(lines[5], output, `ENDIF reached. Continuing.`);
+                await highlightAndLog(lines[6], output, `Executing: ${lines[6].textContent.trim()}`);
+            });
+        });
+
+        // FOR Loop Logic
+        runIterationBtn.addEventListener('click', () => {
+            runSimulation(runIterationBtn, iterationCodeEl, iterationOutputEl, async (lines, output) => {
+                await highlightAndLog(lines[0], output, `Executing: ${lines[0].textContent.trim()}`);
+                
+                await highlightAndLog(lines[1], output, `Starting FOR loop from 1 to 3.`);
+                for (let i = 1; i <= 3; i++) {
+                     await highlightAndLog(lines[1], output, `Loop counter <b class="text-blue-600">i</b> is now <b class="text-blue-600">${i}</b>`);
+                     await highlightAndLog(lines[2], output, `Executing: ${lines[2].textContent.trim()}`);
+                     await highlightAndLog(lines[3], output, `NEXT i...`, 300);
+                }
+                 await highlightAndLog(lines[1], output, `Loop condition finished.`);
+                 await highlightAndLog(lines[4], output, `Executing: ${lines[4].textContent.trim()}`);
+            });
+        });
+        
+        // WHILE Loop Logic
+        runWhileBtn.addEventListener('click', () => {
+            runSimulation(runWhileBtn, whileCodeEl, whileOutputEl, async (lines, output) => {
+                let count = 0;
+                await highlightAndLog(lines[0], output, `Variable <b class="text-blue-600">count</b> is initialized to <b class="text-blue-600">0</b>.`);
+
+                while (count < 3) {
+                    await highlightAndLog(lines[1], output, `Checking condition: <b class="text-blue-600">count < 3</b> (${count} < 3)...`);
+                    await highlightAndLog(lines[1], output, `Condition is <b class="text-green-600">TRUE</b>. Entering loop.`);
+
+                    await highlightAndLog(lines[2], output, `Executing: ${lines[2].textContent.trim()}`);
+
+                    await highlightAndLog(lines[3], output, `Executing: ${lines[3].textContent.trim()}`);
+                    count++; // Increment the actual JS variable
+                    await highlightAndLog(lines[3], output, `Variable <b class="text-blue-600">count</b> is now <b class="text-blue-600">${count}</b>.`);
+
+                    await highlightAndLog(lines[4], output, `ENDWHILE, returning to condition check...`, 300);
+                }
+
+                await highlightAndLog(lines[1], output, `Checking condition: <b class="text-blue-600">count < 3</b> (${count} < 3)...`);
+                await highlightAndLog(lines[1], output, `Condition is <b class="text-red-600">FALSE</b>. Exiting loop.`);
+                await highlightAndLog(lines[5], output, `Executing: ${lines[5].textContent.trim()}`);
+            });
+        });
+
+
+        window.onload = () => {
+             document.querySelector('.tab-button').click();
+        };
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Units 1-7 Samples - Cornell Notes & Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400&display=swap');
+
+        :root {
+            --paper-bg: #ffffff;
+            --line-color: #e2e8f0;
+            --margin-line: #ef4444;
+            --text-color: #1e293b;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+        }
+
+        /* The A4 Page Look - Wider Width */
+        .page-container {
+            width: 260mm;
+            min-height: 297mm;
+            background: var(--paper-bg);
+            margin: 0 auto; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            page-break-after: always;
+        }
+
+        /* Editable Areas */
+        .editable {
+            outline: none;
+            min-height: 1.5em;
+        }
+        
+        .editable:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* Image handling in editables */
+        .editable img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 8px 0;
+            display: block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .editable img:hover {
+            opacity: 0.9;
+            outline: 3px solid #ef4444;
+        }
+
+        /* Grid Layout for Cornell System */
+        .cornell-grid {
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 0;
+            border: 2px solid #000;
+            flex-grow: 1;
+        }
+
+        /* Sections */
+        .header-section {
+            grid-column: 1 / -1;
+            border-bottom: 2px solid #000;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .cues-column {
+            border-right: 2px solid #000;
+            padding: 1rem;
+            background-color: #fdfdfd;
+        }
+
+        .notes-column {
+            padding: 1rem;
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #e2e8f0 31px, #e2e8f0 32px);
+            line-height: 32px;
+            background-attachment: local;
+        }
+
+        .summary-section {
+            grid-column: 1 / -1;
+            border-top: 2px solid #000;
+            padding: 1rem;
+            background: #f8fafc;
+            min-height: 150px;
+        }
+
+        /* Checklist Styles */
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .status-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+        }
+        .status-btn:hover { background: #f1f5f9; }
+        
+        /* Status Colors */
+        .status-0 { color: #cbd5e1; } /* Empty */
+        .status-1 { color: #10b981; border-color: #10b981; background: #ecfdf5; } /* Check */
+        .status-2 { color: #f59e0b; border-color: #f59e0b; background: #fffbeb; } /* Question */
+        .status-3 { color: #ef4444; border-color: #ef4444; background: #fef2f2; } /* Cross */
+
+        /* Quiz Styles */
+        .tab-btn {
+            color: #e0e7ff;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+        }
+        .tab-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .tab-btn.active {
+            background-color: #312e81; /* indigo-900 */
+            color: white;
+            border-bottom: 3px solid #fbbf24; /* amber-400 */
+        }
+        
+        /* Center the quiz content */
+        #quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .quiz-question-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border-top: 4px solid #4f46e5;
+            display: flex;
+            flex-direction: column;
+        }
+        .quiz-textarea {
+            width: 100%;
+            min-height: 120px;
+            margin-top: 15px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .quiz-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .model-answer {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 0.375rem;
+            color: #064e3b;
+            font-size: 0.9rem;
+            display: none; /* Always hidden on screen by default */
+        }
+        
+        .show-answer-btn {
+            display: none; 
+        }
+
+        /* Essential Utility: Standard Hide */
+        .hidden { display: none; }
+
+        /* Print Styling */
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Logic to hide non-active tabs during print */
+            body.print-mode-notes #tab-quiz { display: none !important; }
+            body.print-mode-quiz #tab-notes { display: none !important; }
+            
+            body.print-mode-quiz .page-container { box-shadow: none; margin: 0; width: 100%; }
+            body.print-mode-quiz .quiz-question-card { 
+                break-inside: avoid; 
+                border: 1px solid #ccc; 
+                box-shadow: none; 
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            
+            /* SHOW model answers ONLY when printing the quiz */
+            body.print-mode-quiz .model-answer { 
+                display: block !important; 
+                border: none;
+                background-color: transparent;
+                padding: 0;
+                margin-top: 5px;
+                font-weight: bold;
+                color: #047857; /* Darker green for print readability */
+            }
+            
+            #notebook {
+                gap: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            .page-container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                height: 100vh;
+                border: none;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        .handwritten {
+            font-family: 'Kalam', cursive;
+            font-size: 1.2rem;
+        }
+        
+        .page-wrapper:hover .delete-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="print-mode-notes"> <!-- Default print mode -->
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="handleImport(this)">
+
+    <!-- Header Navigation -->
+    <nav class="bg-indigo-800 text-white shadow-lg sticky top-0 z-50 no-print">
+        <div class="max-w-6xl mx-auto px-4">
+            <!-- Top Row: Title & Main Actions -->
+            <div class="flex flex-col sm:flex-row justify-between items-center py-3 gap-4">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-graduation-cap text-yellow-400 text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">IGCSE CS: Units 1-7</h1>
+                        <span class="text-xs text-indigo-300">Study Companion</span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="switchTab('notes')" id="btn-tab-notes" class="tab-btn px-4 py-2 font-semibold rounded-t-lg transition active hover:bg-indigo-700">
+                        <i class="fas fa-book-open mr-2"></i> Notes
+                    </button>
+                    <button onclick="switchTab('quiz')" id="btn-tab-quiz" class="tab-btn px-4 py-2 font-semibold rounded-t-lg transition hover:bg-indigo-700">
+                        <i class="fas fa-question-circle mr-2"></i> Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sub-Toolbar (Context Sensitive) -->
+        <div id="toolbar-notes" class="bg-indigo-900 px-4 py-2 transition-all">
+            <div class="max-w-6xl mx-auto flex flex-wrap gap-2 justify-center sm:justify-end items-center">
+                 <!-- File Actions -->
+                 <div class="flex bg-indigo-800 rounded p-1 gap-1">
+                    <button onclick="exportData()" class="px-2 py-1 rounded hover:bg-indigo-700 text-xs flex items-center gap-1" title="Backup">
+                        <i class="fas fa-download text-green-400"></i> Save
+                    </button>
+                    <button onclick="importTrigger()" class="px-2 py-1 rounded hover:bg-indigo-700 text-xs flex items-center gap-1" title="Restore">
+                        <i class="fas fa-upload text-blue-400"></i> Open
+                    </button>
+                 </div>
+                 <!-- Edit Actions -->
+                 <button onclick="triggerImageUpload()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-image text-purple-300"></i> Image</button>
+                 <button onclick="addPage()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-plus text-emerald-300"></i> Page</button>
+                 <button onclick="toggleFont()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-pen-fancy text-pink-300"></i> Font</button>
+                 <button onclick="resetToDefault()" class="px-3 py-1 rounded hover:bg-red-900 text-sm text-red-300"><i class="fas fa-trash"></i> Reset</button>
+                 <!-- Print -->
+                 <button onclick="printPDF()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-bold shadow"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+        </div>
+
+        <div id="toolbar-quiz" class="bg-indigo-900 px-4 py-2 hidden transition-all">
+            <div class="max-w-6xl mx-auto flex flex-wrap gap-4 justify-center sm:justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-indigo-200">Topic:</label>
+                    <select id="unit-select" class="bg-indigo-800 text-white text-sm rounded px-2 py-1 border border-indigo-600 focus:outline-none focus:border-yellow-400 cursor-pointer">
+                        <option value="all">All Units (1-7)</option>
+                        <option value="unsure">My "Unsure" Topics (❓)</option>
+                        <option value="1">Unit 1: Data Representation</option>
+                        <option value="2">Unit 2: Data Transmission</option>
+                        <option value="3">Unit 3: Hardware</option>
+                        <option value="4">Unit 4: Software</option>
+                        <option value="5">Unit 5: The Internet</option>
+                        <option value="6">Unit 6: Automated Tech</option>
+                        <option value="7">Unit 7: Algorithm Design</option>
+                    </select>
+                    <button onclick="startQuiz()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-1 rounded text-sm font-bold shadow cursor-pointer">
+                        Start New Quiz
+                    </button>
+                </div>
+                <button onclick="printQuiz()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-bold shadow cursor-pointer">
+                    <i class="fas fa-file-pdf"></i> Save Quiz PDF
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <div class="flex justify-center bg-gray-100 min-h-screen pb-20 pt-8">
+        
+        <!-- NOTES TAB -->
+        <div id="tab-notes" class="w-full flex flex-col gap-8 items-center">
+            <div id="notebook" class="flex flex-col gap-8 items-center w-full">
+                <!-- Pages injected by JS -->
+            </div>
+        </div>
+
+        <!-- QUIZ TAB -->
+        <div id="tab-quiz" class="w-full px-4 hidden">
+            <div id="quiz-intro" class="text-center py-10">
+                <div class="bg-white p-8 rounded-xl shadow-lg inline-block max-w-lg">
+                    <i class="fas fa-clipboard-list text-6xl text-indigo-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Ready to test your knowledge?</h2>
+                    <p class="text-gray-600 mb-6">Select a unit from the toolbar above and click "Start New Quiz".</p>
+                    <div class="text-sm text-gray-500 bg-gray-100 p-3 rounded text-left">
+                        <p class="mb-1"><strong><i class="fas fa-star text-yellow-500"></i> New Feature:</strong></p>
+                        <p>Select <strong>My "Unsure" Topics</strong> to generate a quiz focusing only on the syllabus points you marked with a question mark (❓) in your notes.</p>
+                        <p class="mt-2 text-xs">Includes questions from recent Past Papers.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="quiz-container" class="hidden">
+                <div class="mb-8 flex justify-between items-end border-b-2 border-gray-300 pb-4 max-w-4xl mx-auto">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800">Knowledge Check</h2>
+                        <p class="text-gray-600 font-medium mt-1" id="quiz-subtitle">Random Selection</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Date: <span class="font-medium text-gray-800" id="quiz-date"></span></p>
+                    </div>
+                </div>
+                <div id="questions-list">
+                    <!-- Questions injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-40 transition-transform duration-300 flex items-center gap-3 z-50">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMsg">Saved</span>
+    </div>
+
+    <script>
+        const fieldClasses = ['field-topic', 'field-subject', 'field-date', 'field-cues', 'field-notes', 'field-summary', 'field-keywords'];
+        let autoSaveTimer;
+        let lastFocusedEditable = null;
+        // CHANGED KEY TO FORCE RE-LOAD OF DATA IF PREVIOUS WAS CORRUPT/EMPTY
+        const STORAGE_KEY = 'cornell_notes_units1to7_v5_restored';
+
+        // --- QUESTION BANK ---
+        const questionBank = [
+            // Unit 1 - Generated
+            { u: 1, q: "Explain why computers use the binary number system to represent data.", ref: "1.1.1", a: "Computers use binary because the transistors/switches in the CPU have two states: ON (1) and OFF (0). It is also more reliable and simpler to build circuits for two states." },
+            { u: 1, q: "Convert the denary number 157 into an 8-bit binary number.", ref: "1.1.2", a: "157 in binary is 10011101.\n(128 + 16 + 8 + 4 + 1 = 157)" },
+            { u: 1, q: "Explain two uses of the hexadecimal system in computer science.", ref: "1.1.3", a: "1. Representing MAC addresses (e.g., 00:1A:2B...).\n2. Defining HTML colour codes (e.g., #FFFFFF).\n3. Displaying error codes for easier human reading." },
+            { u: 1, q: "What is meant by an 'overflow' error in binary addition?", ref: "1.1.4", a: "Overflow occurs when the result of a calculation requires more bits than are available to store it (e.g., adding 1 to 11111111 in an 8-bit system results in 9 bits, so the carry is lost)." },
+            { u: 1, q: "Perform a logical left shift of 2 places on the binary number 00101100 and state the effect on the value.", ref: "1.1.5", a: "Original: 00101100 (44)\nShifted: 10110000 (176)\nEffect: Multiplies the original number by 4 (2^2)." },
+            { u: 1, q: "Describe how negative numbers are represented using Two's Complement.", ref: "1.1.6", a: "The Most Significant Bit (MSB) acts as a sign bit (1 = negative). To convert: Flip all bits of the positive binary number and add 1." },
+            { u: 1, q: "Explain the difference between the ASCII and Unicode character sets.", ref: "1.2.1", a: "ASCII uses 7 or 8 bits and represents English characters only. Unicode uses 16 or 32 bits and can represent characters from all global languages plus emojis." },
+            { u: 1, q: "How does increasing the sample rate affect the quality and file size of a sound recording?", ref: "1.2.2", a: "Increasing sample rate improves sound quality (closer to original analogue wave) but significantly increases the file size as more data is stored per second." },
+            { u: 1, q: "Calculate the file size of a 10x10 pixel image with a colour depth of 8 bits (in bytes).", ref: "1.3.2", a: "Total pixels = 10 * 10 = 100 pixels.\nTotal bits = 100 * 8 = 800 bits.\nTotal bytes = 800 / 8 = 100 bytes." },
+            { u: 1, q: "Explain the difference between lossy and lossless compression.", ref: "1.3.3", a: "Lossy: Permanently deletes data to reduce size (quality reduces). Used for Images/Audio.\nLossless: Compresses without deleting data (original can be restored). Used for Text/Code." },
+            // Unit 1 - Past Papers
+            { u: 1, q: "Describe how text is converted to binary to be processed by a computer.", ref: "1.2.1", tags: ['Past Paper'], a: "Each character is assigned a unique denary value based on a character set (e.g., ASCII). This value is then converted into a binary string for the computer to process." },
+            { u: 1, q: "Explain why an overflow error might occur during binary addition.", ref: "1.1.4", tags: ['Past Paper'], a: "It occurs when the sum of two binary numbers exceeds the maximum value that can be represented with the given number of bits (e.g., sum > 255 in 8-bit)." },
+            
+            // Unit 2 - Generated
+            { u: 2, q: "Describe the structure of a data packet (Header, Payload, Trailer).", ref: "2.1.1", a: "Header: Contains destination IP, sender IP, packet ID.\nPayload: The actual data being sent.\nTrailer: End of packet marker and error check bits (CRC)." },
+            { u: 2, q: "Explain the process of packet switching.", ref: "2.1.2", a: "Data is broken into packets. Each packet takes a different independent route through the network routers. Packets arrive out of order and are reassembled at the destination." },
+            { u: 2, q: "Compare serial and parallel data transmission. Give one advantage of each.", ref: "2.1.3", a: "Serial: 1 bit at a time over 1 wire. Advantage: Reliable over long distance, no skew.\nParallel: Multiple bits over multiple wires. Advantage: Faster over short distance." },
+            { u: 2, q: "Explain the difference between Half-Duplex and Full-Duplex transmission.", ref: "2.1.4", a: "Half-Duplex: Data travels in both directions, but only one at a time (e.g., Walkie-Talkie).\nFull-Duplex: Data travels in both directions simultaneously (e.g., Telephone call)." },
+            // Unit 2 - Past Papers
+            { u: 2, q: "Identify two items of data contained in a packet header.", ref: "2.1.1", tags: ['Past Paper'], a: "1. Destination IP Address\n2. Sender IP Address\n3. Packet Sequence Number" },
+            { u: 2, q: "Explain how an odd parity check detects errors.", ref: "2.2.1", tags: ['Past Paper'], a: "The sender adds a bit (0 or 1) to make the total number of 1s in the byte odd. The receiver counts the 1s; if the total is even, an error has occurred." },
+
+            // Unit 3 - Generated
+            { u: 3, q: "Describe the role of the Arithmetic Logic Unit (ALU) in the CPU.", ref: "3.1.2", a: "The ALU performs arithmetic calculations (addition, subtraction) and logical operations (AND, OR, NOT, comparisons like > or <)." },
+            { u: 3, q: "Describe the steps of the Fetch-Execute Cycle.", ref: "3.1.3", a: "1. Fetch: PC address -> MAR. Instruction fetched to MDR -> CIR.\n2. Decode: Control Unit decodes instruction.\n3. Execute: Instruction performed (ALU calculation or data move)." },
+            { u: 3, q: "What is an embedded system? Give two examples.", ref: "3.1.5", a: "A computer system built into a larger device with a dedicated function.\nExamples: Washing machine, Microwave, Car engine management system." },
+            // Unit 3 - Past Papers
+            { u: 3, q: "Describe how the Memory Data Register (MDR) and Arithmetic Logic Unit (ALU) are used in the fetch-decode-execute cycle.", ref: "3.1.3", tags: ['Past Paper'], a: "MDR: Stores the data or instruction fetched from memory.\nALU: Performs the calculation or logic operation required by the instruction currently in the CIR." },
+            { u: 3, q: "Describe what is meant by cloud storage.", ref: "3.3.3", tags: ['Past Paper'], a: "Data is stored on remote servers accessed via the internet. The physical servers are managed by a hosting company (e.g., Google, Dropbox)." },
+
+            // Unit 4 - Generated
+            { u: 4, q: "Distinguish between System Software and Application Software.", ref: "4.1.1", a: "System Software: Runs and manages the computer hardware (e.g., OS, Drivers).\nApplication Software: Allows user to perform specific tasks (e.g., Word Processor, Game)." },
+            { u: 4, q: "What is the role of an Interrupt in a computer system?", ref: "4.1.4", a: "A signal sent to the CPU (from hardware or software) telling it to stop the current task and handle a higher priority event." },
+            // Unit 4 - Past Papers
+            { u: 4, q: "Describe the operation of a compiler and of an interpreter.", ref: "4.2.3", tags: ['Past Paper'], a: "Compiler: Translates whole code at once, produces executable, lists errors at end.\nInterpreter: Translates line-by-line, stops at first error, does not produce executable." },
+            { u: 4, q: "Describe how a compiler reports errors.", ref: "4.2.3", tags: ['Past Paper'], a: "It scans the entire code and produces a list of all errors found at the end of the compilation process." },
+            { u: 4, q: "Explain why a programmer might choose a high-level language over a low-level language for developing a 3D computer game.", tags: ['Past Paper'], ref: "4.2.1", a: "Easier to write/debug/maintain code; portable across different hardware; focuses on logic rather than memory management." },
+            { u: 4, q: "Identify the type of software that provides services required by the computer (e.g. utility software).", tags: ['Past Paper'], ref: "4.1.1", a: "System software." },
+            { u: 4, q: "Identify the type of software that runs on the firmware.", tags: ['Past Paper'], ref: "4.1.3", a: "Operating System (OS)." },
+            { u: 4, q: "Define 'Hardware' in a computer system.", tags: ['Past Paper'], ref: "3.1.1", a: "The physical components of a computer system." },
+            { u: 4, q: "Define 'Firmware' and state where it is stored.", tags: ['Past Paper'], ref: "4.1.3", a: "Software that provides low-level control for the device's specific hardware; stored in non-volatile memory like ROM or Flash." },
+
+
+            // Unit 5 - Generated
+            { u: 5, q: "What is the difference between the Internet and the World Wide Web?", ref: "5.1.1", a: "Internet: The global physical infrastructure of connected networks.\nWWW: The service (collection of web pages) accessed via the Internet using HTTP." },
+            { u: 5, q: "Explain the function of a DNS (Domain Name Server).", ref: "5.1.5", a: "It translates a human-readable Domain Name (e.g., www.google.com) into a machine-readable IP Address so the browser can locate the server." },
+            // Unit 5 - Past Papers
+            { u: 5, q: "Describe the process of SSL and explain how it provides a secure connection.", ref: "5.3.3", tags: ['Past Paper'], a: "1. Browser requests secure connection.\n2. Server sends digital certificate.\n3. Browser verifies certificate.\n4. Encryption keys exchanged to encrypt data transfer." },
+            { u: 5, q: "Describe what is meant by social engineering.", ref: "5.3.2", tags: ['Past Paper'], a: "Manipulating people into giving up confidential information (like passwords) through deception, rather than hacking the system directly." },
+
+            // Unit 6 - Generated
+            { u: 6, q: "Describe the input-process-output loop in an automated system.", ref: "6.1.1", a: "Input: Sensors measure environment.\nProcess: Microprocessor compares sensor data to pre-set values.\nOutput: If needed, Actuators change the environment (e.g., heater on)." },
+            { u: 6, q: "Why is an Analogue to Digital Converter (ADC) needed in sensor systems?", ref: "6.1.1", a: "Sensors capture analogue data (continuous), but computers/microprocessors can only process digital data (discrete 1s and 0s)." },
+            // Unit 6 - Past Papers
+            { u: 6, q: "Explain why an expert system needs a knowledge base.", ref: "6.3.2", tags: ['Past Paper'], a: "The knowledge base stores the facts and rules gathered from human experts, which the inference engine uses to make decisions or diagnoses." },
+            { u: 6, q: "State what is meant by machine learning.", ref: "6.3.2", tags: ['Past Paper'], a: "A subfield of AI where algorithms allow computers to learn from data and improve their performance without being explicitly programmed for every rule." },
+
+            // Unit 7 - Generated
+            { u: 7, q: "List the stages of the Program Development Life Cycle.", ref: "7.1.1", a: "1. Analysis\n2. Design\n3. Coding\n4. Testing\n5. Maintenance" },
+            { u: 7, q: "Explain the difference between Validation and Verification.", ref: "7.3.2", a: "Validation: Checks if data is reasonable/sensible (e.g., range check).\nVerification: Checks if data has been copied correctly (e.g., double entry)." }
+        ];
+
+        // --- TAB LOGIC ---
+        function switchTab(tabName) {
+            const notesTab = document.getElementById('tab-notes');
+            const quizTab = document.getElementById('tab-quiz');
+            const notesToolbar = document.getElementById('toolbar-notes');
+            const quizToolbar = document.getElementById('toolbar-quiz');
+
+            if (tabName === 'notes') {
+                notesTab.style.display = 'flex';
+                quizTab.style.display = 'none';
+                notesToolbar.style.display = 'block';
+                quizToolbar.style.display = 'none';
+                
+                document.getElementById('btn-tab-notes').classList.add('active');
+                document.getElementById('btn-tab-quiz').classList.remove('active');
+                
+                document.body.className = 'print-mode-notes';
+            } else {
+                notesTab.style.display = 'none';
+                quizTab.style.display = 'block';
+                notesToolbar.style.display = 'none';
+                quizToolbar.style.display = 'flex';
+                
+                document.getElementById('btn-tab-quiz').classList.add('active');
+                document.getElementById('btn-tab-notes').classList.remove('active');
+                
+                document.body.className = 'print-mode-quiz';
+            }
+            
+            window.scrollTo(0,0);
+        }
+
+        // --- QUIZ LOGIC ---
+        function startQuiz() {
+            const unit = document.getElementById('unit-select').value;
+            let pool = [];
+            const subtitle = document.getElementById('quiz-subtitle');
+
+            if (unit === 'unsure') {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                const unsureUnits = new Set();
+                let foundItemsCount = 0;
+
+                data.forEach(page => {
+                    if (page['checklist-data']) {
+                        page['checklist-data'].forEach(item => {
+                            if (item.status === 2) { 
+                                foundItemsCount++;
+                                const match = item.text.trim().match(/^(\d+)\./);
+                                if (match) {
+                                    unsureUnits.add(parseInt(match[1]));
+                                } else {
+                                    const pageTopic = page['field-topic'] || "";
+                                    const topicMatch = pageTopic.match(/Unit\s*(\d+)/i);
+                                    if(topicMatch) unsureUnits.add(parseInt(topicMatch[1]));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                if (foundItemsCount === 0) {
+                    alert("No topics marked as 'Unsure' (❓) found in your checklists! \n\nGo back to the Notes tab and click the checkbox twice to mark an item as Unsure.");
+                    return;
+                }
+
+                pool = questionBank.filter(q => unsureUnits.has(q.u));
+                subtitle.innerText = `Focus on Unsure Topics (Units: ${Array.from(unsureUnits).join(', ')})`;
+
+            } else if (unit === 'all') {
+                pool = questionBank;
+                subtitle.innerText = "All Units Challenge";
+            } else {
+                pool = questionBank.filter(q => q.u == unit);
+                subtitle.innerText = `Unit ${unit} Focused Test`;
+            }
+
+            if (pool.length === 0) {
+                alert("No questions available for this selection.");
+                return;
+            }
+
+            const shuffled = pool.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 10);
+
+            const container = document.getElementById('questions-list');
+            container.innerHTML = '';
+            document.getElementById('quiz-date').innerText = new Date().toLocaleDateString();
+
+            selected.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'quiz-question-card';
+                
+                let tagBadge = '';
+                if (item.tags && item.tags.includes('Past Paper')) {
+                    tagBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded border border-yellow-300 ml-2" title="Source: Past Exam Paper"><i class="fas fa-history mr-1"></i>Past Paper</span>`;
+                }
+
+                let refBadge = '';
+                if (item.ref) {
+                    refBadge = `<span class="text-xs text-gray-500 ml-2 italic">Ref: ${item.ref}</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between mb-2">
+                        <div class="flex items-center">
+                            <span class="font-bold text-indigo-600 text-lg mr-2">Q${index + 1}</span>
+                            ${tagBadge}
+                            ${refBadge}
+                        </div>
+                        <span class="text-xs font-semibold bg-gray-200 text-gray-600 px-2 py-1 rounded">Unit ${item.u}</span>
+                    </div>
+                    <p class="text-gray-800 font-medium text-lg mb-3">${item.q}</p>
+                    <textarea class="quiz-textarea" placeholder="Type your answer here..."></textarea>
+                    
+                    <div class="model-answer">
+                        <strong>Model Answer:</strong><br>
+                        ${item.a ? item.a.replace(/\n/g, '<br>') : 'Refer to syllabus notes.'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('quiz-intro').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+        }
+
+        function printQuiz() {
+            window.print();
+        }
+
+        // --- EXISTING NOTES LOGIC ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadNotes();
+            
+            document.addEventListener('dblclick', function(e) {
+                if (e.target.tagName === 'IMG' && e.target.closest('.editable')) {
+                    if (confirm('Delete this image?')) {
+                        e.target.remove();
+                        saveNotes();
+                        showToast('Image Removed');
+                    }
+                }
+            });
+
+            // IMPORTANT: Initialize visible tab on load
+            switchTab('notes');
+        });
+
+        function toggleCheck(btn) {
+            const icons = {
+                0: '<i class="far fa-square"></i>',
+                1: '<i class="fas fa-check"></i>',
+                2: '<i class="fas fa-question"></i>',
+                3: '<i class="fas fa-times"></i>'
+            };
+            let current = parseInt(btn.dataset.status) || 0;
+            let next = (current + 1) % 4;
+            btn.dataset.status = next;
+            btn.className = `status-btn status-${next}`;
+            btn.innerHTML = icons[next];
+            saveNotes();
+        }
+
+        function addChecklistItem(btn) {
+            const container = btn.closest('.syllabus-checklist');
+            const item = document.createElement('div');
+            item.className = 'checklist-item';
+            item.innerHTML = `
+                <button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)"><i class="far fa-square"></i></button>
+                <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Item..."></div>
+                <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print"><i class="fas fa-minus-circle"></i></button>
+            `;
+            container.insertBefore(item, btn.parentElement);
+        }
+
+        function triggerImageUpload() {
+            if (!lastFocusedEditable) {
+                lastFocusedEditable = document.querySelector('.field-notes'); 
+                if(!lastFocusedEditable) return alert("Click in a notes box first.");
+            }
+            document.getElementById('imageInput').click();
+        }
+
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const maxWidth = 600;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = height * (maxWidth / width);
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    insertImageAtCursor(dataUrl);
+                    saveNotes();
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
+        }
+
+        function insertImageAtCursor(src) {
+            lastFocusedEditable.focus();
+            const img = document.createElement('img');
+            img.src = src;
+            img.title = "Double-click to remove";
+            
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0 && sel.anchorNode && lastFocusedEditable.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(img);
+                sel.removeAllRanges(); // Clear selection
+            } else {
+                lastFocusedEditable.appendChild(img);
+            }
+        }
+
+        function createPageElement(data = {}) {
+            const pageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'page-wrapper relative group';
+            wrapper.dataset.pageId = pageId;
+
+            const getVal = (key) => data[key] || '';
+            const dateVal = data['field-date'] || new Date().toLocaleDateString();
+
+            if (!data['checklist-data'] || data['checklist-data'].length === 0) {
+                 const match = prefilledData.find(p => p['field-topic'] === data['field-topic']);
+                 if (match && match['checklist-data']) {
+                     data['checklist-data'] = JSON.parse(JSON.stringify(match['checklist-data']));
+                 }
+            }
+
+            let checklistHTML = '';
+            if (data['checklist-data'] && Array.isArray(data['checklist-data'])) {
+                const icons = { 0: '<i class="far fa-square"></i>', 1: '<i class="fas fa-check"></i>', 2: '<i class="fas fa-question"></i>', 3: '<i class="fas fa-times"></i>' };
+                data['checklist-data'].forEach(item => {
+                    checklistHTML += `
+                        <div class="checklist-item">
+                            <button class="status-btn status-${item.status}" data-status="${item.status}" onclick="toggleCheck(this)">${icons[item.status]}</button>
+                            <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true">${item.text}</div>
+                            <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print"><i class="fas fa-minus-circle"></i></button>
+                        </div>`;
+                });
+            } else {
+                 checklistHTML = `<div class="checklist-item"><button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)"><i class="far fa-square"></i></button><div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Objective..."></div></div>`;
+            }
+
+            wrapper.innerHTML = `
+                <div class="absolute top-2 -right-12 h-full hidden xl:block no-print">
+                     <button onclick="deletePage(this)" class="delete-btn bg-red-500 text-white w-10 h-10 rounded-full shadow hover:bg-red-600 opacity-0 transition flex items-center justify-center" title="Remove Page"><i class="fas fa-trash"></i></button>
+                </div>
+                 <button onclick="deletePage(this)" class="xl:hidden absolute top-2 right-2 z-10 text-red-400 hover:text-red-600 no-print p-2"><i class="fas fa-trash"></i></button>
+
+                <div class="page-container">
+                    <div class="cornell-grid">
+                        <div class="header-section">
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Topic / Chapter</label>
+                                    <div class="field-topic editable font-bold text-lg border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-topic')}</div>
+                                </div>
+                                <div class="text-right">
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Class / Subject</label>
+                                    <div class="field-subject editable font-medium border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-subject')}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div><div class="field-date editable text-sm text-slate-600" contenteditable="true">${dateVal}</div></div>
+                                <div class="text-right"><label class="text-xs font-bold text-slate-500 uppercase">Date</label></div>
+                            </div>
+                            <div class="mt-2 syllabus-checklist">
+                                <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Learning Objectives</label>
+                                ${checklistHTML}
+                                <div class="no-print mt-1"><button onclick="addChecklistItem(this)" class="text-xs text-indigo-600 font-medium flex items-center gap-1"><i class="fas fa-plus-circle"></i> Add Item</button></div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Key Words / Vocabulary</label>
+                                <div class="field-keywords editable text-sm border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-keywords')}</div>
+                            </div>
+                        </div>
+                        <div class="cues-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Questions / Cues</label>
+                            <div class="field-cues editable h-full" contenteditable="true">${getVal('field-cues')}</div>
+                        </div>
+                        <div class="notes-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Main Notes</label>
+                            <div class="field-notes editable h-full" contenteditable="true">${getVal('field-notes')}</div>
+                        </div>
+                        <div class="summary-section">
+                            <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Summary</label>
+                            <div class="field-summary editable" contenteditable="true">${getVal('field-summary')}</div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-2 right-4 text-xs text-slate-300 no-print">Page <span class="page-num"></span></div>
+                </div>
+            `;
+
+            const editables = wrapper.querySelectorAll('.editable');
+            editables.forEach(el => {
+                el.addEventListener('input', () => {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(saveNotes, 1000);
+                });
+                el.addEventListener('focus', () => lastFocusedEditable = el);
+            });
+            return wrapper;
+        }
+
+        function addPage(data = {}) {
+            const notebook = document.getElementById('notebook');
+            const newPage = createPageElement(data);
+            notebook.appendChild(newPage);
+            updatePageNumbers();
+            if (Object.keys(data).length === 0) {
+                newPage.scrollIntoView({ behavior: 'smooth' });
+                saveNotes();
+            }
+        }
+
+        function deletePage(btn) {
+            const notebook = document.getElementById('notebook');
+            if (notebook.children.length <= 1) {
+                if(confirm("Clear content instead?")) {
+                    const page = btn.closest('.page-wrapper');
+                    page.querySelectorAll('.editable').forEach(el => el.innerHTML = '');
+                    saveNotes();
+                }
+                return;
+            }
+            if (confirm('Delete this page?')) {
+                btn.closest('.page-wrapper').remove();
+                updatePageNumbers();
+                saveNotes();
+                showToast('Page removed');
+            }
+        }
+
+        function updatePageNumbers() {
+            document.querySelectorAll('.page-wrapper').forEach((page, index) => {
+                page.querySelector('.page-num').innerText = index + 1;
+            });
+        }
+
+        function saveNotes() {
+            const pages = document.querySelectorAll('.page-wrapper');
+            const data = [];
+            pages.forEach(page => {
+                const pageData = {};
+                fieldClasses.forEach(cls => {
+                    const el = page.querySelector(`.${cls}`);
+                    if (el) pageData[cls] = el.innerHTML;
+                });
+                const checklistItems = [];
+                page.querySelectorAll('.checklist-item').forEach(item => {
+                    const btn = item.querySelector('.status-btn');
+                    const textDiv = item.querySelector('.checklist-text');
+                    if (textDiv) {
+                        checklistItems.push({
+                            status: btn ? parseInt(btn.dataset.status) : 0,
+                            text: textDiv.innerHTML
+                        });
+                    }
+                });
+                pageData['checklist-data'] = checklistItems;
+                data.push(pageData);
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showToast('Saved');
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') alert('Storage Limit Reached!');
+            }
+        }
+
+        function loadNotes() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const notebook = document.getElementById('notebook');
+            notebook.innerHTML = '';
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(pageData => addPage(pageData));
+                } else {
+                    prefilledData.forEach(pageData => addPage(pageData));
+                }
+            } else {
+                prefilledData.forEach(pageData => addPage(pageData));
+            }
+        }
+
+        function exportData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) return alert("No data!");
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            // Generate filename with current date and time
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            
+            // Format: igcse_notes_backup_YYYY-MM-DD_HH-MM.json
+            const filename = `igcse_notes_backup_${year}-${month}-${day}_${hours}-${minutes}.json`;
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Backup Saved!');
+        }
+
+        function importTrigger() { document.getElementById('importInput').click(); }
+        
+        function handleImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                        loadNotes();
+                        showToast('Restored!');
+                    }
+                } catch(e){ alert('Error reading file'); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function printPDF() { window.print(); }
+        function toggleFont() { 
+            document.body.classList.toggle('font-handwritten-mode'); 
+            document.querySelectorAll('.page-container').forEach(p => p.classList.toggle('handwritten'));
+        }
+        function resetToDefault() { 
+            if(confirm("Reset all notes to syllabus defaults?")) {
+                localStorage.removeItem(STORAGE_KEY); 
+                loadNotes(); 
+                showToast('Reset Complete');
+            }
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('translate-y-40');
+            setTimeout(() => t.classList.add('translate-y-40'), 2000);
+        }
+        document.addEventListener('keydown', e => {
+            if ((e.metaKey || e.ctrlKey) && e.keyCode == 83) { e.preventDefault(); saveNotes(); }
+        });
+    </script>
+</body>
+</html>

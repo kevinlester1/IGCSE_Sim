@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>How the Internet Works - Simulation</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-y: auto;
+        }
+        
+        /* Custom styles for the modal */
+        #infoModal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.6); /* Dim background */
+            padding-top: 60px;
+        }
+        #modalContent {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 24px;
+            border: 1px solid #888;
+            width: 90%;
+            max-width: 600px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        #closeModal {
+            color: #aaa;
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        #closeModal:hover,
+        #closeModal:focus {
+            color: #333;
+        }
+        
+        /* Canvas styles */
+        canvas {
+            background: #f7fafc;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            /* Make canvas responsive */
+            width: 100%;
+            height: auto;
+        }
+        
+        /* Style for the highlighted step */
+        .explanation-step.highlight {
+            background-color: #ebf8ff; /* Light blue background */
+            border-color: #90cdf4; /* Blue border */
+            transform: scale(1.02);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* * Tab Styles - No @apply, uses standard CSS/Tailwind 
+         * We will apply Tailwind classes directly in the HTML
+         * and control active/inactive states via JavaScript
+         */
+        
+        /* Styles for security tab threat list */
+        .threat-btn.active {
+            background-color: #fee2e2; /* red-100 */
+            color: #991b1b; /* red-800 */
+        }
+        .threat-btn.inactive {
+            color: #374151; /* gray-700 */
+        }
+        .threat-btn.inactive:hover {
+            background-color: #f3f4f6; /* gray-100 */
+        }
+
+        /* Ensure smooth scrolling for side panel */
+        #explanationPanel {
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Simple styles for quiz results */
+        .results-correct {
+            background-color: #f0fdf4; /* green-50 */
+            border-left: 4px solid #22c55e; /* green-500 */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .results-incorrect {
+            background-color: #fef2f2; /* red-50 */
+            border-left: 4px solid #ef4444; /* red-500 */
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 0 0.5rem 0.5rem 0;
+        }
+        .review-topic {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #4f46e5; /* indigo-600 */
+            margin-top: 0.5rem;
+        }
+        .review-topic:hover {
+            color: #3730a3; /* indigo-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-4 md:p-8">
+
+    <!-- Main container widened for side panel -->
+    <div class="w-full max-w-7xl">
+        
+        <!-- Tab Buttons -->
+        <div class="flex -mb-px">
+            <!-- Tab buttons now have styles directly applied and are larger -->
+            <button id="simTabBtn" class="px-8 py-4 text-lg font-semibold rounded-t-lg transition-all duration-200 bg-white text-blue-700 shadow-md">
+                <span class="text-xl">🚀</span> Simulation
+            </button>
+            <button id="secTabBtn" class="px-8 py-4 text-lg font-semibold rounded-t-lg transition-all duration-200 bg-blue-50 text-gray-600 hover:bg-blue-100">
+                <span class="text-xl">🔒</span> Cyber Security
+            </button>
+            <button id="quizTabBtn" class="px-8 py-4 text-lg font-semibold rounded-t-lg transition-all duration-200 bg-blue-50 text-gray-600 hover:bg-blue-100">
+                <span class="text-xl">🎓</span> Knowledge Check
+            </button>
+        </div>
+
+        <!-- Simulation Tab Panel (Visible by default) -->
+        <div id="simTabPanel" class="bg-white p-6 md:p-8 rounded-b-2xl rounded-tr-2xl shadow-xl">
+            <h1 class="text-2xl md:text-4xl font-bold text-center text-blue-700 mb-6">
+                Interactive Simulation: How the Internet Works
+            </h1>
+            
+            <!-- Grid Layout -->
+            <div class="md:grid md:grid-cols-3 md:gap-8">
+                
+                <!-- Left Column: Simulation -->
+                <div class="md:col-span-2">
+                    <!-- 
+                      ****************************************************
+                      * CRITICAL: This is the canvas element for the sim *
+                      ****************************************************
+                    -->
+                    <canvas id="simCanvas" width="900" height="500"></canvas>
+                    
+                    <div id="statusMsg" class="text-center text-lg font-semibold text-gray-700 mt-4 p-3 bg-gray-100 rounded-lg">
+                        Click 'Start Simulation' to begin.
+                    </div>
+                    
+                    <!-- Controls -->
+                    <div class="mt-4 flex justify-center gap-4">
+                        <button id="startBtn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+                            Start Simulation
+                        </button>
+                        <button id="resetBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all duration-200 ease-in-out">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Right Column: Step-by-Step Explanations -->
+                <div class="md:col-span-1 bg-gray-50 p-4 rounded-lg shadow-inner max-h-[550px] overflow-y-auto mt-6 md:mt-0" id="explanationPanel">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 sticky top-0 bg-gray-50 pb-2 border-b border-gray-200">
+                        What's Happening?
+                    </h2>
+                    <div id="explanationContainer" class="space-y-3">
+                        
+                        <div id="step-exp-0" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 1: DNS Query to Router</h3>
+                            <p class="text-sm text-gray-600">Your computer asks your Home Router, "How do I find the IP address for 'example.com'?" This stays inside your Home Network.</p>
+                        </div>
+                        
+                        <div id="step-exp-1" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 2: Router to DNS Server</h3>
+                            <p class="text-sm text-gray-600">The Router (your gateway) sends the query to a DNS Server on the internet, the internet's "phonebook" (T4).</p>
+                        </div>
+                        
+                        <div id="step-exp-2" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 3: DNS Server Responds</h3>
+                            <p class="text-sm text-gray-600">The DNS Server finds the IP address (e.g., `93.184.216.34`) and sends this information back to your Router (T4).</p>
+                        </div>
+                        
+                        <div id="step-exp-3" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 4: IP Address to Computer</h3>
+                            <p class="text-sm text-gray-600">Your Router passes the IP address to your computer. Your browser now knows the correct "phone number".</p>
+                        </div>
+                        
+                        <div id="step-exp-4" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 5: HTTPS Request to Router</h3>
+                            <p class="text-sm text-gray-600">Your computer creates data packets (T1) for an encrypted HTTPS request (T3, T6) and sends them to the router.</p>
+                        </div>
+                        
+                        <div id="step-exp-5" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 6: Router to Internet (Hop 1)</h3>
+                            <p class="text-sm text-gray-600">The router's Firewall (T6) approves the packet, which leaves your Home Network and travels to the first Internet Router.</p>
+                        </div>
+                        
+                        <div id="step-exp-6" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 7: Internet Hop 2</h3>
+                            <p class="text-sm text-gray-600">The packet "hops" to the next Internet Router, getting closer to the destination server.</p>
+                        </div>
+
+                        <div id="step-exp-7" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 8: Packet Arrives at Server</h3>
+                            <p class="text-sm text-gray-600">The packet arrives at the final destination: the Web Server for 'example.com' (T4).</p>
+                        </div>
+
+                        <div id="step-exp-8" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 9: Server Responds (Hop 1)</h3>
+                            <p class="text-sm text-gray-600">The server sends back the website (HTML/Cookies) in an encrypted HTTPS response packet (T3, T4).</p>
+                        </div>
+
+                        <div id="step-exp-9" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 10: Response Hop 2</h3>
+                            <p class="text-sm text-gray-600">The response packet travels back through the internet, hopping between routers on its way to your IP address.</p>
+                        </div>
+                        
+                        <div id="step-exp-10" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 11: Response Arrives at Router</h3>
+                            <p class="text-sm text-gray-600">The packet re-enters your Home Network. The router's Firewall checks it again (T6).</p>
+                        </div>
+
+                        <div id="step-exp-11" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 12: Router to Computer</h3>
+                            <p class="text-sm text-gray-600">The router uses your computer's <strong>MAC address</strong> (T2) to send the packet to your specific device.</p>
+                        </div>
+                        
+                        <div id="step-exp-12" class="explanation-step p-3 border border-gray-200 rounded-lg transition-all duration-300">
+                            <h3 class="font-bold text-sm text-gray-700">Step 13: Render Website</h3>
+                            <p class="text-sm text-gray-600">Your <strong>Web Browser</strong> decrypts and renders the <strong>HTML</strong>, displaying the visual webpage (T3).</p>
+                        </div>
+
+                    </div>
+                </div>
+            </div> <!-- End Grid Layout -->
+
+            <!-- Learn More Section -->
+            <div class="border-t border-gray-200 pt-6 mt-8">
+                <h2 class="text-xl font-bold text-center text-gray-800 mb-4">Learn More</h2>
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button data-modal="browser" class="modal-btn bg-blue-100 hover:bg-blue-200 text-blue-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        What is a Web Browser?
+                    </button>
+                    <button data-modal="url" class="modal-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        URL & HTTP/HTTPS
+                    </button>
+                    <button data-modal="dns" class="modal-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        DNS & IP Address
+                    </button>
+                    <button data-modal="router" class="modal-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        Router, NIC, MAC & Firewall
+                    </button>
+                    <button data-modal="server" class="modal-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        Web Server, HTML & Cookies
+                    </button>
+                    <button data-modal="packets" class="modal-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg transition-all duration-200">
+                        Data Packets
+                    </button>
+                </div>
+            </div>
+        </div> <!-- End Simulation Tab Panel -->
+
+        <!-- Cyber Security Tab Panel (Hidden by default) -->
+        <div id="secTabPanel" class="bg-white p-6 md:p-8 rounded-b-2xl rounded-tr-2xl shadow-xl hidden">
+            <h1 class="text-2xl md:text-4xl font-bold text-center text-red-700 mb-6">
+                Cyber Security: Threats & Solutions
+            </h1>
+            <p class="text-center text-lg text-gray-600 mb-8">
+                Based on your T5 (Threats) and T6 (Solutions) presentations.
+                <br>Click a threat on the left to see its description and the solutions that protect against it.
+            </p>
+
+            <div class="md:grid md:grid-cols-3 md:gap-8">
+                <!-- Left Column: Threat List -->
+                <div class="md:col-span-1 bg-gray-50 p-4 rounded-lg shadow-inner max-h-[600px] overflow-y-auto">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 sticky top-0 bg-gray-50 pb-2 border-b border-gray-200">
+                        Select a Threat
+                    </h2>
+                    <nav id="threatList" class="space-y-2">
+                        <button data-threat="malware" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">Malware (Virus, Worm, Trojan...)</button>
+                        <button data-threat="phishing" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">Phishing & Social Engineering</button>
+                        <button data-threat="pharming" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">Pharming</button>
+                        <button data-threat="ddos" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">DDoS Attack</button>
+                        <button data-threat="interception" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">Data Interception (MITM)</button>
+                        <button data-threat="brute" class="threat-btn w-full text-left p-3 rounded-lg font-medium transition-all duration-150 inactive">Brute-force Attack</button>
+                    </nav>
+                </div>
+
+                <!-- Right Column: Content Area -->
+                <div id="secContentArea" class="md:col-span-2 bg-white p-4 rounded-lg min-h-[600px] mt-6 md:mt-0">
+                    <div class="flex flex-col items-center justify-center h-full text-center">
+                        <svg class="w-24 h-24 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        <h3 class="text-2xl font-semibold text-gray-700">Select a threat from the left</h3>
+                        <p class="text-gray-500">The description and corresponding solutions will appear here.</p>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- End Security Tab Panel -->
+
+        <!-- Quiz Tab Panel (Hidden by default) -->
+        <div id="quizTabPanel" class="bg-white p-6 md:p-8 rounded-b-2xl rounded-tr-2xl shadow-xl hidden">
+            <h1 class="text-2xl md:text-4xl font-bold text-center text-indigo-700 mb-6">
+                Knowledge Check
+            </h1>
+            <p class="text-center text-lg text-gray-600 mb-8">
+                Test your understanding of the presentations (T1-T6).
+                <br>Answer all questions and click "Check My Answers" at the bottom for your score and feedback.
+            </p>
+
+            <!-- Quiz Form Container -->
+            <form id="quizForm" class="max-w-4xl mx-auto">
+                <!-- Questions will be dynamically injected here by JavaScript -->
+            </form>
+
+            <!-- Quiz Controls -->
+            <div class="max-w-4xl mx-auto mt-8 text-center">
+                <button id="submitQuizBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-all duration-200 ease-in-out text-lg">
+                    Check My Answers
+                </button>
+                <button id="retryQuizBtn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-8 rounded-lg shadow-md transition-all duration-200 ease-in-out text-lg hidden">
+                    Retry Quiz
+                </button>
+            </div>
+
+            <!-- Quiz Results Container -->
+            <div id="quizResults" class="max-w-4xl mx-auto mt-10 hidden">
+                <!-- Results summary (score) will be injected here -->
+                <div id="quizScore"></div>
+                <!-- Detailed feedback will be injected here -->
+                <div id="quizFeedback"></div>
+            </div>
+
+        </div> <!-- End Quiz Tab Panel -->
+
+    </div>
+
+    <!-- Info Modal -->
+    <div id="infoModal">
+        <div id="modalContent">
+            <span id="closeModal">&times;</span>
+            <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-gray-800">Modal Title</h2>
+            <div id="modalText" class="text-gray-700 space-y-4">
+                <!-- Modal content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 
+      ****************************************************************
+      * CRITICAL: All JavaScript is wrapped in a DOMContentLoaded     *
+      * event listener to prevent errors from script loading first.  *
+      ****************************************************************
+    -->
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            // --- Canvas & Simulation Logic ---
+            const canvas = document.getElementById('simCanvas');
+            // Check if canvas exists before getting context
+            if (!canvas) {
+                console.error("Simulation Canvas not found!");
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            const statusMsg = document.getElementById('statusMsg');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            let currentStep = 0;
+            let packet = null;
+            
+            const components = {
+                client: { x: 120, y: 250, label: "Your Computer (Client)", icon: "💻" },
+                router: { x: 280, y: 250, label: "Home Router / Firewall", icon: "🛡️" },
+                dns: { x: 450, y: 100, label: "DNS Server", icon: "📚" },
+                inet1: { x: 450, y: 250, label: "Internet Router", icon: "☁️" },
+                inet2: { x: 600, y: 250, label: "Internet Router", icon: "☁️" },
+                server: { x: 780, y: 250, label: "Web Server (example.com)", icon: "🗄️" }
+            };
+
+            const simulationSteps = [
+                // DNS Lookup
+                { start: components.client, end: components.router, label: "DNS Query", msg: "Step 1: Asking Router for 'example.com'...", color: "#3b82f6" },
+                { start: components.router, end: components.dns, label: "DNS Query", msg: "Step 2: Router asks DNS Server for the IP address...", color: "#3b82f6" },
+                { start: components.dns, end: components.router, label: "IP: 93.184.216.34", msg: "Step 3: DNS Server returns the IP address.", color: "#22c55e" },
+                { start: components.router, end: components.client, label: "IP: 93.184.216.34", msg: "Step 4: Router sends the IP back to your computer.", color: "#22c55e" },
+                // HTTPS Request
+                { start: components.client, end: components.router, label: "HTTPS Request", msg: "Step 5: Sending secure (HTTPS) request.", color: "#f97316" },
+                { start: components.router, end: components.inet1, label: "HTTPS Request", msg: "Step 6: Router sends packet to Internet (Hop 1).", color: "#f97316" },
+                { start: components.inet1, end: components.inet2, label: "HTTPS Request", msg: "Step 7: Packet travels through Internet (Hop 2).", color: "#f97316" },
+                { start: components.inet2, end: components.server, label: "HTTPS Request", msg: "Step 8: Packet arrives at the Web Server.", color: "#f97316" },
+                // HTTPS Response
+                { start: components.server, end: components.inet2, label: "HTML/Cookie", msg: "Step 9: Server responds with HTML & Cookie (Encrypted).", color: "#a855f7" },
+                { start: components.inet2, end: components.inet1, label: "HTML/Cookie", msg: "Step 10: Response travels back through Internet (Hop 2).", color: "#a855f7" },
+                { start: components.inet1, end: components.router, label: "HTML/Cookie", msg: "Step 11: Response packet arrives at your Router.", color: "#a855f7" },
+                { start: components.router, end: components.client, label: "HTML/Cookie", msg: "Step 12: Router sends data to your computer (via MAC).", color: "#a855f7" },
+                // Final step (text only)
+                { start: null, end: null, label: null, msg: "Simulation Complete! Your browser renders the HTML." }
+            ];
+            
+            // --- Drawing Functions ---
+            function drawComponent(component) {
+                ctx.fillStyle = "white";
+                ctx.strokeStyle = "#94a3b8";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.rect(component.x - 70, component.y - 40, 140, 80);
+                ctx.fill();
+                ctx.stroke();
+                ctx.font = "30px Arial";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(component.icon, component.x, component.y - 10);
+                ctx.fillStyle = "#334155";
+                ctx.font = "11px 'Inter', sans-serif";
+                ctx.fillText(component.label, component.x, component.y + 25);
+            }
+            
+            function drawAllComponents() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Home Network Box
+                ctx.fillStyle = "#f1f5f9"; // Light blue-gray
+                ctx.strokeStyle = "#0ea5e9"; // Blue border
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.rect(20, 150, 350, 200); // x, y, width, height
+                ctx.fill();
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset dash
+                ctx.fillStyle = "#334155";
+                ctx.font = "14px 'Inter', sans-serif";
+                ctx.textAlign = "left";
+                ctx.fillText("Home Network (LAN)", 30, 175);
+                ctx.textAlign = "center"; // Reset align
+
+                // Draw Connection Lines
+                ctx.strokeStyle = "#cbd5e1";
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // Client <-> Router
+                ctx.moveTo(components.client.x + 70, components.client.y);
+                ctx.lineTo(components.router.x - 70, components.router.y);
+                // Router -> DNS
+                ctx.moveTo(components.router.x, components.router.y - 40);
+                ctx.lineTo(components.dns.x, components.dns.y + 40);
+                // Router -> Inet1
+                ctx.moveTo(components.router.x + 70, components.router.y);
+                ctx.lineTo(components.inet1.x - 30, components.inet1.y);
+                // Inet1 <-> Inet2
+                ctx.moveTo(components.inet1.x + 30, components.inet1.y);
+                ctx.lineTo(components.inet2.x - 30, components.inet2.y);
+                // Inet2 <-> Server
+                ctx.moveTo(components.inet2.x + 30, components.inet2.y);
+                ctx.lineTo(components.server.x - 70, components.server.y);
+                ctx.stroke();
+                
+                // Draw all components on top
+                for (const key in components) {
+                    drawComponent(components[key]);
+                }
+            }
+            
+            function drawPacket(p) {
+                ctx.fillStyle = p.color || "#3b82f6";
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#1e293b";
+                ctx.font = "11px 'Inter', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(p.label, p.x, p.y - 18);
+            }
+
+            // --- Animation Loop ---
+            function animate() {
+                drawAllComponents();
+                if (packet && packet.active) {
+                    const dx = packet.targetX - packet.x;
+                    const dy = packet.targetY - packet.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < packet.speed) {
+                        packet.active = false;
+                        startBtn.disabled = false;
+                        if (currentStep < simulationSteps.length - 1) { // -1 because last step is text-only
+                            startBtn.textContent = "Next Step";
+                        } else {
+                            startBtn.textContent = "Finished";
+                            startBtn.disabled = true;
+                        }
+                    } else {
+                        packet.x += (dx / dist) * packet.speed;
+                        packet.y += (dy / dist) * packet.speed;
+                    }
+                    drawPacket(packet);
+                }
+                requestAnimationFrame(animate);
+            }
+
+            // --- Highlight Explanation Function ---
+            function highlightExplanation(stepIndex) {
+                const explanationSteps = document.querySelectorAll('.explanation-step');
+                explanationSteps.forEach((step, index) => {
+                    if (index === stepIndex) {
+                        step.classList.add('highlight');
+                        step.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else {
+                        step.classList.remove('highlight');
+                    }
+                });
+            }
+
+            // --- Control Functions ---
+            function createPacket(step) {
+                return {
+                    x: step.start.x,
+                    y: step.start.y,
+                    targetX: step.end.x,
+                    targetY: step.end.y,
+                    label: step.label,
+                    color: step.color,
+                    speed: 5,
+                    active: true
+                };
+            }
+            function runNextStep() {
+                if (currentStep >= simulationSteps.length) {
+                    return; // Do nothing if finished
+                }
+
+                if (currentStep === simulationSteps.length - 1) {
+                    // Handle last text-only step
+                    const step = simulationSteps[currentStep];
+                    statusMsg.textContent = step.msg;
+                    highlightExplanation(currentStep);
+                    startBtn.textContent = "Finished";
+                    startBtn.disabled = true;
+                    currentStep++;
+                    return;
+                }
+
+                startBtn.disabled = true;
+                const step = simulationSteps[currentStep];
+                statusMsg.textContent = step.msg;
+                highlightExplanation(currentStep);
+                
+                if (step.start) {
+                    packet = createPacket(step);
+                }
+                
+                currentStep++;
+            }
+            function resetSimulation() {
+                currentStep = 0;
+                packet = null;
+                statusMsg.textContent = "Click 'Start Simulation' to begin.";
+                startBtn.disabled = false;
+                startBtn.textContent = "Start Simulation";
+                highlightExplanation(-1);
+                drawAllComponents();
+            }
+
+            // --- Modal Logic ---
+            const modalData = {
+                browser: {
+                    title: "What is a Web Browser?",
+                    text: `<p>A web browser is the application you use (like Chrome, Firefox, or Safari) to access the World Wide Web. Its main purpose is to <strong>render (display) web pages</strong> by reading <strong>HTML</strong> code (T3).</p><p>It also has many other key features (T3):</p><ul class='list-disc list-inside ml-4'><li><strong>Address Bar:</strong> Where you type the <strong>URL</strong> to navigate to a site.</li><li><strong>Navigation Tools:</strong> The 'Back', 'Forward', and 'Refresh' buttons.</li><li><strong>Tabs:</strong> Allow you to have multiple web pages open in one window.</li><li><strong>Bookmarks (or Favourites):</strong> Lets you save a list of sites you want to visit again.</li><li><strong>Browsing History:</strong> Keeps a record of all the pages you've visited.</li><li><strong>Cookie Storage:</strong> Manages the cookies sent by web servers (T4).</li></ul>`
+                },
+                url: {
+                    title: "URL & HTTP/HTTPS",
+                    text: `<p>A <strong>URL (Uniform Resource Locator)</strong> is the web address you type in your browser (T3).</p><p>It's made of parts:</p><ul class='list-disc list-inside ml-4'><li><strong>Protocol:</strong> <code>https://</code> - This is the <strong>Hypertext Transfer Protocol Secure</strong> (HTTPS). It's an encrypted, secure version of HTTP. The <strong>S</strong> means it uses <strong>SSL (Secure Sockets Layer)</strong> to encrypt data, keeping it safe from interception (T3, T6).</li><li><strong>Domain Name:</strong> <code>www.example.com</code> - The human-friendly name for the website (T3).</li></ul>`
+                },
+                dns: {
+                    title: "DNS & IP Address",
+                    text: `<p>The internet doesn't use names, it uses numbers called <strong>IP (Internet Protocol) Addresses</strong> (T1, T4).</p><p>An <strong>IPv4</strong> address is a 32-bit number, like <code>93.184.216.34</code>. We are moving to <strong>IPv6</strong> (128-bit) because we ran out of IPv4 addresses (T2).</p><p>The <strong>DNS (Domain Name System) Server</strong> is the internet's "phonebook". Your browser sends it a domain name (<code>example.com</code>) and the DNS server sends back the correct IP address (<code>93.184.216.34</code>) so your browser knows which server to contact (T4).</p>`
+                },
+                router: {
+                    title: "Router, NIC, MAC & Firewall",
+                    text: `<p><strong>Network Interface Card (NIC):</strong> Every device (your computer, phone) needs a NIC to connect to a network. This is the physical hardware that lets you plug in an ethernet cable or connect to Wi-Fi (T1).</p><p><strong>MAC Address (Media Access Control):</strong> Every NIC is given a unique, permanent 48-bit address when it's manufactured, like <code>1f-38-69-ba-9f-0c</code>. This address is used to identify devices <strong>within your local network</strong> (e.g., for your computer to send data to your router) (T2).</p><p><strong>IP Address vs. MAC Address:</strong> A MAC address is like a device's permanent serial number. An IP address is like its temporary mailing address on the internet. Your router uses MAC addresses for local traffic and IP addresses for internet traffic (T2).</p><p><strong>Router:</strong> This device "routes" data packets between networks. Your home router connects your local network (LAN) to the public internet (WAN). It also typically includes a <strong>DHCP server</strong> to assign local IP addresses to your devices (T1).</p><p><strong>Firewall:</strong> Often built into the router, a firewall is a security solution. It checks incoming and outgoing packets and blocks any that seem malicious or don't follow the rules, protecting you from threats (T6).</p>`
+                },
+                server: {
+                    title: "Web Server, HTML & Cookies",
+                    text: `<p>A <strong>Web Server</strong> is a computer that stores websites and serves them to users who request them. It's identified by its IP address (T4).</p><p>When your request arrives, the server sends back the webpage, which is written in <strong>HTML (Hypertext Markup Language)</strong>. Your browser reads this HTML code to render (display) the visual webpage (T3).</p><p>The server might also send a <strong>Cookie</strong>, which is a small data file stored by your browser. <strong>Session cookies</strong> remember things for one visit (like a shopping cart), while <strong>persistent cookies</strong> remember you for longer (like a "Remember Me" login) (T4).</p>`
+                },
+                packets: {
+                    title: "Data Packets",
+                    text: `<p>When data is sent over the internet, it's not sent in one big file. It's broken into many small pieces called <strong>data packets</strong> (T1).</p><p>Each packet is like a small envelope. It contains a piece of the data, the <strong>destination IP address</strong> (where it's going), and the <strong>source IP address</strong> (where it came from so the server knows where to send the reply) (T1).</p><p>Packets may take different routes to reach the destination, where they are reassembled in the correct order.</p>`
+                }
+            };
+
+            const modal = document.getElementById('infoModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalText = document.getElementById('modalText');
+            const closeModal = document.getElementById('closeModal');
+            document.querySelectorAll('.modal-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modalId = btn.dataset.modal;
+                    const data = modalData[modalId];
+                    modalTitle.textContent = data.title;
+                    modalText.innerHTML = data.text;
+                    modal.style.display = "block";
+                });
+            });
+            closeModal.onclick = () => {
+                modal.style.display = "none";
+            }
+            window.onclick = (event) => {
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+
+            // --- Tab Switching Logic ---
+            const tabButtons = {
+                sim: document.getElementById('simTabBtn'),
+                sec: document.getElementById('secTabBtn'),
+                quiz: document.getElementById('quizTabBtn')
+            };
+            const tabPanels = {
+                sim: document.getElementById('simTabPanel'),
+                sec: document.getElementById('secTabPanel'),
+                quiz: document.getElementById('quizTabPanel')
+            };
+
+            function setActiveTab(tabKey) {
+                // Deactivate all
+                Object.keys(tabButtons).forEach(key => {
+                    tabButtons[key].classList.add('bg-blue-50', 'text-gray-600', 'hover:bg-blue-100');
+                    tabButtons[key].classList.remove('bg-white', 'text-blue-700', 'shadow-md');
+                    tabPanels[key].classList.add('hidden');
+                });
+
+                // Activate the selected one
+                tabButtons[tabKey].classList.remove('bg-blue-50', 'text-gray-600', 'hover:bg-blue-100');
+                tabButtons[tabKey].classList.add('bg-white', 'text-blue-700', 'shadow-md');
+                tabPanels[tabKey].classList.remove('hidden');
+            }
+
+            tabButtons.sim.addEventListener('click', () => setActiveTab('sim'));
+            tabButtons.sec.addEventListener('click', () => setActiveTab('sec'));
+            tabButtons.quiz.addEventListener('click', () => setActiveTab('quiz'));
+
+            // Set initial active tab
+            setActiveTab('sim');
+
+
+            // --- Cyber Security Tab Logic ---
+            const securityData = {
+                malware: {
+                    title: "Threat: Malware (T5)",
+                    description: "Short for <strong>malicious software</strong>. These are programs designed to harm your computer or steal data. Types include: <ul class='list-disc list-inside ml-4'><li><strong>Virus:</strong> Attaches to other programs and replicates to corrupt or delete files.</li><li><strong>Worm:</strong> Replicates itself to spread to other computers, slowing down networks.</li><li><strong>Trojan Horse:</strong> Disguises itself as useful software but contains malicious code.</li><li><strong>Ransomware:</strong> Encrypts all your files and demands a ransom (money) to unlock them.</li><li><strong>Spyware:</strong> Secretly finds and sends your information (passwords, browsing habits) to a hacker.</li></ul>",
+                    solutions: [
+                        {
+                            title: "Anti-Malware Software (T6)",
+                            text: "This software (including anti-virus and anti-spyware) detects and removes malware. It keeps a database of 'signatures' of known viruses and scans your files. When new malware is found, the database is updated."
+                        },
+                        {
+                            title: "Automatic Software Updates (T6)",
+                            text: "Hackers 'exploit' security holes in out-of-date software. Automatic updates 'patch' these holes, fixing bugs and security flaws so malware can't get in."
+                        },
+                        {
+                            title: "Firewalls (T6)",
+                            text: "A firewall acts as a barrier, checking incoming and outgoing data packets. It can block packets from known malicious sources or prevent malware from sending your data out."
+                        }
+                    ]
+                },
+                phishing: {
+                    title: "Threat: Phishing & Social Engineering (T5)",
+                    description: "<strong>Social Engineering</strong> is the act of tricking people to get confidential information. <strong>Phishing</strong> is a common example, where a fake email, text, or call pretends to be from a legitimate company (like a bank). It tries to create a sense of urgency to trick you into revealing personal information like passwords or credit card details.",
+                    solutions: [
+                        {
+                            title: "Check Spelling, Tone & Greeting (T6)",
+                            text: "Look for clues. Phishing emails often have poor spelling or grammar. They might use a generic greeting like 'Dear Customer' instead of your name, and try to create a fake sense of urgency (e.g., 'Your account will be locked!')."
+                        },
+                        {
+                            title: "Check the URL (T6)",
+                            text: "Hover your mouse over any links before you click! The text might say <code>mybank.com</code>, but the actual link (shown in the corner of your browser) might go to <code>mybank-security-login.xyz</code>. This check helps defeat both Phishing and Pharming."
+                        },
+                        {
+                            title: "Authentication (T6)",
+                            text: "Use strong passwords and two-step verification (like a code sent to your phone). This means even if a hacker steals your password via phishing, they still can't log in without the second code."
+                        }
+                    ]
+                },
+                pharming: {
+                    title: "Threat: Pharming (T5)",
+                    description: "A technical attack where a hacker redirects a legitimate website's domain name (e.g., <code>mybank.com</code>) to a fake, malicious IP address. This can happen by attacking your computer or the DNS server itself. You type the correct URL but are taken to a fake site.",
+                    solutions: [
+                        {
+                            title: "Check for HTTPS / SSL (T6)",
+                            text: "Look for the padlock and <code>https://</code>. A hacker's fake site often won't have a valid SSL certificate for the real domain (<code>mybank.com</code>). Your browser may give a warning. The <strong>SSL protocol</strong> ensures you are connected to the *real* server."
+                        },
+                        {
+                            title: "Anti-Malware Software (T6)",
+                            text: "Some anti-malware software can prevent or reverse the malicious changes made to your computer's settings by a pharming attack."
+                        }
+                    ]
+                },
+                ddos: {
+                    title: "Threat: DDoS Attack (T5)",
+                    description: "A <strong>Distributed Denial of Service (DDoS)</strong> attack floods a server with pointless requests from many different computers (a 'botnet'). The server becomes overwhelmed, can't keep up with legitimate requests, and slows down or crashes for everyone.",
+                    solutions: [
+                        {
+                            title: "Firewalls & Proxy Servers (T6)",
+                            text: "A <strong>Firewall</strong> can be configured to detect and block the flood of packets from malicious IP addresses. A <strong>Proxy Server</strong> can also help by hiding the real server's IP address and filtering requests, making it harder to target."
+                        }
+                    ]
+                },
+                interception: {
+                    title: "Threat: Data Interception (MITM) (T5)",
+                    description: "A <strong>Man-in-the-Middle (MITM)</strong> attack where an attacker secretly eavesdrops on your network communication (e.g., on unencrypted public Wi-Fi). They can steal data, passwords, or personal information.",
+                    solutions: [
+                        {
+                            title: "HTTPS & SSL (T6)",
+                            text: "This is the most important solution. The <strong>SSL (Secure Sockets Layer)</strong> protocol provides encryption (T6). When you use <code>https://</code>, all data between your browser and the server is encrypted. The attacker can intercept the data, but it's just meaningless scrambled text to them."
+                        },
+                        {
+                            title: "Proxy Servers / VPNs (T6)",
+                            text: "A proxy server (or VPN) can be used to encrypt all your traffic, especially on public Wi-Fi. This hides your activity from anyone trying to eavesdrop on the local network."
+                        }
+                    ]
+                },
+                brute: {
+                    title: "Threat: Brute-force Attack (T5)",
+                    description: "A program is used to try every single possible password combination (e.g., 'aaa', 'aab', 'aac'...) until it finds the correct one. This is slow but effective against simple, short passwords.",
+                    solutions: [
+                        {
+                            title: "Authentication (T6)",
+                            text: "This is the main defense. Use <strong>strong passwords</strong> (long, with uppercase, lowercase, numbers, and symbols) to make a brute-force attack take too long. Also, use <strong>two-step verification</strong> (a code sent to your phone), as the hacker can't brute-force that code."
+                        },
+                        {
+                            title: "Access Levels (T6)",
+                            text: "Systems can be set to lock an account after a few failed login attempts (e.g., 5 tries), which stops a brute-force attack immediately. This is a form of access control."
+                        }
+                    ]
+                }
+            };
+
+            const threatList = document.getElementById('threatList');
+            const secContentArea = document.getElementById('secContentArea');
+
+            threatList.addEventListener('click', (e) => {
+                const threatBtn = e.target.closest('.threat-btn');
+                if (!threatBtn) return; // Didn't click a button
+
+                const threatKey = threatBtn.dataset.threat;
+                const data = securityData[threatKey];
+
+                // Update active button
+                threatList.querySelectorAll('.threat-btn').forEach(btn => {
+                    btn.classList.add('inactive');
+                    btn.classList.remove('active');
+                });
+                threatBtn.classList.add('active');
+                threatBtn.classList.remove('inactive');
+
+                // Generate and set content
+                let solutionsHtml = data.solutions.map(sol => `
+                    <div class="mt-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                        <h4 class="font-bold text-lg text-green-800">${sol.title}</h4>
+                        <p class="text-gray-700">${sol.text}</p>
+                    </div>
+                `).join('');
+
+                secContentArea.innerHTML = `
+                    <h3 class="text-2xl font-bold text-red-800">${data.title}</h3>
+                    <p class="text-gray-700 mt-2">${data.description}</p>
+                    <hr class="my-6">
+                    <h3 class="text-2xl font-bold text-green-700">Solutions (from T6)</h3>
+                    <div class="mt-4">
+                        ${solutionsHtml}
+                    </div>
+                `;
+            });
+
+
+            // --- Quiz Tab Logic ---
+            const quizForm = document.getElementById('quizForm');
+            const submitQuizBtn = document.getElementById('submitQuizBtn');
+            const retryQuizBtn = document.getElementById('retryQuizBtn');
+            const quizResults = document.getElementById('quizResults');
+            const quizScore = document.getElementById('quizScore');
+            const quizFeedback = document.getElementById('quizFeedback');
+
+            const quizData = [
+                // T1: Network Hardware
+                {
+                    type: 'mc',
+                    question: 'What does NIC stand for?',
+                    options: ['Network Internal Controller', 'Network Interface Card', 'New Internet Connection', 'Network Integration Chip'],
+                    answer: 'Network Interface Card',
+                    review: 'Network Hardware (T1)'
+                },
+                {
+                    type: 'blank',
+                    question: 'A ... is a device that routes data packets between networks.',
+                    answer: 'router',
+                    review: 'Network Hardware (T1)'
+                },
+                {
+                    type: 'mc',
+                    question: 'What protocol assigns IP addresses to devices on a local network?',
+                    options: ['HTTP', 'FTP', 'DHCP', 'SSL'],
+                    answer: 'DHCP',
+                    review: 'Network Hardware (T1)'
+                },
+                // T2: MAC & IP Addresses
+                {
+                    type: 'mc',
+                    question: 'A MAC address is a __-bit number.',
+                    options: ['32-bit', '48-bit', '64-bit', '128-bit'],
+                    answer: '48-bit',
+                    review: 'MAC & IP Addresses (T2)'
+                },
+                {
+                    type: 'blank',
+                    question: 'An IPv4 address is a ...-bit number.',
+                    answer: '32',
+                    review: 'MAC & IP Addresses (T2)'
+                },
+                {
+                    type: 'mc',
+                    question: 'Which address is permanent and set by the manufacturer?',
+                    options: ['IP Address', 'MAC Address', 'URL Address', 'DHCP Address'],
+                    answer: 'MAC Address',
+                    review: 'MAC & IP Addresses (T2)'
+                },
+                {
+                    type: 'mc',
+                    question: 'The newer IP standard with 128-bit addresses is called...',
+                    options: ['IPv4', 'IPv6', 'MAC-6', 'IPX'],
+                    answer: 'IPv6',
+                    review: 'MAC & IP Addresses (T2)'
+                },
+                // T3: Internet & Web Basics
+                {
+                    type: 'mc',
+                    question: "The 'S' in HTTPS stands for...",
+                    options: ['Standard', 'Simple', 'Secure', 'Server'],
+                    answer: 'Secure',
+                    review: 'Internet & Web Basics (T3)'
+                },
+                {
+                    type: 'blank',
+                    question: 'The language used to create and structure web pages is called ....',
+                    answer: 'html',
+                    review: 'Internet & Web Basics (T3)'
+                },
+                {
+                    type: 'mc',
+                    question: 'What is the main job of a Web Browser?',
+                    options: ['To host a website', 'To render HTML', 'To assign IP addresses', 'To scan for viruses'],
+                    answer: 'To render HTML',
+                    review: 'Internet & Web Basics (T3)'
+                },
+                {
+                    type: 'mc',
+                    question: 'The "World Wide Web" is the same as "The Internet".',
+                    options: ['True', 'False'],
+                    answer: 'False',
+                    review: 'Internet & Web Basics (T3)'
+                },
+                // T4: Web Technologies
+                {
+                    type: 'blank',
+                    question: 'The ... server acts like the internet\'s "phonebook", matching domain names to IP addresses.',
+                    answer: 'dns',
+                    review: 'Web Technologies (DNS, Cookies) (T4)'
+                },
+                {
+                    type: 'mc',
+                    question: 'A cookie that is deleted when the browser closes is a...',
+                    options: ['Persistent cookie', 'Session cookie', 'Tracking cookie', 'Zombie cookie'],
+                    answer: 'Session cookie',
+                    review: 'Web Technologies (DNS, Cookies) (T4)'
+                },
+                {
+                    type: 'mc',
+                    question: 'A cookie that stores your login information for a long time is a...',
+                    options: ['Persistent cookie', 'Session cookie', 'Temporary cookie', 'First-party cookie'],
+                    answer: 'Persistent cookie',
+                    review: 'Web Technologies (DNS, Cookies) (T4)'
+                },
+                // T5: Threats
+                {
+                    type: 'blank',
+                    question: 'Malware that encrypts your files and demands money is called ....',
+                    answer: 'ransomware',
+                    review: 'Cyber Security Threats (T5)'
+                },
+                {
+                    type: 'mc',
+                    question: 'An attack that floods a server with requests from many computers is...',
+                    options: ['Phishing', 'DDoS', 'Brute-force', 'Pharming'],
+                    answer: 'DDoS',
+                    review: 'Cyber Security Threats (T5)'
+                },
+                {
+                    type: 'mc',
+                    question: 'A fake email pretending to be your bank to steal your password is...',
+                    options: ['Phishing', 'DDoS', 'Spyware', 'Pharming'],
+                    answer: 'Phishing',
+                    review: 'Cyber Security Threats (T5)'
+                },
+                // T6: Solutions
+                {
+                    type: 'blank',
+                    question: 'A ... checks incoming and outgoing packets and blocks malicious ones.',
+                    answer: 'firewall',
+                    review: 'Cyber Security Solutions (T6)'
+                },
+                {
+                    type: 'mc',
+                    question: 'What protocol provides the encryption for HTTPS?',
+                    options: ['FTP', 'IP', 'DHCP', 'SSL'],
+                    answer: 'SSL',
+                    review: 'Cyber Security Solutions (T6)'
+                },
+                {
+                    type: 'mc',
+                    question: 'Using a password and a code sent to your phone is called...',
+                    options: ['Access Level', 'Single Sign-On', 'Two-step verification', 'Encryption'],
+                    answer: 'Two-step verification',
+                    review: 'Cyber Security Solutions (T6)'
+                }
+            ];
+
+            // Function to load and display the quiz
+            function loadQuiz() {
+                quizForm.innerHTML = ''; // Clear previous quiz
+                quizData.forEach((q, index) => {
+                    // Main container for the question
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'bg-gray-50 p-6 rounded-lg shadow-sm mb-6 border border-gray-200';
+                    
+                    // Question header (number and text)
+                    let questionHTML = `
+                        <div class="flex items-start gap-4 mb-4">
+                            <span class="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-600 text-white font-bold text-lg flex items-center justify-center">${index + 1}</span>
+                            <p class="text-xl font-semibold text-gray-800 pt-0.5">${q.question.replace(/\.{3,}/g, '...')}</p>
+                        </div>
+                        <div class="pl-12"> <!-- Aligns body with question text -->
+                    `;
+                    
+                    if (q.type === 'mc') {
+                        questionHTML += '<div class="space-y-3">';
+                        q.options.forEach(option => {
+                            // Using peer-checked for better Tailwind-native styling
+                            questionHTML += `
+                                <label class="block">
+                                    <input type="radio" name="q${index}" value="${option}" class="hidden peer">
+                                    <span class="block w-full p-4 border border-gray-300 rounded-lg cursor-pointer hover:bg-blue-50 transition-all duration-150 bg-white text-lg
+                                                 peer-checked:bg-blue-100 peer-checked:border-blue-400 peer-checked:ring-2 peer-checked:ring-blue-300">
+                                        ${option}
+                                    </span>
+                                </label>
+                            `;
+                        });
+                        questionHTML += '</div>';
+                    } else if (q.type === 'blank') {
+                        // Larger, cleaner text input
+                        questionHTML += `
+                            <input type="text" id="q${index}" 
+                                   class="border border-gray-300 rounded-lg p-3 w-full md:w-2/3 text-lg focus:ring-2 focus:ring-blue-400 focus:outline-none" 
+                                   autocomplete="off" 
+                                   placeholder="Type your answer here...">
+                        `;
+                    }
+                    
+                    questionHTML += '</div>'; // Close .pl-12
+                    questionDiv.innerHTML = questionHTML;
+                    quizForm.appendChild(questionDiv);
+                });
+            }
+
+            // Function to check the answers
+            function checkAnswers() {
+                let score = 0;
+                let feedbackHTML = '';
+
+                quizData.forEach((q, index) => {
+                    let userAnswer;
+                    const isMC = q.type === 'mc';
+                    
+                    if (isMC) {
+                        const selectedOption = document.querySelector(`input[name="q${index}"]:checked`);
+                        userAnswer = selectedOption ? selectedOption.value : '';
+                    } else {
+                        userAnswer = document.getElementById(`q${index}`).value.trim().toLowerCase();
+                    }
+
+                    const correctAnswer = isMC ? q.answer : q.answer.toLowerCase();
+                    
+                    let questionTextForFeedback = q.question;
+                    if (!isMC) {
+                        questionTextForFeedback = q.question.replace(/\.{3,}/g, `<strong class="text-green-700">${q.answer}</strong>`);
+                    }
+
+                    if (userAnswer === correctAnswer) {
+                        score++;
+                        feedbackHTML += `
+                            <div class="results-correct">
+                                <p class="font-bold">Question ${index + 1}: Correct</p>
+                                <p>${questionTextForFeedback}</p>
+                            </div>
+                        `;
+                    } else {
+                        feedbackHTML += `
+                            <div class="results-incorrect">
+                                <p class="font-bold">Question ${index + 1}: Incorrect</p>
+                                <p>${questionTextForFeedback}</p>
+                                <p class="mt-2"><strong>Your answer:</strong> <span class="text-red-700">"${userAnswer || 'No answer'}"</span></p>
+                                <p><strong>Correct answer:</strong> <span class="text-green-700">"${q.answer}"</span></p>
+                                <span class="review-topic">Review Area: ${q.review}</span>
+                            </div>
+                        `;
+                    }
+                });
+
+                // Display results
+                quizScore.innerHTML = `<h2 class="text-3xl font-bold text-center text-indigo-700 mb-4">Your Score: ${score} / ${quizData.length}</h2>`;
+                quizFeedback.innerHTML = '<h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">Review Your Answers</h3>' + feedbackHTML;
+                quizResults.classList.remove('hidden');
+
+                // Toggle buttons
+                submitQuizBtn.classList.add('hidden');
+                retryQuizBtn.classList.remove('hidden');
+
+                // Scroll to results
+                quizResults.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // Function to reset the quiz
+            function resetQuiz() {
+                quizResults.classList.add('hidden');
+                quizScore.innerHTML = '';
+                quizFeedback.innerHTML = '';
+                
+                retryQuizBtn.classList.add('hidden');
+                submitQuizBtn.classList.remove('hidden');
+
+                loadQuiz(); // Reload the quiz questions
+                quizTabPanel.scrollIntoView({ behavior: 'smooth' });
+            }
+
+            // --- Initial Setup ---
+
+            // Add event listeners for Sim
+            startBtn.addEventListener('click', runNextStep);
+            resetBtn.addEventListener('click', resetSimulation);
+            
+            // Event Listeners for Quiz
+            submitQuizBtn.addEventListener('click', checkAnswers);
+            retryQuizBtn.addEventListener('click', resetQuiz);
+
+            // Initial draw
+            drawAllComponents();
+            // Start animation loop
+            animate();
+            // Load the quiz questions
+            loadQuiz();
+        
+        }); // End of DOMContentLoaded
+    </script>
+</body>
+</html>

@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Software Testing Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+        }
+        .simulation-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.3s ease-in-out;
+        }
+        pre {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-size: 0.875rem;
+        }
+        .code-highlight {
+            background-color: #fbbf24;
+            color: #1e293b;
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            color: white;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #3b82f6;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2563eb;
+        }
+        .btn:disabled {
+            background-color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #64748b;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+        }
+        .feedback-correct {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .feedback-info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+        }
+        .trace-table th, .trace-table td {
+            border: 1px solid #cbd5e1;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .highlight-row {
+            background-color: #fef9c3;
+        }
+        .highlight-code-line {
+            background-color: #374151;
+            display: block;
+            width: 100%;
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border-radius: 0.5rem 0.5rem 0 0;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+            cursor: pointer;
+            background-color: #e5e7eb;
+            color: #4b5563;
+        }
+        .tab-btn.active {
+            background-color: white;
+            color: #1d4ed8;
+            border-bottom: 1px solid white;
+            position: relative;
+            top: 1px;
+        }
+        .tab-content {
+            display: none;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 0 0.75rem 0.75rem 0.75rem;
+            border: 1px solid #d1d5db;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-slate-800">Software Testing Simulation</h1>
+            <p class="text-slate-600 mt-2">An interactive guide to understanding errors, test data, and trace tables.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="flex border-b border-gray-300">
+            <button class="tab-btn active" onclick="openTab('fundamentals')">Testing Fundamentals</button>
+            <button class="tab-btn" onclick="openTab('tracetables')">Trace Tables</button>
+        </div>
+
+        <!-- Tab Content: Fundamentals -->
+        <div id="fundamentals" class="tab-content active">
+            <!-- Section 1: Types of Errors -->
+            <section id="error-types">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">1. Types of Program Errors</h2>
+                
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800">Syntax Errors</h3>
+                    <p class="text-slate-600 mt-2 mb-4">These errors occur when the code violates the rules of the programming language. The program won't run at all.</p>
+                    <pre><code id="syntax-code">OUTPUT "Max number: <span class="code-highlight">,</span> MaxNum</code></pre>
+                    <button id="show-syntax-error" class="btn btn-primary mt-4">Reveal Explanation</button>
+                    <div id="syntax-feedback" class="feedback feedback-info hidden mt-4">
+                        <strong>Explanation:</strong> The comma is inside the string literal. The compiler doesn't understand this instruction and cannot run the program. The fix is: <code>OUTPUT "Max number: ", MaxNum</code>.
+                    </div>
+                </div>
+
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800">Logical Errors</h3>
+                    <p class="text-slate-600 mt-2 mb-4">The program runs, but produces an incorrect result. Find the bug in this algorithm that's supposed to find the largest of three numbers.</p>
+                    <pre><code>INPUT Num1, Num2, Num3
+MaxNum ← 0
+IF Num1 >= Num2 AND Num1 >= Num3 THEN
+    <span class="code-highlight">MaxNum ← Num3</span>
+ELSE IF Num2 >= Num3 THEN
+...</code></pre>
+                    <p class="mt-4">Try testing with Num1 as the largest value.</p>
+                    <div class="flex flex-col sm:flex-row gap-2 mt-2">
+                        <input type="number" id="logic-num1" placeholder="Num1" class="border p-2 rounded w-full">
+                        <input type="number" id="logic-num2" placeholder="Num2" class="border p-2 rounded w-full">
+                        <input type="number" id="logic-num3" placeholder="Num3" class="border p-2 rounded w-full">
+                    </div>
+                    <button id="run-logic-test" class="btn btn-primary mt-4">Run Test</button>
+                    <div id="logic-feedback" class="feedback hidden"></div>
+                </div>
+                
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800">Runtime Errors</h3>
+                    <p class="text-slate-600 mt-2 mb-4">The program is syntactically correct, but a specific input causes it to crash while running. Can you make this program crash?</p>
+                    <pre><code>INPUT NumberOfCakes
+INPUT NumberOfPeople
+CakesPerPerson ← NumberOfCakes / NumberOfPeople
+OUTPUT CakesPerPerson</code></pre>
+                    <p class="mt-4">Enter the number of cakes and people.</p>
+                    <div class="flex flex-col sm:flex-row gap-2 mt-2">
+                        <input type="number" id="runtime-cakes" placeholder="Cakes" class="border p-2 rounded w-full">
+                        <input type="number" id="runtime-people" placeholder="People" class="border p-2 rounded w-full">
+                    </div>
+                    <button id="run-runtime-test" class="btn btn-primary mt-4">Run Test</button>
+                    <div id="runtime-feedback" class="feedback hidden"></div>
+                </div>
+            </section>
+
+            <!-- Section 2: Types of Test Data -->
+            <section id="test-data" class="mt-8">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">2. Types of Test Data</h2>
+                <div class="simulation-card">
+                    <p class="text-slate-600 mb-4">Consider a program that accepts a whole number between <strong>10 and 50 (inclusive)</strong>. We use different types of data to test it robustly.</p>
+                    
+                    <div class="space-y-4 mt-6 mb-6">
+                        <div>
+                            <h4 class="font-semibold text-lg text-slate-800">Normal Data</h4>
+                            <p class="text-slate-600">Valid, typical data to check for correct outputs.</p>
+                            <p class="mt-1"><span class="font-mono text-sm bg-slate-100 text-slate-700 py-1 px-2 rounded">Examples:</span> <code class="font-semibold">20</code>, <code class="font-semibold">35</code>, <code class="font-semibold">49</code></p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg text-slate-800">Extreme / Boundary Data</h4>
+                            <p class="text-slate-600">Data at the very limits of the valid range (and just outside) to catch comparison errors.</p>
+                            <p class="mt-1"><span class="font-mono text-sm bg-slate-100 text-slate-700 py-1 px-2 rounded">Valid:</span> <code class="font-semibold">10</code>, <code class="font-semibold">50</code> | <span class="font-mono text-sm bg-slate-100 text-slate-700 py-1 px-2 rounded">Invalid:</span> <code class="font-semibold">9</code>, <code class="font-semibold">51</code></p>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-lg text-slate-800">Abnormal Data</h4>
+                            <p class="text-slate-600">Data of the wrong type or format that the program should handle gracefully.</p>
+                            <p class="mt-1"><span class="font-mono text-sm bg-slate-100 text-slate-700 py-1 px-2 rounded">Examples:</span> <code class="font-semibold">"hello"</code>, <code class="font-semibold">-100</code>, <code class="font-semibold">3.14</code></p>
+                        </div>
+                    </div>
+                    <hr class="my-6">
+                    <p class="mt-4 font-semibold">Try it yourself! Enter a value to see its classification:</p>
+                    <div class="flex flex-col sm:flex-row gap-2 mt-2">
+                        <input type="text" id="test-data-input" placeholder="Enter a value" class="border p-2 rounded w-full">
+                        <button id="run-data-test" class="btn btn-primary">Check Data Type</button>
+                    </div>
+                    <div id="data-feedback" class="feedback hidden"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Tab Content: Trace Tables -->
+        <div id="tracetables" class="tab-content">
+            <section id="trace-table-section">
+                <h2 class="text-2xl font-bold text-slate-700 mb-4">Interactive Trace Tables</h2>
+                
+                <!-- Trace Table Example 1 -->
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-2">Example 1: A `WHILE` Loop</h3>
+                    <p class="text-slate-600 mb-4">Trace this algorithm that uses a `WHILE` loop to see how variables change.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Algorithm:</h4>
+                            <pre><code class="trace-code-block" id="trace-code-block-1">
+<span data-line-id="1-1">Num ← 3</span>
+<span data-line-id="1-2">N ← 0</span>
+<span data-line-id="1-3">WHILE N < 4 DO</span>
+<span data-line-id="1-4">  Num ← Num + N</span>
+<span data-line-id="1-5">  N ← N + 1</span>
+<span data-line-id="1-6">END WHILE</span>
+<span data-line-id="1-7">OUTPUT Num</span>
+                            </code></pre>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Trace Table:</h4>
+                            <table class="w-full trace-table">
+                                <thead><tr><th>Step</th><th>Line</th><th>N</th><th>Num</th><th>Condition</th><th>Output</th></tr></thead>
+                                <tbody id="trace-table-body-1"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button id="trace-next-step-1" class="btn btn-primary">Start Trace</button>
+                        <button id="trace-reset-1" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Trace Table Example 2 -->
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-2">Example 2: A `FOR` Loop</h3>
+                    <p class="text-slate-600 mb-4">This example uses a `FOR` loop. Watch how `Count` increments automatically.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Algorithm:</h4>
+                            <pre><code class="trace-code-block" id="trace-code-block-2">
+<span data-line-id="2-1">Total ← 0</span>
+<span data-line-id="2-2">FOR Count ← 1 TO 3</span>
+<span data-line-id="2-3">  Total ← Total + (Count * 2)</span>
+<span data-line-id="2-4">END FOR</span>
+<span data-line-id="2-5">OUTPUT Total</span>
+                            </code></pre>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Trace Table:</h4>
+                            <table class="w-full trace-table">
+                                <thead><tr><th>Step</th><th>Line</th><th>Count</th><th>Total</th><th>Output</th></tr></thead>
+                                <tbody id="trace-table-body-2"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button id="trace-next-step-2" class="btn btn-primary">Start Trace</button>
+                        <button id="trace-reset-2" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Trace Table Example 3 -->
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-2">Example 3: `IF/ELSEIF/ELSE` Logic</h3>
+                    <p class="text-slate-600 mb-4">This trace shows how conditional statements work. The program will only execute the code inside the first true condition.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <h4 class="font-semibold text-slate-800 mb-2">Algorithm:</h4>
+                            <pre><code class="trace-code-block" id="trace-code-block-3">
+<span data-line-id="3-1">Score ← 75</span>
+<span data-line-id="3-2">Grade ← ""</span>
+<span data-line-id="3-3">IF Score > 80 THEN</span>
+<span data-line-id="3-4">  Grade ← "Distinction"</span>
+<span data-line-id="3-5">ELSEIF Score > 65 THEN</span>
+<span data-line-id="3-6">  Grade ← "Merit"</span>
+<span data-line-id="3-7">ELSE</span>
+<span data-line-id="3-8">  Grade ← "Pass"</span>
+<span data-line-id="3-9">END IF</span>
+<span data-line-id="3-10">OUTPUT Grade</span>
+                            </code></pre>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Trace Table:</h4>
+                            <table class="w-full trace-table">
+                                <thead><tr><th>Step</th><th>Line</th><th>Score</th><th>Grade</th><th>Condition</th><th>Output</th></tr></thead>
+                                <tbody id="trace-table-body-3"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button id="trace-next-step-3" class="btn btn-primary">Start Trace</button>
+                        <button id="trace-reset-3" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                 <!-- Trace Table Example 4 -->
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-2">Example 4: Nested Loops</h3>
+                    <p class="text-slate-600 mb-4">Trace a nested loop. Notice how the inner loop (variable `y`) completes all its iterations for each single iteration of the outer loop (variable `x`).</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <h4 class="font-semibold text-slate-800 mb-2">Algorithm:</h4>
+                            <pre><code class="trace-code-block" id="trace-code-block-4">
+<span data-line-id="4-1">FOR x ← 1 TO 2</span>
+<span data-line-id="4-2">  FOR y ← 1 TO 2</span>
+<span data-line-id="4-3">    OUTPUT x, ",", y</span>
+<span data-line-id="4-4">  END FOR</span>
+<span data-line-id="4-5">END FOR</span>
+                            </code></pre>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Trace Table:</h4>
+                            <table class="w-full trace-table">
+                                <thead><tr><th>Step</th><th>Line</th><th>x</th><th>y</th><th>Output</th></tr></thead>
+                                <tbody id="trace-table-body-4"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button id="trace-next-step-4" class="btn btn-primary">Start Trace</button>
+                        <button id="trace-reset-4" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+                <!-- Trace Table Example 5 -->
+                <div class="simulation-card">
+                    <h3 class="text-xl font-semibold text-slate-800 mb-2">Example 5: Array Processing</h3>
+                    <p class="text-slate-600 mb-4">This algorithm finds the largest number in a list (array). Watch how `MaxValue` is updated only when a larger number is found.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                             <h4 class="font-semibold text-slate-800 mb-2">Algorithm:</h4>
+                            <pre><code class="trace-code-block" id="trace-code-block-5">
+<span data-line-id="5-1">Numbers ← [12, 5, 23, 9]</span>
+<span data-line-id="5-2">MaxValue ← Numbers[0]</span>
+<span data-line-id="5-3">FOR i ← 1 TO 3</span>
+<span data-line-id="5-4">  IF Numbers[i] > MaxValue THEN</span>
+<span data-line-id="5-5">    MaxValue ← Numbers[i]</span>
+<span data-line-id="5-6">  END IF</span>
+<span data-line-id="5-7">END FOR</span>
+<span data-line-id="5-8">OUTPUT MaxValue</span>
+                            </code></pre>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-800 mb-2">Trace Table:</h4>
+                            <table class="w-full trace-table">
+                                <thead><tr><th>Step</th><th>Line</th><th>i</th><th>Numbers[i]</th><th>MaxValue</th><th>Condition</th><th>Output</th></tr></thead>
+                                <tbody id="trace-table-body-5"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button id="trace-next-step-5" class="btn btn-primary">Start Trace</button>
+                        <button id="trace-reset-5" class="btn btn-secondary">Reset</button>
+                    </div>
+                </div>
+
+            </section>
+        </div>
+    </div>
+
+    <script>
+    // --- Helper Functions ---
+    function openTab(tabName) {
+        const tabContents = document.querySelectorAll('.tab-content');
+        tabContents.forEach(content => content.classList.remove('active'));
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabName).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    class TraceTableSimulator {
+        constructor(id, initialState, sequence, renderRow) {
+            this.id = id;
+            this.initialState = initialState;
+            this.sequence = sequence;
+            this.renderRow = renderRow;
+
+            this.nextBtn = document.getElementById(`trace-next-step-${id}`);
+            this.resetBtn = document.getElementById(`trace-reset-${id}`);
+            this.tbody = document.getElementById(`trace-table-body-${id}`);
+            this.codeBlock = document.getElementById(`trace-code-block-${id}`);
+
+            this.nextBtn.addEventListener('click', () => this.nextStep());
+            this.resetBtn.addEventListener('click', () => this.reset());
+            this.reset();
+        }
+
+        reset() {
+            this.state = JSON.parse(JSON.stringify(this.initialState)); // Deep copy
+            this.tbody.innerHTML = '';
+            this.highlightCodeLine(0);
+            this.nextBtn.textContent = 'Start Trace';
+            this.nextBtn.disabled = false;
+        }
+
+        highlightCodeLine(lineNumber) {
+            this.codeBlock.querySelectorAll('span').forEach(line => line.classList.remove('highlight-code-line'));
+            if (lineNumber > 0) {
+                const lineEl = this.codeBlock.querySelector(`[data-line-id='${this.id}-${lineNumber}']`);
+                if (lineEl) lineEl.classList.add('highlight-code-line');
+            }
+        }
+
+        nextStep() {
+            if (this.state.isFinished) return;
+            this.nextBtn.textContent = 'Next Step';
+
+            const lineAction = this.sequence[this.state.step];
+            lineAction(this.state);
+
+            const newRow = this.tbody.insertRow();
+            newRow.innerHTML = this.renderRow(this.state);
+            
+            this.tbody.querySelectorAll('tr').forEach(row => row.classList.remove('highlight-row'));
+            newRow.classList.add('highlight-row');
+            
+            this.highlightCodeLine(this.state.line);
+            
+            this.state.step++;
+            if (this.state.step >= this.sequence.length) {
+                this.state.isFinished = true;
+                this.nextBtn.disabled = true;
+                this.nextBtn.textContent = 'Finished';
+                this.highlightCodeLine(0);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- Section 1 & 2 Logic ---
+        document.getElementById('show-syntax-error').addEventListener('click', () => document.getElementById('syntax-feedback').classList.remove('hidden'));
+        document.getElementById('run-logic-test').addEventListener('click', () => {
+            const num1 = parseInt(document.getElementById('logic-num1').value), num2 = parseInt(document.getElementById('logic-num2').value), num3 = parseInt(document.getElementById('logic-num3').value);
+            const feedbackEl = document.getElementById('logic-feedback');
+            if (isNaN(num1) || isNaN(num2) || isNaN(num3)) {
+                feedbackEl.textContent = 'Please enter three valid numbers.';
+                feedbackEl.className = 'feedback feedback-incorrect';
+                feedbackEl.classList.remove('hidden');
+                return;
+            }
+            let maxNum = (num1 >= num2 && num1 >= num3) ? num3 : (num2 >= num3) ? num2 : num3; // Flawed logic
+            const correctMax = Math.max(num1, num2, num3);
+            feedbackEl.innerHTML = `<strong>Program Output:</strong> ${maxNum}<br><strong>Correct Answer:</strong> ${correctMax}`;
+            feedbackEl.className = maxNum === correctMax ? 'feedback feedback-correct' : 'feedback feedback-incorrect';
+            feedbackEl.innerHTML += maxNum === correctMax ? '<br>The logic worked, but is still flawed! Try making Num1 the largest.' : '<br><strong>Error Found!</strong> The algorithm failed.';
+            feedbackEl.classList.remove('hidden');
+        });
+        document.getElementById('run-runtime-test').addEventListener('click', () => {
+            const people = parseInt(document.getElementById('runtime-people').value);
+            const feedbackEl = document.getElementById('runtime-feedback');
+            if (people === 0) {
+                feedbackEl.innerHTML = '<strong>CRASH!</strong> A "ZeroDivisionError" occurred. Cannot divide by zero.';
+                feedbackEl.className = 'feedback feedback-incorrect';
+            } else if (isNaN(people)) {
+                feedbackEl.innerHTML = 'Please enter a valid number.';
+                feedbackEl.className = 'feedback feedback-incorrect';
+            } else {
+                feedbackEl.textContent = `Program ran successfully.`;
+                feedbackEl.className = 'feedback feedback-correct';
+            }
+            feedbackEl.classList.remove('hidden');
+        });
+        document.getElementById('run-data-test').addEventListener('click', () => {
+            const value = document.getElementById('test-data-input').value.trim();
+            const num = parseInt(value);
+            let message = '';
+            if (value === '' || isNaN(num) || value.includes('.')) {
+                message = `<strong>"${value}" is Abnormal Data.</strong> It's not a whole number.`;
+            } else if (num < 10 || num > 50) {
+                message = (num === 9 || num === 51) ? `<strong>${num} is Boundary Data (Invalid).</strong>` : `<strong>${num} is Abnormal Data.</strong>`;
+            } else {
+                message = (num === 10 || num === 50) ? `<strong>${num} is Extreme/Boundary Data (Valid).</strong>` : `<strong>${num} is Normal Data.</strong>`;
+            }
+            const feedbackEl = document.getElementById('data-feedback');
+            feedbackEl.innerHTML = message;
+            feedbackEl.className = 'feedback feedback-info';
+            feedbackEl.classList.remove('hidden');
+        });
+
+        // --- Trace Table Simulators ---
+
+        // Trace Table 1: WHILE Loop
+        new TraceTableSimulator(1, 
+            { step: 0, line: 0, N: '?', Num: '?', condition: '?', output: '', isFinished: false },
+            [
+                s => { s.line = 1; s.Num = 3; },
+                s => { s.line = 2; s.N = 0; },
+                s => { s.line = 3; s.condition = s.N < 4; },
+                s => { s.line = 4; s.Num += s.N; },
+                s => { s.line = 5; s.N += 1; },
+                s => { s.line = 3; s.condition = s.N < 4; },
+                s => { s.line = 4; s.Num += s.N; },
+                s => { s.line = 5; s.N += 1; },
+                s => { s.line = 3; s.condition = s.N < 4; },
+                s => { s.line = 4; s.Num += s.N; },
+                s => { s.line = 5; s.N += 1; },
+                s => { s.line = 3; s.condition = s.N < 4; },
+                s => { s.line = 4; s.Num += s.N; },
+                s => { s.line = 5; s.N += 1; },
+                s => { s.line = 3; s.condition = s.N < 4; },
+                s => { s.line = 7; s.output = s.Num; },
+            ],
+            s => `<td>${s.step + 1}</td><td>${s.line}</td><td>${s.N}</td><td>${s.Num}</td><td>${s.condition === '?' ? '?' : String(s.condition).toUpperCase()}</td><td>${s.output}</td>`
+        );
+        
+        // Trace Table 2: FOR Loop
+        new TraceTableSimulator(2,
+            { step: 0, line: 0, Count: '?', Total: '?', output: '', isFinished: false },
+            [
+                s => { s.line = 1; s.Total = 0; },
+                s => { s.line = 2; s.Count = 1; },
+                s => { s.line = 3; s.Total += (s.Count * 2); },
+                s => { s.line = 2; s.Count = 2; },
+                s => { s.line = 3; s.Total += (s.Count * 2); },
+                s => { s.line = 2; s.Count = 3; },
+                s => { s.line = 3; s.Total += (s.Count * 2); },
+                s => { s.line = 4; },
+                s => { s.line = 5; s.output = s.Total; },
+            ],
+            s => `<td>${s.step + 1}</td><td>${s.line}</td><td>${s.Count}</td><td>${s.Total}</td><td>${s.output}</td>`
+        );
+
+        // Trace Table 3: IF/ELSEIF/ELSE
+        new TraceTableSimulator(3,
+            { step: 0, line: 0, Score: '?', Grade: '?', condition: '?', output: '', isFinished: false },
+            [
+                s => { s.line = 1; s.Score = 75; },
+                s => { s.line = 2; s.Grade = ""; },
+                s => { s.line = 3; s.condition = s.Score > 80; },
+                s => { s.line = 5; s.condition = s.Score > 65; },
+                s => { s.line = 6; s.Grade = "Merit"; },
+                s => { s.line = 9; s.condition = 'N/A';},
+                s => { s.line = 10; s.output = s.Grade; },
+            ],
+            s => `<td>${s.step + 1}</td><td>${s.line}</td><td>${s.Score}</td><td>${s.Grade}</td><td>${s.condition === '?' ? '?' : String(s.condition).toUpperCase()}</td><td>${s.output}</td>`
+        );
+
+        // Trace Table 4: Nested Loops
+        new TraceTableSimulator(4,
+            { step: 0, line: 0, x: '?', y: '?', output: '', isFinished: false },
+            [
+                s => { s.line = 1; s.x = 1; },
+                s => { s.line = 2; s.y = 1; },
+                s => { s.line = 3; s.output = `${s.x},${s.y}`; },
+                s => { s.line = 2; s.y = 2; },
+                s => { s.line = 3; s.output = `${s.x},${s.y}`; },
+                s => { s.line = 4; s.y = '?';},
+                s => { s.line = 1; s.x = 2; },
+                s => { s.line = 2; s.y = 1; },
+                s => { s.line = 3; s.output = `${s.x},${s.y}`; },
+                s => { s.line = 2; s.y = 2; },
+                s => { s.line = 3; s.output = `${s.x},${s.y}`; },
+                s => { s.line = 4; s.y = '?';},
+                s => { s.line = 5; s.x = '?';},
+            ],
+            s => `<td>${s.step + 1}</td><td>${s.line}</td><td>${s.x}</td><td>${s.y}</td><td>${s.output}</td>`
+        );
+
+        // Trace Table 5: Array Processing
+        const numbersArray = [12, 5, 23, 9];
+        new TraceTableSimulator(5,
+            { step: 0, line: 0, i: '?', currentValue: '?', MaxValue: '?', condition: '?', output: '', isFinished: false },
+            [
+                s => { s.line = 1; },
+                s => { s.line = 2; s.MaxValue = numbersArray[0]; },
+                s => { s.line = 3; s.i = 1; s.currentValue = numbersArray[s.i];},
+                s => { s.line = 4; s.condition = s.currentValue > s.MaxValue; },
+                s => { s.line = 3; s.i = 2; s.currentValue = numbersArray[s.i];},
+                s => { s.line = 4; s.condition = s.currentValue > s.MaxValue; },
+                s => { s.line = 5; s.MaxValue = s.currentValue; },
+                s => { s.line = 6; },
+                s => { s.line = 3; s.i = 3; s.currentValue = numbersArray[s.i];},
+                s => { s.line = 4; s.condition = s.currentValue > s.MaxValue; },
+                s => { s.line = 6; },
+                s => { s.line = 7; },
+                s => { s.line = 8; s.output = s.MaxValue; },
+            ],
+            s => `<td>${s.step + 1}</td><td>${s.line}</td><td>${s.i}</td><td>${s.currentValue}</td><td>${s.MaxValue}</td><td>${s.condition === '?' ? '?' : String(s.condition).toUpperCase()}</td><td>${s.output}</td>`
+        );
+    });
+    </script>
+</body>
+</html>
+

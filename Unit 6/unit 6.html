@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Computer Science - Unit 4 Software</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.4s ease-out forwards; }
+        @media print { 
+            .no-print { display: none !important; } 
+            .print-only { display: block !important; } 
+            textarea { border: 1px solid #ccc; resize: none; overflow: hidden; } 
+            body { background: white; color: black; }
+        }
+        .tree { display: flex; justify-content: center; padding-top: 20px; overflow-x: auto; padding-bottom: 20px;}
+        .tree ul { position: relative; padding-top: 20px; display: flex; justify-content: center; }
+        .tree li { list-style-type: none; position: relative; padding: 20px 10px 0 10px; text-align: center; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #cbd5e1; width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid #cbd5e1; }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 2px solid #cbd5e1; border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #cbd5e1; width: 0; height: 20px; }
+        .tree-node { display: inline-block; padding: 10px 16px; text-decoration: none; border-radius: 8px; transition: all 0.3s; cursor: pointer; border: 1px solid rgba(0,0,0,0.05); position: relative; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        .tree-node:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS ---
+        const Icon = ({ d, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{d}</svg>
+        );
+        
+        const icons = {
+            book: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+            cpu: <><rect x="4" y="4" width="16" height="16" rx="2" ry="2" /><rect x="9" y="9" width="6" height="6" /><line x1="9" y1="1" x2="9" y2="4" /><line x1="15" y1="1" x2="15" y2="4" /><line x1="9" y1="20" x2="9" y2="23" /><line x1="15" y1="20" x2="15" y2="23" /><line x1="20" y1="9" x2="23" y2="9" /><line x1="20" y1="14" x2="23" y2="14" /><line x1="1" y1="9" x2="4" y2="9" /><line x1="1" y1="14" x2="4" y2="14" /></>,
+            brain: <><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></>,
+            alert: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+            layers: <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+            refresh: <><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></>,
+            check: <polyline points="20 6 9 17 4 12"/>,
+            x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+            code: <><polyline points="16 18 22 12 16 6" /><polyline points="8 6 2 12 8 18" /></>,
+            checksq: <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+            file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+            dl: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></>,
+            map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
+            target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>,
+            pen: <><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></>
+        };
+
+        // --- DATA ---
+        const CONCEPT_MAP_DATA = {
+            id:'root',label:'Unit 4: Software',color:'bg-indigo-600 text-white',desc:"Understanding types of software, interrupts, and how code is translated.",children:[
+                {id:'types',label:'Software Types',color:'bg-blue-100 text-blue-900 border-blue-300',desc:"Categories of software.",children:[
+                    {id:'sys',label:'System Software',desc:'Manages computer hardware (e.g., OS, Drivers, Utilities).',expectations:['Define System Software','Examples: OS, Device Drivers']},
+                    {id:'app',label:'Application Software',desc:'Performs tasks for the user (e.g., Word Processor, Games).',expectations:['Define Application Software','Run on top of OS']},
+                    {id:'firm',label:'Firmware',desc:'Permanent software programmed into read-only memory (ROM).',expectations:['BIOS/Bootstrap','Starts the computer']}
+                ]},
+                {id:'os',label:'Operating System',color:'bg-emerald-100 text-emerald-900 border-emerald-300',desc:"Manages the system resources.",children:[
+                    {id:'mgmt',label:'Management',desc:'Memory, File, Security, Hardware, User Interface.',expectations:['List OS functions','Describe memory management']},
+                    {id:'int',label:'Interrupts',desc:'Signals that stop the CPU to handle a task.',expectations:['Hardware vs Software interrupts','The role of the ISR (Interrupt Service Routine)']}
+                ]},
+                {id:'lang',label:'Prog. Languages',color:'bg-pink-100 text-pink-900 border-pink-300',desc:"How humans communicate with computers.",children:[
+                    {id:'hl',label:'High-Level',desc:'Human-friendly (Python, Java). Machine independent.',expectations:['Advantages: Easier to write/debug','Disadvantage: Needs translation, slower']},
+                    {id:'ll',label:'Low-Level',desc:'Machine-friendly (Assembly, Machine Code).',expectations:['Advantages: Efficient, Hardware control','Disadvantage: Hard to read, machine specific']}
+                ]},
+                {id:'trans',label:'Translators',color:'bg-amber-100 text-amber-900 border-amber-300',desc:"Converting source code to machine code.",children:[
+                    {id:'comp',label:'Compiler',desc:'Translates whole code at once to executable.',expectations:['Creates .exe','Reports errors at end','Fast execution']},
+                    {id:'inter',label:'Interpreter',desc:'Translates line by line.',expectations:['Runs immediately','Stops at first error','Good for development']},
+                    {id:'ass',label:'Assembler',desc:'Translates Assembly to Machine Code.',expectations:['Used for Low-Level languages']}
+                ]}
+            ]
+        };
+        
+        const RECALL_DATA = [
+            {id:'recall-types',title:'Software Types',prompt:'Explain the difference between System Software and Application Software. What is Firmware?',keyIdeas:["System Software: Runs the computer (OS, Drivers).","Application Software: Runs user tasks (Word, Games).","Firmware: Permanent software on ROM (BIOS/Bootloader).","Order: Hardware -> Firmware -> OS -> Application."]},
+            {id:'recall-trans',title:'Translators',prompt:'Compare Compilers and Interpreters. How do they handle errors? Which produces an executable?',keyIdeas:["Compiler: Translates all at once. Creates executable (.exe). Reports list of errors at end. Fast to run.","Interpreter: Translates line-by-line. No executable. Stops at first error. Good for debugging."]},
+            {id:'recall-lang',title:'High vs Low Level',prompt:'Why would a programmer choose a Low-Level language over a High-Level one? Give advantages of both.',keyIdeas:["High-Level: Easier to read/write, machine independent (portable), easier debugging.","Low-Level: Direct hardware control, highly efficient/fast, memory efficient. Used in embedded systems (e.g., vending machines)."]},
+            {id:'recall-int',title:'Interrupts',prompt:'What is an interrupt? Give examples of Hardware and Software interrupts. What happens when one occurs?',keyIdeas:["Interrupt: Signal to CPU to stop current task.","Hardware: Key press, mouse click, printer out of paper.","Software: Division by zero, file not found.","Process: 1. Suspend task 2. Save registers/state 3. Run ISR 4. Restore state 5. Resume task."]}
+        ];
+        
+        const VOCABULARY = [
+            {term:"System Software",def:"Software that provides the services the computer requires (e.g., OS, Utilities)."},
+            {term:"Application Software",def:"Software that allows the user to perform specific tasks (e.g., Word, Browser)."},
+            {term:"Firmware",def:"Permanent software programmed into read-only memory (ROM), e.g., BIOS."},
+            {term:"Bootloader",def:"A program that loads the operating system when the computer is turned on."},
+            {term:"Interrupt",def:"A signal sent to the CPU to stop the current process and handle a high-priority task."},
+            {term:"ISR",def:"Interrupt Service Routine - the software that handles a specific interrupt."},
+            {term:"High-Level Language",def:"Programming language close to human language (e.g., Python). Portable."},
+            {term:"Low-Level Language",def:"Programming language close to machine code (e.g., Assembly). Specific to hardware."},
+            {term:"Compiler",def:"Translator that converts high-level code into machine code all at once. Creates an executable."},
+            {term:"Interpreter",def:"Translator that converts and executes high-level code line by line. No executable created."},
+            {term:"Assembler",def:"Translator that converts Assembly Language into Machine Code."},
+            {term:"IDE",def:"Integrated Development Environment. Provides editor, debugger, and translator in one interface."},
+            {term:"Machine Code",def:"Binary instructions (0s and 1s) that the CPU can execute directly."},
+            {term:"Mnemonics",def:"Short codes used in Assembly Language (e.g., ADD, SUB, LDA)."}
+        ];
+        
+        const EXAM_QUESTIONS = [
+            {id:"Q1",question:"A programmer has designed a 3D interactive game. It needs to run efficiently but be developed quickly.\n(a) Should they use High-level or Low-level?\n(b) Explain two reasons for your choice.",marks:4,modelAnswer:"(a) High-level language.\n(b) 1. Faster development time due to English-like syntax.\n2. Built-in libraries for 3D graphics make it easier.\n(Note: Low-level is more efficient, but High-level meets the 'developed as soon as possible' criteria better)."},
+            {id:"Q2",question:"Describe the operation of a Compiler vs an Interpreter.",marks:4,modelAnswer:"Compiler: Translates the whole program at once. Creates an executable file. Reports all errors at the end.\nInterpreter: Translates and runs code line by line. Stops at the first error. Does not create an executable."},
+            {id:"Q3",question:"A programmer is writing code for a vending machine.\n(a) Describe what is meant by a low-level language.\n(b) Give two reasons to use it here.",marks:4,modelAnswer:"(a) A language that relates closely to the computer's hardware (Machine code/Assembly).\n(b) 1. To directly manipulate the hardware (motors/sensors).\n2. The code needs to be memory efficient/fast execution."},
+            {id:"Q4",question:"Tick which statement is correct about High-level languages:\nA. Mnemonics are used.\nB. Harder to debug than Low-level.\nC. Machine Independent.\nD. Directly manipulates hardware.",marks:1,modelAnswer:"C. The computer program is machine independent."},
+            {id:"Q5",question:"An IDE is used to create programs. Apart from a compiler, give three common functions of an IDE.",marks:3,modelAnswer:"1. Code Editor / Syntax Highlighting.\n2. Debugger (step-through, breakpoints).\n3. Auto-completion / IntelliSense."},
+            {id:"Q6",question:"Interrupts can be Hardware or Software based.\n(a) Give two examples of Hardware interrupts.\n(b) Give two examples of Software interrupts.",marks:4,modelAnswer:"(a) Hardware: Key press, Mouse click, Printer out of paper, Buffer full.\n(b) Software: Division by zero error, Stack overflow, File not found."},
+            {id:"Q7",question:"Complete the table:\n1. Physical components of a computer.\n2. Software providing user services (e.g. Word).\n3. Software managing main functions (Files/Memory).\n4. Software stored in ROM (BIOS).",marks:4,modelAnswer:"1. Hardware\n2. Application Software\n3. System Software (Operating System)\n4. Firmware"},
+            {id:"Q8",question:"State two advantages of using High-level language over Low-level.",marks:2,modelAnswer:"1. Easier to read/write/understand (close to English).\n2. Portable / Machine Independent (runs on different hardware)."},
+            {id:"Q9",question:"Explain the role of the Interrupt Service Routine (ISR).",marks:3,modelAnswer:"When an interrupt occurs, the CPU saves its current state (registers). The ISR is a small program loaded to handle the specific interrupt (e.g., read key press). Once finished, the CPU restores the previous state and resumes."},
+            {id:"Q10",question:"Identify the type of translator that:\n(i) Executes line by line.\n(ii) Creates an executable file.",marks:2,modelAnswer:"(i) Interpreter\n(ii) Compiler"}
+        ];
+        
+        const CHECKLIST_DATA = [
+            {category:"1. Software Types",items:["System vs Application Software","Firmware & Bootloader","Role of the OS"]},
+            {category:"2. Programming Languages",items:["High-level vs Low-level features","Assembly Language & Mnemonics","Advantages/Disadvantages of each"]},
+            {category:"3. Translators",items:["Compiler operations","Interpreter operations","Assembler operations","Comparison (Speed, Error reporting)"]},
+            {category:"4. System Operations",items:["Interrupts (Hardware/Software)","Interrupt Service Routine (ISR)","IDE Functions"]}
+        ];
+        
+        const MASTER_QUIZ_POOL = [
+            {question:"Which software creates an executable file?",options:["Interpreter","Compiler","Assembler","IDE"],correct:1},
+            {question:"Which language uses Mnemonics?",options:["Python","High-level","Assembly","Machine Code"],correct:2},
+            {question:"Which is an example of System Software?",options:["Video Game","Web Browser","Operating System","Spreadsheet"],correct:2},
+            {question:"Where is Firmware stored?",options:["RAM","Hard Drive","ROM","Cache"],correct:2},
+            {question:"What triggers a Software Interrupt?",options:["Key press","Mouse click","Division by zero","Printer jam"],correct:2},
+            {question:"Which translator reports errors at the end?",options:["Interpreter","Compiler","Assembler","Debugger"],correct:1},
+            {question:"What does IDE stand for?",options:["Internal Data Exchange","Integrated Development Environment","Input Data Error","Internal Drive Error"],correct:1},
+            {question:"Which language is 'Machine Independent'?",options:["Assembly","Machine Code","High-level","Binary"],correct:2},
+            {question:"What happens first when an interrupt occurs?",options:["Run ISR","Save CPU state","Crash computer","Ignore it"],correct:1},
+            {question:"Which is NOT a function of an OS?",options:["Memory Management","File Management","Editing Photos","Handling Interrupts"],correct:2},
+            {question:"Low-level languages are best for?",options:["Websites","Mobile Apps","Embedded Systems","Data Analysis"],correct:2},
+            {question:"Which translator runs line-by-line?",options:["Compiler","Interpreter","Assembler","Linker"],correct:1},
+            {question:"BIOS is an example of?",options:["Application","Firmware","Hardware","Utility"],correct:1},
+            {question:"A printer running out of paper causes a?",options:["Software Interrupt","Hardware Interrupt","System Crash","Deadlock"],correct:1},
+            {question:"Why use High-level languages?",options:["Hardware control","Faster execution","Easier to debug","Uses less memory"],correct:2},
+            {question:"Machine code consists of?",options:["English words","Mnemonics","0s and 1s","HTML tags"],correct:2},
+            {question:"Which is Application Software?",options:["Linux","Windows","PhotoShop","BIOS"],correct:2},
+            {question:"What manages the Fetch-Execute cycle?",options:["HDD","RAM","Control Unit","Bus"],correct:2},
+            {question:"The software that handles an interrupt is called?",options:["ISR","IDE","CPU","BIOS"],correct:0},
+            {question:"Bootloader is responsible for?",options:["Loading the App","Loading the OS","Saving files","Connecting WiFi"],correct:1}
+        ];
+
+        // --- COMPONENTS ---
+
+        const ConceptMap = () => {
+            const [selectedNode, setSelectedNode] = useState(null);
+            
+            const TreeNode = ({ node, isRoot = false }) => (
+                <li className="relative">
+                    <div 
+                        onClick={() => setSelectedNode(node)} 
+                        className={`tree-node border shadow-sm ${node.color || 'bg-white text-slate-700 border-slate-300'} ${isRoot ? 'font-extrabold text-xl px-8 py-4' : 'text-sm font-medium'} hover:bg-slate-50 transition-colors`}
+                    >
+                        {node.label}
+                    </div>
+                    {node.children && (
+                        <ul>
+                            {node.children.map(child => <TreeNode key={child.id} node={child} />)}
+                        </ul>
+                    )}
+                </li>
+            );
+
+            return (
+                <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6">
+                    <div className="mb-6 flex justify-between items-center border-b pb-4">
+                        <div>
+                            <h2 className="text-2xl font-bold text-slate-800">Unit 4 Concept Map</h2>
+                            <p className="text-sm text-slate-500">Interactive syllabus explorer</p>
+                        </div>
+                    </div>
+                    <div className="tree w-full overflow-x-auto min-h-[400px]">
+                        <ul><TreeNode node={CONCEPT_MAP_DATA} isRoot={true} /></ul>
+                    </div>
+                    {selectedNode && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setSelectedNode(null)}>
+                            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full transform transition-all scale-100" onClick={e => e.stopPropagation()}>
+                                <div className={`text-xl font-bold mb-4 p-4 rounded-lg flex justify-between items-center ${selectedNode.color || 'bg-slate-100 text-slate-800'}`}>
+                                    {selectedNode.label}
+                                    <button onClick={() => setSelectedNode(null)} className="text-sm opacity-60 hover:opacity-100 bg-black/10 rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+                                </div>
+                                <div className="space-y-6">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-2 text-indigo-700 font-bold uppercase text-xs tracking-wider"><Icon d={icons.book} className="w-4 h-4"/> Overview</div>
+                                        <p className="text-slate-700 leading-relaxed bg-slate-50 p-3 rounded border border-slate-100">{selectedNode.desc}</p>
+                                    </div>
+                                    {selectedNode.expectations && (
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-3 text-emerald-700 font-bold uppercase text-xs tracking-wider"><Icon d={icons.target} className="w-4 h-4"/> Exam Expectations</div>
+                                            <ul className="space-y-2">
+                                                {selectedNode.expectations.map((exp, i) => (
+                                                    <li key={i} className="flex gap-3 text-sm text-slate-700 items-start"><Icon d={icons.check} className="w-5 h-5 text-emerald-500 shrink-0"/><span>{exp}</span></li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="mt-8 flex justify-end">
+                                    <button onClick={() => setSelectedNode(null)} className="bg-slate-800 text-white px-6 py-2 rounded-lg hover:bg-slate-900 font-medium text-sm transition-colors">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ActiveRecall = () => {
+            const [inputs, setInputs] = useState({});
+            const [showKeys, setShowKeys] = useState({});
+            const generatePDF = () => {
+                const element = document.getElementById('active-recall-content');
+                if (!element) return;
+                const originalKeys = {...showKeys}; const allKeys = {}; RECALL_DATA.forEach(item => allKeys[item.id] = true); setShowKeys(allKeys);
+                setTimeout(() => { window.html2pdf().set({margin: 0.5, filename: 'IGCSE_Unit4_Recall.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }}).from(element).save().then(() => setShowKeys(originalKeys)); }, 100);
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div><h2 className="text-3xl font-extrabold flex items-center gap-3"><Icon d={icons.pen} className="w-8 h-8"/> Active Recall</h2><p className="text-indigo-100 mt-2 text-lg">Test your knowledge. Type then check.</p></div>
+                        <button onClick={generatePDF} className="bg-white text-indigo-600 px-6 py-3 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-50 shadow-md transition-transform hover:scale-105"><Icon d={icons.dl} className="w-5 h-5"/> Save PDF</button>
+                    </div>
+                    <div id="active-recall-content" className="space-y-8">
+                        {RECALL_DATA.map((item, idx) => (
+                            <div key={item.id} className="bg-white p-8 rounded-xl shadow-md border border-slate-200 break-inside-avoid">
+                                <h3 className="text-xl font-bold text-slate-800 mb-3 border-b pb-2 flex justify-between"><span>{idx + 1}. {item.title}</span></h3>
+                                <p className="text-slate-600 mb-6 font-medium italic bg-slate-50 p-4 rounded-lg border border-slate-100">"{item.prompt}"</p>
+                                <textarea value={inputs[item.id] || ''} onChange={(e) => setInputs(p => ({...p, [item.id]: e.target.value}))} className="w-full p-4 border border-slate-300 rounded-lg bg-white focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 min-h-[150px] mb-4 text-slate-700 transition-shadow" placeholder="Type your explanation here..." />
+                                <div className="no-print flex justify-end"><button onClick={() => setShowKeys(p => ({...p, [item.id]: !p[item.id]}))} className={`px-4 py-2 rounded-lg font-bold text-sm transition-colors ${showKeys[item.id] ? "bg-slate-200 text-slate-700" : "bg-indigo-100 text-indigo-700 hover:bg-indigo-200"}`}>{showKeys[item.id] ? "Hide Key Ideas" : "Reveal Key Ideas"}</button></div>
+                                {showKeys[item.id] && <div className="mt-6 bg-emerald-50 border-l-4 border-emerald-500 p-6 rounded-r-lg animate-fade-in"><h4 className="font-bold text-emerald-800 mb-3 flex items-center gap-2"><Icon d={icons.check} className="w-5 h-5"/> Key Marking Points</h4><ul className="space-y-2 text-emerald-900">{item.keyIdeas.map((idea, i) => <li key={i} className="flex gap-2"><span className="font-bold">•</span>{idea}</li>)}</ul></div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Flashcards = () => {
+            const [idx, setIdx] = useState(0); const [flipped, setFlipped] = useState(false);
+            const next = () => { setFlipped(false); setTimeout(() => setIdx((idx + 1) % VOCABULARY.length), 200); };
+            const prev = () => { setFlipped(false); setTimeout(() => setIdx((idx - 1 + VOCABULARY.length) % VOCABULARY.length), 200); };
+            return (
+                <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl shadow-md border border-slate-200 min-h-[500px]">
+                    <div className="flex justify-between w-full max-w-lg mb-8 items-center"><h3 className="text-2xl font-bold flex gap-2 text-slate-800"><Icon d={icons.layers} className="w-6 h-6 text-indigo-600"/> Flashcards</h3><span className="text-sm font-bold bg-slate-100 px-3 py-1 rounded-full text-slate-500">{idx + 1} / {VOCABULARY.length}</span></div>
+                    <div className="relative w-full max-w-lg h-64 perspective-1000 cursor-pointer group mb-8" onClick={() => setFlipped(!flipped)}>
+                        <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
+                            <div className="absolute w-full h-full bg-indigo-600 text-white rounded-2xl flex items-center justify-center p-8 backface-hidden shadow-xl border-4 border-indigo-500 text-center"><div className="space-y-4"><h4 className="text-3xl font-extrabold">{VOCABULARY[idx].term}</h4><p className="text-indigo-200 text-sm font-medium animate-pulse">(Click to flip)</p></div></div>
+                            <div className="absolute w-full h-full bg-white text-slate-800 rounded-2xl flex items-center justify-center p-8 backface-hidden rotate-y-180 shadow-xl border-4 border-indigo-600 text-center"><p className="text-xl font-medium leading-relaxed">{VOCABULARY[idx].def}</p></div>
+                        </div>
+                    </div>
+                    <div className="flex gap-4"><button onClick={prev} className="px-6 py-3 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 font-bold transition-colors">Previous</button><button onClick={next} className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-bold shadow-lg shadow-indigo-200 transition-all hover:scale-105">Next Card</button></div>
+                </div>
+            );
+        };
+
+        // --- SUB-COMPONENTS FOR SIMULATIONS ---
+        
+        const InterruptSim = () => {
+            const [state, setState] = useState('idle'); // idle, running, interrupt, isr, restore
+            const [progress, setProgress] = useState(0);
+            const [intType, setIntType] = useState('');
+            const timer = useRef(null);
+
+            const startTask = () => {
+                setState('running');
+                setProgress(0);
+            };
+
+            const triggerInterrupt = (type) => {
+                if(state !== 'running') return;
+                clearInterval(timer.current);
+                setIntType(type);
+                setState('interrupt');
+                setTimeout(() => setState('isr'), 1500); // Wait 1.5s for save state
+            };
+
+            useEffect(() => {
+                if (state === 'running') {
+                    timer.current = setInterval(() => {
+                        setProgress(p => {
+                            if(p >= 100) { setState('idle'); return 0; }
+                            return p + 1;
+                        });
+                    }, 50);
+                } else if (state === 'isr') {
+                    // Simulate ISR running
+                    setTimeout(() => setState('restore'), 2000);
+                } else if (state === 'restore') {
+                    // Simulate restore
+                    setTimeout(() => setState('running'), 1500);
+                }
+                return () => clearInterval(timer.current);
+            }, [state]);
+
+            return (
+                <div className="max-w-2xl mx-auto space-y-6">
+                    <div className="text-center space-y-2">
+                        <h3 className="text-xl font-bold text-slate-800">CPU Interrupt Simulator</h3>
+                        <p className="text-slate-500">Run a task, then trigger an interrupt to see the cycle.</p>
+                    </div>
+
+                    {/* CPU Display */}
+                    <div className="bg-slate-900 rounded-xl p-6 text-green-400 font-mono text-sm shadow-2xl relative overflow-hidden min-h-[200px] flex flex-col justify-center items-center border-4 border-slate-700">
+                        {state === 'idle' && <div className="animate-pulse">CPU IDLE. WAITING FOR TASK...</div>}
+                        {state === 'running' && <div className="w-full space-y-2">
+                            <div className="flex justify-between text-xs text-slate-400"><span>EXECUTING TASK A</span><span>PC: 1011001</span></div>
+                            <div className="h-4 bg-slate-800 rounded-full overflow-hidden border border-slate-600"><div className="h-full bg-green-500 transition-all duration-75" style={{width: `${progress}%`}}></div></div>
+                            <div className="text-center text-xs text-slate-500">Fetch - Decode - Execute</div>
+                        </div>}
+                        {state === 'interrupt' && <div className="text-center space-y-2">
+                            <div className="text-red-500 font-bold text-lg animate-bounce">⚠️ INTERRUPT RECEIVED ({intType})</div>
+                            <div className="text-yellow-400">Suspanding Task A...</div>
+                            <div className="text-yellow-400">Pushing Registers to Stack...</div>
+                        </div>}
+                        {state === 'isr' && <div className="text-center space-y-2">
+                            <div className="text-blue-400 font-bold">RUNNING ISR (Handler)</div>
+                            <div className="text-slate-400">Handling {intType}...</div>
+                            <div className="animate-spin text-2xl mt-2">⚙️</div>
+                        </div>}
+                        {state === 'restore' && <div className="text-center text-emerald-400 space-y-2">
+                            <div>ISR COMPLETE.</div>
+                            <div>Popping Registers from Stack...</div>
+                            <div>Restoring Task A...</div>
+                        </div>}
+                    </div>
+
+                    {/* Controls */}
+                    <div className="grid grid-cols-3 gap-4">
+                        <button onClick={startTask} disabled={state !== 'idle'} className="bg-emerald-500 text-white p-4 rounded-lg font-bold hover:bg-emerald-600 disabled:opacity-50 shadow-lg shadow-emerald-200">
+                            ▶ Start Task
+                        </button>
+                        <button onClick={() => triggerInterrupt('Hardware: Key Press')} disabled={state !== 'running'} className="bg-amber-500 text-white p-4 rounded-lg font-bold hover:bg-amber-600 disabled:opacity-50 shadow-lg shadow-amber-200">
+                            ⌨️ HW Interrupt
+                        </button>
+                        <button onClick={() => triggerInterrupt('Software: Div by Zero')} disabled={state !== 'running'} className="bg-red-500 text-white p-4 rounded-lg font-bold hover:bg-red-600 disabled:opacity-50 shadow-lg shadow-red-200">
+                            💻 SW Interrupt
+                        </button>
+                    </div>
+
+                    {/* Explanation */}
+                    <div className="bg-slate-50 p-4 rounded-lg text-sm text-slate-600 border border-slate-200">
+                        <strong>The Cycle:</strong> Normal Execution ➔ Interrupt Signal ➔ <span className="text-red-600">Halt & Save State</span> ➔ <span className="text-blue-600">Run ISR</span> ➔ <span className="text-green-600">Restore State</span> ➔ Resume.
+                    </div>
+                </div>
+            );
+        };
+
+        const LLLSim = () => {
+            const [acc, setAcc] = useState(0);
+            const [mem, setMem] = useState({ 100: 5, 101: 10, 102: 0 }); // Memory addresses
+            const [step, setStep] = useState(0);
+            
+            const steps = [
+                { inst: "START", desc: "Program waiting..." },
+                { inst: "LDA 100", desc: "Load value from Address 100 (5) into Accumulator." },
+                { inst: "ADD 101", desc: "Add value from Address 101 (10) to Accumulator." },
+                { inst: "STO 102", desc: "Store Accumulator value (15) into Address 102." },
+                { inst: "END", desc: "Program finished." }
+            ];
+
+            const runStep = () => {
+                if(step === 0) { // Moving to LDA
+                    setStep(1);
+                    setAcc(5);
+                } else if(step === 1) { // Moving to ADD
+                    setStep(2);
+                    setAcc(15); // 5 + 10
+                } else if(step === 2) { // Moving to STO
+                    setStep(3);
+                    setMem(prev => ({...prev, 102: 15}));
+                } else if(step === 3) { // End
+                    setStep(4);
+                } else {
+                    // Reset
+                    setAcc(0);
+                    setMem({ 100: 5, 101: 10, 102: 0 });
+                    setStep(0);
+                }
+            };
+
+            return (
+                <div className="space-y-6 max-w-2xl mx-auto">
+                    <div className="text-center">
+                        <h3 className="text-xl font-bold text-slate-800">Low Level Language Simulator</h3>
+                        <p className="text-slate-500">Visualizing how Assembly interacts with Hardware</p>
+                    </div>
+
+                    <div className="bg-slate-800 p-6 rounded-xl font-mono text-white shadow-xl">
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="w-1/3">
+                                <h4 className="text-indigo-400 font-bold mb-2">Memory (RAM)</h4>
+                                <div className="space-y-1 text-sm">
+                                    <div className="flex justify-between p-1 bg-slate-700 rounded border border-slate-600"><span>100:</span> <span className="text-green-400">{mem[100]}</span></div>
+                                    <div className="flex justify-between p-1 bg-slate-700 rounded border border-slate-600"><span>101:</span> <span className="text-green-400">{mem[101]}</span></div>
+                                    <div className={`flex justify-between p-1 rounded border ${step >= 3 ? 'bg-indigo-900 border-indigo-500' : 'bg-slate-700 border-slate-600'}`}><span>102:</span> <span className={`${step >= 3 ? 'text-yellow-400 font-bold' : 'text-slate-500'}`}>{mem[102]}</span></div>
+                                </div>
+                            </div>
+                            
+                            <div className="w-1/2 flex flex-col items-center">
+                                <h4 className="text-indigo-400 font-bold mb-2">CPU Accumulator</h4>
+                                <div className={`w-24 h-24 border-4 ${step > 0 ? 'border-yellow-500 text-yellow-500' : 'border-slate-600 text-slate-600'} rounded-full flex items-center justify-center text-3xl font-bold transition-all`}>
+                                    {acc}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-black/30 p-4 rounded-lg border border-slate-600">
+                            <div className="text-xs text-slate-400 mb-1">CURRENT INSTRUCTION:</div>
+                            <div className="text-xl font-bold text-green-400">{steps[step].inst}</div>
+                            <div className="text-sm text-slate-300 mt-1">{steps[step].desc}</div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                            <h4 className="font-bold text-blue-800 mb-1">High Level Equivalent</h4>
+                            <code className="bg-white px-2 py-1 rounded border text-sm block text-center">x = y + z</code>
+                            <p className="text-xs text-blue-600 mt-2">1 line of code. Easier for humans.</p>
+                        </div>
+                         <div className="bg-slate-100 p-4 rounded-lg border border-slate-300">
+                            <h4 className="font-bold text-slate-800 mb-1">Low Level (Assembly)</h4>
+                            <div className="text-xs font-mono space-y-1">
+                                <div>LDA 100</div>
+                                <div>ADD 101</div>
+                                <div>STO 102</div>
+                            </div>
+                            <p className="text-xs text-slate-600 mt-2">3 lines. Controls hardware directly.</p>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-center">
+                        <button onClick={runStep} className="bg-indigo-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-indigo-700 transition shadow-lg">
+                            {step >= 4 ? "Reset Simulation" : "Step Forward ▶"}
+                        </button>
+                    </div>
+                </div>
+            )
+        };
+
+        const TranslatorGuide = () => {
+            const [mode, setMode] = useState('compiler');
+            const data = {
+                compiler: { title: 'Compiler', color: 'bg-rose-100 text-rose-900', icon: '📦', features: ['Translates entire code at once','Creates an Executable (.exe)','Reports ALL errors at the end','Fast execution (no translation needed at runtime)'] },
+                interpreter: { title: 'Interpreter', color: 'bg-cyan-100 text-cyan-900', icon: '🗣️', features: ['Translates line-by-line','No executable created','Stops at the FIRST error','Slower execution (translates while running)'] },
+                assembler: { title: 'Assembler', color: 'bg-amber-100 text-amber-900', icon: '⚙️', features: ['Translates Assembly Language','Converts Mnemonics to Machine Code','One-to-one mapping usually'] }
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="flex justify-center gap-4">
+                        {Object.keys(data).map(k => <button key={k} onClick={()=>setMode(k)} className={`px-6 py-3 rounded-lg font-bold capitalize transition-all ${mode===k ? 'bg-indigo-600 text-white shadow-lg transform scale-105' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{k}</button>)}
+                    </div>
+                    <div className={`p-8 rounded-xl border-2 transition-all ${data[mode].color} border-transparent shadow-lg`}>
+                        <div className="text-center mb-6">
+                            <div className="text-6xl mb-2">{data[mode].icon}</div>
+                            <h3 className="text-3xl font-extrabold">{data[mode].title}</h3>
+                        </div>
+                        <ul className="space-y-4 max-w-md mx-auto">
+                            {data[mode].features.map((f, i) => (
+                                <li key={i} className="flex items-center gap-3 bg-white/60 p-3 rounded-lg font-medium shadow-sm">
+                                    <span className="w-2 h-2 rounded-full bg-current shrink-0"></span>
+                                    {f}
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+            );
+        };
+
+        const SoftwareHierarchy = () => {
+            return (
+                <div className="max-w-md mx-auto space-y-2">
+                    <h3 className="text-center font-bold text-slate-700 mb-4">Software Hierarchy</h3>
+                    <div className="bg-sky-500 text-white p-4 rounded-lg text-center font-bold shadow-lg transform hover:scale-105 transition cursor-help relative group">
+                        User / Application Software
+                        <span className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs p-2 rounded w-48 z-10">Word Processors, Games, Browsers. Performs tasks for you.</span>
+                    </div>
+                    <div className="flex justify-center"><Icon d={icons.dl} className="w-6 h-6 text-slate-300"/></div>
+                    <div className="bg-emerald-500 text-white p-4 rounded-lg text-center font-bold shadow-lg transform hover:scale-105 transition cursor-help relative group">
+                        System Software (OS)
+                        <span className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs p-2 rounded w-48 z-10">Windows, macOS, Linux. Manages hardware/resources.</span>
+                    </div>
+                    <div className="flex justify-center"><Icon d={icons.dl} className="w-6 h-6 text-slate-300"/></div>
+                    <div className="bg-amber-500 text-white p-4 rounded-lg text-center font-bold shadow-lg transform hover:scale-105 transition cursor-help relative group">
+                        Firmware / BIOS
+                        <span className="absolute hidden group-hover:block bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs p-2 rounded w-48 z-10">Bootloader. Stored on ROM. Starts the hardware.</span>
+                    </div>
+                    <div className="flex justify-center"><Icon d={icons.dl} className="w-6 h-6 text-slate-300"/></div>
+                    <div className="bg-slate-700 text-white p-4 rounded-lg text-center font-bold shadow-lg">
+                        Hardware (CPU, RAM, HDD)
+                    </div>
+                </div>
+            );
+        }
+
+        const Simulations = () => {
+            const [tab, setTab] = useState('interrupt');
+            return (
+                <div className="bg-white rounded-xl shadow-md border overflow-hidden">
+                    <div className="flex border-b bg-slate-50 overflow-x-auto">
+                        {[{id:'interrupt',l:'Interrupt Sim',i:icons.cpu},{id:'translator',l:'Translators',i:icons.code},{id:'layers',l:'Hierarchy',i:icons.layers},{id:'lll',l:'Low Level Sim',i:icons.code}].map(t=><button key={t.id} onClick={()=>setTab(t.id)} className={`flex-1 py-4 px-6 text-sm font-bold flex gap-2 justify-center items-center whitespace-nowrap transition-colors ${tab===t.id?'bg-white text-indigo-600 border-b-2 border-indigo-600':'text-slate-500 hover:text-slate-700'}`}><Icon d={t.i} className="w-4 h-4"/>{t.l}</button>)}
+                    </div>
+                    <div className="p-8">
+                        {tab==='interrupt'&&<InterruptSim/>}
+                        {tab==='translator'&&<TranslatorGuide/>}
+                        {tab==='layers'&&<SoftwareHierarchy/>}
+                        {tab==='lll'&&<LLLSim/>}
+                    </div>
+                </div>
+            );
+        };
+
+        const ExamPractice = () => {
+            const [ans, setAns] = useState({}); const [show, setShow] = useState({});
+            const savePDF = () => {
+                const el = document.getElementById('exam-pdf'); if(!el) return;
+                const old = {...show}; const all={}; EXAM_QUESTIONS.forEach(q=>all[q.id]=true); setShow(all);
+                window.html2pdf().set({margin:0.5,filename:'Exam_Practice_Unit4.pdf',html2canvas:{scale:2}}).from(el).save().then(()=>setShow(old));
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="bg-blue-600 rounded-xl p-6 text-white flex justify-between items-center shadow-lg">
+                        <div><h2 className="text-2xl font-bold flex gap-2"><Icon d={icons.file} className="w-6 h-6"/> Exam Practice</h2></div>
+                        <button onClick={savePDF} className="bg-white text-blue-600 px-4 py-2 rounded-lg font-bold flex gap-2 hover:bg-blue-50 transition"><Icon d={icons.dl} className="w-5 h-5"/> PDF</button>
+                    </div>
+                    <div id="exam-pdf" className="bg-white p-8 rounded-xl border shadow-md space-y-8">
+                        {EXAM_QUESTIONS.map((q,i)=>(
+                            <div key={q.id} className="break-inside-avoid">
+                                <div className="flex justify-between font-bold mb-3 text-slate-800"><span>{i+1}. {q.question.split('\n')[0]}</span><span className="text-xs bg-slate-100 px-2 py-1 rounded text-slate-500 border">[{q.marks} marks]</span></div>
+                                <div className="pl-4 border-l-4 border-slate-200 mb-4 whitespace-pre-line text-slate-600 text-sm">{q.question.split('\n').slice(1).join('\n')}</div>
+                                <textarea value={ans[q.id]||''} onChange={e=>setAns({...ans,[q.id]:e.target.value})} className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50 min-h-[100px] text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500" placeholder="Type your answer..."/>
+                                <div className="no-print mt-3 flex items-center gap-4">
+                                    <button onClick={()=>setShow({...show,[q.id]:!show[q.id]})} className="text-xs font-bold text-blue-600 hover:text-blue-800 uppercase tracking-wide">{show[q.id]?'Hide Model Answer':'Show Model Answer'}</button>
+                                </div>
+                                {show[q.id] && <div className="mt-3 bg-green-50 p-4 rounded-lg text-sm text-green-900 whitespace-pre-line border border-green-100 animate-fade-in"><strong>Model Answer:</strong><br/>{q.modelAnswer}</div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Quiz = () => {
+            const [currentQ, setCurrentQ] = useState(0); const [selected, setSelected] = useState(null); const [score, setScore] = useState(0); const [showResult, setShowResult] = useState(false); const [quizSet, setQuizSet] = useState([]);
+            const generateQuiz = () => { const shuffled = [...MASTER_QUIZ_POOL].sort(() => 0.5 - Math.random()); setQuizSet(shuffled.slice(0, 10)); setCurrentQ(0); setSelected(null); setScore(0); setShowResult(false); };
+            useEffect(() => { generateQuiz(); }, []);
+            const handleSelect = (idx) => { setSelected(idx); setShowResult(true); if (idx === quizSet[currentQ].correct) setScore(s => s + 1); };
+            const nextQuestion = () => { if (currentQ < quizSet.length - 1) { setCurrentQ(p => p + 1); setSelected(null); setShowResult(false); } else { alert(`Quiz Complete! Score: ${score + (selected === quizSet[currentQ].correct ? 0 : 0)} / ${quizSet.length}`); generateQuiz(); } };
+            if (quizSet.length === 0) return <div>Loading...</div>;
+            const q = quizSet[currentQ];
+            return (
+                <div className="max-w-2xl mx-auto bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                    <div className="flex justify-between items-center mb-6 border-b pb-4">
+                        <div className="flex items-center gap-3"><h3 className="text-xl font-bold text-slate-800">Quick Fire Quiz</h3><button onClick={generateQuiz} className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold hover:bg-indigo-200 flex items-center gap-1"><Icon d={icons.refresh} className="w-3 h-3"/> Reset</button></div>
+                        <span className="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-sm font-bold">Q {currentQ + 1} of {quizSet.length}</span>
+                    </div>
+                    <p className="text-lg font-medium text-slate-700 mb-6">{q.question}</p>
+                    <div className="space-y-3">
+                        {q.options.map((opt, idx) => {
+                            let stateClass = "border-slate-200 hover:bg-slate-50";
+                            if (showResult) { if (idx === q.correct) stateClass = "bg-green-100 border-green-500 text-green-800"; else if (idx === selected) stateClass = "bg-red-100 border-red-500 text-red-800"; }
+                            return ( <button key={idx} disabled={showResult} onClick={() => handleSelect(idx)} className={`w-full text-left p-4 rounded-lg border-2 font-medium transition-all ${stateClass} ${selected === idx ? 'ring-2 ring-offset-1 ring-indigo-200' : ''}`}><div className="flex justify-between items-center"><span>{opt}</span>{showResult && idx === q.correct && <Icon d={icons.check} className="w-5 h-5 text-green-600" />}{showResult && idx === selected && idx !== q.correct && <Icon d={icons.x} className="w-5 h-5 text-red-600" />}</div></button> );
+                        })}
+                    </div>
+                    {showResult && (<div className="mt-6 flex justify-end"><button onClick={nextQuestion} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 transition shadow-md">{currentQ === quizSet.length - 1 ? "Finish Quiz" : "Next Question"}</button></div>)}
+                </div>
+            );
+        };
+
+        const TopicChecklist = () => {
+            const [checkedState, setCheckedState] = useState({});
+            useEffect(() => { const saved = localStorage.getItem('igcse-unit4-checklist'); if (saved) { try { setCheckedState(JSON.parse(saved)); } catch(e) {} } }, []);
+            const toggleItem = (categoryIndex, itemIndex) => { const key = `${categoryIndex}-${itemIndex}`; const newState = { ...checkedState, [key]: !checkedState[key] }; setCheckedState(newState); localStorage.setItem('igcse-unit4-checklist', JSON.stringify(newState)); };
+            const totalItems = CHECKLIST_DATA.reduce((acc, cat) => acc + cat.items.length, 0); const checkedCount = Object.values(checkedState).filter(Boolean).length; const progress = Math.round((checkedCount / totalItems) * 100);
+            return (
+                <div className="bg-white rounded-xl shadow-md border border-slate-200 p-8">
+                    <div className="flex justify-between items-center mb-8">
+                        <h2 className="text-2xl font-bold text-slate-800">Topic Revision Checklist</h2>
+                        <div className="text-right"><span className="text-sm font-bold text-indigo-600">{progress}% Complete</span><div className="w-48 h-3 bg-slate-100 rounded-full mt-2 overflow-hidden shadow-inner"><div className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-700" style={{ width: `${progress}%` }}></div></div></div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {CHECKLIST_DATA.map((cat, catIdx) => (
+                            <div key={catIdx} className="space-y-4">
+                                <h3 className="font-bold text-slate-700 border-b border-slate-200 pb-2 flex items-center gap-2"><span className="bg-indigo-100 text-indigo-600 w-6 h-6 rounded flex items-center justify-center text-xs">{catIdx+1}</span> {cat.category}</h3>
+                                <ul className="space-y-2">
+                                    {cat.items.map((item, itemIdx) => {
+                                        const isChecked = !!checkedState[`${catIdx}-${itemIdx}`];
+                                        return (
+                                            <li key={itemIdx} onClick={() => toggleItem(catIdx, itemIdx)} className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all ${isChecked ? 'bg-emerald-50' : 'hover:bg-slate-50'}`}>
+                                                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${isChecked ? 'bg-emerald-500 border-emerald-500' : 'bg-white border-slate-300'}`}>{isChecked && <Icon d={icons.check} className="w-3.5 h-3.5 text-white" />}</div>
+                                                <span className={`text-sm font-medium ${isChecked ? 'text-emerald-800 line-through opacity-75' : 'text-slate-600'}`}>{item}</span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const VocabularyList = () => {
+            return (
+                <div className="bg-white p-6 rounded-xl shadow-md border border-slate-200">
+                    <h3 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-200 pb-4"><Icon d={icons.book} className="w-6 h-6 text-indigo-600" /> Vocabulary List</h3>
+                    <div className="grid grid-cols-1 gap-4">
+                        {VOCABULARY.map((v, i) => (
+                            <div key={i} className="flex flex-col md:flex-row gap-2 md:gap-4 p-4 hover:bg-slate-50 rounded-lg transition border-b border-slate-100 last:border-0 group">
+                                <div className="md:w-1/4"><span className="font-bold text-indigo-700 block group-hover:translate-x-1 transition-transform">{v.term}</span></div>
+                                <div className="md:w-3/4 text-slate-700 text-sm leading-relaxed">{v.def}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [sect, setSect] = useState('map');
+            const menu = [ {id:'map',l:'Concept Map',i:icons.map}, {id:'recall',l:'Active Recall',i:icons.pen}, {id:'flashcards',l:'Flashcards',i:icons.layers}, {id:'sims',l:'Simulators',i:icons.cpu}, {id:'exam',l:'Exam Practice',i:icons.file}, {id:'quiz',l:'Quiz',i:icons.brain}, {id:'checklist',l:'Checklist',i:icons.checksq}, {id:'vocab',l:'Vocabulary',i:icons.book} ];
+            return (
+                <div className="min-h-screen bg-slate-100 text-slate-900 pb-20 font-inter">
+                    <header className="bg-gradient-to-r from-indigo-800 to-indigo-600 text-white shadow-lg p-8"><div className="max-w-6xl mx-auto"><div className="flex items-center gap-2 mb-2 opacity-80 font-mono text-sm tracking-widest"><Icon d={icons.book} className="w-5 h-5"/> IGCSE 0478</div><h1 className="text-4xl font-extrabold tracking-tight">Unit 4: Software</h1></div></header>
+                    <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm shadow-sm border-b overflow-x-auto"><div className="max-w-6xl mx-auto px-4"><nav className="flex space-x-1">{menu.map(m=><button key={m.id} onClick={()=>setSect(m.id)} className={`flex items-center gap-2 px-5 py-4 text-sm font-bold border-b-4 transition whitespace-nowrap ${sect===m.id?'border-indigo-600 text-indigo-700 bg-indigo-50/50':'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}><Icon d={m.i} className="w-4 h-4"/>{m.l}</button>)}</nav></div></div>
+                    <main className="max-w-6xl mx-auto px-4 py-10 animate-fade-in">
+                        {sect==='map' && <ConceptMap/>}
+                        {sect==='recall' && <ActiveRecall/>}
+                        {sect==='flashcards' && <Flashcards/>}
+                        {sect==='sims' && <Simulations/>}
+                        {sect==='exam' && <ExamPractice/>}
+                        {sect==='quiz' && <Quiz/>}
+                        {sect==='checklist' && <TopicChecklist/>}
+                        {sect==='vocab' && <VocabularyList/>}
+                    </main>
+                </div>
+            );
+        };
+
+        window.onload = () => {
+            try {
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(<App />);
+                console.log("React App Mounted Successfully");
+            } catch (e) {
+                console.error("React App Crashed:", e);
+                document.body.innerHTML = "<h1 style='color:red;padding:20px'>App Crashed. Check Console (F12)</h1>";
+            }
+        };
+    </script>
+</body>
+</html>

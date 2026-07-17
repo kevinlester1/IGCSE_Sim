@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Computer Science - Unit 3 Hardware</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .perspective-1000 { perspective: 1000px; }
+        .transform-style-3d { transform-style: preserve-3d; }
+        .backface-hidden { backface-visibility: hidden; }
+        .rotate-y-180 { transform: rotateY(180deg); }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        
+        /* FDE Cycle Animations */
+        @keyframes movePcToMar { 0% { top: 20px; left: 20px; opacity: 1; } 100% { top: 20px; left: 200px; opacity: 1; } }
+        @keyframes moveRamToMdr { 0% { top: 100px; left: 300px; opacity: 1; } 100% { top: 100px; left: 100px; opacity: 1; } }
+        
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        @media print { .no-print { display: none !important; } .print-only { display: block !important; } textarea { border: 1px solid #ccc; resize: none; overflow: hidden; } }
+
+        /* Tree CSS */
+        .tree { display: flex; justify-content: center; padding-top: 20px; }
+        .tree ul { position: relative; padding-top: 20px; display: flex; justify-content: center; }
+        .tree li { list-style-type: none; position: relative; padding: 20px 10px 0 10px; text-align: center; }
+        .tree li::before, .tree li::after { content: ''; position: absolute; top: 0; right: 50%; border-top: 2px solid #94a3b8; width: 50%; height: 20px; }
+        .tree li::after { right: auto; left: 50%; border-left: 2px solid #94a3b8; }
+        .tree li:only-child::after, .tree li:only-child::before { display: none; }
+        .tree li:only-child { padding-top: 0; }
+        .tree li:first-child::before, .tree li:last-child::after { border: 0 none; }
+        .tree li:last-child::before { border-right: 2px solid #94a3b8; border-radius: 0 5px 0 0; }
+        .tree li:first-child::after { border-radius: 5px 0 0 0; }
+        .tree ul ul::before { content: ''; position: absolute; top: 0; left: 50%; border-left: 2px solid #94a3b8; width: 0; height: 20px; }
+        .tree ul.vertical-stack { flex-direction: column; align-items: center; padding-top: 0; }
+        .tree ul.vertical-stack::before { display: none; }
+        .tree ul.vertical-stack li { padding: 10px 0 0 0; }
+        .tree ul.vertical-stack li::before, .tree ul.vertical-stack li::after { border: none; }
+        .tree ul.vertical-stack li:not(:last-child)::after { content: ''; position: absolute; left: 50%; bottom: -10px; height: 10px; width: 2px; background: #94a3b8; border: none; }
+        .tree-node { display: inline-block; padding: 8px 12px; text-decoration: none; border-radius: 6px; transition: all 0.3s; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); position: relative; z-index: 10; }
+        .tree-node:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS ---
+        const Icon = ({ d, className, ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {d}
+            </svg>
+        );
+
+        const icons = {
+            chip: <><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></>,
+            storage: <><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M21 5c0 1.66-4 3-9 3s-9-1.34-9-3s4-3 9-3s9 1.34 9 3"/></>,
+            input: <><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></>,
+            cloud: <><path d="M17.5 19c0-3.037-2.463-5.5-5.5-5.5S6.5 15.963 6.5 19c0 1.105-0.895 2-2 2s-2-0.895-2-2c0-3.866 3.134-7 7-7s7 3.134 7 7v1"/></>,
+            book: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+            check: <polyline points="20 6 9 17 4 12"/>,
+            x: <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>,
+            map: <><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></>,
+            pen: <><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></>,
+            layers: <><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></>,
+            sim: <><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"/><path d="M12 6v6l4 2"/></>,
+            file: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></>,
+            brain: <><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/></>,
+            checksq: <><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+            alert: <><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+            help: <><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></>,
+            refresh: <><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></>,
+            dl: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></>,
+            light: <><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 9.5 5 4.65 4.65 0 0 0 3.5 11.5c.76.76 1.23 1.52 1.41 2.5"/></>,
+            target: <><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></>
+        };
+
+        // --- DATA ---
+        const CONCEPT_MAP_DATA = {id:'root',label:'Unit 3: Hardware',color:'bg-indigo-600 text-white',desc:"Physical components of a computer system.",children:[{id:'arch',label:'3.1 Architecture',color:'bg-blue-100 text-blue-900 border-blue-300',desc:"Internal CPU Components.",children:[{id:'cpu',label:'CPU',desc:'Central Processing Unit.',expectations:['FDE Cycle','ALU, CU, Registers','Buses (Data, Address, Control)']},{id:'perf',label:'Performance',desc:'Factors affecting speed.',expectations:['Clock speed','Cache size','Number of Cores']},{id:'embed',label:'Embedded',desc:'System within a larger system.',expectations:['Single purpose','Firmware','Washing machines, Cars']}]},{id:'io',label:'3.2 Input/Output',color:'bg-green-100 text-green-900 border-green-300',desc:"Interacting with the computer.",children:[{id:'in',label:'Input',desc:'Sending data to CPU.',expectations:['Keyboard/Mouse','Scanner (2D/3D/Barcode/QR)','Microphone']},{id:'out',label:'Output',desc:'Data from CPU to user.',expectations:['Screens (LCD/LED)','Printers (Inkjet/Laser/3D)','Speakers/Actuators']},{id:'sensor',label:'Sensors',desc:'Reading physical data.',expectations:['Light, Temp, Motion','Analogue to Digital (ADC)']}]},{id:'store',label:'3.3 Storage',color:'bg-pink-100 text-pink-900 border-pink-300',desc:"Saving data.",children:[{id:'prim',label:'Primary',desc:'Direct access by CPU.',expectations:['RAM (Volatile, Read/Write)','ROM (Non-volatile, Read-only)']},{id:'sec',label:'Secondary',desc:'Permanent storage.',expectations:['HDD (Magnetic)','SSD (Flash)','Optical (CD/DVD)']},{id:'virt',label:'Virtual',desc:'Extension of RAM on HDD/SSD.',expectations:['Paging','Used when RAM full']},{id:'cloud',label:'Cloud',desc:'Remote servers.',expectations:['Pros: Access anywhere','Cons: Need internet']}]},{id:'net',label:'3.4 Network',color:'bg-amber-100 text-amber-900 border-amber-300',desc:"Connecting devices.",children:[{id:'nic',label:'NIC',desc:'Network Interface Card.',expectations:['Connects device to network']},{id:'mac',label:'MAC Address',desc:'Hardware ID (Hex).',expectations:['Unique','Set by manufacturer']},{id:'ip',label:'IP Address',desc:'Network Location.',expectations:['IPv4 vs IPv6','Static vs Dynamic']},{id:'router',label:'Router',desc:'Directs data packets.',expectations:['Connects LAN to WAN']}]}]};
+
+        const VOCABULARY = [
+            {term:"CPU",def:"Central Processing Unit. Fetches, decodes and executes instructions."},
+            {term:"ALU",def:"Arithmetic Logic Unit. Performs calculations (+,-) and logical comparisons (AND, OR)."},
+            {term:"CU",def:"Control Unit. Decodes instructions and sends signals to manage data flow."},
+            {term:"PC",def:"Program Counter. Stores the address of the NEXT instruction to be fetched."},
+            {term:"MAR",def:"Memory Address Register. Stores the address of the memory location about to be accessed."},
+            {term:"MDR",def:"Memory Data Register. Stores the data/instruction just fetched from or waiting to be written to memory."},
+            {term:"CIR",def:"Current Instruction Register. Stores the current instruction while it is being decoded/executed."},
+            {term:"ACC",def:"Accumulator. Stores the result of calculations from the ALU."},
+            {term:"Bus",def:"A set of wires to transmit data/signals. Address Bus (unidirectional), Data Bus (bi), Control Bus (bi/uni)."},
+            {term:"Embedded System",def:"A computer system built into a larger device with a dedicated function (e.g., Washing Machine)."},
+            {term:"RAM",def:"Random Access Memory. Volatile primary memory. Stores currently running programs/data."},
+            {term:"ROM",def:"Read Only Memory. Non-volatile. Stores boot-up instructions (BIOS/Bootstrap)."},
+            {term:"Virtual Memory",def:"Using part of Secondary Storage (HDD/SSD) as temporary RAM when physical RAM is full."},
+            {term:"SSD",def:"Solid State Drive. Non-volatile secondary storage using Flash memory (transistors). No moving parts."},
+            {term:"HDD",def:"Hard Disk Drive. Magnetic storage using spinning platters and read/write heads."},
+            {term:"Sensor",def:"Input device that measures physical properties (Temp, Light, Pressure) and converts to signal."},
+            {term:"Actuator",def:"Output component (motor) that creates physical movement (e.g., opening a valve)."},
+            {term:"MAC Address",def:"Media Access Control. Unique hardware ID assigned by manufacturer (Hexadecimal)."},
+            {term:"IP Address",def:"Internet Protocol. Address assigned by network to locate a device (can be dynamic)."}
+        ];
+
+        const RECALL_DATA = [
+            {id:'rec1',title:'Von Neumann Architecture',prompt:'List the registers (PC, MAR...) and their functions. Explain the FDE cycle.',keyIdeas:["PC: Address of next instruction.","MAR: Address to fetch/write.","MDR: Data arriving/leaving CPU.","CIR: Holds instruction to decode.","ACC: ALU results.","Fetch: PC->MAR, RAM->MDR, MDR->CIR, PC+1.","Decode: CU interprets. Execute: ALU/Control."]},
+            {id:'rec2',title:'Storage Types',prompt:'Compare Primary vs Secondary. RAM vs ROM. HDD vs SSD vs Optical.',keyIdeas:["Primary: Direct CPU access (RAM/ROM). Secondary: Permanent (HDD/SSD).","RAM: Volatile, R/W. ROM: Non-volatile, Read-only.","SSD: Fast, durable, no moving parts (Flash).","HDD: Cheaper/GB, moving parts (Magnetic).","Optical: Portable, slow (Laser)."]},
+            {id:'rec3',title:'Input/Output & Sensors',prompt:'Name 3 sensors and their uses. Difference between Monitoring and Control systems?',keyIdeas:["Sensors: Temp (Greenhouse), Light (Streetlamp), Pressure (Door).","Monitoring: Just records values.","Control: Compares input to preset value -> sends signal to Actuator to change physical state."]},
+            {id:'rec4',title:'High vs Low Level Language',prompt:'(Software recap) Compiler vs Interpreter?',keyIdeas:["High: Human readable, portable. Low: Machine specific, memory efficient.","Compiler: Translates all at once, creates executable.","Interpreter: Line by line, good for debugging."]}
+        ];
+
+        const EXAM_QUESTIONS = [
+            {id:"Q1",question:"A washing machine uses an embedded system.\n(a) Identify two characteristics of an embedded system.\n(b) Give three other examples of devices with embedded systems.",marks:5,modelAnswer:"(a) Built into a larger device. Single/dedicated function. Microprocessor based.\n(b) Microwave, Car engine management, Vending machine, Security light."},
+            {id:"Q2",question:"Explain the role of the following registers in the FDE cycle:\n(i) Memory Address Register (MAR)\n(ii) Memory Data Register (MDR)",marks:4,modelAnswer:"(i) MAR: Holds the address of the memory location currently being accessed (fetched from or written to).\n(ii) MDR: Holds the actual data or instruction transferred to/from the memory location in MAR."},
+            {id:"Q3",question:"A greenhouse automation system uses sensors and a microprocessor.\nDescribe how the system maintains temperature.",marks:6,modelAnswer:"1. Temp sensor reads data.\n2. Sends signal to microprocessor (via ADC).\n3. Microprocessor compares value to preset limit.\n4. If too cold, sends signal to Actuator to turn on heater.\n5. If too hot, turns on fan/opens window.\n6. Loop/Continuous monitoring."},
+            {id:"Q4",question:"Virtual Memory.\n(a) When is it used?\n(b) How is it created?",marks:4,modelAnswer:"(a) When physical RAM is full.\n(b) By partitioning/using a section of the Hard Drive/SSD to act as temporary RAM. Pages of data not currently in use are swapped out to it."},
+            {id:"Q5",question:"Compare HDD and SSD for a laptop.\nState which is better and give two reasons.",marks:3,modelAnswer:"SSD is better.\n1. More durable (no moving parts) for a portable device.\n2. Faster read/write speeds (quicker boot up).\n3. Quieter/Less heat."},
+            {id:"Q6",question:"A barcode scanner is an input device.\nDescribe how it works.",marks:3,modelAnswer:"Shines red laser/LED at barcode. White bars reflect light, black absorb. Sensor detects reflection pattern. Converts to digital binary data."},
+            {id:"Q7",question:"Explain the difference between a MAC address and an IP address.",marks:2,modelAnswer:"MAC: Physical/Hardware address, set by manufacturer, doesn't change.\nIP: Network address, assigned by router/ISP, can change (dynamic)."},
+            {id:"Q8",question:"(a) What is the purpose of the ALU?\n(b) What is the purpose of the Control Unit?",marks:2,modelAnswer:"(a) Arithmetic (maths) and Logic (comparisons) operations.\n(b) Decodes instructions, manages execution, sends control signals."},
+            {id:"Q9",question:"Identify the suitable sensor for:\n(a) Turning on street lights at night.\n(b) Counting cars passing a point.\n(c) Monitoring acidity in a river.",marks:3,modelAnswer:"(a) Light sensor.\n(b) Pressure/Magnetic/Infra-red sensor.\n(c) pH sensor."},
+            {id:"Q10",question:"Why do computers need both RAM and ROM?",marks:2,modelAnswer:"ROM stores the boot-up instructions (needed to start computer, non-volatile).\nRAM stores the currently running operating system/apps/data (needed for read/write speed, volatile)."}
+        ];
+
+        const QUIZ_POOL = [
+            {question:"Which register holds the address of the next instruction?",options:["MAR","MDR","PC","ACC"],correct:2},
+            {question:"Volatile memory?",options:["HDD","ROM","RAM","SSD"],correct:2},
+            {question:"Non-volatile, no moving parts storage?",options:["HDD","SSD","RAM","Optical"],correct:1},
+            {question:"Unit that performs calculations?",options:["CU","ALU","Input","Output"],correct:1},
+            {question:"Bus that carries data both ways?",options:["Address","Control","Data","Universal"],correct:2},
+            {question:"Sensor for automatic door?",options:["pH","Temp","Infra-red/Motion","Gas"],correct:2},
+            {question:"Example of embedded system?",options:["Laptop","Server","Dishwasher","Supercomputer"],correct:2},
+            {question:"Virtual memory is located on?",options:["RAM","ROM","Hard Drive","CPU"],correct:2},
+            {question:"Output device for 3D object?",options:["Inkjet","3D Printer","Screen","Actuator"],correct:1},
+            {question:"Component that creates physical movement?",options:["Sensor","Actuator","ADC","Router"],correct:1},
+            {question:"MAC address is?",options:["Software","Network assigned","Hardware/Static","192.168.0.1"],correct:2},
+            {question:"ROM stores?",options:["User files","Boot-up instructions","Current Word doc","Web cache"],correct:1},
+            {question:"DLP stands for?",options:["Digital Light Processing","Data Link Protocol","Direct Line Print","Dual Logic Processor"],correct:0},
+            {question:"Address Bus direction?",options:["Bi-directional","Uni-directional","Omni-directional","None"],correct:1},
+            {question:"QR Code is read by?",options:["Magnetic strip","Camera/Scanner","Laser only","Microphone"],correct:1}
+        ];
+
+        const CLOZE_TEXT = [{text:"The",blank:!1},{text:"CPU",blank:!0,answer:"CPU"},{text:"fetches instructions from",blank:!1},{text:"RAM",blank:!0,answer:"RAM"},{text:". The",blank:!1},{text:"PC",blank:!0,answer:"PC"},{text:"holds the address of the next instruction. This address is copied to the",blank:!1},{text:"MAR",blank:!0,answer:"MAR"},{text:". The data is fetched and placed in the",blank:!1},{text:"MDR",blank:!0,answer:"MDR"},{text:". The instruction is decoded by the",blank:!1},{text:"CU",blank:!0,answer:"CU"},{text:"and executed. An",blank:!1},{text:"embedded",blank:!0,answer:"embedded"},{text:"system is a computer built into a larger device. ",blank:!1},{text:"SSD",blank:!0,answer:"SSD"},{text:"storage uses flash memory and has no",blank:!1},{text:"moving",blank:!0,answer:"moving"},{text:"parts. ",blank:!1},{text:"Virtual",blank:!0,answer:"Virtual"},{text:"memory uses secondary storage as extended RAM.",blank:!1}];
+
+        const CHECKLIST_DATA = [{category:"3.1 Architecture",items:["Von Neumann Model","Registers (PC, MAR, MDR, CIR, ACC)","Buses (Address, Data, Control)","FDE Cycle","Cores, Cache, Clock","Embedded Systems"]},{category:"3.2 Input/Output",items:["Input Devices (Scanners, Cameras...)","Output Devices (Printers, Screens...)","Sensors (Types & Uses)"]},{category:"3.3 Storage",items:["Primary (RAM vs ROM)","Secondary (HDD vs SSD vs Optical)","Virtual Memory","Cloud Storage"]},{category:"3.4 Network HW",items:["NIC (Network Interface Card)","MAC vs IP Address","Router functions"]}];
+        
+        const COMMON_ERRORS = [
+            {title:"RAM vs ROM",desc:"RAM is Volatile (files lost if power off), R/W. ROM is Non-Volatile, Read-Only (Boot instructions)."},
+            {title:"Memory vs Storage",desc:"Memory (RAM) is for running programs. Storage (HDD/SSD) is for saving files permanently."},
+            {title:"Address Bus Direction",desc:"Address bus is Uni-directional (CPU -> Memory). Data bus is Bi-directional."},
+            {title:"Embedded Systems",desc:"They are NOT just 'small computers'. They have a dedicated/single function within a larger system."},
+            {title:"MAC vs IP",desc:"MAC is physical/hardware (fixed). IP is network/logical (can change)."}
+        ];
+
+        // --- COMPONENTS ---
+        const TheoryBox = ({ title, children }) => (<div className="mt-6 bg-amber-50 border border-amber-200 rounded-lg p-5 text-sm text-slate-700"><div className="font-bold text-amber-800 mb-3 flex items-center gap-2 text-base"><Icon d={icons.light} className="w-5 h-5"/> {title}</div><div className="space-y-3 leading-relaxed">{children}</div></div>);
+
+        const FDESim = () => {
+            const [step, setStep] = useState(0); 
+            const steps = [
+                {t:"Start", d:"PC holds address 101"},
+                {t:"Fetch 1", d:"PC content (101) copied to MAR"},
+                {t:"Fetch 2", d:"Signal sent via Address Bus to RAM address 101"},
+                {t:"Fetch 3", d:"Content of RAM(101) [LDA 50] copied to MDR"},
+                {t:"Fetch 4", d:"MDR content copied to CIR"},
+                {t:"Fetch 5", d:"PC incremented to 102"},
+                {t:"Decode", d:"CU decodes 'LDA 50' (Load content of 50 to ACC)"},
+                {t:"Execute", d:"Value fetched from address 50 and put in Accumulator"}
+            ];
+            const next = () => setStep((step+1)%steps.length);
+            
+            return (
+                <div className="space-y-4">
+                    <h4 className="font-bold text-slate-800">Fetch-Decode-Execute Cycle Visualizer</h4>
+                    <div className="h-64 bg-slate-100 border rounded relative p-4 text-xs font-bold text-center">
+                        {/* Registers */}
+                        <div className="absolute top-4 left-4 w-20 h-10 border bg-white flex items-center justify-center shadow">PC <span className="ml-2 text-blue-600">{step===0?'101':(step>=5?'102':'101')}</span></div>
+                        <div className="absolute top-4 left-32 w-20 h-10 border bg-white flex items-center justify-center shadow">MAR <span className="ml-2 text-blue-600">{step>=1?'101':''}</span></div>
+                        <div className="absolute top-4 right-4 w-24 h-48 border bg-yellow-50 flex flex-col items-center justify-center shadow">RAM <div className="font-normal mt-2">101: LDA 50<br/>50: DATA</div></div>
+                        <div className="absolute bottom-4 left-32 w-20 h-10 border bg-white flex items-center justify-center shadow">MDR <span className="ml-2 text-blue-600">{step>=3?'LDA 50':''}</span></div>
+                        <div className="absolute bottom-4 left-4 w-20 h-10 border bg-white flex items-center justify-center shadow">CIR <span className="ml-2 text-blue-600">{step>=4?'LDA 50':''}</span></div>
+                        <div className="absolute bottom-4 right-32 w-20 h-10 border bg-white flex items-center justify-center shadow">ACC <span className="ml-2 text-green-600">{step===7?'DATA':''}</span></div>
+
+                        {/* Animation Dots */}
+                        {step===1 && <div className="absolute w-3 h-3 bg-red-500 rounded-full animate-[movePcToMar_1s_forwards]" style={{top:'30px', left:'60px'}}></div>}
+                        {step===3 && <div className="absolute w-3 h-3 bg-red-500 rounded-full animate-[moveRamToMdr_1s_forwards]" style={{top:'50px', left:'300px'}}></div>}
+                    </div>
+                    <div className="flex justify-between items-center bg-white p-3 rounded border">
+                        <div><span className="font-bold text-indigo-600">Step {step+1}: {steps[step].t}</span> - {steps[step].d}</div>
+                        <button onClick={next} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700">Next Step</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const SensorSim = () => {
+            const [scenario, setScenario] = useState('street'); // street, green, door
+            const [feedback, setFeedback] = useState('');
+            
+            const scenarios = {
+                street: { title: "Automated Street Light", correct: ['Light', 'Microprocessor', 'Lamp'], opts: ['Light','Temp','Pressure','Motor','Lamp','Siren'] },
+                green: { title: "Greenhouse Temp Control", correct: ['Temp', 'Microprocessor', 'Motor'], opts: ['Light','Temp','Sound','Motor','Lamp','Screen'] },
+                door: { title: "Automatic Door", correct: ['Pressure', 'Microprocessor', 'Motor'], opts: ['Light','Pressure','pH','Motor','Heater','Speaker'] }
+            };
+            
+            const [selections, setSelections] = useState({in:'', proc:'Microprocessor', out:''});
+
+            const check = () => {
+                const s = scenarios[scenario];
+                if(selections.in === s.correct[0] && selections.out === s.correct[2]) setFeedback("Correct! System logic is valid.");
+                else setFeedback("Incorrect. Try different components.");
+            };
+
+            return (
+                <div className="space-y-4">
+                    <h4 className="font-bold text-slate-800">Automated System Builder</h4>
+                    <div className="flex gap-2 mb-4"><button onClick={()=>setScenario('street')} className={`px-2 py-1 text-xs rounded ${scenario==='street'?'bg-blue-600 text-white':'bg-slate-200'}`}>Street Light</button><button onClick={()=>setScenario('green')} className={`px-2 py-1 text-xs rounded ${scenario==='green'?'bg-blue-600 text-white':'bg-slate-200'}`}>Greenhouse</button><button onClick={()=>setScenario('door')} className={`px-2 py-1 text-xs rounded ${scenario==='door'?'bg-blue-600 text-white':'bg-slate-200'}`}>Door</button></div>
+                    
+                    <div className="bg-slate-100 p-4 rounded border flex items-center justify-around">
+                        <div className="flex flex-col gap-1"><label className="text-xs font-bold">Input (Sensor)</label><select className="p-1 rounded" onChange={e=>setSelections({...selections, in:e.target.value})}><option>-</option>{scenarios[scenario].opts.slice(0,3).map(o=><option key={o}>{o}</option>)}</select></div>
+                        <div className="text-2xl">→</div>
+                        <div className="flex flex-col gap-1"><label className="text-xs font-bold">Process</label><div className="p-1 bg-white border rounded text-center text-sm">Microprocessor</div></div>
+                        <div className="text-2xl">→</div>
+                        <div className="flex flex-col gap-1"><label className="text-xs font-bold">Output (Actuator)</label><select className="p-1 rounded" onChange={e=>setSelections({...selections, out:e.target.value})}><option>-</option>{scenarios[scenario].opts.slice(3).map(o=><option key={o}>{o}</option>)}</select></div>
+                    </div>
+                    <button onClick={check} className="w-full py-2 bg-green-600 text-white rounded font-bold">Test System</button>
+                    {feedback && <div className={`p-2 rounded text-center text-sm font-bold ${feedback.includes('Correct')?'bg-green-100 text-green-700':'bg-red-100 text-red-700'}`}>{feedback}</div>}
+                    <TheoryBox title="Control Loop">Sensor reads data -> ADC converts to digital -> Microprocessor compares to preset value -> If match/out of range -> Signal sent to Actuator -> Output happens.</TheoryBox>
+                </div>
+            );
+        };
+
+        const StorageSim = () => {
+             return (
+                 <div className="space-y-4">
+                     <h4 className="font-bold text-slate-800">Storage Technology Comparison</h4>
+                     <div className="grid grid-cols-3 gap-2 text-center text-sm">
+                         <div className="bg-white p-3 rounded border shadow-sm">
+                             <div className="font-bold text-indigo-600 mb-1">Magnetic (HDD)</div>
+                             <p className="text-xs text-slate-500">Moving platters, Read/Write head.</p>
+                             <ul className="text-xs text-left mt-2 list-disc pl-3"><li>High Capacity</li><li>Cheap per GB</li><li>Fragile</li><li>Slower</li></ul>
+                         </div>
+                         <div className="bg-white p-3 rounded border shadow-sm">
+                             <div className="font-bold text-indigo-600 mb-1">Solid State (SSD)</div>
+                             <p className="text-xs text-slate-500">Flash memory, Transistors.</p>
+                             <ul className="text-xs text-left mt-2 list-disc pl-3"><li>Very Fast</li><li>Durable (No moving parts)</li><li>Expensive per GB</li><li>Lower power</li></ul>
+                         </div>
+                         <div className="bg-white p-3 rounded border shadow-sm">
+                             <div className="font-bold text-indigo-600 mb-1">Optical (CD/DVD)</div>
+                             <p className="text-xs text-slate-500">Lasers, Pits & Lands.</p>
+                             <ul className="text-xs text-left mt-2 list-disc pl-3"><li>Cheap distribution</li><li>Portable</li><li>Slowest</li><li>Scratches easily</li></ul>
+                         </div>
+                     </div>
+                 </div>
+             );
+        };
+
+        const Simulations = () => {
+            const [tab, setTab] = useState('fde');
+            return (
+                <div className="bg-white rounded-xl shadow-md border overflow-hidden">
+                    <div className="flex border-b bg-slate-50 overflow-x-auto">
+                        <button onClick={()=>setTab('fde')} className={`flex-1 py-3 px-4 font-bold whitespace-nowrap ${tab==='fde'?'text-indigo-600 border-b-2 border-indigo-600':''}`}>FDE Cycle</button>
+                        <button onClick={()=>setTab('sensor')} className={`flex-1 py-3 px-4 font-bold whitespace-nowrap ${tab==='sensor'?'text-indigo-600 border-b-2 border-indigo-600':''}`}>Auto Systems</button>
+                        <button onClick={()=>setTab('storage')} className={`flex-1 py-3 px-4 font-bold whitespace-nowrap ${tab==='storage'?'text-indigo-600 border-b-2 border-indigo-600':''}`}>Storage Comp</button>
+                    </div>
+                    <div className="p-6">
+                        {tab==='fde' && <FDESim/>}
+                        {tab==='sensor' && <SensorSim/>}
+                        {tab==='storage' && <StorageSim/>}
+                    </div>
+                </div>
+            );
+        };
+
+        // ... [ConceptMap, ActiveRecall, Flashcards, TopicChecklist, ExamPractice, Quiz, ClozeExercise, CommonErrors, VocabularyList components] ...
+        
+        const ConceptMap = () => {
+            const [selectedNode, setSelectedNode] = useState(null);
+            const TreeNode = ({ node, isRoot = false }) => (
+                <li className="relative">
+                    <div onClick={() => setSelectedNode(node)} className={`tree-node border shadow-sm ${node.color || 'bg-white text-slate-700 border-slate-300'} ${isRoot ? 'font-bold text-lg px-6 py-3' : 'text-sm'} hover:bg-slate-50 transition-colors`}>{node.label}</div>
+                    {node.children && <ul className={!isRoot && node.children.length > 0 ? "vertical-stack" : ""}>{node.children.map(child => <TreeNode key={child.id} node={child} />)}</ul>}
+                </li>
+            );
+            return (
+                <div className="bg-white rounded-xl shadow-md border border-slate-200 p-6 overflow-x-auto min-h-[600px]">
+                    <div className="mb-6 flex justify-between items-center"><h2 className="text-2xl font-bold text-slate-800">Unit 3 Concept Map</h2><p className="text-sm text-slate-500">Click any node for details</p></div>
+                    <div className="tree w-full"><ul><TreeNode node={CONCEPT_MAP_DATA} isRoot={true} /></ul></div>
+                    {selectedNode && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 animate-fade-in" onClick={() => setSelectedNode(null)}>
+                            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full" onClick={e => e.stopPropagation()}>
+                                <h3 className={`text-xl font-bold mb-3 p-3 rounded-lg ${selectedNode.color || 'bg-slate-100 text-slate-800'}`}>{selectedNode.label}</h3>
+                                <div className="mb-6"><div className="flex items-center gap-2 mb-2 text-indigo-700 font-bold"><Icon d={icons.book} className="w-5 h-5"/> Concept</div><p className="text-slate-600 pl-7">{selectedNode.desc}</p></div>
+                                {selectedNode.expectations && <div className="mb-6 bg-green-50 p-4 rounded-lg border border-green-200"><div className="flex items-center gap-2 mb-3 text-green-800 font-bold"><Icon d={icons.target} className="w-5 h-5"/> Exam Expectations</div><ul className="list-disc pl-5 space-y-1 text-sm text-green-900">{selectedNode.expectations.map((exp, i) => <li key={i}>{exp}</li>)}</ul></div>}
+                                <div className="flex justify-end"><button onClick={() => setSelectedNode(null)} className="bg-slate-200 text-slate-700 px-5 py-2 rounded-lg hover:bg-slate-300 font-bold">Close</button></div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const ActiveRecall = () => {
+            const [inputs, setInputs] = useState({});
+            const [showKeys, setShowKeys] = useState({});
+            const generatePDF = () => {
+                const element = document.getElementById('active-recall-content');
+                if (!element) return;
+                const originalKeys = {...showKeys}; const allKeys = {}; RECALL_DATA.forEach(item => allKeys[item.id] = true); setShowKeys(allKeys);
+                window.html2pdf().set({ margin: 0.5, filename: 'Active_Recall_Unit3.pdf', image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2 }, jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' } }).from(element).save().then(() => setShowKeys(originalKeys));
+            };
+            return (
+                <div className="space-y-6">
+                    <div className="bg-gradient-to-r from-violet-600 to-indigo-600 rounded-xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div><h2 className="text-2xl font-bold flex items-center gap-2"><Icon d={icons.pen} className="w-6 h-6"/> Active Recall</h2><p className="text-indigo-100 mt-1">Brain dump topic knowledge.</p></div>
+                        <button onClick={generatePDF} className="bg-white text-indigo-600 px-5 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-indigo-50"><Icon d={icons.dl} className="w-5 h-5"/> Save PDF</button>
+                    </div>
+                    <div id="active-recall-content" className="space-y-8">
+                        {RECALL_DATA.map((item, idx) => (
+                            <div key={item.id} className="bg-white p-6 rounded-xl shadow-md border border-slate-200 break-inside-avoid">
+                                <h3 className="text-xl font-bold text-slate-800 mb-2">{idx + 1}. {item.title}</h3>
+                                <p className="text-slate-600 mb-4 font-medium italic">{item.prompt}</p>
+                                <textarea value={inputs[item.id] || ''} onChange={(e) => setInputs(p => ({...p, [item.id]: e.target.value}))} className="w-full p-4 border border-slate-300 rounded-lg bg-slate-50 focus:ring-2 focus:ring-indigo-500 min-h-[150px] mb-4 text-sm" placeholder="Type everything you remember..." />
+                                <div className="no-print"><button onClick={() => setShowKeys(p => ({...p, [item.id]: !p[item.id]}))} className="text-sm font-bold text-indigo-600 hover:text-indigo-800">{showKeys[item.id] ? "Hide Key Ideas" : "Reveal Key Ideas"}</button></div>
+                                {showKeys[item.id] && <div className="mt-4 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg animate-fade-in"><h4 className="font-bold text-green-800 mb-2 flex items-center gap-2"><Icon d={icons.check} className="w-4 h-4"/> Key Ideas</h4><ul className="list-disc pl-5 space-y-1 text-sm text-green-900">{item.keyIdeas.map((idea, i) => <li key={i}>{idea}</li>)}</ul></div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Flashcards = () => {
+            const [idx, setIdx] = useState(0); const [flipped, setFlipped] = useState(false); const [ans, setAns] = useState({});
+            const next = () => { setFlipped(false); setTimeout(() => setIdx((idx + 1) % VOCABULARY.length), 200); };
+            const prev = () => { setFlipped(false); setTimeout(() => setIdx((idx - 1 + VOCABULARY.length) % VOCABULARY.length), 200); };
+            const savePDF = () => {
+                const el = document.createElement('div');
+                el.innerHTML = `<div style="padding:20px;font-family:sans-serif"><h1 style="text-align:center">Flashcards - Unit 3</h1>${VOCABULARY.map((v,i)=>`<div style="margin-bottom:15px;border-bottom:1px solid #ccc"><h3>${v.term}</h3><p><strong>Your Def:</strong> ${ans[i]||''}</p><p style="color:green"><strong>Correct:</strong> ${v.def}</p></div>`).join('')}</div>`;
+                window.html2pdf().from(el).save();
+            };
+            return (
+                <div className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-md border border-slate-200">
+                    <div className="flex justify-between w-full mb-6"><h3 className="text-xl font-bold flex gap-2"><Icon d={icons.layers} className="w-5 h-5"/> Flashcards</h3><button onClick={savePDF} className="text-xs bg-indigo-100 text-indigo-700 px-3 py-1 rounded font-bold">Save PDF</button></div>
+                    <div className="relative w-full max-w-md h-64 perspective-1000 cursor-pointer group mb-6" onClick={() => setFlipped(!flipped)}>
+                        <div className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
+                            <div className="absolute w-full h-full bg-indigo-600 text-white rounded-xl flex items-center justify-center p-8 backface-hidden shadow-lg border-2 border-indigo-500 text-center"><h4 className="text-3xl font-bold">{VOCABULARY[idx].term}</h4><p className="mt-4 text-indigo-200 text-sm">(Click to reveal)</p></div>
+                            <div className="absolute w-full h-full bg-white text-slate-800 rounded-xl flex items-center justify-center p-8 backface-hidden rotate-y-180 shadow-lg border-2 border-indigo-600 text-center"><p className="text-xl font-medium">{VOCABULARY[idx].def}</p></div>
+                        </div>
+                    </div>
+                    <textarea value={ans[idx]||''} onChange={e=>setAns({...ans,[idx]:e.target.value})} className="w-full max-w-md p-3 border rounded mb-6 bg-slate-50 h-24 text-sm" placeholder="Type definition (Self-Test)..."/>
+                    <div className="flex gap-4"><button onClick={prev} className="px-4 py-2 bg-slate-200 rounded">Prev</button><button onClick={next} className="px-4 py-2 bg-slate-200 rounded">Next</button></div>
+                    <p className="mt-2 text-slate-500 text-sm">{idx + 1} / {VOCABULARY.length}</p>
+                </div>
+            );
+        };
+
+        const ExamPractice = () => {
+            const [ans, setAns] = useState({}); const [show, setShow] = useState({});
+            const save = () => { const el=document.getElementById('exam-pdf'); if(el){ const old={...show}; const all={}; EXAM_QUESTIONS.forEach(q=>all[q.id]=true); setShow(all); window.html2pdf().set({margin:0.5,filename:'Unit3_Exam.pdf',html2canvas:{scale:2}}).from(el).save().then(()=>setShow(old)); }};
+            return (
+                <div className="space-y-6">
+                    <div className="bg-blue-600 rounded p-6 text-white flex justify-between items-center"><h2 className="text-2xl font-bold flex gap-2"><Icon d={icons.file} className="w-6 h-6"/> Exam Practice</h2><button onClick={save} className="bg-white text-blue-600 px-4 py-2 rounded font-bold flex gap-2"><Icon d={icons.dl} className="w-5 h-5"/> PDF</button></div>
+                    <div id="exam-pdf" className="bg-white p-8 rounded border shadow space-y-8">
+                        {EXAM_QUESTIONS.map((q,i)=>(
+                            <div key={q.id} className="break-inside-avoid">
+                                <div className="flex justify-between font-bold mb-2"><span>{i+1}. {q.question.split('\n')[0]}</span><span className="text-xs bg-slate-100 px-2 py-1 rounded">[{q.marks}]</span></div>
+                                <div className="pl-4 border-l-2 mb-4 whitespace-pre-line text-sm">{q.question.split('\n').slice(1).join('\n')}</div>
+                                <textarea value={ans[q.id]||''} onChange={e=>setAns({...ans,[q.id]:e.target.value})} className="w-full p-2 border rounded bg-slate-50 min-h-[80px] text-sm" placeholder="Answer..."/>
+                                <div className="no-print mt-2"><button onClick={()=>setShow({...show,[q.id]:!show[q.id]})} className="text-xs font-bold text-indigo-600">{show[q.id]?'Hide':'Show'} Model</button></div>
+                                {show[q.id] && <div className="mt-2 bg-green-50 p-3 rounded text-sm text-green-900 whitespace-pre-line"><strong>Model:</strong> {q.modelAnswer}</div>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Quiz = () => {
+            const [q, setQ] = useState(0); const [sel, setSel] = useState(null); const [res, setRes] = useState(false); const [sc, setSc] = useState(0); const [set, setSet] = useState([]);
+            
+            const generateQuiz = () => {
+                const shuffled = [...QUIZ_POOL].sort(() => 0.5 - Math.random());
+                setSet(shuffled.slice(0, 10));
+                setQ(0);
+                setSel(null);
+                setSc(0);
+                setRes(false);
+            };
+
+            useEffect(() => { generateQuiz(); }, []);
+
+            const click = i => { setSel(i); setRes(true); if(i===set[q].correct) setSc(s=>s+1); };
+            const next = () => { 
+                if(q < set.length-1) { setQ(q+1); setSel(null); setRes(false); }
+                else { 
+                    alert(`Score: ${sc + (sel===set[q].correct?0:0)}/${set.length}`); 
+                    generateQuiz(); 
+                }
+            };
+
+            if(set.length === 0) return <div>Loading...</div>;
+
+            return (
+                <div className="bg-white p-8 rounded shadow max-w-2xl mx-auto">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex items-center gap-3">
+                            <h3 className="font-bold text-lg">Quiz</h3>
+                            <button onClick={generateQuiz} className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded font-bold hover:bg-indigo-200 flex items-center gap-1">
+                                <Icon d={icons.refresh} className="w-3 h-3"/> New Questions
+                            </button>
+                        </div>
+                        <span className="bg-indigo-100 text-indigo-800 px-2 rounded text-sm">{q+1}/{set.length}</span>
+                    </div>
+                    <p className="mb-4 text-lg">{set[q].question}</p>
+                    <div className="space-y-3">
+                        {set[q].options.map((opt, idx) => {
+                            let stateClass = "border-slate-200 hover:bg-slate-50";
+                            if (res) {
+                                if (idx === set[q].correct) stateClass = "bg-green-100 border-green-500 text-green-800";
+                                else if (idx === sel) stateClass = "bg-red-100 border-red-500 text-red-800";
+                            }
+                            return (
+                                <button
+                                    key={idx}
+                                    disabled={res}
+                                    onClick={() => click(idx)}
+                                    className={`w-full text-left p-4 rounded-lg border-2 font-medium transition-all ${stateClass}`}
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <span>{opt}</span>
+                                        {res && idx === set[q].correct && <Icon d={icons.check} className="w-5 h-5 text-green-600" />}
+                                        {res && idx === sel && idx !== set[q].correct && <Icon d={icons.x} className="w-5 h-5 text-red-600" />}
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {res && <div className="mt-6 flex justify-end"><button onClick={next} className="px-6 py-2 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700">Next Question</button></div>}
+                </div>
+            );
+        };
+
+        const Checklist = () => {
+            const [chk, setChk] = useState({});
+            useEffect(()=>{const s=localStorage.getItem('u3-check');if(s)try{setChk(JSON.parse(s))}catch(e){}},[]);
+            const toggle = (c,i) => { const n={...chk,[`${c}-${i}`]:!chk[`${c}-${i}`]}; setChk(n); localStorage.setItem('u3-check',JSON.stringify(n)); };
+            return (
+                <div className="bg-white rounded shadow border p-6">
+                    <h2 className="text-2xl font-bold mb-6">Topic Checklist</h2>
+                    <div className="grid md:grid-cols-2 gap-8">{CHECKLIST_DATA.map((c,ci)=>(<div key={ci}><h3 className="font-bold border-b pb-2 mb-2">{c.category}</h3><ul>{c.items.map((it,ii)=><li key={ii} onClick={()=>toggle(ci,ii)} className="flex gap-2 items-center p-2 cursor-pointer hover:bg-slate-50 rounded"><div className={`w-5 h-5 border rounded flex items-center justify-center ${chk[`${ci}-${ii}`]?'bg-green-500 border-green-500':''}`}>{chk[`${ci}-${ii}`]&&<Icon d={icons.check} className="w-3.5 h-3.5 text-white"/>}</div><span className={chk[`${ci}-${ii}`]?'line-through text-slate-400':''}>{it}</span></li>)}</ul></div>))}</div>
+                </div>
+            );
+        };
+
+        const VocabList = () => (
+            <div className="bg-white p-6 rounded shadow border">
+                <h3 className="text-2xl font-bold mb-6 flex gap-2"><Icon d={icons.book} className="w-6 h-6 text-indigo-600"/> Vocabulary</h3>
+                <div className="grid gap-4">{VOCABULARY.map((v,i)=><div key={i} className="flex gap-4 p-3 border-b hover:bg-slate-50"><div className="w-1/4 font-bold text-indigo-700">{v.term}</div><div className="w-3/4 text-sm">{v.def}</div></div>)}</div>
+            </div>
+        );
+
+        const CommonErrors = () => (<div className="grid grid-cols-1 md:grid-cols-2 gap-4">{COMMON_ERRORS.map((err, idx) => (<div key={idx} className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg"><div className="flex items-start gap-3"><Icon d={icons.alert} className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" /><div><h4 className="font-bold text-red-800 mb-1">{err.title}</h4><p className="text-sm text-red-700 leading-relaxed">{err.desc}</p></div></div></div>))}</div>);
+
+        const App = () => {
+            const [sect, setSect] = useState('sims');
+            const menu = [
+                {id:'map',l:'Concept Map',i:icons.map},
+                {id:'recall',l:'Active Recall',i:icons.pen},
+                {id:'flashcards',l:'Flashcards',i:icons.layers},
+                {id:'sims',l:'Simulations',i:icons.sim},
+                {id:'exam',l:'Exam Practice',i:icons.file},
+                {id:'quiz',l:'Quiz',i:icons.brain},
+                {id:'checklist',l:'Checklist',i:icons.checksq},
+                {id:'vocab',l:'Vocabulary',i:icons.book},
+            ];
+            return (
+                <div className="min-h-screen bg-slate-100 text-slate-900 pb-20">
+                    <header className="bg-indigo-700 text-white shadow-lg p-6"><div className="max-w-6xl mx-auto"><div className="flex items-center gap-2 mb-1 opacity-80"><Icon d={icons.chip} className="w-6 h-6"/><span className="font-bold text-sm tracking-widest">IGCSE 0478</span></div><h1 className="text-3xl font-extrabold">Unit 3: Hardware</h1></div></header>
+                    <div className="sticky top-0 z-20 bg-white shadow-sm border-b overflow-x-auto"><div className="max-w-6xl mx-auto px-4"><nav className="flex space-x-1">{menu.map(m=><button key={m.id} onClick={()=>setSect(m.id)} className={`flex items-center gap-2 px-4 py-4 text-sm font-bold border-b-4 transition whitespace-nowrap ${sect===m.id?'border-indigo-600 text-indigo-700':'border-transparent text-slate-500 hover:text-slate-700'}`}><Icon d={m.i} className="w-4 h-4"/>{m.l}</button>)}</nav></div></div>
+                    <main className="max-w-6xl mx-auto px-4 py-8">
+                        {sect==='map' && <ConceptMap/>}
+                        {sect==='recall' && <ActiveRecall/>}
+                        {sect==='flashcards' && <Flashcards/>}
+                        {sect==='sims' && <Simulations/>}
+                        {sect==='exam' && <ExamPractice/>}
+                        {sect==='quiz' && <Quiz/>}
+                        {sect==='checklist' && <Checklist/>}
+                        {sect==='vocab' && <VocabList/>}
+                        {sect==='errors' && <><h2 className="text-2xl font-bold mb-4">Common Errors</h2><CommonErrors/></>}
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

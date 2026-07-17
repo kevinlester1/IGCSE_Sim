@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE CS Keyword Dash (AI Edition)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #4f46e5;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        /* Custom scrollbar for category list */
+        .category-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .category-list::-webkit-scrollbar-track {
+            background: #4a5568; /* gray-700 */
+            border-radius: 10px;
+        }
+        .category-list::-webkit-scrollbar-thumb {
+            background: #718096; /* gray-500 */
+            border-radius: 10px;
+        }
+        .category-list::-webkit-scrollbar-thumb:hover {
+            background: #a0aec0; /* gray-400 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center p-4">
+
+    <!-- Main Container -->
+    <div class="w-full max-w-2xl mx-auto">
+
+        <!-- 1. Start Screen -->
+        <div id="start-screen" class="bg-gray-800 shadow-xl rounded-lg p-8 sm:p-12 text-center fade-in">
+            <h1 class="text-4xl sm:text-5xl font-bold text-indigo-400 mb-4">IGCSE CS Keyword Dash</h1>
+            <h2 class="text-2xl font-semibold text-indigo-300 mb-6">Study & Challenge</h2>
+
+            <!-- Mode Selector -->
+            <div class="mb-6">
+                <label class="block text-lg font-medium text-gray-300 mb-3">Choose your mode:</label>
+                <div class="flex rounded-lg shadow-sm">
+                    <button id="mode-practice" class="flex-1 py-3 px-4 bg-indigo-700 text-white font-semibold rounded-l-lg border-r border-indigo-800 transition">
+                        Practice Mode
+                    </button>
+                    <button id="mode-ai" class="flex-1 py-3 px-4 bg-gray-700 text-gray-300 font-semibold rounded-r-lg transition">
+                        AI Challenge
+                    </button>
+                </div>
+                <p id="mode-description" class="text-sm text-gray-400 mt-2 h-10">
+                    No timer, no API key. Just study and compare your answers.
+                </p>
+            </div>
+
+            <!-- Topic Selector -->
+            <div class="mb-6">
+                <label class="block text-lg font-medium text-gray-300 mb-3">Select topics to include:</label>
+                <div id="category-list-container" class="category-list max-h-48 overflow-y-auto bg-gray-900 p-4 rounded-lg text-left text-sm space-y-2 border border-gray-700">
+                    <!-- Categories will be dynamically inserted here -->
+                </div>
+                <div class="flex justify-between mt-2 text-xs">
+                    <button id="select-all" class="text-indigo-400 hover:text-indigo-300">Select All</button>
+                    <button id="deselect-all" class="text-indigo-400 hover:text-indigo-300">Deselect All</button>
+                </div>
+            </div>
+            
+            <!-- API Key Input Field (Hidden by default) -->
+            <div id="api-key-container" class="mb-8 hidden fade-in">
+                <label for="user-api-key" class="block text-sm font-medium text-gray-300 mb-2">Gemini API Key</label>
+                <input type="password" id="user-api-key" class="w-full p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Paste your key here for AI Challenge mode">
+                <p class="text-xs text-gray-500 mt-2">Required for AI Challenge mode only. Get one from Google AI Studio.</p>
+            </div>
+            
+            <!-- General Error Message Area -->
+            <div id="start-error-message" class="hidden my-4 p-3 bg-red-900 text-red-200 rounded-lg fade-in"></div>
+
+            <button id="start-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg text-2xl transition duration-200 shadow-lg">
+                Start Practice!
+            </button>
+        </div>
+
+        <!-- 2. Game Screen (Initially Hidden) -->
+        <div id="game-screen" class="hidden fade-in">
+            <!-- Header: Timer and Score -->
+            <div id="game-header" class="flex justify-between items-center mb-6 px-2">
+                <div>
+                    <span class="text-gray-400 text-sm uppercase">Time Left</span>
+                    <div id="timer" class="text-4xl font-bold text-red-500">10:00</div>
+                </div>
+                <div>
+                    <span class="text-gray-400 text-sm uppercase">Category</span>
+                    <div id="current-category" class="text-lg font-medium text-indigo-400 text-right">Data Rep.</div>
+                </div>
+                <div>
+                    <span class="text-gray-400 text-sm uppercase">Score</span>
+                    <div id="score" class="text-4xl font-bold text-green-500">0</div>
+                </div>
+            </div>
+
+            <!-- Main Game Card -->
+            <div class="bg-gray-800 shadow-xl rounded-lg p-8 sm:p-12 min-h-[450px] flex flex-col justify-between">
+                <!-- Word and Input -->
+                <div>
+                    <span class="text-indigo-400 text-sm uppercase font-semibold">Define this Term:</span>
+                    <h2 id="current-word" class="text-4xl sm:text-5xl font-bold mb-6 break-words">Binary</h2>
+                    
+                    <textarea id="user-answer" class="w-full h-24 p-3 bg-gray-700 text-white rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Type your definition here..."></textarea>
+                </div>
+                
+                <!-- Result Area (Initially Hidden) -->
+                <div id="result-area" class="hidden mt-4 pt-4 border-t border-gray-700 fade-in">
+                    <!-- AI Feedback -->
+                    <div id="ai-feedback-area" class="hidden">
+                        <h3 id="result-feedback-title" class="text-2xl font-bold mb-3"></h3>
+                        <p id="result-feedback-explanation" class="text-lg text-gray-300 mb-4"></p>
+                    </div>
+                    
+                    <div class="space-y-3 text-sm">
+                        <p><strong class="text-gray-400">Your Answer:</strong> <span id="result-user-answer" class="text-gray-200"></span></p>
+                        <p><strong class="text-gray-400">Correct Answer:</strong> <span id="result-correct-answer" class="text-gray-200"></span></p>
+                    </div>
+                </div>
+                
+                <!-- General Error Message Area -->
+                <div id="error-message" class="hidden mt-4 p-3 bg-red-900 text-red-200 rounded-lg fade-in"></div>
+
+                <!-- Action Buttons -->
+                <div class="mt-8">
+                    <!-- AI Challenge Buttons -->
+                    <div id="ai-buttons" class="hidden grid grid-cols-2 gap-4">
+                        <button id="pass-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 shadow-md">
+                            Pass
+                        </button>
+                        <button id="submit-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 shadow-md flex items-center justify-center gap-2">
+                            Submit
+                        </button>
+                    </div>
+
+                    <!-- Practice Mode Buttons -->
+                    <div id="practice-buttons" class="hidden grid grid-cols-2 gap-4">
+                        <button id="practice-next-word-button" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 shadow-md">
+                            Next Word
+                        </button>
+                        <button id="show-answer-button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 shadow-md">
+                            Show Answer
+                        </button>
+                    </div>
+
+                    <!-- "Next Word" Button (for after submission) -->
+                    <button id="next-word-button" class="hidden w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg text-xl transition duration-200 shadow-md">
+                        Next Word
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quit Button -->
+            <div class="text-center mt-4">
+                <button id="quit-button" class="text-gray-500 hover:text-gray-300 transition text-sm">
+                    &larr; Quit to Main Menu
+                </button>
+            </div>
+        </div>
+
+        <!-- 3. Game Over Screen (Initially Hidden) -->
+        <div id="game-over-screen" class="hidden bg-gray-800 shadow-xl rounded-lg p-8 sm:p-12 text-center fade-in">
+            <h1 class="text-4xl sm:text-5xl font-bold text-indigo-400 mb-4">Time's Up!</h1>
+            <p class="text-2xl text-gray-300 mb-6">Your final score is:</p>
+            <div id="final-score" class="text-8xl font-bold text-green-500 mb-10">0</div>
+            <p class="text-gray-400 mb-8">
+                Great job! Review the words you passed on. Every review helps cement your knowledge.
+            </p>
+            <button id="play-again-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-6 rounded-lg text-2xl transition duration-200 shadow-lg">
+                Play Again
+            </button>
+        </div>
+    </div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 1. DATA: IGCSE CS Keywords (Categorized) ---
+            const allKeywords = {
+                "Topic 1: Data Representation": [
+                    { term: "Binary", definition: "A base-2 number system using only the digits 0 and 1." },
+                    { term: "Hexadecimal", definition: "A base-16 number system used to represent binary numbers in a shorter format." },
+                    { term: "Overflow Error", definition: "An error that occurs when a calculation produces a result that is too large to be stored in the available space (e.g., an 8-bit register)." },
+                    { term: "Two's Complement", definition: "A method for representing negative numbers in binary." },
+                    { term: "ASCII", definition: "A 7-bit character set used to represent text characters in computers." },
+                    { term: "Unicode", definition: "A character set standard that can represent characters from most of the world's languages, using more bits than ASCII." },
+                    { term: "Sample Rate", definition: "The number of times per second a sound wave is measured (sampled) when converting from analog to digital." },
+                    { term: "Sample Resolution", definition: "The number of bits used to store the value of each sample in digital audio." },
+                    { term: "Colour Depth", definition: "The number of bits used to store the colour value for a single pixel in an image." },
+                    { term: "Pixel", definition: "The smallest addressable element in a digital image; a single point of colour." },
+                    { term: "Resolution", definition: "The total number of pixels in an image, typically expressed as width x height (e.g., 1920x1080)." },
+                    { term: "Lossy Compression", definition: "A compression method that reduces file size by permanently deleting data (e.g., JPEG, MP3)." },
+                    { term: "Lossless Compression", definition: "A compression method that reduces file size without losing any data, allowing perfect reconstruction (e.g., RLE, ZIP)." },
+                    { term: "RLE (Run-Length Encoding)", definition: "A lossless compression method that stores sequences of identical data as a single value and a count." }
+                ],
+                "Topic 2: Data Transmission": [
+                    { term: "Packet", definition: "A small block of data transmitted over a network, containing a header, payload, and trailer." },
+                    { term: "Packet Switching", definition: "A method of data transmission where messages are broken into packets and sent independently over the best route, then reassembled." },
+                    { term: "Simplex", definition: "Data transmission in one direction only (e.g., TV broadcast)." },
+                    { term: "Half-Duplex", definition: "Data transmission in both directions, but only one way at a time (e.g., walkie-talkie)." },
+                    { term: "Full-Duplex", definition: "Data transmission in both directions simultaneously (e.g., phone call)." },
+                    { term: "Serial", definition: "Data transmission where bits are sent one after another over a single wire." },
+                    { term: "Parallel", definition: "Data transmission where multiple bits are sent simultaneously over multiple wires." },
+                    { term: "Parity Check", definition: "An error-detection method that adds an extra bit (parity bit) to make the total number of 1s either even or odd." },
+                    { term: "Checksum", definition: "An error-detection method using a calculation on a block of data, with the result sent with the data." },
+                    { term: "ARQ (Automatic Repeat Query)", definition: "An error-control method that uses acknowledgements (ACK) and timeouts to request re-transmission of lost or corrupted data." },
+                    { term: "Symmetric Encryption", definition: "Encryption that uses a single, shared secret key to both encrypt and decrypt data." },
+                    { term: "Asymmetric Encryption", definition: "Encryption using a pair of keys: a public key for encryption and a private key for decryption." }
+                ],
+                "Topic 3: Hardware": [
+                    { term: "CPU (Central Processing Unit)", definition: "The 'brain' of the computer; it processes instructions and data by fetching, decoding, and executing them." },
+                    { term: "ALU (Arithmetic Logic Unit)", definition: "The part of the CPU that performs arithmetic calculations (e.g., +, -) and logical operations (e.g., AND, OR)." },
+                    { term: "Control Unit (CU)", definition: "The part of the CPU that manages the fetch-decode-execute cycle and controls the flow of data within the CPU and to other components." },
+                    { term: "Register", definition: "A small, high-speed storage location directly within the CPU, used to hold temporary data or instructions." },
+                    { term: "MAR (Memory Address Register)", definition: "A CPU register that holds the memory address of the data or instruction to be fetched or written." },
+                    { term: "MDR (Memory Data Register)", definition: "A CPU register that holds the data or instruction fetched from memory or waiting to be written to memory." },
+                    { term: "Program Counter (PC)", definition: "A CPU register that holds the memory address of the next instruction to be fetched." },
+                    { term: "Fetch-Decode-Execute Cycle", definition: "The continuous process by which the CPU retrieves an instruction from memory, determines what it does, and then carries it out." },
+                    { term: "Embedded System", definition: "A computer system with a dedicated function within a larger mechanical or electrical system (e.g., in a washing machine)." },
+                    { term: "RAM (Random Access Memory)", definition: "Volatile (loses data when power is off) memory used to store currently running programs and data." },
+                    { term: "ROM (Read Only Memory)", definition: "Non-volatile (keeps data when power is off) memory that typically stores the computer's boot-up instructions (bootstrap)." },
+                    { term: "Virtual Memory", definition: "Using a part of the hard drive as if it were RAM when the physical RAM is full, by swapping data pages." },
+                    { term: "Cloud Storage", definition: "A remote data storage service where data is stored on servers accessed via the internet." },
+                    { term: "MAC Address", definition: "A unique hardware identifier assigned to a Network Interface Card (NIC) by the manufacturer." },
+                    { term: "IP Address", definition: "A unique numerical label assigned to each device connected to a network, used for location and addressing." },
+                    { term: "Router", definition: "A network device that forwards data packets between computer networks, directing traffic on the internet." },
+                    { term: "Sensor", definition: "An input device that detects and measures a physical property (e.g., temperature, light, pressure) and converts it into a signal." },
+                    { term: "Actuator", definition: "An output device (like a motor or heater) in an automated system that takes an electrical signal and causes a physical action." }
+                ],
+                "Topic 4: Software": [
+                    { term: "Operating System (OS)", definition: "System software that manages computer hardware, software resources, and provides services for programs (e.g., Windows, macOS, Android)." },
+                    { term: "Interrupt", definition: "A signal to the CPU from hardware or software indicating an event that needs immediate attention, pausing the current task." },
+                    { term: "High-Level Language", definition: "A programming language with strong abstraction, human-readable syntax, and machine independence (e.g., Python, Java)." },
+                    { term: "Low-Level Language", definition: "A programming language that is close to machine code, providing little abstraction (e.g., Assembly language)." },
+                    { term: "Assembly Language", definition: "A low-level language that uses mnemonics to represent machine code instructions." },
+                    { term: "Compiler", definition: "A translator that converts an entire high-level language program into machine code all at once, creating an executable file." },
+                    { term: "Interpreter", definition: "A translator that converts and executes a high-level language program one line at a time." },
+                    { term: "Assembler", definition: "A translator that converts assembly language mnemonics into machine code." },
+                    { term: "IDE (Integrated Development Environment)", definition: "Software that provides tools for programmers, such as a code editor, debugger, and translator." }
+                ],
+                "Topic 5: The Internet & Its Uses": [
+                    { term: "Internet", definition: "A global network of interconnected computer networks; the physical infrastructure." },
+                    { term: "WWW (World Wide Web)", definition: "A system of interlinked hypertext documents and resources accessed via the Internet, using browsers." },
+                    { term: "URL (Uniform Resource Locator)", definition: "The text-based address of a resource on the World Wide Web (e.g., a web page)." },
+                    { term: "HTTP", definition: "Hypertext Transfer Protocol. The standard protocol used for communication between web browsers and web servers." },
+                    { term: "HTTPS", definition: "Hypertext Transfer Protocol Secure. The encrypted version of HTTP, using SSL/TLS to secure communication." },
+                    { term: "DNS (Domain Name Server)", definition: "A system that translates human-readable domain names (like google.com) into machine-readable IP addresses." },
+                    { term: "Web Server", definition: "A computer that stores, processes, and delivers web pages to clients (browsers) upon request." },
+                    { term: "Cookie", definition: "A small text file stored on a user's computer by a website, used to store user preferences, session data, etc." },
+                    { term: "Phishing", definition: "A cyber security attack that uses a deceptive email or website to trick a user into revealing sensitive information." },
+                    { term: "Malware", definition: "Malicious software (like viruses, worms, ransomware) designed to disrupt, damage, or gain unauthorized access to a computer." },
+                    { term: "Virus", definition: "A type of malware that attaches itself to other programs and replicates when the program is run." },
+                    { term: "Firewall", definition: "A network security system that monitors and controls incoming and outgoing network traffic based on security rules." },
+                    { term: "SSL (Secure Socket Layer)", definition: "A security protocol that creates an encrypted link between a web server and a browser (now superseded by TSL)." },
+                    { term: "Blockchain", definition: "A distributed, immutable digital ledger used to record transactions, often for digital currencies." }
+                ],
+                "Topic 6: Automated & Emerging Tech": [
+                    { term: "Automated System", definition: "A system that uses sensors, microprocessors, and actuators to perform a task without human intervention." },
+                    { term: "Robotics", definition: "A branch of technology that deals with the design, construction, operation, and application of robots." },
+                    { term: "Artificial Intelligence (AI)", definition: "A branch of computer science where computers are programmed to simulate intelligent human behaviour, like learning and problem-solving." },
+                    { term: "Machine Learning", definition: "A subset of AI where systems can automatically learn and improve from experience without being explicitly programmed." },
+                    { term: "Expert System", definition: "A type of AI that uses a knowledge base and an inference engine to simulate the decision-making ability of a human expert." }
+                ],
+                "Topic 7: Algorithm Design": [
+                    { term: "Decomposition", definition: "Breaking down a complex problem into smaller, more manageable sub-problems." },
+                    { term: "Abstraction", definition: "Removing or hiding unnecessary detail from a problem to focus on the essential features." },
+                    { term: "Algorithm", definition: "A step-by-step set of rules or instructions to be followed to solve a problem." },
+                    { term: "Flowchart", definition: "A visual diagram that represents the steps and decisions of an algorithm." },
+                    { term: "Pseudocode", definition: "A text-based, high-level description of an algorithm that is not specific to any programming language." },
+                    { term: "Linear Search", definition: "A search algorithm that checks each item in a list, one by one, until the target item is found or the list ends." },
+                    { term: "Bubble Sort", definition: "A simple sorting algorithm that repeatedly steps through a list, compares adjacent items, and swaps them if they are in the wrong order." },
+                    { term: "Validation", definition: "A check performed by a program to ensure that data entered is reasonable, sensible, and of the correct type." },
+                    { term: "Range Check", definition: "A validation check that ensures data is within an allowed upper and lower limit (e.g., age is 1-100)." },
+                    { term: "Presence Check", definition: "A validation check that ensures a field has not been left empty." },
+                    { term: "Type Check", definition: "A validation check that ensures data is of the correct data type (e.g., integer, string)." },
+                    { term: "Check Digit", definition: "An error-detection check, the last digit of a code (like a barcode) calculated from the other digits, used to verify data entry." },
+                    { term: "Verification", definition: "A check to ensure that data has been transferred or copied correctly from one medium to another (e.g., double entry)." },
+                    { term: "Double Entry", definition: "A verification method where data is entered twice, and the two entries are compared for differences." },
+                    { term: "Trace Table", definition: "A tool used to test an algorithm by manually recording the value of each variable at each step." }
+                ],
+                "Topic 8: Programming Concepts": [
+                    { term: "Variable", definition: "A named memory location used to store data that can change while the program is running." },
+                    { term: "Constant", definition: "A named memory location used to store data that does not change while the program is running." },
+                    { term: "Data Type", definition: "A classification that specifies which type of value a variable can hold (e.g., Integer, String, Boolean)." },
+                    { term: "Sequence", definition: "A control structure where program instructions are executed one after another, in order." },
+                    { term: "Selection", definition: "A control structure (like IF or CASE) that allows the program to make a decision and execute different code based on a condition." },
+                    { term: "Iteration", definition: "The repetition of a block of code, typically using a loop (e.g., FOR, WHILE, REPEAT-UNTIL)." },
+                    { term: "Array", definition: "A data structure that stores a collection of items of the same data type under a single variable name." },
+                    { term: "Procedure", definition: "A named block of code that performs a specific task and does not return a value." },
+                    { term: "Function", definition: "A named block of code that performs a task and returns a value." },
+                    { term: "Parameter", definition: "A value passed into a procedure or function when it is called." },
+                    { term: "File Handling", definition: "The process of a program reading data from or writing data to a file on secondary storage." }
+                ],
+                "Topic 9: Databases": [
+                    { term: "Database", definition: "An organized collection of structured data, typically stored electronically." },
+                    { term: "Table", definition: "A set of data in a database, organized in rows (records) and columns (fields)." },
+                    { term: "Record", definition: "A single row in a database table, representing one complete entry (e.g., one student's information)." },
+                    { term: "Field", definition: "A single column in a database table, representing one piece of data about a record (e.g., 'FirstName')." },
+                    { term: "Primary Key", definition: "A unique field in a database table that identifies each record (e.g., StudentID)." },
+                    { term: "SQL (Structured Query Language)", definition: "The standard language used to query, manage, and manipulate data in a relational database." }
+                ],
+                "Topic 10: Boolean Logic": [
+                    { term: "Logic Gate", definition: "A basic building block of a digital circuit that performs a single logical operation (e.g., AND, OR, NOT)." },
+                    { term: "AND Gate", definition: "A logic gate that outputs TRUE (1) only if both of its inputs are TRUE (1)." },
+                    { term: "OR Gate", definition: "A logic gate that outputs TRUE (1) if at least one of its inputs is TRUE (1)." },
+                    { term: "NOT Gate", definition: "A logic gate that inverts its single input; outputs TRUE (1) if the input is FALSE (0), and vice versa." },
+                    { term: "NAND Gate", definition: "A logic gate that is the opposite of an AND gate; outputs FALSE (0) only if both inputs are TRUE (1)." },
+                    { term: "NOR Gate", definition: "A logic gate that is the opposite of an OR gate; outputs TRUE (1) only if both inputs are FALSE (0)." },
+                    { term: "XOR Gate", definition: "A logic gate that outputs TRUE (1) if its inputs are different (one is TRUE and one is FALSE)." },
+                    { term: "Truth Table", definition: "A table that shows all possible combinations of inputs for a logic circuit and the corresponding output." }
+                ]
+            };
+
+            let gameWords = [];
+            let currentWordIndex = 0;
+            let score = 0;
+            let timeLeft = 600; // 10 minutes in seconds
+            let timerInterval = null;
+            let gameMode = 'practice'; // 'practice' or 'ai'
+
+            // --- 2. DOM Element References ---
+            const startScreen = document.getElementById('start-screen');
+            const gameScreen = document.getElementById('game-screen');
+            const gameOverScreen = document.getElementById('game-over-screen');
+
+            const startButton = document.getElementById('start-button');
+            const playAgainButton = document.getElementById('play-again-button');
+            const quitButton = document.getElementById('quit-button');
+            
+            const timerDisplay = document.getElementById('timer');
+            const scoreDisplay = document.getElementById('score');
+            const gameHeader = document.getElementById('game-header');
+            const currentCategoryDisplay = document.getElementById('current-category');
+            
+            const currentWordDisplay = document.getElementById('current-word');
+            const userAnswerInput = document.getElementById('user-answer');
+            
+            const resultArea = document.getElementById('result-area');
+            const aiFeedbackArea = document.getElementById('ai-feedback-area');
+            const resultFeedbackTitle = document.getElementById('result-feedback-title');
+            const resultFeedbackExplanation = document.getElementById('result-feedback-explanation');
+            const resultUserAnswer = document.getElementById('result-user-answer');
+            const resultCorrectAnswer = document.getElementById('result-correct-answer');
+            const errorMessage = document.getElementById('error-message');
+            const startErrorMessage = document.getElementById('start-error-message');
+
+            const aiButtons = document.getElementById('ai-buttons');
+            const passButton = document.getElementById('pass-button');
+            const submitButton = document.getElementById('submit-button');
+            
+            const practiceButtons = document.getElementById('practice-buttons');
+            const practiceNextWordButton = document.getElementById('practice-next-word-button');
+            const showAnswerButton = document.getElementById('show-answer-button');
+
+            const nextWordButton = document.getElementById('next-word-button');
+
+            const finalScoreDisplay = document.getElementById('final-score');
+            
+            const modePracticeButton = document.getElementById('mode-practice');
+            const modeAiButton = document.getElementById('mode-ai');
+            const modeDescription = document.getElementById('mode-description');
+            const apiKeyContainer = document.getElementById('api-key-container');
+            const categoryListContainer = document.getElementById('category-list-container');
+            const selectAllButton = document.getElementById('select-all');
+            const deselectAllButton = document.getElementById('deselect-all');
+
+            // --- 3. Gemini API Configuration ---
+            let apiKey = "";
+            const userApiKeyInput = document.getElementById('user-api-key');
+            const baseApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=`;
+            
+            const systemPrompt = `You are an expert IGCSE Computer Science teacher. Your job is to evaluate a student's definition for a given keyword. Compare the student's answer to the correct definition.
+You MUST respond ONLY with a JSON object matching this schema:
+{
+  "type": "OBJECT",
+  "properties": {
+    "is_correct": { "type": "BOOLEAN" },
+    "explanation": { "type": "STRING" }
+  },
+  "required": ["is_correct", "explanation"]
+}
+- "is_correct": true if the student's answer is semantically correct, even if not word-for-word. False otherwise.
+- "explanation": A brief, one-sentence explanation for your decision (e.g., "You correctly identified it's a base-2 system," or "You missed the key idea that it's non-volatile memory.")`;
+
+            const responseSchema = {
+                type: "OBJECT",
+                properties: {
+                    "is_correct": { "type": "BOOLEAN" },
+                    "explanation": { "type": "STRING" }
+                },
+                required: ["is_correct", "explanation"]
+            };
+
+            // --- 4. Game Logic Functions ---
+            
+            /** Initializes the start screen */
+            function initStartScreen() {
+                // Generate category checkboxes
+                categoryListContainer.innerHTML = '';
+                Object.keys(allKeywords).forEach(category => {
+                    const categoryId = category.replace(/[^a-zA-Z0-9]/g, '');
+                    const checkboxHtml = `
+                        <div class="flex items-center">
+                            <input id="${categoryId}" name="category" type="checkbox" value="${category}" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-indigo-600 focus:ring-indigo-500">
+                            <label for="${categoryId}" class="ml-3 text-gray-300">${category}</label>
+                        </div>
+                    `;
+                    categoryListContainer.innerHTML += checkboxHtml;
+                });
+                
+                // Set default mode
+                setGameMode('practice');
+            }
+            
+            /** Sets the game mode ('practice' or 'ai') */
+            function setGameMode(mode) {
+                gameMode = mode;
+                if (mode === 'practice') {
+                    modePracticeButton.classList.remove('bg-gray-700', 'text-gray-300');
+                    modePracticeButton.classList.add('bg-indigo-700', 'text-white');
+                    modeAiButton.classList.remove('bg-indigo-700', 'text-white');
+                    modeAiButton.classList.add('bg-gray-700', 'text-gray-300');
+                    
+                    apiKeyContainer.classList.add('hidden');
+                    modeDescription.textContent = "No timer, no API key. Just study and compare your answers.";
+                    startButton.textContent = "Start Practice!";
+                } else { // 'ai' mode
+                    modePracticeButton.classList.add('bg-gray-700', 'text-gray-300');
+                    modePracticeButton.classList.remove('bg-indigo-700', 'text-white');
+                    modeAiButton.classList.add('bg-gray-700', 'text-gray-300');
+                    modeAiButton.classList.remove('bg-gray-700', 'text-gray-300');
+                    modeAiButton.classList.add('bg-indigo-700', 'text-white');
+                    
+                    apiKeyContainer.classList.remove('hidden');
+                    modeDescription.textContent = "10-min timed challenge. Requires a Gemini API key for grading.";
+                    startButton.textContent = "Start AI Challenge!";
+                }
+            }
+
+            /** Shuffles an array in place (Fisher-Yates) */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+
+            /** Formats seconds into MM:SS format */
+            function formatTime(seconds) {
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+            }
+
+            /** Starts the game */
+            function startGame() {
+                // 1. Build gameWords from selected categories
+                gameWords = [];
+                const selectedCategories = Array.from(document.querySelectorAll('input[name="category"]:checked'))
+                                                .map(cb => cb.value);
+                
+                if (selectedCategories.length === 0) {
+                    showStartError("Please select at least one topic category.");
+                    return;
+                }
+                
+                selectedCategories.forEach(categoryName => {
+                    const wordsFromCategory = allKeywords[categoryName].map(word => ({ ...word, category: categoryName }));
+                    gameWords.push(...wordsFromCategory);
+                });
+                
+                shuffleArray(gameWords);
+                
+                // 2. Check API key if in AI mode
+                if (gameMode === 'ai') {
+                    apiKey = userApiKeyInput.value.trim();
+                    if (!apiKey) {
+                        showStartError("Please enter a Gemini API key to start the AI Challenge.");
+                        return;
+                    }
+                }
+
+                // 3. Reset state
+                score = 0;
+                currentWordIndex = 0;
+                timeLeft = 600;
+
+                // 4. Configure UI based on mode
+                scoreDisplay.textContent = score;
+                startScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                gameScreen.classList.remove('hidden');
+                startErrorMessage.classList.add('hidden');
+
+                if (gameMode === 'ai') {
+                    gameHeader.classList.remove('hidden');
+                    timerDisplay.textContent = formatTime(timeLeft);
+                    if (timerInterval) clearInterval(timerInterval);
+                    timerInterval = setInterval(updateTimer, 1000);
+                    
+                    aiButtons.classList.remove('hidden');
+                    practiceButtons.classList.add('hidden');
+                } else { // 'practice' mode
+                    gameHeader.classList.add('hidden'); // Hide timer/score header
+                    
+                    aiButtons.classList.add('hidden');
+                    practiceButtons.classList.remove('hidden');
+                    showAnswerButton.classList.remove('hidden'); // Ensure "Show Answer" is visible
+                }
+                
+                // 5. Display first word
+                displayWord();
+            }
+
+            /** Updates the timer every second */
+            function updateTimer() {
+                timeLeft--;
+                timerDisplay.textContent = formatTime(timeLeft);
+                if (timeLeft <= 0) {
+                    endGame();
+                }
+            }
+
+            /** Displays the current word and resets buttons */
+            function displayWord() {
+                if (currentWordIndex >= gameWords.length) {
+                    // User finished all words!
+                    endGame();
+                    return;
+                }
+                
+                const word = gameWords[currentWordIndex];
+                
+                currentWordDisplay.textContent = word.term;
+                currentCategoryDisplay.textContent = word.category.replace('Topic ', '').split(':')[1].trim(); // Shorten category name
+                userAnswerInput.value = "";
+                
+                // Reset UI state
+                resultArea.classList.add('hidden');
+                aiFeedbackArea.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                nextWordButton.classList.add('hidden');
+                
+                if (gameMode === 'ai') {
+                    aiButtons.classList.remove('hidden');
+                    submitButton.disabled = false;
+                    passButton.disabled = false;
+                    submitButton.innerHTML = 'Submit';
+                } else {
+                    practiceButtons.classList.remove('hidden');
+                    showAnswerButton.classList.remove('hidden');
+                }
+            }
+            
+            /** Handles the "Pass" button (AI Mode) */
+            function handlePass() {
+                nextWord();
+            }
+
+            /** Moves to the next word */
+            function nextWord() {
+                currentWordIndex++;
+                displayWord();
+            }
+            
+            /** Handles "Show Answer" (Practice Mode) */
+            function handleShowAnswer() {
+                const userAnswer = userAnswerInput.value.trim() || "(No answer provided)";
+                const correctAnswer = gameWords[currentWordIndex].definition;
+                
+                // Hide buttons
+                practiceButtons.classList.add('hidden');
+                showAnswerButton.classList.add('hidden');
+                nextWordButton.classList.remove('hidden');
+                
+                // Show results
+                resultArea.classList.remove('hidden');
+                aiFeedbackArea.classList.add('hidden'); // Ensure AI feedback is hidden
+                resultUserAnswer.textContent = userAnswer;
+                resultCorrectAnswer.textContent = correctAnswer;
+            }
+
+            /** Handles submission of the user's answer (AI Mode) */
+            async function handleSubmitAnswer() {
+                const userAnswer = userAnswerInput.value;
+                if (!userAnswer.trim()) {
+                    showError("Please enter a definition before submitting.");
+                    return;
+                }
+                
+                const { term, definition: correctAnswer } = gameWords[currentWordIndex];
+
+                setLoading(true);
+                
+                try {
+                    const result = await fetchWithBackoff(term, userAnswer, correctAnswer);
+                    showResult(result, userAnswer, correctAnswer);
+                } catch (error) {
+                    console.error("API Error:", error);
+                    showError("Could not check answer. Please try again. " + error.message);
+                } finally {
+                    setLoading(false);
+                }
+            }
+            
+            /** Sets the loading state for buttons */
+            function setLoading(isLoading) {
+                if (isLoading) {
+                    submitButton.disabled = true;
+                    passButton.disabled = true;
+                    submitButton.innerHTML = '<div class="loader"></div> Checking...';
+                    errorMessage.classList.add('hidden');
+                } else {
+                    submitButton.disabled = false;
+                    passButton.disabled = false;
+                    submitButton.innerHTML = 'Submit';
+                }
+            }
+            
+            /** Shows an error message in the game screen */
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+            }
+            
+            /** Shows an error message in the start screen */
+            function showStartError(message) {
+                startErrorMessage.textContent = message;
+                startErrorMessage.classList.remove('hidden');
+            }
+
+            /** Shows the result from the API (AI Mode) */
+            function showResult(apiResponse, userAnswer, correctAnswer) {
+                aiButtons.classList.add('hidden');
+                nextWordButton.classList.remove('hidden');
+                resultArea.classList.remove('hidden');
+                aiFeedbackArea.classList.remove('hidden');
+                
+                // Populate result text
+                resultFeedbackExplanation.textContent = apiResponse.explanation;
+                resultUserAnswer.textContent = userAnswer;
+                resultCorrectAnswer.textContent = correctAnswer;
+                
+                if (apiResponse.is_correct) {
+                    resultFeedbackTitle.textContent = "Correct!";
+                    resultFeedbackTitle.className = "text-2xl font-bold mb-3 text-green-500";
+                    score++;
+                    scoreDisplay.textContent = score;
+                } else {
+                    resultFeedbackTitle.textContent = "Not Quite";
+                    resultFeedbackTitle.className = "text-2xl font-bold mb-3 text-yellow-500";
+                }
+            }
+
+            /** Ends the game (AI Mode) */
+            function endGame() {
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = null;
+                
+                // If in practice mode and game ends (e.g., all words done), just go to main menu
+                if (gameMode === 'practice') {
+                    showStartScreen();
+                    return;
+                }
+
+                finalScoreDisplay.textContent = score;
+                gameScreen.classList.add('hidden');
+                gameOverScreen.classList.remove('hidden');
+            }
+            
+            /** Returns to the start screen */
+            function showStartScreen() {
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = null;
+                
+                gameScreen.classList.add('hidden');
+                gameOverScreen.classList.add('hidden');
+                startScreen.classList.remove('hidden');
+                startErrorMessage.classList.add('hidden');
+            }
+            
+            /** Toggles all category checkboxes */
+            function setAllCheckboxes(checked) {
+                document.querySelectorAll('input[name="category"]').forEach(cb => {
+                    cb.checked = checked;
+                });
+            }
+            
+            // --- 5. API Fetch Logic with Exponential Backoff ---
+            
+            async function checkSemanticSimilarity(term, userAnswer, correctAnswer) {
+                const userPrompt = `Keyword: "${term}"\n\nCorrect Definition: "${correctAnswer}"\n\nStudent's Answer: "${userAnswer}"`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userPrompt }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: responseSchema,
+                        temperature: 0.2
+                    }
+                };
+
+                const apiUrl = `${baseApiUrl}${apiKey}`;
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorBody = await response.text();
+                    throw new Error(`API request failed with status ${response.status}: ${errorBody}`);
+                }
+
+                const result = await response.json();
+                
+                if (!result.candidates || !result.candidates[0].content || !result.candidates[0].content.parts[0].text) {
+                    throw new Error("Invalid API response structure.");
+                }
+                
+                const jsonText = result.candidates[0].content.parts[0].text;
+                return JSON.parse(jsonText);
+            }
+
+            async function fetchWithBackoff(term, userAnswer, correctAnswer, maxRetries = 3) {
+                let delay = 1000;
+                for (let i = 0; i < maxRetries; i++) {
+                    try {
+                        return await checkSemanticSimilarity(term, userAnswer, correctAnswer);
+                    } catch (error) {
+                        if (i === maxRetries - 1) throw error;
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        delay *= 2;
+                    }
+                }
+            }
+
+            // --- 6. Event Listeners ---
+            modePracticeButton.addEventListener('click', () => setGameMode('practice'));
+            modeAiButton.addEventListener('click', () => setGameMode('ai'));
+            
+            startButton.addEventListener('click', startGame);
+            playAgainButton.addEventListener('click', showStartScreen);
+            quitButton.addEventListener('click', showStartScreen);
+            
+            selectAllButton.addEventListener('click', () => setAllCheckboxes(true));
+            deselectAllButton.addEventListener('click', () => setAllCheckboxes(false));
+            
+            // AI Mode Buttons
+            submitButton.addEventListener('click', handleSubmitAnswer);
+            passButton.addEventListener('click', handlePass);
+            
+            // Practice Mode Buttons
+            showAnswerButton.addEventListener('click', handleShowAnswer);
+            practiceNextWordButton.addEventListener('click', nextWord);
+
+            // Universal "Next" button (after result is shown)
+            nextWordButton.addEventListener('click', nextWord);
+            
+            // --- 7. Initial Page Load ---
+            initStartScreen();
+        });
+    </script>
+</body>
+</html>

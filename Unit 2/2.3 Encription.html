@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encryption & Cryptography Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Fira+Code:wght@400;500;600&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9; /* slate-100 */
+            color: #0f172a; /* slate-900 */
+        }
+
+        .mono {
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* Custom Scrollbar for Tabs */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Tab Active State */
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+            position: relative;
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background-color: #3b82f6;
+            transition: width 0.3s ease;
+            border-top-left-radius: 3px;
+            border-top-right-radius: 3px;
+        }
+        .tab-active {
+            color: #1d4ed8; /* blue-700 */
+            background-color: #eff6ff; /* blue-50 */
+            font-weight: 600;
+        }
+        .tab-active::after {
+            width: 100%;
+        }
+
+        /* Simulation Animations */
+        .packet-animation {
+            transition: all 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Prime Node Interactions */
+        .prime-node {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .prime-node:hover:not(.prime-selected) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border-color: #cbd5e1;
+        }
+        .prime-selected {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            color: white !important;
+            border-color: transparent !important;
+            box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.3) !important;
+            transform: scale(1.05);
+        }
+
+        /* Card Hover Effects */
+        .challenge-card {
+            transition: all 0.3s ease;
+        }
+        .challenge-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        /* Decoder Ring Style */
+        .char-box {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 min-h-screen flex flex-col">
+
+    <div class="max-w-6xl mx-auto w-full flex-grow flex flex-col">
+        <!-- Header -->
+        <header class="mb-10 text-center fade-in-up">
+            <div class="inline-block p-3 bg-blue-100 rounded-full mb-4 text-blue-600">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Encryption Laboratory</h1>
+            <p class="text-slate-500 max-w-2xl mx-auto text-lg">Interactive simulations to understand how data is secured across the digital world.</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex overflow-x-auto no-scrollbar bg-white rounded-2xl shadow-sm border border-slate-200 mb-8 p-1 fade-in-up" style="animation-delay: 0.1s;">
+            <button onclick="switchTab('basics')" id="tab-basics" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl tab-active">Core Concepts</button>
+            <button onclick="switchTab('caesar')" id="tab-caesar" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl">Caesar Cipher</button>
+            <button onclick="switchTab('symmetric')" id="tab-symmetric" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl">Symmetric</button>
+            <button onclick="switchTab('asymmetric')" id="tab-asymmetric" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl">Asymmetric</button>
+            <button onclick="switchTab('analogy')" id="tab-analogy" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl">The Padlock</button>
+            <button onclick="switchTab('keygen')" id="tab-keygen" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl">Key Generation</button>
+            <button onclick="switchTab('challenges')" id="tab-challenges" class="tab-btn flex-1 min-w-[140px] px-4 py-3 text-sm font-medium text-slate-600 hover:text-slate-900 rounded-xl flex items-center justify-center gap-2">
+                <span>🚀</span> Challenges
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow">
+            
+            <!-- Section: Basics -->
+            <section id="content-basics" class="block fade-in-up" style="animation-delay: 0.2s;">
+                <div class="grid md:grid-cols-5 gap-6">
+                    <div class="md:col-span-3 bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="p-2 bg-indigo-100 text-indigo-600 rounded-lg">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            </div>
+                            <h2 class="text-2xl font-bold text-slate-800">Why do we need encryption?</h2>
+                        </div>
+                        
+                        <div class="space-y-5 text-slate-600">
+                            <div class="flex items-start bg-slate-50 p-4 rounded-2xl">
+                                <span class="bg-blue-100 text-blue-700 p-1.5 rounded-full mr-4 mt-0.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                                <div>
+                                    <strong class="text-slate-900 block mb-1">Public Networks are Noisy</strong>
+                                    <p class="text-sm">Data travels through cables, routers, and Wi-Fi signals where anyone with the right tools can "listen" to the traffic.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start bg-slate-50 p-4 rounded-2xl">
+                                <span class="bg-blue-100 text-blue-700 p-1.5 rounded-full mr-4 mt-0.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                                <div>
+                                    <strong class="text-slate-900 block mb-1">Protecting Sensitive Data</strong>
+                                    <p class="text-sm">Passwords, bank details, and personal messages need a secure envelope to protect them from malicious actors.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start bg-slate-50 p-4 rounded-2xl">
+                                <span class="bg-blue-100 text-blue-700 p-1.5 rounded-full mr-4 mt-0.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
+                                <div>
+                                    <strong class="text-slate-900 block mb-1">Scrambling the Message</strong>
+                                    <p class="text-sm">Encryption mathematically scrambles data, turning readable <i>Plaintext</i> into unreadable <i>Ciphertext</i>.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-2 bg-slate-900 text-white p-8 rounded-3xl shadow-xl relative overflow-hidden flex flex-col justify-center">
+                        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                        <div class="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+                        
+                        <h2 class="text-xl font-bold mb-4 flex items-center gap-2">
+                            <span class="text-yellow-400">✨</span> The Golden Rule
+                        </h2>
+                        <p class="text-slate-300 leading-relaxed mb-8 text-sm">
+                            Encryption is the process of encoding data so it cannot be understood without a specific, mathematical <strong>Key</strong> to decode it back.
+                        </p>
+                        
+                        <div class="bg-slate-800/80 backdrop-blur-sm p-5 rounded-2xl border border-slate-700/50">
+                            <div class="flex justify-between items-center mb-4 relative">
+                                <div class="text-center z-10 bg-slate-800 px-2">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Plaintext</div>
+                                    <div class="font-mono text-lg font-bold text-green-400">HELLO</div>
+                                </div>
+                                <div class="absolute w-full h-px bg-slate-700 top-1/2 -translate-y-1/2 left-0"></div>
+                                <div class="z-10 bg-slate-800 px-2 text-blue-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                                </div>
+                                <div class="text-center z-10 bg-slate-800 px-2">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider mb-1">Ciphertext</div>
+                                    <div class="font-mono text-lg font-bold text-red-400">KHOOR</div>
+                                </div>
+                            </div>
+                            <div class="text-center text-xs text-slate-500 italic">Example: Shifted by +3</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Caesar Cipher -->
+            <section id="content-caesar" class="hidden fade-in-up">
+                <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Interactive Caesar Cipher</h2>
+                            <p class="text-slate-500 text-sm mt-1">One of the earliest and simplest ciphers. It shifts the alphabet by a set number.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="grid lg:grid-cols-5 gap-8">
+                        <div class="lg:col-span-2 space-y-8">
+                            <div>
+                                <label for="caesar-input" class="block text-sm font-semibold text-slate-700 mb-2">Message to Encrypt</label>
+                                <textarea id="caesar-input" oninput="updateCaesar()" rows="3" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none text-slate-800 font-medium">The quick brown fox jumps over the lazy dog!</textarea>
+                            </div>
+                            
+                            <div class="bg-blue-50/50 p-6 rounded-2xl border border-blue-100">
+                                <div class="flex justify-between items-center mb-4">
+                                    <span class="text-sm font-bold text-slate-700">Encryption Key (Shift)</span>
+                                    <span id="shift-val" class="bg-blue-600 text-white font-mono font-bold px-3 py-1 rounded-lg shadow-sm">3</span>
+                                </div>
+                                <input type="range" id="caesar-shift" min="0" max="25" value="3" oninput="updateCaesar()" class="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                                <div class="flex justify-between text-xs text-slate-400 mt-2 font-mono">
+                                    <span>0</span><span>13</span><span>25</span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between items-end mb-2">
+                                    <label class="block text-sm font-semibold text-slate-700">Resulting Ciphertext</label>
+                                    <button onclick="copyToClipboard('caesar-output')" class="text-xs text-blue-600 hover:text-blue-800 font-medium flex items-center gap-1">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg> Copy
+                                    </button>
+                                </div>
+                                <div class="w-full p-4 bg-slate-900 border border-slate-800 rounded-2xl text-green-400 font-mono break-words min-h-[100px] shadow-inner" id="caesar-output">Wkh txlfn eurzq ira mxpsv ryhu wkh odba grj!</div>
+                            </div>
+                        </div>
+                        
+                        <div class="lg:col-span-3 bg-slate-50 p-6 rounded-3xl border border-slate-200 flex flex-col justify-center overflow-x-auto">
+                            <h3 class="text-center text-sm font-bold text-slate-500 uppercase tracking-wider mb-6">Alphabet Mapping</h3>
+                            <div class="min-w-max mx-auto space-y-4">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-400 w-16 text-right">Plain:</span>
+                                    <div class="flex gap-1 bg-white p-2 rounded-xl border border-slate-200 shadow-sm" id="alphabet-plain"></div>
+                                </div>
+                                <div class="flex items-center justify-center text-blue-300">
+                                    <svg class="w-6 h-6 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path></svg>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-400 w-16 text-right">Cipher:</span>
+                                    <div class="flex gap-1 bg-blue-600 p-2 rounded-xl shadow-md" id="alphabet-cipher"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Symmetric -->
+        <section id="content-symmetric" class="hidden fade-in-up">
+            <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                <div class="text-center max-w-2xl mx-auto mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-4">Symmetric Encryption</h2>
+                    <p class="text-slate-500">The same secret key is used to both encrypt and decrypt the message. It's fast, but both parties must safely share the key first.</p>
+                </div>
+
+                <div class="grid md:grid-cols-3 gap-6 items-start bg-slate-50 p-8 rounded-3xl border border-slate-200">
+                    <!-- Sender -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative z-10 flex flex-col h-full">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+                            👩‍💻
+                        </div>
+                        <h3 class="font-bold text-slate-800 mb-1">Alice (Sender)</h3>
+                        <div class="text-xs text-slate-400 mb-4 flex justify-center gap-1 items-center">
+                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                            Key: <span class="font-mono bg-amber-100 px-1 rounded text-amber-700 font-bold">SECRET99</span>
+                        </div>
+                        
+                        <div class="space-y-3 mt-auto">
+                            <input type="text" id="sym-plain-input" value="Meet at midnight" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-center font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            
+                            <!-- Encryption Process Box -->
+                            <div id="sym-encrypt-process" class="bg-slate-100 rounded-lg p-2 text-xs font-mono text-slate-500 border border-slate-200 opacity-50 transition-opacity">
+                                <div class="mb-1">Plaintext + Key</div>
+                                <div class="text-center">↓</div>
+                                <div id="sym-cipher-preview" class="font-bold text-red-500 break-all h-4">...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Network / Intercept -->
+                    <div class="relative h-48 md:h-full min-h-[200px] flex flex-col items-center justify-center mt-8 md:mt-0">
+                        <!-- Connection Line -->
+                        <div class="absolute w-full md:h-1 h-full md:w-full bg-slate-200 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed border-t-2 md:border-l-0 md:border-t-2 border-l-2 border-slate-300"></div>
+                        
+                        <!-- Packet -->
+                        <div id="sym-packet" class="absolute left-1/2 top-0 md:left-0 md:top-1/2 -translate-x-1/2 -translate-y-1/2 w-auto px-4 h-14 bg-slate-800 rounded-xl flex items-center justify-center text-white shadow-lg opacity-0 z-20 border-2 border-slate-700">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                                <span id="sym-packet-data" class="font-mono text-xs text-red-400 font-bold max-w-[80px] truncate">...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Eavesdropper -->
+                        <div class="absolute bottom-0 w-full text-center bg-slate-900/90 backdrop-blur rounded-xl p-3 shadow-lg border border-slate-700 transform translate-y-8 md:translate-y-4 z-30">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1 flex justify-center items-center gap-2">
+                                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span> Eve (Network)
+                            </div>
+                            <div id="sym-intercept" class="text-xs font-mono text-green-400 h-8 flex flex-col justify-center">Monitoring traffic...</div>
+                        </div>
+                    </div>
+
+                    <!-- Receiver -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 text-center relative z-10 flex flex-col h-full mt-12 md:mt-0">
+                        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 shadow-inner">
+                            👨‍💼
+                        </div>
+                        <h3 class="font-bold text-slate-800 mb-1">Bob (Receiver)</h3>
+                        <div class="text-xs text-slate-400 mb-4 flex justify-center gap-1 items-center">
+                            <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg>
+                            Key: <span class="font-mono bg-amber-100 px-1 rounded text-amber-700 font-bold">SECRET99</span>
+                        </div>
+                        
+                        <div class="space-y-3 mt-auto">
+                            <!-- Decryption Process Box -->
+                            <div id="sym-decrypt-process" class="bg-slate-100 rounded-lg p-2 text-xs font-mono text-slate-500 border border-slate-200 opacity-50 transition-opacity">
+                                <div id="sym-arrived-cipher" class="font-bold text-red-500 break-all h-4">...</div>
+                                <div class="text-center">↓</div>
+                                <div class="mb-1">Ciphertext + Key</div>
+                            </div>
+                            
+                            <div class="bg-slate-50 p-2 rounded-lg border border-slate-200 min-h-[42px] flex items-center justify-center">
+                                <span id="sym-received-text" class="text-sm font-bold text-slate-400 italic">Waiting...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-14 flex justify-center">
+                    <button id="sym-btn" onclick="startSymmetricSim()" class="group relative px-8 py-3 font-bold text-white rounded-xl bg-blue-600 hover:bg-blue-700 shadow-[0_0_20px_rgba(37,99,235,0.3)] transition-all active:scale-95 overflow-hidden z-10">
+                        <span class="relative z-10 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                            Start Transmission
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Asymmetric -->
+        <section id="content-asymmetric" class="hidden fade-in-up">
+            <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                <div class="text-center max-w-2xl mx-auto mb-8">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-4">Asymmetric (Public Key) Crypto</h2>
+                    <p class="text-slate-500">How HTTPS works: A public key is shared openly to encrypt data, but only the secret private key can decrypt it. Solves the key-sharing problem!</p>
+                </div>
+                
+                <div class="max-w-5xl mx-auto">
+                    <div class="grid grid-cols-1 md:grid-cols-[1fr,1.5fr,1fr] gap-4 items-stretch bg-slate-900 p-8 rounded-3xl relative overflow-hidden text-white shadow-xl">
+                        <!-- Background Grid -->
+                        <div class="absolute inset-0" style="background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+                        <!-- Browser (Client) -->
+                        <div class="bg-slate-800/80 backdrop-blur border border-slate-700 p-6 rounded-2xl flex flex-col z-10">
+                            <div class="text-center mb-4">
+                                <div class="text-4xl mb-3">💻</div>
+                                <div class="font-bold text-slate-200">Your Browser</div>
+                            </div>
+                            
+                            <!-- Client Keychain -->
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 mt-auto min-h-[100px]">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2 border-b border-slate-700 pb-1">Keys Held</div>
+                                <div class="space-y-2" id="client-keychain">
+                                    <div class="text-xs text-slate-500 italic" id="client-no-keys">No keys yet...</div>
+                                    <div id="client-pub-key" class="hidden flex items-center gap-2 text-xs bg-blue-900/40 text-blue-300 p-1.5 rounded border border-blue-800">
+                                        <span>🔓</span> Server's Public Key
+                                    </div>
+                                    <div id="client-sess-key" class="hidden flex items-center gap-2 text-xs bg-emerald-900/40 text-emerald-300 p-1.5 rounded border border-emerald-800">
+                                        <span>🔑</span> Session Key (Symmetric)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Network Path -->
+                        <div class="flex flex-col items-center justify-center relative min-h-[150px] py-8 z-10">
+                            <div class="w-full h-px bg-slate-700 absolute top-1/2"></div>
+                            
+                            <!-- Moving Element -->
+                            <div id="asym-moving-item" class="absolute top-1/2 -translate-y-1/2 bg-white text-slate-900 px-4 py-2 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.4)] z-20 opacity-0 font-bold text-sm flex items-center gap-2 transition-all">
+                                <span id="asym-icon" class="text-xl">👋</span>
+                                <span id="asym-packet-text" class="hidden md:inline">Hello</span>
+                            </div>
+                            
+                            <!-- Status Log -->
+                            <div class="absolute bottom-0 w-full text-center">
+                                <div id="asym-action-log" class="text-xs font-mono text-blue-400 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-lg inline-block shadow-lg">Waiting to initiate handshake...</div>
+                            </div>
+                        </div>
+
+                        <!-- Server -->
+                        <div class="bg-slate-800/80 backdrop-blur border border-slate-700 p-6 rounded-2xl flex flex-col z-10">
+                            <div class="text-center mb-4">
+                                <div class="text-4xl mb-3">☁️</div>
+                                <div class="font-bold text-slate-200">Bank Server</div>
+                            </div>
+
+                            <!-- Server Keychain -->
+                            <div class="bg-slate-900 rounded-xl p-3 border border-slate-700 mt-auto min-h-[100px]">
+                                <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-2 border-b border-slate-700 pb-1">Keys Held</div>
+                                <div class="space-y-2" id="server-keychain">
+                                    <div class="flex items-center gap-2 text-xs bg-red-900/40 text-red-300 p-1.5 rounded border border-red-800">
+                                        <span>🗝️</span> Private Key (Secret)
+                                    </div>
+                                    <div id="server-pub-key" class="flex items-center gap-2 text-xs bg-blue-900/40 text-blue-300 p-1.5 rounded border border-blue-800">
+                                        <span>🔓</span> Public Key
+                                    </div>
+                                    <div id="server-sess-key" class="hidden flex items-center gap-2 text-xs bg-emerald-900/40 text-emerald-300 p-1.5 rounded border border-emerald-800">
+                                        <span>🔑</span> Session Key (Symmetric)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 flex justify-center">
+                        <button id="asym-btn" onclick="startAsymSimulation()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all active:scale-95 flex items-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                            Initiate Secure Handshake
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+            <!-- Section: Asymmetric -->
+            <section id="content-asymmetric" class="hidden fade-in-up">
+                <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="text-center max-w-2xl mx-auto mb-12">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-4">Asymmetric (Public Key) Crypto</h2>
+                        <p class="text-slate-500">How HTTPS works: A public key is shared openly to encrypt data, but only the secret private key can decrypt it. Solves the key-sharing problem!</p>
+                    </div>
+                    
+                    <div class="max-w-4xl mx-auto">
+                        <!-- Handshake Simulation -->
+                        <div class="grid grid-cols-1 md:grid-cols-[1fr,2fr,1fr] gap-4 items-center bg-slate-900 p-8 rounded-3xl relative overflow-hidden text-white shadow-xl">
+                            <!-- Background Grid -->
+                            <div class="absolute inset-0" style="background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px); background-size: 20px 20px;"></div>
+
+                            <!-- Browser (Client) -->
+                            <div class="bg-slate-800/80 backdrop-blur border border-slate-700 p-6 rounded-2xl text-center z-10">
+                                <div class="text-4xl mb-3">💻</div>
+                                <div class="font-bold text-slate-200">Your Browser</div>
+                                <div class="mt-4 space-y-2">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Status</div>
+                                    <div id="asym-label-client" class="text-xs font-mono bg-slate-900 py-1.5 px-2 rounded border border-slate-700 text-blue-400">Idle</div>
+                                </div>
+                            </div>
+
+                            <!-- Network Path -->
+                            <div class="flex flex-col items-center justify-center relative min-h-[100px] z-10">
+                                <div class="w-full h-px bg-slate-700 absolute"></div>
+                                <div class="w-full h-px bg-blue-500/50 absolute shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+                                
+                                <!-- Moving Element -->
+                                <div id="asym-moving-item" class="absolute bg-white text-slate-900 p-2.5 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.4)] z-20 opacity-0 transition-all duration-[1200ms] ease-in-out">
+                                    <span id="asym-icon" class="text-xl">👋</span>
+                                </div>
+                                
+                                <div id="asym-network-label" class="absolute -top-6 text-[10px] font-mono text-slate-400 bg-slate-900 px-2 rounded">Internet</div>
+                            </div>
+
+                            <!-- Server -->
+                            <div class="bg-slate-800/80 backdrop-blur border border-slate-700 p-6 rounded-2xl text-center z-10">
+                                <div class="text-4xl mb-3">☁️</div>
+                                <div class="font-bold text-slate-200">Bank Server</div>
+                                <div class="mt-4 space-y-2">
+                                    <div class="text-[10px] text-slate-400 uppercase tracking-wider">Status</div>
+                                    <div id="asym-label-server" class="text-xs font-mono bg-slate-900 py-1.5 px-2 rounded border border-slate-700 text-purple-400">Listening :443</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-10 flex justify-center">
+                            <button id="asym-btn" onclick="startAsymSimulation()" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-10 rounded-xl shadow-[0_0_20px_rgba(147,51,234,0.3)] transition-all active:scale-95 flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                                Initiate Secure Handshake
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Analogy -->
+            <section id="content-analogy" class="hidden fade-in-up">
+                <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-8 text-center">The Padlock Analogy</h2>
+                    
+                    <div id="analogy-display" class="bg-gradient-to-b from-slate-50 to-slate-100 p-8 md:p-16 rounded-3xl text-center min-h-[400px] flex flex-col items-center justify-center border border-slate-200 relative overflow-hidden transition-all duration-500">
+                        
+                        <!-- Progress Indicators -->
+                        <div class="absolute top-6 left-0 w-full flex justify-center gap-2 px-8">
+                            <div class="h-1.5 w-1/4 bg-blue-500 rounded-full transition-all" id="analogy-dot-1"></div>
+                            <div class="h-1.5 w-1/4 bg-slate-200 rounded-full transition-all" id="analogy-dot-2"></div>
+                            <div class="h-1.5 w-1/4 bg-slate-200 rounded-full transition-all" id="analogy-dot-3"></div>
+                            <div class="h-1.5 w-1/4 bg-slate-200 rounded-full transition-all" id="analogy-dot-4"></div>
+                        </div>
+
+                        <div id="analogy-icon-container" class="text-8xl mb-10 transition-all duration-500 transform hover:scale-110 drop-shadow-xl">
+                            <span id="analogy-icon">🔓🔑</span>
+                        </div>
+                        
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 max-w-lg w-full">
+                            <h3 id="analogy-title" class="text-lg font-bold text-blue-700 mb-2">Step 1: The Setup</h3>
+                            <p id="analogy-text" class="text-base text-slate-600 leading-relaxed">Bob creates an open padlock (Public Key) and keeps the only key for it (Private Key) safe with him.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8 flex justify-between items-center px-4">
+                        <button onclick="changeAnalogyStep(-1)" id="btn-analogy-prev" class="text-slate-500 hover:text-slate-800 font-semibold px-4 py-2 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1" disabled>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg> Back
+                        </button>
+                        <button onclick="changeAnalogyStep(1)" id="btn-analogy-next" class="bg-slate-900 hover:bg-black text-white px-8 py-3 rounded-xl font-bold shadow-md transition-all active:scale-95 flex items-center gap-2">
+                            Next Step <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Keygen -->
+            <section id="content-keygen" class="hidden fade-in-up">
+                <div class="space-y-6">
+                    <!-- Explanation -->
+                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="flex flex-col md:flex-row gap-8 items-center">
+                            <div class="flex-1 space-y-4 text-slate-600 text-sm md:text-base leading-relaxed">
+                                <h2 class="text-2xl font-bold text-slate-800 mb-4">How are Asymmetric Keys made? (RSA)</h2>
+                                <p>It relies on a mathematical "trapdoor function" involving massive prime numbers.</p>
+                                <ul class="space-y-3 bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                                    <li class="flex items-start gap-3"><span class="text-blue-500 font-bold">1.</span> <span>Pick two secret prime numbers (<strong class="text-slate-800">P</strong> and <strong class="text-slate-800">Q</strong>).</span></li>
+                                    <li class="flex items-start gap-3"><span class="text-blue-500 font-bold">2.</span> <span>Multiply them to get <strong class="text-slate-800">N</strong> (The Public Lock). It is easy to multiply.</span></li>
+                                    <li class="flex items-start gap-3"><span class="text-blue-500 font-bold">3.</span> <span><strong class="text-red-500">The Trapdoor:</strong> It is incredibly hard to figure out P and Q if you only know N. Factoring large numbers takes computers thousands of years.</span></li>
+                                </ul>
+                            </div>
+                            <div class="w-full md:w-1/3 bg-indigo-600 p-6 rounded-3xl text-indigo-50 shadow-lg transform rotate-1 hover:rotate-0 transition-transform">
+                                <h4 class="font-bold text-white mb-2 flex items-center gap-2"><span class="text-xl">🎨</span> The Paint Analogy</h4>
+                                <p class="text-sm opacity-90">Imagine mixing two secret paint colors (Primes) together in a bucket (Public Key). Anyone can see the final mixed color, but it's virtually impossible to un-mix it to find exactly what the two original colors were.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Tool -->
+                    <div class="bg-white p-6 md:p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                            <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            Key Generator Sandbox
+                        </h2>
+                        <div class="grid lg:grid-cols-3 gap-6">
+                            <!-- Step 1 -->
+                            <div class="bg-blue-50/50 p-6 rounded-3xl border border-blue-100 flex flex-col h-full">
+                                <h3 class="font-bold text-blue-900 text-sm mb-1">1. Choose Secret Primes</h3>
+                                <p class="text-xs text-blue-600/70 mb-4">Select two different numbers to act as P and Q.</p>
+                                <div class="grid grid-cols-4 gap-2 flex-grow content-start" id="prime-picker"></div>
+                            </div>
+                            
+                            <!-- Step 2 -->
+                            <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200 flex flex-col items-center justify-center text-center relative h-full">
+                                <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-white border border-slate-200 rounded-full flex items-center justify-center text-slate-400 z-10 hidden lg:flex">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                                <h3 class="font-bold text-slate-800 text-sm mb-2">2. Calculate Modulus (N)</h3>
+                                <div class="text-[10px] text-slate-400 font-mono mb-4 bg-slate-200 px-2 py-1 rounded">N = P × Q</div>
+                                <div class="text-5xl font-black text-slate-800 font-mono tracking-tight" id="val-n">---</div>
+                                <div class="text-xs text-slate-500 mt-4 max-w-[200px]">This is the core of your Public Key. It's safe to share!</div>
+                            </div>
+
+                            <!-- Step 3 -->
+                            <div class="bg-slate-900 p-6 rounded-3xl text-white flex flex-col h-full relative">
+                                <div class="absolute -left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-slate-800 border border-slate-700 rounded-full flex items-center justify-center text-slate-400 z-10 hidden lg:flex">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                </div>
+                                <h3 class="font-bold text-slate-300 text-sm mb-4">3. Generated Key Pair</h3>
+                                <div class="space-y-3 flex-grow flex flex-col justify-center">
+                                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shadow-inner relative overflow-hidden">
+                                        <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                                        <div class="text-[10px] text-blue-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg> Public Key
+                                        </div>
+                                        <div class="font-mono text-sm break-all text-slate-200" id="res-public">...</div>
+                                    </div>
+                                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/50 shadow-inner relative overflow-hidden">
+                                        <div class="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
+                                        <div class="text-[10px] text-red-400 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path></svg> Private Key Details
+                                        </div>
+                                        <div class="font-mono text-sm break-all text-slate-200" id="res-private">...</div>
+                                        <div class="text-[9px] text-slate-500 mt-2">* Simplified exponents (e,d) for demo</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section: Challenges -->
+            <section id="content-challenges" class="hidden fade-in-up">
+                <div class="bg-white p-6 md:p-10 rounded-3xl shadow-sm border border-slate-200">
+                    <h2 class="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-3">
+                        <span>🚀</span> Test Your Knowledge
+                    </h2>
+                    <p class="text-slate-500 mb-8">Apply what you've learned in the previous sections.</p>
+                    
+                    <div class="grid md:grid-cols-3 gap-6">
+                        <!-- Challenge 1 -->
+                        <div class="challenge-card flex flex-col bg-blue-50 rounded-3xl border border-blue-100 overflow-hidden relative">
+                            <div class="absolute top-0 right-0 bg-blue-200 text-blue-700 text-[10px] font-bold px-3 py-1 rounded-bl-xl">C-01</div>
+                            <div class="p-6 flex-grow flex flex-col">
+                                <h3 class="font-bold text-blue-900 text-lg mb-2">The Cipher Crack</h3>
+                                <p class="text-sm text-blue-800 mb-6 flex-grow">Without peeking at the slider, can you mentally decode this message hidden by a <strong class="bg-blue-200 px-1 rounded">+2 shift</strong>?</p>
+                                <div class="font-mono bg-white p-3 rounded-xl text-center font-bold text-blue-600 shadow-inner border border-blue-100">
+                                    Vjg dktf hkkgv
+                                </div>
+                                <button onclick="toggleHint('hint1')" class="mt-4 text-xs text-blue-600 font-semibold hover:underline w-full text-left">Show Hint...</button>
+                                <p id="hint1" class="hidden text-[10px] bg-blue-100 p-2 rounded mt-2 text-blue-800">Shift every letter BACKWARDS by 2 in the alphabet. V -> T.</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Challenge 2 -->
+                        <div class="challenge-card flex flex-col bg-emerald-50 rounded-3xl border border-emerald-100 overflow-hidden relative">
+                            <div class="absolute top-0 right-0 bg-emerald-200 text-emerald-800 text-[10px] font-bold px-3 py-1 rounded-bl-xl">C-02</div>
+                            <div class="p-6 flex-grow flex flex-col">
+                                <h3 class="font-bold text-emerald-900 text-lg mb-2">Symmetric Sabotage</h3>
+                                <p class="text-sm text-emerald-800 mb-4 flex-grow">In the Symmetric tab, Alice and Bob use 'SECRET99'. What happens if Bob tries to decrypt the incoming packet with 'SECRET98'?</p>
+                                <div class="bg-white p-4 rounded-xl border border-emerald-100 shadow-inner flex items-center justify-center h-20 text-emerald-900 text-sm font-medium text-center">
+                                    Does he see part of the message, or gibberish?
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Challenge 3 -->
+                        <div class="challenge-card flex flex-col bg-purple-50 rounded-3xl border border-purple-100 overflow-hidden relative">
+                            <div class="absolute top-0 right-0 bg-purple-200 text-purple-800 text-[10px] font-bold px-3 py-1 rounded-bl-xl">C-03</div>
+                            <div class="p-6 flex-grow flex flex-col">
+                                <h3 class="font-bold text-purple-900 text-lg mb-2">The Eavesdropper</h3>
+                                <p class="text-sm text-purple-800 mb-4 flex-grow">Eve intercepts Bob's <strong>Public Key</strong> as it travels across the network. Can she use it to read the secret message Alice sends back to Bob?</p>
+                                <div class="bg-white p-4 rounded-xl border border-purple-100 shadow-inner flex items-center justify-center gap-4">
+                                    <button onclick="alert('Correct! The Public Key can only LOCK (encrypt) data. Only the Private Key can UNLOCK (decrypt) it.')" class="px-4 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg text-sm font-bold transition-colors">No</button>
+                                    <button onclick="alert('Incorrect. Think about the padlock analogy. The public key is an OPEN lock.')" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-sm font-bold transition-colors">Yes</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-8 py-6 text-center text-slate-400 text-sm">
+            <p>Designed for educational purposes.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let currentTab = 'basics';
+        let isAnimatingSymmetric = false;
+        let isAnimatingAsymmetric = false;
+
+        // --- Core UI Logic ---
+        function switchTab(tab) {
+            const sections = ['basics', 'caesar', 'symmetric', 'asymmetric', 'analogy', 'keygen', 'challenges'];
+            sections.forEach(s => {
+                const sectionEl = document.getElementById(`content-${s}`);
+                const tabEl = document.getElementById(`tab-${s}`);
+                if (sectionEl) {
+                    sectionEl.style.display = 'none';
+                    // Reset animation by triggering reflow
+                    sectionEl.classList.remove('fade-in-up');
+                }
+                if (tabEl) tabEl.classList.remove('tab-active');
+            });
+            
+            const targetSection = document.getElementById(`content-${tab}`);
+            const targetTab = document.getElementById(`tab-${tab}`);
+            
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                // Trigger animation
+                void targetSection.offsetWidth; 
+                targetSection.classList.add('fade-in-up');
+            }
+            if (targetTab) targetTab.classList.add('tab-active');
+            
+            // Re-initialize specific tab content
+            if(tab === 'keygen') initKeygen();
+            if(tab === 'caesar') initCaesarAlphabet();
+        }
+
+        // --- Utility ---
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).innerText;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                const btn = event.currentTarget;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="text-green-600">Copied!</span>';
+                setTimeout(() => btn.innerHTML = originalText, 1500);
+            } catch (err) {
+                console.error('Unable to copy', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        function toggleHint(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('hidden');
+        }
+
+        // --- Key Generation Logic (RSA simplified) ---
+        let p = 17, q = 23;
+        function initKeygen() {
+            const container = document.getElementById('prime-picker');
+            const primes = [11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53];
+            container.innerHTML = '';
+            
+            primes.forEach(num => {
+                const btn = document.createElement('button');
+                const isSelected = num === p || num === q;
+                btn.className = `p-2 text-sm font-bold rounded-xl border ${isSelected ? 'prime-selected' : 'bg-white border-slate-200 text-slate-600'} prime-node w-full aspect-square flex items-center justify-center`;
+                btn.innerText = num;
+                btn.onclick = () => selectPrime(num);
+                container.appendChild(btn);
+            });
+            calculateKeys();
+        }
+
+        function selectPrime(num) {
+            if (num === p || num === q) return; // Already selected
+            // Shift selection
+            p = q; 
+            q = num;
+            initKeygen();
+        }
+
+        function calculateKeys() {
+            const n = p * q;
+            const phi = (p - 1) * (q - 1);
+            
+            // Simplified e and d calculation for demo purposes
+            let e = 3; 
+            while (gcd(e, phi) !== 1 && e < phi) e += 2;
+            
+            let d = 1; 
+            let safety = 0; // prevent infinite loop in edge cases
+            while ((e * d) % phi !== 1 && safety < 10000) {
+                d++;
+                safety++;
+            }
+
+            document.getElementById('val-n').innerText = n;
+            
+            const pubEl = document.getElementById('res-public');
+            pubEl.innerHTML = `Modulus (N): <span class="text-white">${n}</span><br>Exponent (e): <span class="text-white">${e}</span><br><span class="text-[10px] text-slate-400 mt-2 block">Shared with everyone.</span>`;
+            
+            const privEl = document.getElementById('res-private');
+            privEl.innerHTML = `Primes (P,Q): <span class="text-white">${p}, ${q}</span><br>Secret Exp (d): <span class="text-white">${d}</span><br><span class="text-[10px] text-slate-400 mt-2 block">Kept absolutely secret.</span>`;
+        }
+
+        function gcd(a, b) { 
+            return b === 0 ? a : gcd(b, a % b); 
+        }
+
+        // --- Caesar Logic ---
+        function initCaesarAlphabet() {
+            const plain = document.getElementById('alphabet-plain');
+            const cipher = document.getElementById('alphabet-cipher');
+            
+            if (!plain.hasChildNodes()) {
+                for(let i=0; i<26; i++) {
+                    const char = String.fromCharCode(65+i);
+                    plain.innerHTML += `<div class="char-box bg-slate-50 text-slate-700">${char}</div>`;
+                    cipher.innerHTML += `<div id="c-alpha-${i}" class="char-box bg-white/20 text-white shadow-sm border border-white/30">?</div>`;
+                }
+            }
+            updateCaesar();
+        }
+
+        function updateCaesar() {
+            const shift = parseInt(document.getElementById('caesar-shift').value);
+            document.getElementById('shift-val').innerText = shift;
+            
+            const input = document.getElementById('caesar-input').value;
+            const output = input.replace(/[a-zA-Z]/g, (c) => {
+                const isUpper = c === c.toUpperCase();
+                const base = isUpper ? 65 : 97;
+                return String.fromCharCode(((c.charCodeAt(0) - base + shift) % 26) + base);
+            });
+            document.getElementById('caesar-output').innerText = output;
+
+            // Update alphabet mapping boxes
+            for(let i=0; i<26; i++) {
+                const el = document.getElementById(`c-alpha-${i}`);
+                if (el) {
+                    el.innerText = String.fromCharCode(65 + (i + shift) % 26);
+                }
+            }
+        }
+
+        // --- Simulations ---
+        async function startSymmetricSim() {
+            if (isAnimatingSymmetric) return;
+            isAnimatingSymmetric = true;
+
+            const packet = document.getElementById('sym-packet');
+            const packetData = document.getElementById('sym-packet-data');
+            const intercept = document.getElementById('sym-intercept');
+            const received = document.getElementById('sym-received-text');
+            const inputVal = document.getElementById('sym-plain-input').value || "Empty Data";
+            const btn = document.getElementById('sym-btn');
+            
+            // Process elements
+            const encryptProcess = document.getElementById('sym-encrypt-process');
+            const cipherPreview = document.getElementById('sym-cipher-preview');
+            const decryptProcess = document.getElementById('sym-decrypt-process');
+            const arrivedCipher = document.getElementById('sym-arrived-cipher');
+
+            // Reset state
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            packet.style.transition = 'none';
+            packet.style.opacity = "0";
+            
+            // Adjust start position based on screen size
+            if(window.innerWidth >= 768) {
+                packet.style.left = "0%";
+                packet.style.top = "50%";
+            } else {
+                packet.style.left = "50%";
+                packet.style.top = "0%";
+            }
+            
+            received.innerText = "Waiting...";
+            received.className = "text-sm font-bold text-slate-400 italic";
+            intercept.innerHTML = "Monitoring traffic...";
+            intercept.className = "text-xs font-mono text-slate-400 h-8 flex flex-col justify-center";
+            encryptProcess.classList.remove('opacity-100', 'ring-2', 'ring-blue-400');
+            encryptProcess.classList.add('opacity-50');
+            decryptProcess.classList.remove('opacity-100', 'ring-2', 'ring-blue-400');
+            decryptProcess.classList.add('opacity-50');
+            cipherPreview.innerText = "...";
+            arrivedCipher.innerText = "...";
+
+            // Trigger reflow
+            void packet.offsetWidth;
+
+            // Generate "Ciphertext" visual
+            const encryptedStr = btoa(inputVal).substring(0,12) + "=";
+
+            // Phase 1: Encrypting
+            encryptProcess.classList.remove('opacity-50');
+            encryptProcess.classList.add('opacity-100', 'ring-2', 'ring-blue-400', 'bg-blue-50');
+            await new Promise(r => setTimeout(r, 600));
+            cipherPreview.innerText = encryptedStr;
+            await new Promise(r => setTimeout(r, 800));
+            encryptProcess.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50');
+
+            // Phase 2: Transmit
+            packetData.innerText = encryptedStr;
+            packet.style.opacity = "1";
+            packet.style.transition = 'all 1.5s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            if(window.innerWidth >= 768) {
+                packet.style.left = "100%";
+            } else {
+                packet.style.top = "100%";
+            }
+
+            // Mid-point interception by Eve
+            setTimeout(() => {
+                intercept.innerHTML = `<span class="text-slate-300">Intercepted:</span><br/>[ENCRYPTED] ${encryptedStr}`;
+                intercept.className = "text-xs font-mono text-red-400 font-bold h-8 flex flex-col justify-center";
+            }, 750);
+
+            await new Promise(r => setTimeout(r, 1500));
+            packet.style.opacity = "0";
+
+            // Phase 3: Decrypting
+            arrivedCipher.innerText = encryptedStr;
+            decryptProcess.classList.remove('opacity-50');
+            decryptProcess.classList.add('opacity-100', 'ring-2', 'ring-blue-400', 'bg-blue-50');
+            await new Promise(r => setTimeout(r, 800));
+            
+            received.innerText = inputVal;
+            received.className = "text-sm font-bold text-green-600";
+            await new Promise(r => setTimeout(r, 500));
+            decryptProcess.classList.remove('ring-2', 'ring-blue-400', 'bg-blue-50');
+
+            // Cleanup
+            isAnimatingSymmetric = false;
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+
+        async function startAsymSimulation() {
+            if (isAnimatingAsymmetric) return;
+            isAnimatingAsymmetric = true;
+
+            const item = document.getElementById('asym-moving-item');
+            const icon = document.getElementById('asym-icon');
+            const text = document.getElementById('asym-packet-text');
+            const log = document.getElementById('asym-action-log');
+            const btn = document.getElementById('asym-btn');
+            
+            // Keychain Elements
+            const clientNoKeys = document.getElementById('client-no-keys');
+            const clientPub = document.getElementById('client-pub-key');
+            const clientSess = document.getElementById('client-sess-key');
+            const serverSess = document.getElementById('server-sess-key');
+            
+            // Reset state
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            item.style.transition = 'none';
+            item.style.left = "0%"; // Client side
+            item.style.opacity = "0";
+            
+            // Reset keychains visually
+            clientPub.classList.add('hidden');
+            clientSess.classList.add('hidden');
+            serverSess.classList.add('hidden');
+            clientNoKeys.classList.remove('hidden');
+            
+            // Trigger reflow
+            void item.offsetWidth;
+            item.style.transition = 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)';
+
+            // Phase 1: Client Hello
+            log.innerText = "1. Client requests secure connection.";
+            log.className = "text-xs font-mono text-blue-400 bg-slate-900 border border-blue-900 px-3 py-1.5 rounded-lg inline-block shadow-lg";
+            icon.innerText = "👋";
+            text.innerText = "Hello";
+            item.style.opacity = "1";
+            item.style.left = "80%"; // Move to server
+            await new Promise(r => setTimeout(r, 1400));
+            item.style.opacity = "0";
+            await new Promise(r => setTimeout(r, 400));
+
+            // Phase 2: Server sends Public Key
+            log.innerText = "2. Server sends its PUBLIC KEY.";
+            log.className = "text-xs font-mono text-blue-400 bg-slate-900 border border-blue-900 px-3 py-1.5 rounded-lg inline-block shadow-lg";
+            icon.innerText = "🔓";
+            text.innerText = "Public Key";
+            item.style.left = "80%";
+            item.style.opacity = "1";
+            
+            // Trigger reflow for reverse transition
+            void item.offsetWidth;
+            item.style.left = "0%"; // Move to client
+            await new Promise(r => setTimeout(r, 1400));
+            item.style.opacity = "0";
+            
+            // Client receives Public Key
+            clientNoKeys.classList.add('hidden');
+            clientPub.classList.remove('hidden');
+            clientPub.classList.add('animate-pulse');
+            setTimeout(()=> clientPub.classList.remove('animate-pulse'), 1000);
+            await new Promise(r => setTimeout(r, 1000));
+
+            // Phase 3: Client generates & sends Session Key
+            log.innerText = "3. Client generates a Symmetric SESSION KEY and locks it with Public Key.";
+            log.className = "text-xs font-mono text-emerald-400 bg-slate-900 border border-emerald-900 px-3 py-1.5 rounded-lg inline-block shadow-lg";
+            
+            clientSess.classList.remove('hidden'); // Show client holding it
+            
+            icon.innerText = "📦🔒"; 
+            text.innerText = "Locked Session Key";
+            item.style.left = "0%";
+            item.style.opacity = "1";
+            
+            void item.offsetWidth;
+            item.style.left = "80%"; // Move to server
+            await new Promise(r => setTimeout(r, 1400));
+            item.style.opacity = "0";
+
+            // Phase 4: Server Decrypts & Success
+            log.innerText = "4. Server uses its secret PRIVATE KEY to unlock the Session Key.";
+            log.className = "text-xs font-mono text-red-400 bg-slate-900 border border-red-900 px-3 py-1.5 rounded-lg inline-block shadow-lg";
+            await new Promise(r => setTimeout(r, 1200));
+
+            // Server adds Session Key to keychain
+            serverSess.classList.remove('hidden');
+            serverSess.classList.add('animate-pulse');
+            setTimeout(()=> serverSess.classList.remove('animate-pulse'), 1000);
+
+            log.innerText = "✅ SECURE! Both now share the same Symmetric Key.";
+            log.className = "text-xs font-bold font-mono text-green-400 bg-green-900/30 border border-green-500 px-3 py-1.5 rounded-lg inline-block shadow-lg";
+            
+            // Cleanup
+            setTimeout(() => {
+                isAnimatingAsymmetric = false;
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }, 1000);
+        }
+
+        // --- Analogy Logic ---
+        let analogyStep = 1;
+        function changeAnalogyStep(dir) {
+            analogyStep += dir; 
+            if(analogyStep < 1) analogyStep = 1; 
+            if(analogyStep > 4) analogyStep = 4;
+            
+            const icon = document.getElementById('analogy-icon');
+            const title = document.getElementById('analogy-title');
+            const text = document.getElementById('analogy-text');
+            const container = document.getElementById('analogy-display');
+            
+            const steps = [
+                { 
+                    i: "🔓🔑", 
+                    title: "Step 1: The Setup",
+                    t: "Bob creates an open padlock (Public Key) and keeps the only key for it (Private Key) safe with him.",
+                    bg: "from-slate-50 to-slate-100"
+                },
+                { 
+                    i: "💨 🔓", 
+                    title: "Step 2: Distribution",
+                    t: "Bob sends the open lock to Alice. Eavesdroppers see it, but can't do anything malicious with an OPEN lock.",
+                    bg: "from-blue-50 to-blue-100"
+                },
+                { 
+                    i: "📦🔒", 
+                    title: "Step 3: Encryption",
+                    t: "Alice puts her secret message in a box and snaps Bob's lock shut. Only Bob has the key to open it now!",
+                    bg: "from-purple-50 to-purple-100"
+                },
+                { 
+                    i: "✨🔑📦✨", 
+                    title: "Step 4: Decryption",
+                    t: "Bob receives the locked box and uses his PRIVATE KEY to unlock it and read the message safely.",
+                    bg: "from-green-50 to-green-100"
+                }
+            ];
+
+            // Animate transition
+            icon.parentElement.style.transform = "scale(0.8)";
+            icon.parentElement.style.opacity = "0";
+            
+            setTimeout(() => {
+                const current = steps[analogyStep-1];
+                icon.innerText = current.i;
+                title.innerText = current.title;
+                text.innerText = current.t;
+                container.className = `bg-gradient-to-b ${current.bg} p-8 md:p-16 rounded-3xl text-center min-h-[400px] flex flex-col items-center justify-center border border-slate-200 relative overflow-hidden transition-all duration-500`;
+                
+                icon.parentElement.style.transform = "scale(1)";
+                icon.parentElement.style.opacity = "1";
+            }, 250);
+
+            // Update dots
+            for(let i=1; i<=4; i++) {
+                const dot = document.getElementById(`analogy-dot-${i}`);
+                if(i <= analogyStep) {
+                    dot.classList.remove('bg-slate-200');
+                    dot.classList.add('bg-blue-500');
+                } else {
+                    dot.classList.remove('bg-blue-500');
+                    dot.classList.add('bg-slate-200');
+                }
+            }
+
+            // Update buttons
+            document.getElementById('btn-analogy-prev').disabled = analogyStep === 1;
+            document.getElementById('btn-analogy-next').disabled = analogyStep === 4;
+            if(analogyStep === 4) {
+                 document.getElementById('btn-analogy-next').innerHTML = 'Finished <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>';
+            } else {
+                 document.getElementById('btn-analogy-next').innerHTML = 'Next Step <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>';
+            }
+        }
+
+        // Initialize on load
+        window.onload = () => {
+            initCaesarAlphabet();
+            initKeygen();
+            
+            // Handle window resize for animations
+            window.addEventListener('resize', () => {
+                if(isAnimatingSymmetric) {
+                    // Force reset if resizing during animation to prevent glitches
+                    const packet = document.getElementById('sym-packet');
+                    packet.style.opacity = "0";
+                    packet.style.transition = 'none';
+                    isAnimatingSymmetric = false;
+                    document.getElementById('sym-btn').disabled = false;
+                    document.getElementById('sym-btn').classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            });
+        };
+    </script>
+</body>
+</html>

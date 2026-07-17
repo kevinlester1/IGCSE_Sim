@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sound Sampling Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        .slider-thumb::-webkit-slider-thumb:hover {
+            background: #60a5fa;
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            transition: background 0.2s;
+        }
+        .slider-thumb::-moz-range-thumb:hover {
+            background: #60a5fa;
+        }
+        
+        /* Custom scrollbar for the binary display */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(31, 41, 55, 1); 
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(75, 85, 99, 1); 
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(107, 114, 128, 1); 
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-7xl bg-gray-800 rounded-2xl shadow-2xl p-6 md:p-8 border border-gray-700">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight">Interactive Sound Sampling Simulator</h1>
+            <p class="text-gray-400 mt-3 max-w-2xl mx-auto">Visualize and hear how sample rate, bit depth, and duration affect sound quality and digital file size.</p>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Controls -->
+            <div class="lg:col-span-1 bg-gray-700/40 p-6 rounded-xl border border-gray-600/50">
+                <h2 class="text-xl font-semibold mb-6 border-b border-gray-600 pb-3 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" /></svg>
+                    Simulation Controls
+                </h2>
+                
+                <div class="mb-6 group">
+                    <div class="flex justify-between items-end mb-2">
+                        <label for="sampleRate" class="block font-medium text-md text-gray-100">Sample Rate</label>
+                        <span class="text-blue-300 font-mono text-lg font-bold" id="sampleRateValue">8,000 Hz</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3 line-clamp-2 group-hover:line-clamp-none transition-all">Measurements per second. Low rates cause loss of detail.</p>
+                    <input id="sampleRate" type="range" min="1" max="100" value="56" step="1" class="w-full h-2.5 bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb outline-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
+
+                <div class="mb-6 group">
+                    <div class="flex justify-between items-end mb-2">
+                        <label for="bitDepth" class="block font-medium text-md text-gray-100">Bit Depth</label>
+                        <span class="text-blue-300 font-mono text-lg font-bold" id="bitDepthValue">4 bits</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3 line-clamp-2 group-hover:line-clamp-none transition-all">Bits per sample (resolution). Low depth adds static noise.</p>
+                    <input id="bitDepth" type="range" min="2" max="16" value="4" class="w-full h-2.5 bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb outline-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
+                
+                <div class="mb-6 group">
+                    <div class="flex justify-between items-end mb-2">
+                        <label for="duration" class="block font-medium text-md text-gray-100">Duration</label>
+                        <span class="text-blue-300 font-mono text-lg font-bold" id="durationValue">3 s</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3">Total length of the audio clip.</p>
+                    <input id="durationSlider" type="range" min="1" max="10" value="3" class="w-full h-2.5 bg-gray-600 rounded-lg appearance-none cursor-pointer slider-thumb outline-none focus:ring-2 focus:ring-blue-500/50">
+                </div>
+
+                <div class="mt-8 text-center">
+                    <button id="playSoundBtn" class="bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white font-bold py-3 px-6 rounded-lg w-full text-lg shadow-lg shadow-indigo-900/50 transition-all transform hover:-translate-y-0.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Play Audio
+                    </button>
+                </div>
+
+                <div class="bg-gray-800 p-5 rounded-lg mt-6 border border-gray-700 shadow-inner">
+                    <h3 class="text-sm uppercase tracking-wider font-semibold mb-3 text-gray-400 text-center">Calculated File Size</h3>
+                    <div id="fileSizeCalculation" class="text-center text-xs font-mono text-gray-300 mb-3 p-2 bg-gray-900 rounded-lg border border-gray-700">
+                        <!-- Calculation shown here -->
+                    </div>
+                    <div class="text-center">
+                        <p class="text-3xl font-bold text-green-400 drop-shadow-[0_0_8px_rgba(74,222,128,0.3)]" id="fileSize">600 bits</p>
+                        <p class="text-gray-400 font-mono text-sm mt-1" id="fileSizeDetail">(75 bytes)</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Visualization and Data -->
+            <div class="lg:col-span-2 flex flex-col">
+                <div class="bg-gray-900 rounded-xl p-4 mb-6 shadow-inner border border-gray-700 relative flex-grow min-h-[300px]">
+                    <canvas id="simulationCanvas" class="absolute inset-0 w-full h-full rounded-lg"></canvas>
+                </div>
+                
+                <div class="bg-gray-800 rounded-xl p-5 border border-gray-700">
+                    <h3 class="text-lg font-semibold mb-3 flex items-center text-gray-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+                        Digital Representation (Binary Output)
+                    </h3>
+                    <div id="binaryData" class="w-full bg-gray-900 p-4 rounded-lg font-mono text-green-400 text-sm break-all h-32 overflow-y-auto border border-gray-700 shadow-inner leading-relaxed tracking-wider">
+                        <!-- Binary data will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Challenge Mode Section -->
+        <div class="mt-8 bg-gradient-to-r from-gray-800 to-gray-700 p-6 rounded-xl border border-gray-600 shadow-lg">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="mb-4 md:mb-0 md:mr-6 text-center md:text-left flex-1">
+                    <h2 class="text-2xl font-bold mb-2 text-white flex items-center justify-center md:justify-start">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-yellow-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5.01-9.9m1.414-1.414l-.707-.707m-9.9 2.828l.707-.707M12 21v-1m0-11a2 2 0 100-4 2 2 0 000 4z" /></svg>
+                        Test Your Knowledge
+                    </h2>
+                    <p class="text-gray-300 text-sm">Calculate the raw uncompressed file size in bits.</p>
+                </div>
+                
+                <div id="challenge" class="flex-grow w-full max-w-2xl">
+                    <div class="flex flex-col sm:flex-row items-stretch gap-3">
+                        <div id="challengeQuestion" class="flex-grow p-3 bg-gray-900 border border-gray-600 rounded-lg text-center flex items-center justify-center whitespace-nowrap text-sm sm:text-base">
+                            <!-- Question populated by JS -->
+                        </div>
+                        <input type="number" id="challengeAnswer" class="bg-gray-900 border border-gray-600 text-white text-center rounded-lg p-3 w-full sm:w-32 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono" placeholder="Bits?">
+                        <button id="checkAnswerBtn" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md whitespace-nowrap">Check</button>
+                        <button id="newChallengeBtn" class="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-3 px-4 rounded-lg transition-colors shadow-md whitespace-nowrap" title="Skip to next question">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                    <p id="challengeFeedback" class="mt-3 text-sm h-5 font-medium text-center"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+        const sampleRateSlider = document.getElementById('sampleRate');
+        const bitDepthSlider = document.getElementById('bitDepth');
+        const durationSlider = document.getElementById('durationSlider');
+        
+        const sampleRateValue = document.getElementById('sampleRateValue');
+        const bitDepthValue = document.getElementById('bitDepthValue');
+        const durationValue = document.getElementById('durationValue');
+        
+        const fileSizeDisplay = document.getElementById('fileSize');
+        const fileSizeDetailDisplay = document.getElementById('fileSizeDetail');
+        const fileSizeCalculation = document.getElementById('fileSizeCalculation');
+        const binaryDataDisplay = document.getElementById('binaryData');
+        const playSoundBtn = document.getElementById('playSoundBtn');
+
+        // Challenge Mode Elements
+        const challengeQuestion = document.getElementById('challengeQuestion');
+        const challengeAnswerInput = document.getElementById('challengeAnswer');
+        const checkAnswerBtn = document.getElementById('checkAnswerBtn');
+        const newChallengeBtn = document.getElementById('newChallengeBtn');
+        const challengeFeedback = document.getElementById('challengeFeedback');
+        
+        let challengeCorrectAnswer = 0;
+        let audioContext;
+        
+        let canvasWidth, canvasHeight, graphWidth, graphHeight;
+        const padding = 50;
+        
+        // Playback state for visual sync
+        let isPlaying = false;
+        let playbackStartTime = 0;
+        let animationFrameId = null;
+
+        // Exponential mapping for sample rate slider (500 Hz to 48,000 Hz)
+        function getSampleRate() {
+            const minP = 1;
+            const maxP = 100;
+            const minV = Math.log(500);
+            const maxV = Math.log(48000);
+            const scale = (maxV - minV) / (maxP - minP);
+            const sliderValue = parseInt(sampleRateSlider.value);
+            return Math.round(Math.exp(minV + scale * (sliderValue - minP)));
+        }
+
+        // Generates a recognizable 8-bit style melody (Ode to Joy)
+        function getMelodySample(time) {
+            const bpm = 140;
+            const beatDuration = 60 / bpm;
+            const notes = [
+                329.63, 329.63, 349.23, 392.00, // E4 E4 F4 G4
+                392.00, 349.23, 329.63, 293.66, // G4 F4 E4 D4
+                261.63, 261.63, 293.66, 329.63, // C4 C4 D4 E4
+                329.63, 293.66, 293.66, 0       // E4 D4 D4 rest
+            ];
+            
+            const totalMelodyDuration = notes.length * beatDuration;
+            const loopedTime = time % totalMelodyDuration;
+            const noteIndex = Math.floor(loopedTime / beatDuration);
+            
+            if (noteIndex >= notes.length || notes[noteIndex] === 0) return 0;
+            
+            const freq = notes[noteIndex];
+            const timeInBeat = loopedTime % beatDuration;
+            
+            // Volume Envelope (Attack & Release)
+            let envelope = 1.0;
+            const attack = 0.05;
+            const release = 0.05;
+            
+            if (timeInBeat < attack) envelope = timeInBeat / attack;
+            else if (timeInBeat > beatDuration - release) envelope = (beatDuration - timeInBeat) / release;
+            else envelope = 1.0 - (timeInBeat / beatDuration) * 0.2; // Slight decay
+            
+            // Mix of Saw and Square wave for a rich, recognizable synth tone
+            const phase = (loopedTime * freq) % 1;
+            const saw = (phase * 2) - 1;
+            const square = phase < 0.5 ? 1 : -1;
+            
+            return (saw * 0.4 + square * 0.6) * envelope * 0.5; // Scaled to -0.5 to 0.5 for headroom
+        }
+
+        function drawSimulation(windowStartTime = 0) {
+            const sampleRate = getSampleRate();
+            const bitDepth = parseInt(bitDepthSlider.value);
+            const duration = parseInt(durationSlider.value);
+            const numLevels = Math.pow(2, bitDepth);
+            const visualTimeWindow = 0.03; // Show 30ms window like an oscilloscope
+
+            // Update UI Labels
+            sampleRateValue.textContent = `${sampleRate.toLocaleString()} Hz`;
+            bitDepthValue.textContent = `${bitDepth} bits`;
+            durationValue.textContent = `${duration} s`;
+
+            const totalBits = sampleRate * bitDepth * duration;
+            const totalBytes = Math.ceil(totalBits / 8);
+            fileSizeDisplay.textContent = `${totalBits.toLocaleString()} bits`;
+            fileSizeDetailDisplay.textContent = `(${totalBytes.toLocaleString()} bytes)`;
+            fileSizeCalculation.innerHTML = `
+                ${sampleRate.toLocaleString()} Hz &times; ${bitDepth} bits &times; ${duration}s = <strong class="text-green-400 font-bold">${totalBits.toLocaleString()}</strong>
+            `;
+
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Default styling for grid
+            ctx.fillStyle = '#9ca3af'; 
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // Draw Background Grid & Labels
+            const maxLabels = 16;
+            let labelStep = 1;
+            if (numLevels > maxLabels) {
+                 labelStep = Math.ceil((numLevels-1) / maxLabels);
+            }
+
+            // Draw Y-Axis Quantization Levels
+            for (let i = 0; i < numLevels; i += labelStep) {
+                const levelY = (canvasHeight - padding) - (i / (numLevels - 1)) * graphHeight;
+                if (i % labelStep === 0) ctx.fillText(i, padding - 25, levelY);
+                ctx.beginPath();
+                ctx.moveTo(padding, levelY);
+                ctx.lineTo(canvasWidth - padding, levelY);
+                ctx.stroke();
+            }
+
+            // Draw X-Axis Time Grids (Oscilloscope Window)
+            for (let i = 0; i <= 6; i++) {
+                const timeMs = ((i / 6) * (visualTimeWindow * 1000)).toFixed(0);
+                const timeX = padding + (i / 6) * graphWidth;
+                ctx.fillText(timeMs + "ms", timeX, canvasHeight - padding + 25);
+                
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+                ctx.moveTo(timeX, padding);
+                ctx.lineTo(timeX, canvasHeight - padding);
+                ctx.stroke();
+            }
+
+            // Draw Axes lines
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, canvasHeight - padding);
+            ctx.lineTo(canvasWidth - padding, canvasHeight - padding);
+            ctx.stroke();
+
+            // Y-Axis Label
+            ctx.save();
+            ctx.translate(padding - 40, canvasHeight / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = '#cbd5e1';
+            ctx.font = '500 13px Inter';
+            ctx.fillText("Amplitude Levels", 0, 0);
+            ctx.restore();
+            
+            // X-Axis Label
+            ctx.font = '500 13px Inter';
+            ctx.fillText("Time (Oscilloscope View - 30ms window)", canvasWidth / 2, canvasHeight - padding + 45);
+
+            // 1. Draw pure analog wave (Blue)
+            ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)'; // blue-400 slightly transparent
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            for (let x = 0; x <= graphWidth; x++) {
+                const time = windowStartTime + (x / graphWidth) * visualTimeWindow;
+                const signal = getMelodySample(time);
+                const normalizedValue = (signal + 1) / 2; // Map -1..1 to 0..1
+                const y = (canvasHeight - padding) - (normalizedValue * graphHeight);
+                
+                if (x === 0) ctx.moveTo(padding + x, y);
+                else ctx.lineTo(padding + x, y);
+            }
+            ctx.stroke();
+
+            // 2. Perform Sampling and Draw Quantized Steps (Red)
+            let binaryString = '';
+            const numSamplesInWindow = Math.floor(sampleRate * visualTimeWindow);
+            const startSampleIndex = Math.floor(windowStartTime * sampleRate);
+            
+            ctx.strokeStyle = '#f87171'; // red-400
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+
+            let prevQuantizedY = null;
+            let prevSampleX = null;
+
+            for (let i = 0; i <= numSamplesInWindow + 1; i++) {
+                const sampleIndex = startSampleIndex + i;
+                const sampleTime = sampleIndex / sampleRate;
+                
+                if (sampleTime > windowStartTime + visualTimeWindow + (1/sampleRate)) continue;
+
+                const sampleX = ((sampleTime - windowStartTime) / visualTimeWindow) * graphWidth;
+                
+                const analogSignal = getMelodySample(sampleTime);
+                const normalizedValue = (analogSignal + 1) / 2;
+                let level = Math.round(normalizedValue * (numLevels - 1));
+                level = Math.max(0, Math.min(numLevels - 1, level)); // Clamp
+                
+                const quantizedY = (canvasHeight - padding) - (level / (numLevels - 1)) * graphHeight;
+
+                if (i < 150 && sampleTime <= windowStartTime + visualTimeWindow) { 
+                    const binaryValue = level.toString(2).padStart(bitDepth, '0');
+                    binaryString += `<span class="${i % 2 === 0 ? 'text-green-300' : 'text-green-500'}">${binaryValue}</span> `;
+                }
+
+                if (prevQuantizedY === null) {
+                    ctx.moveTo(padding + sampleX, quantizedY);
+                } else {
+                    ctx.lineTo(padding + sampleX, prevQuantizedY); 
+                    ctx.lineTo(padding + sampleX, quantizedY);     
+                }
+
+                prevQuantizedY = quantizedY;
+                prevSampleX = sampleX;
+            }
+            
+            if (prevQuantizedY !== null && prevSampleX !== null && prevSampleX < graphWidth) {
+                ctx.lineTo(padding + graphWidth, prevQuantizedY);
+            }
+            ctx.stroke();
+            
+            // 3. Draw Sample Points (Yellow Dots)
+            ctx.fillStyle = '#facc15'; 
+            for (let i = 0; i <= numSamplesInWindow; i++) {
+                const sampleIndex = startSampleIndex + i;
+                const sampleTime = sampleIndex / sampleRate;
+                if (sampleTime > windowStartTime + visualTimeWindow) continue;
+                
+                const sampleX = ((sampleTime - windowStartTime) / visualTimeWindow) * graphWidth;
+                const analogSignal = getMelodySample(sampleTime);
+                const normalizedValue = (analogSignal + 1) / 2;
+                const y = (canvasHeight - padding) - (normalizedValue * graphHeight);
+                
+                // Keep performance solid by stopping dot rendering at extreme frequencies
+                if (numSamplesInWindow < 300) {
+                    ctx.beginPath();
+                    ctx.arc(padding + sampleX, y, 2.5, 0, 2 * Math.PI);
+                    ctx.fill();
+                }
+            }
+
+            binaryDataDisplay.innerHTML = binaryString.trim() + (numSamplesInWindow > 150 ? ' <span class="text-gray-500">...[truncated for performance]</span>' : '');
+
+            // 4. Draw Macro Progress Bar indicator
+            if (windowStartTime > 0 || isPlaying) {
+                const progress = (windowStartTime / duration);
+                ctx.fillStyle = '#22c55e';
+                ctx.fillRect(padding, padding - 15, progress * graphWidth, 4);
+                
+                ctx.fillStyle = '#9ca3af';
+                ctx.font = '11px Inter';
+                ctx.fillText(`Overall Playback Progress: ${(progress*100).toFixed(1)}%`, padding + graphWidth / 2, padding - 25);
+            }
+        }
+
+        function playGeneratedSound() {
+            if (!audioContext) {
+                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            if (isPlaying) {
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            const simSampleRate = getSampleRate();
+            const simBitDepth = parseInt(bitDepthSlider.value);
+            const audioDuration = parseInt(durationSlider.value);
+            const numLevels = Math.pow(2, simBitDepth);
+
+            const outputSampleRate = audioContext.sampleRate;
+            const bufferSize = outputSampleRate * audioDuration;
+            const buffer = audioContext.createBuffer(1, bufferSize, outputSampleRate);
+            const data = buffer.getChannelData(0);
+
+            for (let i = 0; i < bufferSize; i++) {
+                const time = i / outputSampleRate;
+                
+                const simulatedTickDuration = 1 / simSampleRate;
+                const quantizedTime = Math.floor(time / simulatedTickDuration) * simulatedTickDuration;
+                
+                const analogSignal = getMelodySample(quantizedTime);
+                
+                const normalizedValue = (analogSignal + 1) / 2;
+                let level = Math.round(normalizedValue * (numLevels - 1));
+                level = Math.max(0, Math.min(numLevels - 1, level)); 
+                
+                const quantizedSignal = (level / (numLevels - 1)) * 2 - 1;
+                
+                let envelope = 1.0;
+                const fadeDuration = 0.05; 
+                if (time < fadeDuration) envelope = time / fadeDuration;
+                else if (time > audioDuration - fadeDuration) envelope = (audioDuration - time) / fadeDuration;
+                
+                data[i] = quantizedSignal * envelope;
+            }
+
+            const source = audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioContext.destination);
+            source.start();
+            
+            isPlaying = true;
+            playbackStartTime = audioContext.currentTime;
+            
+            function animatePlayhead() {
+                if (!isPlaying) return;
+                
+                const elapsed = audioContext.currentTime - playbackStartTime;
+                if (elapsed >= audioDuration) {
+                    isPlaying = false;
+                    drawSimulation(0); 
+                    return;
+                }
+                
+                // Sweep the oscilloscope window by passing elapsed time
+                drawSimulation(elapsed); 
+                animationFrameId = requestAnimationFrame(animatePlayhead);
+            }
+            
+            animationFrameId = requestAnimationFrame(animatePlayhead);
+        }
+
+        function setupCanvas() {
+            const container = canvas.parentElement;
+            const dpr = window.devicePixelRatio || 1;
+            
+            const rect = container.getBoundingClientRect();
+            
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            
+            ctx.scale(dpr, dpr);
+            
+            canvasWidth = rect.width;
+            canvasHeight = rect.height;
+            graphWidth = canvasWidth - padding * 2;
+            graphHeight = canvasHeight - padding * 2;
+            
+            if (isPlaying) {
+                isPlaying = false;
+                cancelAnimationFrame(animationFrameId);
+            }
+            
+            drawSimulation();
+        }
+
+        // --- Challenge Logic ---
+        function generateChallenge() {
+            const rates = [44100, 48000, 22050, 8000, 11025];
+            const depths = [8, 16, 24, 32];
+            
+            const rate = rates[Math.floor(Math.random() * rates.length)];
+            const depth = depths[Math.floor(Math.random() * depths.length)];
+            const duration = Math.floor(Math.random() * 10) + 1;
+
+            challengeCorrectAnswer = rate * depth * duration;
+            
+            challengeQuestion.innerHTML = `
+                <span class="mr-3">Rate: <strong class="text-blue-400">${rate.toLocaleString()} Hz</strong></span>
+                <span class="mr-3">Depth: <strong class="text-blue-400">${depth} bits</strong></span>
+                <span>Length: <strong class="text-blue-400">${duration}s</strong></span>
+            `;
+            
+            challengeFeedback.textContent = '';
+            challengeAnswerInput.value = '';
+            challengeFeedback.className = 'mt-3 text-sm h-5 font-medium text-center';
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseInt(challengeAnswerInput.value);
+            
+            if (isNaN(userAnswer)) {
+                challengeFeedback.textContent = "Please enter a valid number.";
+                challengeFeedback.className = 'mt-3 text-sm h-5 font-medium text-center text-yellow-400';
+                return;
+            }
+
+            if (userAnswer === challengeCorrectAnswer) {
+                challengeFeedback.textContent = `Correct! ${challengeCorrectAnswer.toLocaleString()} bits.`;
+                challengeFeedback.className = 'mt-3 text-sm h-5 font-medium text-center text-green-400';
+            } else {
+                challengeFeedback.textContent = `Incorrect. Try again! (Hint: Rate × Depth × Duration)`;
+                challengeFeedback.className = 'mt-3 text-sm h-5 font-medium text-center text-red-400';
+            }
+        }
+
+        // --- Event Listeners ---
+        sampleRateSlider.addEventListener('input', () => {
+            if(isPlaying) { isPlaying = false; cancelAnimationFrame(animationFrameId); }
+            drawSimulation();
+        });
+        
+        bitDepthSlider.addEventListener('input', () => {
+            if(isPlaying) { isPlaying = false; cancelAnimationFrame(animationFrameId); }
+            drawSimulation();
+        });
+        
+        durationSlider.addEventListener('input', () => {
+            if(isPlaying) { isPlaying = false; cancelAnimationFrame(animationFrameId); }
+            drawSimulation();
+        });
+        
+        window.addEventListener('resize', () => {
+            // Debounce resize slightly for better performance
+            clearTimeout(window.resizeTimer);
+            window.resizeTimer = setTimeout(setupCanvas, 100);
+        });
+        
+        playSoundBtn.addEventListener('click', playGeneratedSound);
+        newChallengeBtn.addEventListener('click', generateChallenge);
+        checkAnswerBtn.addEventListener('click', checkAnswer);
+        
+        challengeAnswerInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // Initial setup
+        // Ensure DOM is fully painted before initial canvas layout
+        window.onload = function() {
+            setupCanvas();
+            generateChallenge();
+        };
+
+    </script>
+</body>
+</html>

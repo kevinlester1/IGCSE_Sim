@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive SQL Query Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .sql-editor {
+            font-family: 'Roboto Mono', monospace;
+        }
+        .table-cell {
+            padding: 0.75rem;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .table-header {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+        /* Simple animation for result table appearing */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        /* Styles for the explanation section */
+        .prose { color: #374151; line-height: 1.65; }
+        .prose h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.5rem; margin-bottom: 0.5rem; }
+        .prose h4 { font-size: 1.125rem; font-weight: 600; margin-top: 1.25rem; margin-bottom: 0.5rem; }
+        .prose p, .prose ul, .prose ol { margin-bottom: 1rem; }
+        .prose ul, .prose ol { padding-left: 1.5rem; }
+        .prose ul { list-style-type: disc; }
+        .prose ol { list-style-type: decimal; }
+        .prose strong { font-weight: 600; }
+        .prose code { background-color: #f3f4f6; color: #4338ca; padding: 0.2rem 0.4rem; border-radius: 0.25rem; font-family: 'Roboto Mono', monospace; font-size: 0.9em; }
+        .prose pre { background-color: #1f2937; color: #d1d5db; padding: 1rem; border-radius: 0.5rem; overflow-x: auto; }
+        .prose pre code { background-color: transparent; color: inherit; padding: 0; border-radius: 0; }
+
+        /* Tab styles */
+        .tab-button {
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            font-weight: 600;
+            color: #4b5563;
+            transition: all 0.2s ease-in-out;
+        }
+        .tab-button:hover {
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .tab-button.active {
+            color: #2563eb;
+            border-color: #2563eb;
+        }
+        .tab-content {
+            display: none;
+            padding-top: 1.5rem;
+        }
+        /* Challenge styles */
+        .challenge-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+        }
+        .challenge-feedback {
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            width: 90px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Interactive SQL Query Simulator</h1>
+            <p class="text-lg text-gray-600 mt-2">Learn SQL by running queries against a sample database.</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <div class="border-b border-gray-200 mb-4">
+            <nav class="flex -mb-px" aria-label="Tabs">
+                <button class="tab-button active" onclick="openTab(event, 'Simulator')">Simulator & Challenges</button>
+                <button class="tab-button" onclick="openTab(event, 'SQLGuide')">SQL Guide</button>
+                <button class="tab-button" onclick="openTab(event, 'DBConcepts')">Database Concepts</button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="Simulator" class="tab-content">
+            <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    
+                <!-- Left Column: Sample Data & Query Editor -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Sample Table: <code class="text-blue-600">Employees</code></h2>
+                    <div id="source-table-container" class="overflow-x-auto max-h-96">
+                        <!-- Sample table will be rendered here by JS -->
+                    </div>
+    
+                    <h2 class="text-2xl font-semibold mt-8 mb-4 border-b pb-3">Query Editor</h2>
+                    <div>
+                        <p class="mb-3 text-gray-600">Type your SQL query below. Try one of the examples!</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button onclick="setQueryExample(`SELECT * FROM Employees;`)" class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm hover:bg-blue-200 transition-colors">SELECT *</button>
+                            <button onclick="setQueryExample(`SELECT FirstName, LastName, Salary FROM Employees WHERE Department = 'Sales';`)" class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm hover:bg-green-200 transition-colors">WHERE</button>
+                            <button onclick="setQueryExample(`SELECT * FROM Employees ORDER BY Salary DESC;`)" class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm hover:bg-purple-200 transition-colors">ORDER BY</button>
+                            <button onclick="setQueryExample(`SELECT * FROM Employees WHERE Department = 'Engineering' AND Salary >= 80000;`)" class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm hover:bg-yellow-200 transition-colors">AND / OR</button>
+                            <button onclick="setQueryExample(`SELECT COUNT(*) FROM Employees;`)" class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm hover:bg-red-200 transition-colors">COUNT</button>
+                            <button onclick="setQueryExample(`SELECT SUM(Salary) FROM Employees WHERE Department = 'Engineering';`)" class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm hover:bg-indigo-200 transition-colors">SUM</button>
+                            <button onclick="setQueryExample(`SELECT * FROM Employees WHERE LastName LIKE 'S%';`)" class="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm hover:bg-pink-200 transition-colors">LIKE</button>
+                            <button onclick="setQueryExample(`SELECT * FROM Employees WHERE NOT Department = 'Sales';`)" class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 transition-colors">NOT</button>
+                        </div>
+                        <textarea id="sql-query" class="sql-editor w-full h-36 p-3 border border-gray-300 rounded-lg bg-gray-900 text-green-300 focus:ring-2 focus:ring-blue-500 focus:outline-none" spellcheck="false">SELECT * FROM Employees;</textarea>
+                        <button id="run-query" class="mt-4 w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform active:scale-95">
+                            Run Query
+                        </button>
+                    </div>
+                </div>
+    
+                <!-- Right Column: Query Results -->
+                <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200">
+                    <h2 class="text-2xl font-semibold mb-4 border-b pb-3">Query Result</h2>
+                     <div id="message-container" class="mb-4"></div>
+                    <div id="result-container" class="overflow-x-auto">
+                        <!-- Results will be rendered here -->
+                    </div>
+                </div>
+    
+            </main>
+
+            <!-- Challenges Section -->
+            <div class="mt-8 bg-white p-8 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-3xl font-bold mb-6 border-b pb-4 text-gray-900">SQL Practice Challenges</h2>
+                <div class="prose max-w-none">
+                    <p>Test your knowledge! Type your query in the editor above, then click the "Check Answer" button for the corresponding challenge to see if you're correct.</p>
+                </div>
+                <div id="challenges-list" class="mt-4">
+                    <!-- Challenges will be dynamically inserted here -->
+                </div>
+            </div>
+        </div>
+
+        <div id="SQLGuide" class="tab-content">
+            <div class="bg-white p-8 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-3xl font-bold mb-6 border-b pb-4 text-gray-900">Understanding SQL Queries</h2>
+                
+                <div class="prose max-w-none">
+                    <h3>How Do Queries Work? The Role of SQL</h3>
+                    <p>To get information from the database, you need to speak its language: <strong>SQL (Structured Query Language)</strong>. An SQL "query" is a command you write to ask the database to perform a task—most commonly, to retrieve specific data.</p>
+                    <p>Let's break down a basic query:</p>
+                    <pre><code class="language-sql">SELECT FirstName, LastName FROM Employees WHERE Department = 'Sales';</code></pre>
+                    <ul>
+                        <li><strong><code>SELECT FirstName, LastName</code></strong>: This tells the database <em>which columns</em> you want to see. Use <code>SELECT *</code> to see all columns.</li>
+                        <li><strong><code>FROM Employees</code></strong>: This specifies <em>which table</em> to look in.</li>
+                        <li><strong><code>WHERE Department = 'Sales'</code></strong>: This is your filter. It sets the conditions that a row must meet to be included in the results.</li>
+                        <li><strong><code>ORDER BY Salary DESC</code></strong>: This optional clause sorts the results. You can sort by any column in either ascending (<code>ASC</code>) or descending (<code>DESC</code>) order.</li>
+                    </ul>
+
+                    <h4>Filtering with Operators</h4>
+                    <p>The <code>WHERE</code> clause is very powerful. You can combine multiple conditions and use various operators:</p>
+                    <ul>
+                        <li><strong>Comparison:</strong> <code>=</code>, <code>!=</code> (or <code>&lt;&gt;</code>), <code>&gt;</code>, <code>&lt;</code>, <code>&gt;=</code>, <code>&lt;=</code>.</li>
+                        <li><strong>Logical:</strong> <code>AND</code> (both conditions must be true), <code>OR</code> (at least one condition must be true), <code>NOT</code> (inverts a condition, e.g., <code>WHERE NOT Department = 'Sales'</code>).</li>
+                        <li><strong>Pattern Matching:</strong> <code>LIKE</code> is used for searching for patterns in text. The percent sign <code>%</code> is a wildcard for zero or more characters. For example, <code>WHERE FirstName LIKE 'J%'</code> finds all first names that start with 'J'.</li>
+                    </ul>
+
+                    <h4>Aggregate Functions</h4>
+                    <p>SQL can also perform calculations on your data using aggregate functions.</p>
+                     <ul>
+                        <li><strong><code>COUNT(column)</code></strong>: Counts the number of rows. <code>COUNT(*)</code> is commonly used to count all rows that match the <code>WHERE</code> clause.</li>
+                        <li><strong><code>SUM(column)</code></strong>: Calculates the sum of a numeric column for all rows that match the <code>WHERE</code> clause.</li>
+                    </ul>
+                    
+                    <h4>The Process in a Nutshell</h4>
+                    <ol>
+                        <li>You write an SQL query that clearly states what information you want.</li>
+                        <li>The database reads and understands your command.</li>
+                        <li>It scans the specified table and applies your filters.</li>
+                        <li>It extracts columns or calculates aggregates as requested.</li>
+                        <li>It sorts the data if requested.</li>
+                        <li>Finally, it presents the finished, organized data to you as the "Query Result."</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+        
+        <div id="DBConcepts" class="tab-content">
+            <div class="bg-white p-8 rounded-xl shadow-md border border-gray-200">
+                <h2 class="text-3xl font-bold mb-6 border-b pb-4 text-gray-900">Core Database Concepts</h2>
+                <div class="prose max-w-none">
+                    <h3>The Structure of a Relational Database</h3>
+                    <p>A relational database organizes data into one or more <strong>tables</strong>. Think of it like a collection of spreadsheets that can be linked together.</p>
+                    <ul>
+                        <li><strong>Tables:</strong> A table is a collection of related data in a grid format. In our simulator, the <code>Employees</code> table holds all the information specifically about employees. A real-world application might have many tables, like <code>Departments</code>, <code>Products</code>, or <code>Customers</code>.</li>
+                        <li><strong>Fields (or Columns):</strong> Each table has columns that define the type of information being stored. In our <code>Employees</code> table, the columns are <code>ID</code>, <code>FirstName</code>, <code>LastName</code>, <code>Department</code>, and <code>Salary</code>.</li>
+                        <li><strong>Records (or Rows):</strong> A row represents a single, complete entry in the table. Each employee has their own row containing their specific information.</li>
+                    </ul>
+
+                    <h3>Primary Keys</h3>
+                    <p>A <strong>primary key</strong> is a special field in a table that uniquely identifies each record. No two records can have the same primary key value. Think of it like a student ID number or a national insurance number—it's guaranteed to be unique.</p>
+                    <ul>
+                        <li><strong>Purpose:</strong> Primary keys prevent duplicate data and are essential for creating relationships between different tables.</li>
+                        <li><strong>In our simulator:</strong> The <code>ID</code> column serves as the primary key for the <code>Employees</code> table. Each employee has a unique ID.</li>
+                    </ul>
+
+                    <h3>Data Types</h3>
+                    <p>Every field in a database must have a specific <strong>data type</strong>. This tells the database what kind of data to expect in that column. Choosing the correct data type is crucial for data integrity and efficiency.</p>
+                    <ul>
+                        <li><strong>Text (or Alphanumeric):</strong> Used for strings of text, like names or addresses (e.g., <code>FirstName</code>).</li>
+                        <li><strong>Integer:</strong> Used for whole numbers (e.g., <code>ID</code>).</li>
+                        <li><strong>Real (or Float):</strong> Used for numbers with decimal points. In our case, <code>Salary</code> is stored as an Integer, but it could be a Real type if it included cents.</li>
+                        <li><strong>Boolean:</strong> Can only hold two values, typically <code>True</code> or <code>False</code>. Useful for fields like "IsActive" or "HasPaid".</li>
+                        <li><strong>Date/Time:</strong> Used to store dates, times, or both. Essential for fields like "DateJoined" or "LastLogin".</li>
+                    </ul>
+
+                    <h3>Validation</h3>
+                    <p><strong>Validation</strong> refers to the rules that are set on fields to ensure the data entered is sensible and correct. This is a critical step in preventing bad data from entering the database.</p>
+                    <p>Examples of validation rules include:</p>
+                    <ul>
+                        <li><strong>Presence Check:</strong> Ensures a field is not left empty (e.g., an email address cannot be blank).</li>
+                        <li><strong>Format Check:</strong> Ensures data matches a specific pattern. For example, a rule could check that a mobile number starts with "0" or that an email address contains an "@" symbol.</li>
+                        <li><strong>Range Check:</strong> Ensures a number falls within a certain range (e.g., a rating must be between 1 and 5).</li>
+                        <li><strong>Length Check:</strong> Ensures text is a certain number of characters long (e.g., a password must be at least 8 characters).</li>
+                    </ul>
+                    <p>While our simulator doesn't enforce these rules, they are a fundamental part of designing a real-world database.</p>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        const employeesData = [
+            { ID: 1, FirstName: 'John', LastName: 'Doe', Department: 'Sales', Salary: 60000 },
+            { ID: 2, FirstName: 'Jane', LastName: 'Smith', Department: 'Marketing', Salary: 55000 },
+            { ID: 3, FirstName: 'Peter', LastName: 'Jones', Department: 'Engineering', Salary: 80000 },
+            { ID: 4, FirstName: 'Mary', LastName: 'Williams', Department: 'Sales', Salary: 62000 },
+            { ID: 5, FirstName: 'David', LastName: 'Brown', Department: 'Engineering', Salary: 95000 },
+            { ID: 6, FirstName: 'Susan', LastName: 'Davis', Department: 'HR', Salary: 50000 },
+            { ID: 7, FirstName: 'Michael', LastName: 'Miller', Department: 'Marketing', Salary: 58000 },
+            { ID: 8, FirstName: 'Linda', LastName: 'Wilson', Department: 'Engineering', Salary: 75000 },
+            { ID: 9, FirstName: 'Chris', LastName: 'Green', Department: 'IT', Salary: 72000 },
+            { ID: 10, FirstName: 'Patricia', LastName: 'Hall', Department: 'HR', Salary: 53000 },
+            { ID: 11, FirstName: 'Daniel', LastName: 'Lee', Department: 'IT', Salary: 88000 },
+            { ID: 12, FirstName: 'Nancy', LastName: 'Allen', Department: 'Finance', Salary: 75000 },
+            { ID: 13, FirstName: 'Kevin', LastName: 'Young', Department: 'Marketing', Salary: 61000 },
+            { ID: 14, FirstName: 'Sarah', LastName: 'King', Department: 'Finance', Salary: 79000 },
+            { ID: 15, FirstName: 'Brian', LastName: 'Wright', Department: 'IT', Salary: 92000 },
+            { ID: 16, FirstName: 'Jessica', LastName: 'Scott', Department: 'Sales', Salary: 68000 },
+            { ID: 17, FirstName: 'Matthew', LastName: 'Adams', Department: 'Engineering', Salary: 105000 },
+            { ID: 18, FirstName: 'Amanda', LastName: 'Baker', Department: 'HR', Salary: 56000 },
+        ];
+
+        const challenges = [
+            { question: "Select all information for employees who work in the 'Marketing' department.", solution: "SELECT * FROM Employees WHERE Department = 'Marketing';" },
+            { question: "List the first name, last name, and salary for all employees in the 'Engineering' department.", solution: "SELECT FirstName, LastName, Salary FROM Employees WHERE Department = 'Engineering';" },
+            { question: "Find all employees whose salary is less than $60,000.", solution: "SELECT * FROM Employees WHERE Salary < 60000;" },
+            { question: "List all employees from the 'IT' department, ordered by their salary from highest to lowest.", solution: "SELECT * FROM Employees WHERE Department = 'IT' ORDER BY Salary DESC;" },
+            { question: "Find the names and departments of all employees who work in 'Finance' or 'HR'.", solution: "SELECT FirstName, LastName, Department FROM Employees WHERE Department = 'Finance' OR Department = 'HR';" },
+            { question: "Find all employees in the 'Sales' department whose salary is also greater than $65,000.", solution: "SELECT * FROM Employees WHERE Department = 'Sales' AND Salary > 65000;" },
+            { question: "Count the total number of employees in the company.", solution: "SELECT COUNT(*) FROM Employees;"},
+            { question: "Calculate the total salary of all employees in the 'IT' department.", solution: "SELECT SUM(Salary) FROM Employees WHERE Department = 'IT';"},
+            { question: "Find all employees whose last name starts with the letter 'W'.", solution: "SELECT * FROM Employees WHERE LastName LIKE 'W%';"},
+            { question: "Find all employees who do not work in the 'HR' or 'Finance' departments.", solution: "SELECT * FROM Employees WHERE NOT (Department = 'HR' OR Department = 'Finance');"}
+        ];
+
+
+        // --- UI ELEMENTS ---
+        const queryInput = document.getElementById('sql-query');
+        const runButton = document.getElementById('run-query');
+        const resultContainer = document.getElementById('result-container');
+        const messageContainer = document.getElementById('message-container');
+        const sourceTableContainer = document.getElementById('source-table-container');
+        const challengesListContainer = document.getElementById('challenges-list');
+
+        // --- CORE LOGIC ---
+
+        function openTab(evt, tabName) {
+            // Get all elements with class="tab-content" and hide them
+            const tabcontent = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+
+            // Get all elements with class="tab-button" and remove the class "active"
+            const tablinks = document.getElementsByClassName("tab-button");
+            for (let i = 0; i < tablinks.length; i++) {
+                tablinks[i].className = tablinks[i].className.replace(" active", "");
+            }
+
+            // Show the current tab, and add an "active" class to the button that opened the tab
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        function showMessage(type, text) {
+            const message = document.createElement('div');
+            message.className = `p-3 rounded-lg text-sm ${
+                type === 'error' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+            }`;
+            message.textContent = text;
+            messageContainer.innerHTML = ''; // Clear previous messages
+            messageContainer.appendChild(message);
+        }
+        
+        function renderTable(container, data, title) {
+            container.innerHTML = '';
+            if (!data || data.length === 0) {
+                container.innerHTML = `<p class="text-gray-500 italic">${title || 'No results to display.'}</p>`;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = 'w-full border-collapse fade-in';
+            
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            Object.keys(data[0]).forEach(key => {
+                const th = document.createElement('th');
+                th.className = 'table-cell table-header';
+                th.textContent = key;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                Object.values(row).forEach(value => {
+                    const td = document.createElement('td');
+                    td.className = 'table-cell';
+                    td.textContent = value;
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+            table.appendChild(tbody);
+
+            container.appendChild(table);
+        }
+        
+        function executeQuery(query) {
+             try {
+                const normalizedQuery = query.trim().replace(/;$/, '').replace(/\s+/g, ' ');
+
+                if (!normalizedQuery.toLowerCase().startsWith('select') || !normalizedQuery.toLowerCase().includes('from employees')) {
+                     throw new Error("Invalid query. Must be a SELECT query from the 'Employees' table.");
+                }
+
+                let data = [...employeesData];
+                
+                const selectMatch = normalizedQuery.match(/SELECT\s+(.*?)\s+FROM/i);
+                const whereMatch = normalizedQuery.match(/WHERE\s+(.*)/i);
+                const orderByMatch = normalizedQuery.match(/ORDER BY\s+(.*)/i);
+                
+                if (!selectMatch) throw new Error("Could not parse SELECT clause.");
+
+                let columns = selectMatch[1].split(',').map(c => c.trim());
+
+                const isAggregate = col => /^(COUNT|SUM)\(.*\)$/i.test(col);
+                const hasAggregate = columns.some(isAggregate);
+                const hasNonAggregate = columns.some(col => !isAggregate(col) && col !== '*');
+
+                if (hasAggregate && hasNonAggregate) {
+                    throw new Error("Cannot mix aggregate functions (COUNT, SUM) with regular columns in this simulator.");
+                }
+
+                if (whereMatch) {
+                    let whereClause = orderByMatch ? whereMatch[1].split(/ ORDER BY /i)[0].trim() : whereMatch[1].trim();
+                    
+                    const evaluateCondition = (row, conditionStr) => {
+                        let condition = conditionStr.trim();
+                        let isNot = false;
+                        if (condition.toLowerCase().startsWith('not ')) {
+                            isNot = true;
+                            condition = condition.substring(4).trim();
+                        }
+
+                        // Handle parentheses
+                        if (condition.startsWith('(') && condition.endsWith(')')) {
+                             condition = condition.substring(1, condition.length - 1).trim();
+                        }
+                        
+                        const likeMatch = condition.match(/(\w+)\s+(NOT\s+LIKE|LIKE)\s+'([^']*)'/i);
+                        if (likeMatch) {
+                             const [, field, operator, pattern] = likeMatch;
+                             const fieldName = Object.keys(row).find(k => k.toLowerCase() === field.toLowerCase());
+                             if (!fieldName) throw new Error(`Column '${field}' not found.`);
+                             
+                             const regexPattern = new RegExp('^' + pattern.replace(/%/g, '.*').replace(/_/g, '.') + '$', 'i');
+                             const result = regexPattern.test(row[fieldName]);
+                             const isNotLike = operator.toLowerCase().includes('not');
+                             return isNotLike ? !result : result;
+                        }
+
+                        const operatorMatch = condition.match(/(\w+)\s*(=|!=|<>|>|<|>=|<=)\s*(?:'([^']*)'|([0-9.]+))/);
+                        if (!operatorMatch) throw new Error(`Unsupported format in WHERE: "${condition}"`);
+
+                        const [, field, op, stringValue, numericValue] = operatorMatch;
+                        const value = stringValue !== undefined ? stringValue : numericValue;
+                        const fieldName = Object.keys(row).find(k => k.toLowerCase() === field.toLowerCase());
+                        if (!fieldName) throw new Error(`Column '${field}' not found.`);
+                        
+                        const rowValue = row[fieldName];
+                        const filterValue = numericValue !== undefined ? parseFloat(value) : value.toLowerCase();
+                        const effectiveRowValue = typeof rowValue === 'string' ? rowValue.toLowerCase() : rowValue;
+
+                        let result;
+                        switch (op) {
+                            case '=': result = effectiveRowValue == filterValue; break;
+                            case '!=':
+                            case '<>': result = effectiveRowValue != filterValue; break;
+                            case '>': result = rowValue > filterValue; break;
+                            case '<': result = rowValue < filterValue; break;
+                            case '>=': result = rowValue >= filterValue; break;
+                            case '<=': result = rowValue <= filterValue; break;
+                            default: result = false;
+                        }
+                        return isNot ? !result : result;
+                    };
+
+                    const evaluateWhereClause = (row, clause) => {
+                        // This is a simplified parser. It handles one level of AND/OR and NOT.
+                        clause = clause.replace(/\s+AND\s+/gi, ' && ').replace(/\s+OR\s+/gi, ' || ');
+
+                        // Replace individual conditions with true/false by evaluating them
+                        const evaluatedClause = clause.replace(/([\w\s='%.()!<>]+)/g, (match) => {
+                             // Avoid replacing logical operators
+                            if (match.trim() === '&&' || match.trim() === '||') return match;
+                             try {
+                                return evaluateCondition(row, match.trim());
+                             } catch (e) {
+                                // If a sub-expression fails, we can't evaluate the whole clause
+                                throw e;
+                             }
+                        });
+                        
+                        try {
+                           return new Function(`return ${evaluatedClause}`)();
+                        } catch(e) {
+                           throw new Error("Could not evaluate the logic in the WHERE clause. Check your AND/OR/NOT structure.");
+                        }
+                    };
+
+                    data = data.filter(row => evaluateWhereClause(row, whereClause));
+                }
+                
+                if (hasAggregate) {
+                    if (columns.length > 1) throw new Error("Multiple aggregate functions in one query are not supported.");
+                    const aggregateColumn = columns[0];
+                    const aggregateMatch = aggregateColumn.match(/^(COUNT|SUM)\(\s*(\*|\w+)\s*\)$/i);
+                    if (!aggregateMatch) throw new Error(`Invalid aggregate function syntax: ${aggregateColumn}`);
+
+                    const [, func, field] = aggregateMatch;
+                    let resultValue;
+                    let resultHeader = selectMatch[1].trim();
+
+                    if (func.toLowerCase() === 'count') {
+                        resultValue = data.length;
+                    } else if (func.toLowerCase() === 'sum') {
+                        const fieldName = Object.keys(data[0] || employeesData[0]).find(k => k.toLowerCase() === field.toLowerCase());
+                        if (!fieldName) throw new Error(`Column '${field}' not found for SUM.`);
+                        if (typeof employeesData[0][fieldName] !== 'number') throw new Error(`SUM can only be applied to numeric columns.`);
+                        resultValue = data.reduce((acc, r) => acc + r[fieldName], 0);
+                    }
+                    return { data: [{ [resultHeader]: resultValue }], error: null, isOrdered: true };
+                }
+
+                let isOrdered = false;
+                if (orderByMatch) {
+                    isOrdered = true;
+                    const [sortField, direction = 'asc'] = orderByMatch[1].trim().split(/\s+/);
+                    const fieldName = Object.keys(data[0] || employeesData[0]).find(k => k.toLowerCase() === sortField.toLowerCase());
+                     if (!fieldName) throw new Error(`Column '${sortField}' not found in ORDER BY clause.`);
+
+                    data.sort((a, b) => {
+                        const valA = a[fieldName];
+                        const valB = b[fieldName];
+                        let comparison = 0;
+                        if (valA > valB) comparison = 1;
+                        else if (valA < valB) comparison = -1;
+                        return direction.toLowerCase() === 'desc' ? comparison * -1 : comparison;
+                    });
+                }
+                
+                if (!(columns.length === 1 && columns[0] === '*')) {
+                     const validColumns = columns.map(c => {
+                        const found = Object.keys(data[0] || employeesData[0]).find(k => k.toLowerCase() === c.toLowerCase());
+                        if (!found) throw new Error(`Column '${c}' not found.`);
+                        return found;
+                    });
+
+                    data = data.map(row => {
+                        let newRow = {};
+                        validColumns.forEach(col => {
+                            newRow[col] = row[col];
+                        });
+                        return newRow;
+                    });
+                }
+                
+                return { data, error: null, isOrdered };
+
+            } catch (error) {
+                return { data: [], error: error.message, isOrdered: false };
+            }
+        }
+
+        function runAndDisplayQuery() {
+            const result = executeQuery(queryInput.value);
+            if (result.error) {
+                renderTable(resultContainer, []);
+                showMessage('error', result.error);
+            } else {
+                renderTable(resultContainer, result.data);
+                showMessage('success', `Query executed successfully. ${result.data.length} rows returned.`);
+            }
+        }
+
+        function checkAnswer(challengeIndex) {
+            const userQuery = queryInput.value;
+            const correctQuery = challenges[challengeIndex].solution;
+
+            const userResult = executeQuery(userQuery);
+            const correctResult = executeQuery(correctQuery);
+
+            let isCorrect = false;
+            if (!userResult.error) {
+                const sortById = (a, b) => a.ID - b.ID;
+                
+                const userResultString = JSON.stringify(userResult.isOrdered ? userResult.data : [...userResult.data].sort(sortById));
+                const correctResultString = JSON.stringify(correctResult.isOrdered ? correctResult.data : [...correctResult.data].sort(sortById));
+               
+                isCorrect = userResultString === correctResultString;
+            }
+
+            const feedbackEl = document.getElementById(`feedback-${challengeIndex}`);
+            if (isCorrect) {
+                feedbackEl.textContent = 'Correct';
+                feedbackEl.className = 'challenge-feedback bg-green-100 text-green-800';
+            } else {
+                feedbackEl.textContent = 'Incorrect';
+                feedbackEl.className = 'challenge-feedback bg-red-100 text-red-800';
+            }
+        }
+        
+        function populateChallenges() {
+            challenges.forEach((challenge, index) => {
+                const item = document.createElement('div');
+                item.className = 'challenge-item';
+                item.innerHTML = `
+                    <p class="flex-1 pr-4">${index + 1}. ${challenge.question}</p>
+                    <div class="flex items-center gap-4">
+                        <span id="feedback-${index}" class="challenge-feedback"></span>
+                        <button onclick="checkAnswer(${index})" class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors text-sm">Check Answer</button>
+                    </div>
+                `;
+                challengesListContainer.appendChild(item);
+            });
+        }
+
+        function setQueryExample(query) {
+            queryInput.value = query;
+            queryInput.focus();
+        }
+
+        // --- INITIALIZATION ---
+        runButton.addEventListener('click', runAndDisplayQuery);
+        
+        queryInput.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                runButton.click();
+            }
+        });
+
+        window.onload = () => {
+            document.getElementById('Simulator').style.display = 'block';
+            populateChallenges();
+            renderTable(sourceTableContainer, employeesData);
+            runAndDisplayQuery(); 
+        };
+    </script>
+
+</body>
+</html>
+

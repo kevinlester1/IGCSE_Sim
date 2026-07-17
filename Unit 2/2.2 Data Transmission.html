@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Transmission Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes slideRight {
+            from { left: -10%; }
+            to { left: 110%; }
+        }
+        .car-animation {
+            position: absolute;
+            transition: all 2s linear;
+        }
+        .bit-serial {
+            animation: moveSerial 0.6s linear;
+        }
+        @keyframes moveSerial {
+            0% { left: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+        .skewed {
+            transition-duration: calc(1.5s + var(--delay));
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .collision-flash {
+            animation: flash 0.5s infinite;
+        }
+        @keyframes flash {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.2); }
+            50% { background-color: rgba(239, 68, 68, 0.5); }
+        }
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        /* Hide scrollbar for nav menu */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans text-gray-900">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- Header -->
+        <header class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 class="text-2xl md:text-3xl font-black tracking-tight text-slate-800">
+                    DATA <span class="text-blue-600">TRANSMISSION</span> LAB
+                </h1>
+                <p class="text-slate-500 text-sm md:text-base font-medium">Interactive Presentation Simulation</p>
+            </div>
+            <nav class="flex flex-nowrap gap-1 bg-white rounded-lg p-1 shadow-sm border border-gray-200 overflow-x-auto no-scrollbar">
+                <button onclick="switchTab('methods')" id="btn-methods" class="tab-btn whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-all bg-blue-600 text-white shadow-md">Methods</button>
+                <button onclick="switchTab('directions')" id="btn-directions" class="tab-btn whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-all text-gray-500 hover:bg-gray-50">Directions</button>
+                <button onclick="switchTab('usb')" id="btn-usb" class="tab-btn whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-all text-gray-500 hover:bg-gray-50">USB Features</button>
+                <button onclick="switchTab('quiz')" id="btn-quiz" class="tab-btn whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-all text-gray-500 hover:bg-gray-50 flex items-center gap-2">
+                    <i class="fas fa-trophy text-yellow-500"></i> Quiz
+                </button>
+                <button onclick="switchTab('challenges')" id="btn-challenges" class="tab-btn whitespace-nowrap px-3 py-1.5 text-sm rounded-md transition-all text-gray-500 hover:bg-gray-50 flex items-center gap-2">
+                    <i class="fas fa-flask text-purple-500"></i> Challenges
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
+            <div class="bg-slate-800 px-6 py-4 flex items-center justify-between">
+                <h2 id="tab-title" class="text-white font-bold flex items-center gap-2">
+                    <i class="fas fa-microchip text-blue-400"></i> Serial vs Parallel
+                </h2>
+                <div class="flex gap-2">
+                    <div class="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-yellow-400"></div>
+                    <div class="w-3 h-3 rounded-full bg-green-400"></div>
+                </div>
+            </div>
+
+            <div class="p-6">
+                <!-- Tab 1: Methods -->
+                <div id="methods" class="tab-content active space-y-6">
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button onclick="setMethod('serial')" id="method-serial" class="px-4 py-2 rounded-lg font-bold bg-blue-600 text-white">Serial</button>
+                        <button onclick="setMethod('parallel')" id="method-parallel" class="px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700">Parallel</button>
+                    </div>
+
+                    <div class="bg-gray-50 p-8 rounded-xl border border-gray-200 relative min-h-[350px]">
+                        <div class="flex justify-between items-center mb-16">
+                            <div class="text-center">
+                                <i class="fas fa-server text-4xl text-blue-500 mb-2"></i>
+                                <div class="text-xs font-mono bg-white p-1 rounded border">Data: 01010110</div>
+                                <span class="text-xs font-bold text-gray-400 uppercase">Sender</span>
+                            </div>
+                            <div class="text-center">
+                                <i class="fas fa-desktop text-4xl text-indigo-500 mb-2"></i>
+                                <div id="receive-buffer" class="text-xs font-mono bg-white p-1 rounded border min-w-[80px]">Buffer: ---</div>
+                                <span class="text-xs font-bold text-gray-400 uppercase">Receiver</span>
+                            </div>
+                        </div>
+
+                        <!-- Wire Container -->
+                        <div id="wire-container" class="relative h-32 flex flex-col justify-center gap-4">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <div id="finish-msg" class="hidden mt-8 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                            <i class="fas fa-check-circle text-green-600"></i>
+                            <div>
+                                <p class="font-bold text-green-800">Success!</p>
+                                <p id="finish-detail" class="text-sm text-green-700">Transmission complete.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-6 p-4 bg-blue-50 rounded-xl">
+                        <button onclick="startMethodSim()" id="btn-start" class="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700">
+                            <i class="fas fa-play"></i> Start Transmission
+                        </button>
+                        <div id="parallel-options" class="hidden flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input type="checkbox" id="check-skew" class="w-4 h-4"> Simulate Skew
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer text-sm font-medium">
+                                <input type="checkbox" id="check-crosstalk" class="w-4 h-4"> Simulate Crosstalk
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Directions (Car Analogy) -->
+                <div id="directions" class="tab-content space-y-6">
+                    <div class="flex flex-wrap gap-4 mb-4">
+                        <button onclick="setDirection('simplex')" id="dir-simplex" class="px-4 py-2 rounded-lg font-bold bg-indigo-600 text-white">Simplex</button>
+                        <button onclick="setDirection('half')" id="dir-half" class="px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700">Half-Duplex</button>
+                        <button onclick="setDirection('full')" id="dir-full" class="px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700">Full-Duplex</button>
+                    </div>
+
+                    <div id="road-canvas" class="bg-slate-800 p-8 rounded-xl relative overflow-hidden h-[300px] border-4 border-slate-700 shadow-inner">
+                        <!-- Road Lines -->
+                        <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 h-24 bg-slate-700 border-y-2 border-slate-600"></div>
+                        <div id="lane-divider" class="absolute inset-x-0 top-1/2 h-0 border-t-2 border-dashed border-slate-500 hidden"></div>
+                        
+                        <!-- Road Signs -->
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 text-slate-500 text-xs font-mono uppercase tracking-widest">
+                            <span id="direction-desc">One-Way Transmission</span>
+                        </div>
+
+                        <div class="relative h-full flex justify-between items-center z-10 px-4">
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center text-white border border-white/20 mb-2">NODE A</div>
+                                <button onclick="sendCar('A')" class="bg-green-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-600">SEND</button>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-16 h-16 bg-white/10 rounded-lg flex items-center justify-center text-white border border-white/20 mb-2">NODE B</div>
+                                <button onclick="sendCar('B')" id="btn-node-b" class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-600 opacity-30 cursor-not-allowed" disabled>SEND</button>
+                            </div>
+                        </div>
+
+                        <!-- Car Container -->
+                        <div id="car-lane" class="absolute inset-0 pointer-events-none"></div>
+                    </div>
+
+                    <div id="collision-alert" class="hidden bg-red-100 border border-red-300 p-4 rounded-lg text-red-700 font-bold text-center animate-bounce">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> COLLISION! Data cannot be sent simultaneously in Half-Duplex.
+                    </div>
+                </div>
+
+                <!-- Tab 3: USB -->
+                <div id="usb" class="tab-content space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                            <h3 class="text-xl font-bold mb-4 flex items-center gap-2"><i class="fab fa-usb text-blue-600"></i> USB Architecture</h3>
+                            <div class="flex items-center justify-center bg-white p-4 rounded-lg border mb-4">
+                                <div class="relative w-32 h-8 bg-gray-200 rounded flex items-center justify-around px-2 border-2 border-gray-300">
+                                    <div class="w-4 h-1 bg-yellow-600 rounded"></div>
+                                    <div class="w-4 h-1 bg-yellow-600 rounded"></div>
+                                    <div class="w-4 h-1 bg-yellow-600 rounded"></div>
+                                    <div class="w-4 h-1 bg-yellow-600 rounded"></div>
+                                </div>
+                            </div>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start gap-2"><i class="fas fa-bolt text-red-500 mt-1"></i> <div><b>Power:</b> Provides +5V power to devices.</div></li>
+                                <li class="flex items-start gap-2"><i class="fas fa-exchange-alt text-green-600 mt-1"></i> <div><b>Serial:</b> Transmits data bit by bit using Data+ and Data- pins.</div></li>
+                                <li class="flex items-start gap-2"><i class="fas fa-plug text-blue-600 mt-1"></i> <div><b>Hot Swappable:</b> Connect/remove while computer is on.</div></li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-900 text-white p-6 rounded-xl relative overflow-hidden">
+                            <i class="fas fa-tachometer-alt absolute top-4 right-4 text-4xl opacity-10"></i>
+                            <h3 class="text-xl font-bold mb-4">Speed Performance</h3>
+                            <div class="space-y-4 text-sm">
+                                <div>
+                                    <div class="flex justify-between mb-1"><span>Parallel Printer Cable</span> <span>110 kbps</span></div>
+                                    <div class="h-1.5 bg-gray-700 rounded-full"><div class="h-full bg-red-500" style="width: 2%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1"><span>USB 1.0 (Serial)</span> <span>12 Mbps</span></div>
+                                    <div class="h-1.5 bg-gray-700 rounded-full"><div class="h-full bg-orange-500" style="width: 15%"></div></div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between mb-1"><span>USB 3.0 (Serial)</span> <span>20 Gbps</span></div>
+                                    <div class="h-1.5 bg-gray-700 rounded-full"><div class="h-full bg-blue-500" style="width: 70%"></div></div>
+                                </div>
+                                <p class="text-[10px] text-gray-400 mt-6 italic">*Note: Internal DDR4 RAM (Parallel) still reaches 200+ Gbps because distances are tiny!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Quiz -->
+                <div id="quiz" class="tab-content space-y-6">
+                    <div id="challenge-screen" class="bg-gray-50 border-2 border-dashed border-gray-300 rounded-2xl p-8 text-center">
+                        <div id="quiz-container">
+                            <div class="mb-6">
+                                <span id="quiz-progress" class="text-xs font-bold text-blue-600 uppercase tracking-widest bg-blue-100 px-3 py-1 rounded-full">Level 1 of 5</span>
+                                <h3 id="quiz-question" class="text-2xl font-bold mt-4 text-slate-800">Ready to test your knowledge?</h3>
+                                <p id="quiz-description" class="text-slate-600 mt-2">Apply the analogies and concepts from the lesson to solve these scenarios.</p>
+                            </div>
+                            
+                            <div id="quiz-options" class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                                <!-- Options injected by JS -->
+                            </div>
+
+                            <button id="start-quiz-btn" onclick="startQuiz()" class="mt-8 bg-blue-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg transition-transform active:scale-95">
+                                Start the Challenge
+                            </button>
+                        </div>
+                        
+                        <div id="quiz-feedback" class="hidden mt-6 p-4 rounded-xl font-bold flex items-center justify-center gap-3">
+                            <!-- Feedback injected by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 5: Challenges -->
+                <div id="challenges" class="tab-content space-y-6">
+                    <div class="mb-4">
+                        <p class="text-slate-600 font-medium text-lg">Take your understanding further by investigating these real-world data transmission case studies.</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Case 1 -->
+                        <div class="bg-purple-50 p-6 rounded-xl border border-purple-200 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i class="fas fa-satellite-dish text-2xl text-purple-600"></i>
+                                <h3 class="text-xl font-bold text-purple-900">1. The Voyager Probe Dilemma</h3>
+                            </div>
+                            <p class="text-sm text-purple-800 mb-4">Voyager 1 is currently over 15 billion miles away from Earth. It takes hours for a signal to reach it.</p>
+                            <h4 class="font-bold text-sm text-purple-900 uppercase tracking-wide mb-2">Research Tasks:</h4>
+                            <ul class="list-disc list-inside text-sm text-purple-800 space-y-1">
+                                <li>Does Voyager use Serial or Parallel transmission? Why?</li>
+                                <li>Is the communication Simplex, Half-Duplex, or Full-Duplex?</li>
+                                <li>How does NASA deal with data corruption over such vast distances?</li>
+                            </ul>
+                        </div>
+
+                        <!-- Case 2 -->
+                        <div class="bg-blue-50 p-6 rounded-xl border border-blue-200 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i class="fas fa-microchip text-2xl text-blue-600"></i>
+                                <h3 class="text-xl font-bold text-blue-900">2. The Death of Parallel</h3>
+                            </div>
+                            <p class="text-sm text-blue-800 mb-4">Old computer motherboards used "Parallel ATA" (PATA) for hard drives. Modern computers use "Serial ATA" (SATA) and PCIe.</p>
+                            <h4 class="font-bold text-sm text-blue-900 uppercase tracking-wide mb-2">Research Tasks:</h4>
+                            <ul class="list-disc list-inside text-sm text-blue-800 space-y-1">
+                                <li>If Parallel sends more bits at once, why did engineers switch to Serial for faster speeds?</li>
+                                <li>Investigate the engineering terms <b>Clock Skew</b> and <b>Crosstalk</b>.</li>
+                            </ul>
+                        </div>
+
+                        <!-- Case 3 -->
+                        <div class="bg-teal-50 p-6 rounded-xl border border-teal-200 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i class="fas fa-water text-2xl text-teal-600"></i>
+                                <h3 class="text-xl font-bold text-teal-900">3. Undersea Internet Cables</h3>
+                            </div>
+                            <p class="text-sm text-teal-800 mb-4">The internet spans the globe through massive fiber-optic cables resting on the ocean floor.</p>
+                            <h4 class="font-bold text-sm text-teal-900 uppercase tracking-wide mb-2">Research Tasks:</h4>
+                            <ul class="list-disc list-inside text-sm text-teal-800 space-y-1">
+                                <li>How do fiber optics achieve Full-Duplex transmission?</li>
+                                <li>What is "Wavelength Division Multiplexing" (WDM)?</li>
+                                <li>Find a map of submarine cables. What happens if one breaks?</li>
+                            </ul>
+                        </div>
+
+                        <!-- Case 4 -->
+                        <div class="bg-orange-50 p-6 rounded-xl border border-orange-200 hover:shadow-md transition-shadow">
+                            <div class="flex items-center gap-3 mb-3">
+                                <i class="fab fa-usb text-2xl text-orange-600"></i>
+                                <h3 class="text-xl font-bold text-orange-900">4. The Magic of USB-C</h3>
+                            </div>
+                            <p class="text-sm text-orange-800 mb-4">USB Type-C is replacing almost every other cable, handling power, video, and data all at once.</p>
+                            <h4 class="font-bold text-sm text-orange-900 uppercase tracking-wide mb-2">Research Tasks:</h4>
+                            <ul class="list-disc list-inside text-sm text-orange-800 space-y-1">
+                                <li>Look up a pinout diagram for a USB-C connector. How many pins does it have?</li>
+                                <li>How does USB-C know which way is "up" when you plug it in?</li>
+                                <li>Compare the max speeds of USB 2.0 vs USB4.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plenary Recap -->
+        <footer class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                <h4 class="font-bold text-gray-500 mb-2 uppercase text-xs tracking-widest">Lesson Objectives</h4>
+                <div class="flex flex-wrap gap-2">
+                    <span class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs font-bold">Serial/Parallel</span>
+                    <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold">Simplex/Duplex</span>
+                    <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">USB Benefits</span>
+                </div>
+            </div>
+            <div class="bg-blue-600 text-white p-4 rounded-xl shadow-md flex items-center justify-between">
+                <div>
+                    <p class="text-xs opacity-75">Ready for the plenary?</p>
+                    <p class="font-bold">Explain the road analogy!</p>
+                </div>
+                <i class="fas fa-car-side text-2xl opacity-50"></i>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // State Management
+        let currentTab = 'methods';
+        let currentMethod = 'serial';
+        let currentDirection = 'simplex';
+        const dataByte = [0, 1, 0, 1, 0, 1, 1, 0];
+        let isSimRunning = false;
+
+        // Challenge State
+        let currentQuestionIndex = 0;
+        let score = 0;
+        const questions = [
+            {
+                q: "A Walkie-Talkie allows you to hear and speak, but only one person can talk at a time. What direction is this?",
+                options: ["Simplex", "Half-Duplex", "Full-Duplex", "Parallel"],
+                answer: 1,
+                hint: "Think of a single-lane bridge with traffic lights."
+            },
+            {
+                q: "You are connecting an old printer with a 2-meter cable. Data needs to move fast, and wires are close together. What is a major risk?",
+                options: ["Signal Skew", "Hot Swapping", "USB Auto-detection", "Serial Lag"],
+                answer: 0,
+                hint: "Multiple wires at different speeds = bits arriving out of order."
+            },
+            {
+                q: "Which analogy best describes Serial transmission?",
+                options: ["A 12-lane motorway", "A standard two-way road", "A narrow one-way side street", "A traffic collision"],
+                answer: 2,
+                hint: "One car at a time, one after another."
+            },
+            {
+                q: "USB stands for 'Universal Serial Bus'. Why is it usually faster than older parallel ports over distance?",
+                options: ["It has more wires", "It doesn't suffer from crosstalk/skew", "It uses bigger bits", "Parallel is always faster"],
+                answer: 1,
+                hint: "Parallel has interference issues over long distances."
+            },
+            {
+                q: "A fibre optic cable uses two separate fibres: one to send and one to receive. What direction is this?",
+                options: ["Simplex", "Half-Duplex", "Full-Duplex", "Serial-Parallel"],
+                answer: 2,
+                hint: "Both ways at the exact same time."
+            }
+        ];
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                b.classList.add('text-gray-500');
+            });
+
+            document.getElementById(tabId).classList.add('active');
+            const btn = document.getElementById('btn-' + tabId);
+            btn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+            btn.classList.remove('text-gray-500');
+
+            const titles = {
+                methods: '<i class="fas fa-microchip text-blue-400"></i> Serial vs Parallel',
+                directions: '<i class="fas fa-road text-yellow-400"></i> Traffic Flow Analogy',
+                usb: '<i class="fab fa-usb text-green-400"></i> USB Features',
+                quiz: '<i class="fas fa-trophy text-yellow-500"></i> Knowledge Quiz',
+                challenges: '<i class="fas fa-flask text-purple-400"></i> Research Challenges'
+            };
+            document.getElementById('tab-title').innerHTML = titles[tabId];
+            currentTab = tabId;
+            resetSims();
+            
+            if(tabId === 'quiz') {
+                resetQuiz();
+            }
+        }
+
+        // Methods Simulation
+        function setMethod(m) {
+            currentMethod = m;
+            document.getElementById('method-serial').className = m === 'serial' ? 'px-4 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700';
+            document.getElementById('method-parallel').className = m === 'parallel' ? 'px-4 py-2 rounded-lg font-bold bg-blue-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700';
+            document.getElementById('parallel-options').className = m === 'parallel' ? 'flex gap-4' : 'hidden';
+            resetSims();
+        }
+
+        function resetSims() {
+            isSimRunning = false;
+            document.getElementById('wire-container').innerHTML = '';
+            document.getElementById('receive-buffer').innerText = 'Buffer: ---';
+            document.getElementById('finish-msg').classList.add('hidden');
+            
+            if (currentMethod === 'serial') {
+                document.getElementById('wire-container').innerHTML = `
+                    <div class="h-1 bg-gray-300 w-full relative">
+                        <div class="absolute -top-6 w-full text-center text-[10px] text-gray-400 uppercase font-mono">Single Channel</div>
+                    </div>
+                `;
+            } else if (currentTab === 'methods') {
+                for(let i=0; i<8; i++) {
+                    const wire = document.createElement('div');
+                    wire.className = 'h-1 bg-gray-300 w-full relative';
+                    wire.id = `wire-${i}`;
+                    wire.innerHTML = `<div class="absolute -left-6 -top-2 text-[8px] font-mono text-gray-400">D${i}</div>`;
+                    document.getElementById('wire-container').appendChild(wire);
+                }
+            }
+        }
+
+        async function startMethodSim() {
+            if (isSimRunning) return;
+            isSimRunning = true;
+            resetSims();
+            document.getElementById('btn-start').disabled = true;
+            document.getElementById('btn-start').classList.add('opacity-50');
+
+            const bufferEl = document.getElementById('receive-buffer');
+            let received = [];
+
+            if (currentMethod === 'serial') {
+                const wire = document.querySelector('#wire-container .h-1');
+                for (let bit of dataByte) {
+                    const bitEl = document.createElement('div');
+                    bitEl.className = 'absolute -top-4 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white font-bold shadow-lg bit-serial';
+                    bitEl.innerText = bit;
+                    wire.appendChild(bitEl);
+                    await new Promise(r => setTimeout(r, 600));
+                    received.push(bit);
+                    bufferEl.innerText = 'Buffer: ' + received.join('');
+                    bitEl.remove();
+                }
+            } else {
+                const skew = document.getElementById('check-skew').checked;
+                const crosstalk = document.getElementById('check-crosstalk').checked;
+                
+                let promises = dataByte.map((bit, i) => {
+                    return new Promise(resolve => {
+                        const wire = document.getElementById(`wire-${i}`);
+                        const bitEl = document.createElement('div');
+                        const delay = skew ? Math.random() * 800 : 0;
+                        const isFlipped = crosstalk && i === 4;
+                        const displayBit = isFlipped ? (bit === 0 ? 1 : 0) : bit;
+                        
+                        bitEl.className = `absolute -top-3 w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold shadow transition-all duration-1000 ${isFlipped ? 'bg-red-500 animate-pulse' : 'bg-blue-500'}`;
+                        bitEl.style.left = '0%';
+                        bitEl.innerText = displayBit;
+                        wire.appendChild(bitEl);
+
+                        setTimeout(() => {
+                            bitEl.style.left = '100%';
+                            setTimeout(() => {
+                                resolve({index: i, bit: displayBit});
+                            }, 1000);
+                        }, delay);
+                    });
+                });
+
+                const results = await Promise.all(promises);
+                results.sort((a,b) => a.index - b.index);
+                received = results.map(r => r.bit);
+                bufferEl.innerText = 'Buffer: ' + received.join('');
+                
+                if (crosstalk) {
+                    document.getElementById('finish-detail').innerText = 'Error! Crosstalk caused a bit flip at D4.';
+                    document.getElementById('finish-msg').classList.remove('bg-green-50', 'border-green-200');
+                    document.getElementById('finish-msg').classList.add('bg-red-50', 'border-red-200');
+                } else {
+                    document.getElementById('finish-detail').innerText = 'Data received correctly.';
+                    document.getElementById('finish-msg').classList.add('bg-green-50', 'border-green-200');
+                    document.getElementById('finish-msg').classList.remove('bg-red-50', 'border-red-200');
+                }
+            }
+
+            document.getElementById('finish-msg').classList.remove('hidden');
+            document.getElementById('btn-start').disabled = false;
+            document.getElementById('btn-start').classList.remove('opacity-50');
+            isSimRunning = false;
+        }
+
+        // Direction Simulation
+        function setDirection(d) {
+            currentDirection = d;
+            document.getElementById('dir-simplex').className = d === 'simplex' ? 'px-4 py-2 rounded-lg font-bold bg-indigo-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700';
+            document.getElementById('dir-half').className = d === 'half' ? 'px-4 py-2 rounded-lg font-bold bg-indigo-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700';
+            document.getElementById('dir-full').className = d === 'full' ? 'px-4 py-2 rounded-lg font-bold bg-indigo-600 text-white' : 'px-4 py-2 rounded-lg font-bold bg-gray-200 text-gray-700';
+            
+            const desc = {
+                simplex: 'Simplex: One-Way Road',
+                half: 'Half-Duplex: Single Lane with Traffic Lights',
+                full: 'Full-Duplex: Standard Two-Way Road'
+            };
+            document.getElementById('direction-desc').innerText = desc[d];
+            document.getElementById('lane-divider').className = d === 'full' ? 'absolute inset-x-0 top-1/2 h-0 border-t-2 border-dashed border-slate-500 block' : 'hidden';
+            
+            const btnB = document.getElementById('btn-node-b');
+            if (d === 'simplex') {
+                btnB.disabled = true;
+                btnB.classList.add('opacity-30', 'cursor-not-allowed');
+            } else {
+                btnB.disabled = false;
+                btnB.classList.remove('opacity-30', 'cursor-not-allowed');
+            }
+            document.getElementById('car-lane').innerHTML = '';
+            document.getElementById('collision-alert').classList.add('hidden');
+        }
+
+        function sendCar(origin) {
+            const lane = document.getElementById('car-lane');
+            const car = document.createElement('div');
+            
+            if (currentDirection === 'half') {
+                if (lane.children.length > 0) {
+                    document.getElementById('collision-alert').classList.remove('hidden');
+                    document.getElementById('road-canvas').classList.add('collision-flash');
+                    setTimeout(() => {
+                        document.getElementById('collision-alert').classList.add('hidden');
+                        document.getElementById('road-canvas').classList.remove('collision-flash');
+                    }, 2000);
+                    return;
+                }
+            }
+
+            car.className = 'car-animation flex items-center justify-center text-2xl';
+            car.innerHTML = origin === 'A' ? '<i class="fas fa-car text-green-400"></i>' : '<i class="fas fa-car fa-flip-horizontal text-blue-400"></i>';
+            
+            let yPos = '50%';
+            if (currentDirection === 'full') {
+                yPos = origin === 'A' ? '40%' : '60%';
+            }
+            
+            car.style.top = yPos;
+            car.style.left = origin === 'A' ? '-10%' : '110%';
+            lane.appendChild(car);
+
+            setTimeout(() => {
+                car.style.left = origin === 'A' ? '110%' : '-10%';
+                setTimeout(() => car.remove(), 2100);
+            }, 50);
+        }
+
+        // Challenge/Quiz Logic
+        function resetQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            document.getElementById('quiz-container').classList.remove('hidden');
+            document.getElementById('start-quiz-btn').classList.remove('hidden');
+            document.getElementById('quiz-question').innerText = "Ready to test your knowledge?";
+            document.getElementById('quiz-description').innerText = "Apply the analogies and concepts from the lesson to solve these scenarios.";
+            document.getElementById('quiz-options').innerHTML = '';
+            document.getElementById('quiz-progress').classList.add('hidden');
+            document.getElementById('quiz-feedback').classList.add('hidden');
+        }
+
+        function startQuiz() {
+            document.getElementById('start-quiz-btn').classList.add('hidden');
+            document.getElementById('quiz-progress').classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const q = questions[currentQuestionIndex];
+            document.getElementById('quiz-progress').innerText = `Level ${currentQuestionIndex + 1} of ${questions.length}`;
+            document.getElementById('quiz-question').innerText = q.q;
+            document.getElementById('quiz-description').innerText = "Select the best answer based on the presentation.";
+            
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = '';
+            
+            q.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "p-4 bg-white border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all font-semibold text-slate-700";
+                btn.innerText = opt;
+                btn.onclick = () => checkAnswer(idx);
+                optionsDiv.appendChild(btn);
+            });
+            document.getElementById('quiz-feedback').classList.add('hidden');
+        }
+
+        function checkAnswer(idx) {
+            const q = questions[currentQuestionIndex];
+            const feedback = document.getElementById('quiz-feedback');
+            const container = document.getElementById('challenge-screen');
+            
+            feedback.classList.remove('hidden');
+            
+            if (idx === q.answer) {
+                score++;
+                feedback.className = "mt-6 p-4 rounded-xl font-bold flex items-center justify-center gap-3 bg-green-100 text-green-700";
+                feedback.innerHTML = `<i class="fas fa-check-circle"></i> Correct! Well done.`;
+                
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    if (currentQuestionIndex < questions.length) {
+                        showQuestion();
+                    } else {
+                        showResults();
+                    }
+                }, 1500);
+            } else {
+                container.classList.add('shake');
+                setTimeout(() => container.classList.remove('shake'), 500);
+                feedback.className = "mt-6 p-4 rounded-xl font-bold flex items-center justify-center gap-3 bg-red-100 text-red-700";
+                feedback.innerHTML = `<i class="fas fa-times-circle"></i> Not quite. Hint: ${q.hint}`;
+            }
+        }
+
+        function showResults() {
+            const container = document.getElementById('quiz-container');
+            const optionsDiv = document.getElementById('quiz-options');
+            optionsDiv.innerHTML = '';
+            
+            document.getElementById('quiz-progress').innerText = "Challenge Complete!";
+            document.getElementById('quiz-question').innerText = `Final Score: ${score} / ${questions.length}`;
+            
+            let msg = "";
+            let icon = "";
+            if (score === questions.length) {
+                msg = "Data Transmission Expert! You've mastered all the concepts.";
+                icon = "fa-crown text-yellow-500";
+            } else if (score >= 3) {
+                msg = "Great effort! You have a solid grasp of transmission methods.";
+                icon = "fa-thumbs-up text-blue-500";
+            } else {
+                msg = "Keep practicing! Review the analogies in the other tabs.";
+                icon = "fa-book-open text-orange-500";
+            }
+
+            document.getElementById('quiz-description').innerHTML = `
+                <div class="flex flex-col items-center gap-4 mt-4">
+                    <i class="fas ${icon} text-6xl"></i>
+                    <p class="text-lg font-medium">${msg}</p>
+                    <button onclick="resetQuiz()" class="bg-slate-800 text-white px-6 py-2 rounded-lg mt-4 font-bold">Try Again</button>
+                </div>
+            `;
+            document.getElementById('quiz-feedback').classList.add('hidden');
+        }
+
+        // Initialize
+        window.onload = () => {
+            resetSims();
+        };
+    </script>
+</body>
+</html>

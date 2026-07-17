@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Sort Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .array-element {
+            transition: all 0.5s ease-in-out;
+            transform-origin: bottom;
+        }
+        .highlight-compare {
+            background-color: #60a5fa !important;
+            color: white;
+        }
+        .highlight-swap {
+            background-color: #facc15 !important;
+            color: white;
+        }
+        .highlight-sorted {
+            background-color: #4ade80 !important;
+            color: white;
+        }
+        .code-line, .flowchart-step {
+            transition: background-color 0.3s ease;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .active-line {
+            background-color: #fde047;
+        }
+        .flowchart-box {
+            border: 2px solid #9ca3af;
+            padding: 10px 15px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 150px;
+            background-color: white;
+            z-index: 10;
+        }
+        .flowchart-terminator {
+            border-radius: 9999px;
+        }
+        .flowchart-diamond {
+            transform: rotate(45deg);
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .flowchart-diamond span {
+            transform: rotate(-45deg);
+            display: block;
+            max-width: 100px;
+            text-align: center;
+        }
+        .flowchart-arrow {
+            position: relative;
+            width: 2px;
+            background-color: #6b7280;
+            margin: 0 auto;
+        }
+        .flowchart-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 8px solid #6b7280;
+        }
+        .no-select {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .line-label {
+            background-color: #f3f4f6;
+            padding: 0 4px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 lg:p-8 no-select">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Bubble Sort Algorithm Simulation</h1>
+            <p class="text-lg text-gray-600 mt-2">Visualize how the Bubble Sort algorithm sorts an array of numbers.</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center">Array Visualization</h2>
+            <div id="array-container" class="flex justify-center items-end h-64 space-x-2 bg-gray-50 p-4 rounded-lg"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Pseudo-code</h2>
+                <div id="pseudo-code" class="space-y-1 text-sm md:text-base font-mono bg-gray-50 p-4 rounded-lg">
+                    <div class="code-line" data-line="1"><strong>procedure</strong> bubbleSort(array A)</div>
+                    <div class="code-line pl-4" data-line="2">n = length of A</div>
+                    <div class="code-line" data-line="3"><strong>repeat</strong></div>
+                    <div class="code-line pl-4" data-line="4">swapped = false</div>
+                    <div class="code-line pl-4" data-line="5"><strong>for</strong> i from 1 to n-1</div>
+                    <div class="code-line pl-8" data-line="6"><strong>if</strong> A[i-1] > A[i] <strong>then</strong></div>
+                    <div class="code-line pl-12" data-line="7">swap(A[i-1], A[i])</div>
+                    <div class="code-line pl-12" data-line="8">swapped = true</div>
+                    <div class="code-line pl-8" data-line="9"><strong>end if</strong></div>
+                    <div class="code-line pl-4" data-line="10"><strong>end for</strong></div>
+                    <div class="code-line pl-4" data-line="11">n = n - 1</div>
+                    <div class="code-line" data-line="12"><strong>until not</strong> swapped</div>
+                    <div class="code-line" data-line="13"><strong>end procedure</strong></div>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-2xl shadow-lg overflow-x-auto">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Flowchart</h2>
+                <div id="flowchart" class="flex flex-col items-center space-y-2 text-xs md:text-sm min-w-[500px]">
+                    <div id="loop-start-target" class="absolute top-[180px]"></div>
+                    <div class="flowchart-step flowchart-box flowchart-terminator" data-step="start">Start</div>
+                    <div class="flowchart-arrow" style="height: 20px;"></div>
+                    <div class="flowchart-step flowchart-box" data-step="init">n = length(A)</div>
+                    <div class="flowchart-arrow" style="height: 20px;"></div>
+                    <div class="flowchart-step flowchart-box" data-step="swapped_false">swapped = false</div>
+                    <div class="flowchart-arrow" style="height: 20px;"></div>
+                    <div class="flowchart-step flowchart-box" data-step="for_loop">for i from 1 to n-1</div>
+                    <div class="flowchart-arrow" style="height: 20px;"></div>
+                    <div class="flowchart-step flowchart-box flowchart-diamond" data-step="if_cond"><span>A[i-1] > A[i]?</span></div>
+                    
+                    <!-- IF Branch -->
+                    <div class="w-full h-[120px] relative">
+                         <!-- NO Path -->
+                        <div class="absolute left-1/2 -translate-x-[1px] h-full w-[2px] bg-gray-600">
+                           <div class="absolute -left-6 top-2 line-label">No</div>
+                        </div>
+                         <!-- YES Path -->
+                        <div class="absolute left-1/2 top-[58px] w-[120px] h-[2px] bg-gray-600">
+                             <div class="absolute -top-5 left-2 line-label">Yes</div>
+                        </div>
+                        <div class="absolute left-[calc(50%+120px)] top-[58px] -translate-y-1/2">
+                           <div class="flowchart-step flowchart-box" data-step="swap">swap(A[i-1], A[i]) <br> swapped = true</div>
+                        </div>
+                    </div>
+                    
+                    <div class="flowchart-step flowchart-box" data-step="decrement">n = n - 1</div>
+                    <div class="flowchart-arrow" style="height: 20px;"></div>
+                    <div class="flowchart-step flowchart-box flowchart-diamond" data-step="until_cond"><span>swapped?</span></div>
+                    
+                    <!-- UNTIL Branch -->
+                    <div class="w-full h-[80px] relative">
+                        <!-- NO Path -->
+                        <div class="absolute left-1/2 -translate-x-[1px] h-full w-[2px] bg-gray-600">
+                            <div class="absolute -left-6 top-2 line-label">No</div>
+                            <div class="flowchart-arrow" style="height: 100%;"></div>
+                        </div>
+                        <div class="absolute bottom-0 left-1/2 -translate-x-1/2">
+                            <div class="flowchart-step flowchart-box flowchart-terminator" data-step="end">End</div>
+                        </div>
+                        <!-- YES/Loop Path -->
+                        <div class="absolute left-1/2 top-[58px] w-[240px] h-[2px] bg-gray-600">
+                            <div class="absolute -top-5 left-2 line-label">Yes</div>
+                        </div>
+                        <div class="absolute left-[calc(50%+240px)] top-[58px] h-[450px] w-[2px] bg-gray-600 -translate-y-full"></div>
+                        <div class="absolute left-[calc(50%-10px)] top-[-392px] w-[250px] h-[2px] bg-gray-600">
+                           <div class="flowchart-arrow" style="width:100%; height: 2px; margin:0;"><span class="absolute top-1/2 left-0 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-r-[8px] border-r-gray-600"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+             <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <label for="arraySize" class="font-medium">Array Size:</label>
+                    <input type="range" id="arraySize" min="5" max="20" value="10" class="w-36">
+                    <span id="arraySizeValue">10</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="speed" class="font-medium">Speed:</label>
+                    <input type="range" id="speed" min="100" max="1000" value="500" class="w-36">
+                     <span id="speedValue">Medium</span>
+                </div>
+                <button id="reset-btn" class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75">Reset</button>
+            </div>
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <button id="start-btn" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">Start</button>
+                <button id="step-btn" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75">Step</button>
+                <button id="auto-btn" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75">Auto Play</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const arrayContainer = document.getElementById('array-container');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const arraySizeSlider = document.getElementById('arraySize');
+        const arraySizeValue = document.getElementById('arraySizeValue');
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+
+        let array = [];
+        let simulationState = null;
+        let isAutoPlaying = false;
+        let speed = 500;
+        let animationTimeout;
+
+        function generateArray(size) {
+            array = [];
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 90) + 10);
+            }
+            renderArray();
+        }
+
+        function renderArray(highlights = {}) {
+            arrayContainer.innerHTML = '';
+            const maxValue = Math.max(...array, 100);
+            array.forEach((value, index) => {
+                const element = document.createElement('div');
+                element.className = 'array-element flex items-start justify-center font-bold text-sm bg-gray-300 rounded-t-md';
+                element.textContent = value;
+                const height = (value / maxValue) * 95;
+                element.style.height = `${height}%`;
+                element.style.width = `${100 / array.length}%`;
+                
+                if (highlights.compare && highlights.compare.includes(index)) {
+                    element.classList.add('highlight-compare');
+                }
+                if (highlights.swap && highlights.swap.includes(index)) {
+                    element.classList.add('highlight-swap');
+                }
+                if (highlights.sorted && highlights.sorted.includes(index)) {
+                    element.classList.add('highlight-sorted');
+                }
+                
+                arrayContainer.appendChild(element);
+            });
+        }
+
+        function highlightCode(line) {
+            document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+            if (line) {
+                document.querySelector(`.code-line[data-line="${line}"]`).classList.add('active-line');
+            }
+        }
+        
+        function highlightFlowchart(step) {
+            document.querySelectorAll('.flowchart-step').forEach(el => el.classList.remove('active-line', 'bg-yellow-200'));
+             if (step) {
+                const el = document.querySelector(`.flowchart-step[data-step="${step}"]`);
+                if(el) el.classList.add('active-line', 'bg-yellow-200');
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => {
+                animationTimeout = setTimeout(resolve, ms);
+            });
+        }
+
+        function* bubbleSortGenerator(arr) {
+            let n = arr.length;
+            let swapped;
+            yield { array: [...arr], highlights: {}, codeLine: 1, flowStep: 'start' };
+            yield { array: [...arr], highlights: {}, codeLine: 2, flowStep: 'init' };
+            
+            do {
+                yield { array: [...arr], highlights: {}, codeLine: 3, flowStep: 'swapped_false' };
+                swapped = false;
+                yield { array: [...arr], highlights: {}, codeLine: 4, flowStep: 'swapped_false' };
+
+                for (let i = 1; i < n; i++) {
+                    yield { array: [...arr], highlights: { compare: [i - 1, i] }, codeLine: 5, flowStep: 'for_loop' };
+                    yield { array: [...arr], highlights: { compare: [i - 1, i] }, codeLine: 6, flowStep: 'if_cond' };
+                    
+                    if (arr[i - 1] > arr[i]) {
+                        swapped = true;
+                        yield { array: [...arr], highlights: { swap: [i-1, i] }, codeLine: 7, flowStep: 'swap' };
+                        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                         yield { array: [...arr], highlights: { swap: [i-1, i] }, codeLine: 8, flowStep: 'swap' };
+                    }
+                     yield { array: [...arr], highlights: {}, codeLine: 9, flowStep: 'for_loop' };
+                }
+                yield { array: [...arr], highlights: {}, codeLine: 10, flowStep: 'decrement' };
+                n--;
+                 const sortedIndices = Array.from({length: arr.length - n-1}, (_, k) => n + 1 + k);
+                 yield { array: [...arr], highlights: { sorted: sortedIndices }, codeLine: 11, flowStep: 'decrement' };
+                 yield { array: [...arr], highlights: { sorted: sortedIndices }, codeLine: 12, flowStep: 'until_cond' };
+
+            } while (swapped);
+            
+            const finalSorted = Array.from({length: arr.length}, (_, k) => k);
+            yield { array: [...arr], highlights: { sorted: finalSorted }, codeLine: 13, flowStep: 'end' };
+            
+            isAutoPlaying = false;
+            toggleButtons(true);
+            return { array: [...arr], highlights: { sorted: finalSorted }, codeLine: null, flowStep: null };
+        }
+
+        function updateUI(state) {
+            if (!state) return;
+            array = state.array;
+            renderArray(state.highlights);
+            highlightCode(state.codeLine);
+            highlightFlowchart(state.flowStep);
+        }
+
+        async function step() {
+            if (simulationState) {
+                const nextState = simulationState.next();
+                updateUI(nextState.value);
+                if (nextState.done) {
+                    simulationState = null;
+                    isAutoPlaying = false;
+                    toggleButtons(true);
+                }
+            }
+        }
+        
+        async function autoPlay() {
+            if (!isAutoPlaying || !simulationState) return;
+            
+            const nextState = simulationState.next();
+            updateUI(nextState.value);
+            
+            if (nextState.done) {
+                isAutoPlaying = false;
+                simulationState = null;
+                toggleButtons(true);
+                return;
+            }
+            
+            await sleep(1100 - speed);
+            autoPlay();
+        }
+        
+        function toggleButtons(enable) {
+            startBtn.disabled = !enable;
+            stepBtn.disabled = !enable;
+            autoBtn.disabled = !enable;
+            resetBtn.disabled = false; // Reset is always available
+            arraySizeSlider.disabled = !enable;
+        }
+        
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            clearTimeout(animationTimeout);
+        }
+
+        startBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            simulationState = bubbleSortGenerator([...array]);
+            step();
+            toggleButtons(false);
+            stepBtn.disabled = false;
+            autoBtn.disabled = false;
+        });
+
+        stepBtn.addEventListener('click', () => {
+             if (!simulationState) {
+                simulationState = bubbleSortGenerator([...array]);
+            }
+            step();
+            toggleButtons(false);
+            stepBtn.disabled = false;
+            autoBtn.disabled = false;
+        });
+
+        autoBtn.addEventListener('click', () => {
+            if (!simulationState) {
+                simulationState = bubbleSortGenerator([...array]);
+            }
+            if (!isAutoPlaying) {
+                isAutoPlaying = true;
+                autoBtn.textContent = 'Pause';
+                toggleButtons(false);
+                autoBtn.disabled = false;
+                autoPlay();
+            } else {
+                isAutoPlaying = false;
+                autoBtn.textContent = 'Auto Play';
+                toggleButtons(false);
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            simulationState = null;
+            isAutoPlaying = false;
+            autoBtn.textContent = 'Auto Play';
+            generateArray(parseInt(arraySizeSlider.value));
+            highlightCode(null);
+            highlightFlowchart(null);
+            toggleButtons(true);
+        });
+
+        arraySizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            arraySizeValue.textContent = size;
+            generateArray(parseInt(size));
+            simulationState = null;
+            toggleButtons(true);
+            highlightCode(null);
+            highlightFlowchart(null);
+        });
+        
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            if (speed < 300) speedValue.textContent = 'Fast';
+            else if (speed < 700) speedValue.textContent = 'Medium';
+            else speedValue.textContent = 'Slow';
+        });
+
+        // Initial setup
+        generateArray(10);
+        toggleButtons(true);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Knowledge Graph: IGCSE CS Database Concepts</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 1rem 0;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #004d40; /* Teal color for a new theme */
+        }
+        
+        .header p {
+            margin: 0.25rem 0 0;
+            color: #555;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 85px);
+            max-width: 100%;
+        }
+
+        #graph-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #info-panel {
+            width: 350px;
+            flex-shrink: 0;
+            background-color: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        #info-panel h2 {
+            margin-top: 0;
+            color: #004d40;
+            border-bottom: 2px solid #00796b;
+            padding-bottom: 0.5rem;
+        }
+        
+        #info-panel p {
+            line-height: 1.6;
+        }
+        
+        #info-panel strong {
+            color: #00796b;
+        }
+        
+        #info-panel code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: pointer;
+            transition: r 0.15s ease-in-out;
+        }
+
+        .nodes circle.selected {
+            stroke: #ffab40; /* Amber color for selection */
+            stroke-width: 3px;
+        }
+
+        .labels text {
+            pointer-events: none;
+            font-size: 12px;
+            font-weight: 500;
+            text-anchor: middle;
+            paint-order: stroke;
+            stroke: white;
+            stroke-width: 2px;
+            stroke-linecap: butt;
+            stroke-linejoin: round;
+        }
+
+        #info-panel > * {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>IGCSE Computer Science</h1>
+        <p>Database and SQL Concepts</p>
+    </div>
+
+    <div class="container">
+        <div id="graph-container"></div>
+        <div id="info-panel">
+            <h2>Welcome!</h2>
+            <p>This is an interactive knowledge graph based on the concepts from your <strong>Databases and SQL</strong> presentation.</p>
+            <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>
+        </div>
+    </div>
+
+    <script>
+        const graphData = {
+            nodes: [
+                // Core Concepts
+                { id: "Database", group: 1, radius: 25, description: "A persistent, organised store of data. 'Persistent' means the data is saved even when the power is off. It is structured to allow for efficient searching and retrieval of information using queries." },
+                { id: "Table", group: 1, radius: 20, description: "A collection of data organised into a grid of records (rows) and fields (columns). A single database can contain multiple tables. For example, a school database might have a 'Students' table and a 'Teachers' table." },
+                { id: "Record", group: 1, radius: 16, description: "A single row in a table. It contains all the data about one specific item or entity. For example, in a 'Students' table, one record would hold all the information for a single student (their ID, name, date of birth, etc.)." },
+                { id: "Field", group: 1, radius: 16, description: "A single column in a table. It represents one specific attribute or piece of information for each record. For example, in a 'Students' table, 'FirstName' would be a field." },
+                { id: "Primary Key", group: 1, radius: 18, description: "A field that contains a unique identifier for each record in a table. This ensures that no two records are identical and prevents duplicate entries. A Primary Key value cannot be empty (NULL)." },
+                
+                // Data Types
+                { id: "Data Types", group: 2, radius: 22, description: "Defines the kind of data that can be stored in a field. Choosing the correct data type helps ensure data integrity, saves storage space, and allows for correct calculations." },
+                { id: "Text/Alphanumeric", group: 2, radius: 15, description: "Used for strings of characters, which can include letters, numbers, and symbols. A mobile phone number is often stored as Text because it might contain a leading '0' that would be lost if stored as a number." },
+                { id: "Integer", group: 2, radius: 15, description: "Used for whole numbers (positive, negative, or zero) with no decimal part. For example, 'NumberOfCustomerOrders' or 'StockQuantity'." },
+                { id: "Real", group: 2, radius: 15, description: "Used for numbers that have a fractional part (i.e., decimal numbers). For example, 'Price' (£2.50) or 'Weight' (1.8kg)." },
+                { id: "Boolean", group: 2, radius: 15, description: "Used for data that can only have two possible values, such as True/False, Yes/No, or 1/0. For example, a field named 'IsInStock' could be a Boolean." },
+                { id: "Date/Time", group: 2, radius: 15, description: "Used for storing date values, time values, or both together. For example, 'DateOfBirth' or 'OrderTimestamp'." },
+                { id: "Character", group: 2, radius: 15, description: "Used for a single letter or symbol. It is useful when you have a very limited set of options. For example, 'M' or 'F' for gender, or a student's grade 'A', 'B', 'C' etc." },
+
+                // Validation
+                { id: "Validation", group: 3, radius: 22, description: "A set of automatic checks applied to data as it is entered to ensure it is sensible and reasonable. This helps improve the quality and accuracy of the data in the database, but it does not check if the data is correct." },
+                { id: "Type Validation", group: 3, radius: 16, description: "The most basic validation check. It ensures that the data entered matches the data type of the field. For example, the database will reject an attempt to enter 'Hello' into an Integer field." },
+                { id: "Length Check", group: 3, radius: 16, description: "Checks that the data entered contains a specific number of characters, or falls within a range of lengths. For example, a password field might require a minimum of 8 characters." },
+                { id: "Format Check", group: 3, radius: 16, description: "Checks that the data follows a pre-defined pattern. For example, a postcode field might be formatted as 'LLN NLL' (e.g., SW1 1AA), or an email must contain an '@' symbol." },
+
+                // SQL
+                { id: "SQL", group: 4, radius: 25, description: "Stands for Structured Query Language. It is the standard programming language used to communicate with a database. It allows you to create tables, and to insert, retrieve, update, and delete data." },
+                { id: "SELECT", group: 4, radius: 20, description: "The SQL command used to specify which fields you want to retrieve from a table. Use <code>SELECT *</code> to retrieve all fields, or list specific fields like <code>SELECT FirstName, LastName</code>." },
+                { id: "FROM", group: 4, radius: 20, description: "The SQL command used to specify which table you are querying. It always follows the SELECT clause. For example: <code>SELECT * FROM Students</code>." },
+                { id: "WHERE", group: 4, radius: 20, description: "The SQL command used to filter the records based on specific criteria, so that only records matching the criteria are returned. For example: <code>WHERE Town = 'Woodbridge'</code>." },
+                { id: "ORDER BY", group: 4, radius: 20, description: "The SQL command used to sort the results of a query. You can sort in ascending order (<code>ASC</code>) or descending order (<code>DESC</code>). For example: <code>ORDER BY LastName ASC</code>." },
+                { id: "SUM", group: 4, radius: 18, description: "An SQL aggregate function that calculates the total of a numeric field for all records matching the query's criteria. For example: <code>SELECT SUM(Cost) FROM Receipts</code>." },
+                { id: "COUNT", group: 4, radius: 18, description: "An SQL aggregate function that counts the number of records that match the query's criteria. For example: <code>SELECT COUNT(*) FROM Students</code> would return the total number of students." },
+                { id: "Operators", group: 4, radius: 18, description: "Symbols used in the <code>WHERE</code> clause to perform comparisons. Common operators are: <code>=</code> (equal to), <code>!=</code> (not equal to), <code>></code> (greater than), <code><</code> (less than), <code>>=</code>, <code><=</code>. You can also use logical operators <code>AND</code>, <code>OR</code>, <code>NOT</code> to combine multiple conditions." }
+            ],
+            links: [
+                { source: "Database", target: "Table" },
+                { source: "Table", target: "Record" },
+                { source: "Table", target: "Field" },
+                { source: "Table", target: "Primary Key" },
+                { source: "Field", target: "Data Types" },
+                { source: "Field", target: "Validation" },
+                { source: "Data Types", target: "Text/Alphanumeric" },
+                { source: "Data Types", target: "Integer" },
+                { source: "Data Types", target: "Real" },
+                { source: "Data Types", target: "Boolean" },
+                { source: "Data Types", target: "Date/Time" },
+                { source: "Data Types", target: "Character" },
+                { source: "Validation", target: "Type Validation" },
+                { source: "Validation", target: "Length Check" },
+                { source: "Validation", target: "Format Check" },
+                { source: "Database", target: "SQL" },
+                { source: "SQL", target: "SELECT" },
+                { source: "SQL", target: "FROM" },
+                { source: "SQL", target: "WHERE" },
+                { source: "SQL", target: "ORDER BY" },
+                { source: "SQL", target: "SUM" },
+                { source: "SQL", target: "COUNT" },
+                { source: "WHERE", target: "Operators" }
+            ]
+        };
+
+        const width = document.getElementById('graph-container').offsetWidth;
+        const height = document.getElementById('graph-container').offsetHeight;
+
+        const color = d3.scaleOrdinal(d3.schemeTableau10);
+
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(110))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY());
+
+        const svg = d3.select("#graph-container").append("svg")
+            .attr("viewBox", [0, 0, width, height])
+            .on("click", backgroundClicked);
+
+        const container = svg.append("g");
+        
+        const link = container.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graphData.links)
+            .enter().append("line")
+            .attr("stroke-width", 2);
+
+        const node = container.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graphData.nodes)
+            .enter().append("circle")
+            .attr("r", d => d.radius)
+            .attr("fill", d => color(d.group))
+            .call(drag(simulation))
+            .on("click", nodeClicked)
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout);
+            
+        const label = container.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(graphData.nodes)
+            .enter().append("text")
+            .text(d => d.id)
+            .attr("dx", 0)
+            .attr("dy", ".35em");
+            
+        node.append("title")
+            .text(d => d.id);
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+            label
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+        
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+        }
+
+        function mouseover(event, d) {
+            d3.select(this).attr("r", d.radius * 1.2);
+        }
+
+        function mouseout(event, d) {
+            if (!d3.select(this).classed("selected")) {
+                d3.select(this).attr("r", d.radius);
+            }
+        }
+
+        function nodeClicked(event, d) {
+            event.stopPropagation();
+            node.classed('selected', false).attr("r", n => n.radius);
+            d3.select(this).classed('selected', true).attr("r", d.radius * 1.2);
+            const infoPanel = d3.select("#info-panel");
+            infoPanel.html(`<h2>${d.id}</h2><p>${d.description}</p>`);
+        }
+
+        function backgroundClicked() {
+            node.classed('selected', false).attr("r", d => d.radius);
+            const infoPanel = d3.select("#info-panel");
+            infoPanel.html(`
+                <h2>Welcome!</h2>
+                <p>This is an interactive knowledge graph based on the concepts from your <strong>Databases and SQL</strong> presentation.</p>
+                <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>`);
+        }
+        
+        const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => {
+            container.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+
+        window.addEventListener('resize', () => {
+            const newWidth = document.getElementById('graph-container').offsetWidth;
+            const newHeight = document.getElementById('graph-container').offsetHeight;
+            svg.attr("viewBox", [0, 0, newWidth, newHeight]);
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2)).restart();
+        });
+    </script>
+</body>
+</html>
+

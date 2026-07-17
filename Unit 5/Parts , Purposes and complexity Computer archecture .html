@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Computing: CPU Thinking Routine</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Set Inter as the default font -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Simple focus style for textareas */
+        textarea:focus {
+            outline: 2px solid #3b82f6; /* Tailwind's blue-500 */
+            outline-offset: 2px;
+        }
+        /* Tab styles */
+        .tab-btn {
+            @apply py-4 px-6 border-b-2 font-medium text-sm text-center;
+        }
+        .tab-btn.active {
+            @apply border-blue-600 text-blue-600;
+        }
+        .tab-btn:not(.active) {
+            @apply border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-400;
+        }
+        .tab-panel.hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        
+        <!-- Header Section -->
+        <header class="mb-6 p-6 bg-white rounded-xl shadow-md">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-700 mb-2">Parts, Purposes, Complexities</h1>
+            <p class="text-lg text-slate-600">An IGCSE Computing Simulation: **Computer Architecture (CPU)**</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-4 border-b border-slate-300 bg-white rounded-t-lg shadow-sm">
+            <nav class="-mb-px flex space-x-2 md:space-x-4" id="tab-nav" aria-label="Tabs">
+                <button class="tab-btn active" data-tab="tab-intro" role="tab" aria-controls="tab-intro" aria-selected="true">
+                    About the Routine
+                </button>
+                <button class="tab-btn" data-tab="tab-parts" role="tab" aria-controls="tab-parts" aria-selected="false">
+                    Phase 1: Parts
+                </button>
+                <button class="tab-btn" data-tab="tab-purposes" role="tab" aria-controls="tab-purposes" aria-selected="false">
+                    Phase 2: Purposes
+                </button>
+                <button class="tab-btn" data-tab="tab-complexities" role="tab" aria-controls="tab-complexities" aria-selected="false">
+                    Phase 3: Complexities
+                </button>
+                <button class="tab-btn" data-tab="tab-bonus" role="tab" aria-controls="tab-bonus" aria-selected="false">
+                    Bonus: FDE Cycle
+                </button>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <main id="tab-content">
+
+            <!-- == TAB 1: ABOUT THE ROUTINE == -->
+            <div id="tab-intro" class="tab-panel active bg-white rounded-b-xl rounded-t-lg md:rounded-t-none shadow-md p-6" role="tabpanel">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">What is "Parts, Purposes, Complexities"?</h2>
+                <div class="space-y-4 text-slate-700">
+                    <p>This activity is a "thinking routine" developed at Harvard's Project Zero. It's designed to help you explore an object or a system (like computer architecture) in a structured way.</p>
+                    
+                    <h3 class="text-xl font-semibold">Purpose of the Routine</h3>
+                    <p>The goal is to spark curiosity and encourage you to observe carefully, looking beyond the obvious features. By breaking a system down, you can surface deeper questions and identify areas for further inquiry.</p>
+                    
+                    <h3 class="text-xl font-semibold">How We'll Use It</h3>
+                    <p>We will apply this routine to the **Central Processing Unit (CPU)**. You will move through three phases:</p>
+                    <ul class="list-decimal list-inside pl-4 space-y-2">
+                        <li><strong>Parts:</strong> You'll identify the pieces or components of the CPU.</li>
+                        <li><strong>Purposes:</strong> You'll think about the purpose of the CPU as a whole, and the purpose of each individual part.</li>
+                        <li><strong>Complexities:</strong> You'll consider how the parts and purposes work together, and what makes the system complicated or raises questions for you.</li>
+                    </ul>
+                    <p class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-blue-800">
+                        In this simulation, the "Show Sample Answer" button for each section will remain locked until you have typed an answer in all the required boxes for that section.
+                    </p>
+                </div>
+            </div>
+
+            <!-- == TAB 2: PARTS == -->
+            <div id="tab-parts" class="tab-panel hidden bg-white rounded-b-xl rounded-t-lg md:rounded-t-none shadow-md p-6" role="tabpanel">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">Phase 1: Parts</h2>
+                <p class="text-lg mb-4">The first prompt is: **What are its parts?**</p>
+                <p class="mb-4">Think about the main functional components *inside* a standard CPU (Von Neumann architecture) that you've learned about. Try to list the primary ones.</p>
+                
+                <!-- CPU Diagram -->
+                <div class="my-6 p-4 bg-slate-50 rounded-lg border border-slate-200 flex flex-col items-center justify-center space-y-4">
+                    <div class="w-full">
+                        <svg class="w-full h-auto max-w-lg md:max-w-xl mx-auto" viewBox="0 0 500 350" xmlns="http://www.w3.org/2000/svg">
+                            <title>Detailed CPU Architecture Diagram</title>
+                            <defs>
+                                <!-- Arrowhead marker -->
+                                <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b" />
+                                </marker>
+                                <!-- Arrowhead for two-way bus -->
+                                <marker id="arrow-rev" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                    <path d="M 10 0 L 0 5 L 10 10 z" fill="#64748b" />
+                                </marker>
+                            </defs>
+                        
+                            <!-- Main CPU Box -->
+                            <rect x="10" y="10" width="350" height="330" rx="10" fill="none" stroke="#0f172a" stroke-width="2"/>
+                            <text x="185" y="35" font-size="14" text-anchor="middle" font-weight="bold" fill="#0f172a">Central Processing Unit (CPU)</text>
+                        
+                            <!-- Main Memory (RAM) -->
+                            <rect x="400" y="10" width="90" height="330" rx="10" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+                            <text x="445" y="155" font-size="12" text-anchor="middle" fill="#4338ca">Main</text>
+                            <text x="445" y="175" font-size="12" text-anchor="middle" fill="#4338ca">Memory</text>
+                            <text x="445" y="195" font-size="12" text-anchor="middle" fill="#4338ca">(RAM)</text>
+                        
+                            <!-- Control Unit (CU) -->
+                            <rect x="20" y="55" width="160" height="60" rx="5" fill="#bae6fd" stroke="#0284c7" stroke-width="1"/>
+                            <text x="100" y="85" font-size="12" text-anchor="middle" fill="#0c4a6e">Control Unit (CU)</text>
+                        
+                            <!-- Arithmetic Logic Unit (ALU) -->
+                            <rect x="190" y="55" width="160" height="60" rx="5" fill="#bbf7d0" stroke="#15803d" stroke-width="1"/>
+                            <text x="270" y="85" font-size="12" text-anchor="middle" fill="#14532d">Arithmetic Logic Unit (ALU)</text>
+                        
+                            <!-- Registers Block -->
+                            <rect x="20" y="125" width="330" height="205" rx="5" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 2"/>
+                            <text x="185" y="142" font-size="12" text-anchor="middle" fill="#475569">Registers</text>
+                        
+                            <!-- Individual Registers -->
+                            <rect x="30" y="160" width="140" height="35" rx="5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+                            <text x="100" y="183" font-size="10" text-anchor="middle" fill="#312e81">Program Counter (PC)</text>
+                        
+                            <rect x="190" y="160" width="140" height="35" rx="5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+                            <text x="260" y="183" font-size="10" text-anchor="middle" fill="#312e81">Accumulator (ACC)</text>
+                        
+                            <rect x="30" y="205" width="140" height="35" rx="5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+                            <text x="100" y="228" font-size="10" text-anchor="middle" fill="#312e81">Memory Addr. Reg (MAR)</text>
+                        
+                            <rect x="30" y="250" width="140" height="35" rx="5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+                            <text x="100" y="273" font-size="10" text-anchor="middle" fill="#312e81">Memory Data Reg (MDR)</text>
+                        
+                            <rect x="190" y="205" width="140" height="80" rx="5" fill="#e0e7ff" stroke="#4338ca" stroke-width="1"/>
+                            <text x="260" y="245" font-size="10" text-anchor="middle" fill="#312e81">Current Inst. Reg (CIR)</text>
+                        
+                            <!-- Buses -->
+                            <!-- Address Bus (CPU -> RAM) -->
+                            <path d="M 170 222 H 395" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrow)" fill="none"/>
+                            <text x="282" y="218" font-size="10" fill="#ef4444" font-weight="medium">Address Bus</text>
+                        
+                            <!-- Data Bus (CPU <-> RAM) -->
+                            <path d="M 170 267 H 395" stroke="#3b82f6" stroke-width="1.5" marker-end="url(#arrow)" marker-start="url(#arrow-rev)" fill="none"/>
+                            <text x="282" y="280" font-size="10" fill="#3b82f6" font-weight="medium">Data Bus</text>
+                        
+                            <!-- Control Bus (CU -> RAM) -->
+                            <path d="M 180 85 H 185 V 300 H 395" stroke="#f97316" stroke-width="1.5" marker-end="url(#arrow)" fill="none" stroke-dasharray="4 2"/>
+                            <text x="300" y="315" font-size="10" fill="#f97316" font-weight="medium">Control Bus (Read/Write)</text>
+                        
+                            <!-- Internal Connections (Simplified) -->
+                            <path d="M 100 125 V 115" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)" fill="none" stroke-dasharray="2 2" /> <!-- CU to Registers -->
+                            <path d="M 185 125 V 115" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)" fill="none" stroke-dasharray="2 2" /> <!-- CU to ALU -->
+                            <path d="M 270 125 V 115" stroke="#64748b" stroke-width="1" marker-end="url(#arrow)" fill="none" stroke-dasharray="2 2" /> <!-- CU to ALU -->
+                        </svg>
+                    </div>
+                    <p class="text-slate-600 text-center md:text-left max-w-xs">A more detailed diagram showing the CPU, its registers, and the buses connecting to Main Memory.</p>
+                </div>
+
+                <!-- Student Input Area -->
+                <div class="space-y-4" id="parts-inputs">
+                    <div>
+                        <label for="part1" class="block text-sm font-medium text-slate-700">Part 1:</label>
+                        <textarea id="part1" rows="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="e.g., The 'manager' component..."></textarea>
+                    </div>
+                    <div>
+                        <label for="part2" class="block text-sm font-medium text-slate-700">Part 2:</label>
+                        <textarea id="part2" rows="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="e.g., The 'calculator' component..."></textarea>
+                    </div>
+                    <div>
+                        <label for="part3" class="block text-sm font-medium text-slate-700">Part 3:</label>
+                        <textarea id="part3" rows="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="e.g., The 'fast-storage' component..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Hint/Answer -->
+                <button 
+                    id="btn-parts" 
+                    disabled 
+                    onclick="toggleAnswer('answer-parts', this)"
+                    class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-opacity">
+                    Show Sample Answer
+                </button>
+                
+                <div id="answer-parts" class="hidden mt-4 bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <p class="font-semibold">Hint:</p>
+                    <p class="mb-4">Think about the part that gives orders, the part that does math, and the small, fast memory locations inside the CPU itself.</p>
+                    <p class="font-semibold">Sample Answer (Parts):</p>
+                    <ul class="list-disc list-inside text-slate-700">
+                        <li><strong>Control Unit (CU)</strong></li>
+                        <li><strong>Arithmetic Logic Unit (ALU)</strong></li>
+                        <li><strong>Registers</strong> (which include the Program Counter (PC), Accumulator (ACC), Memory Address Register (MAR), Memory Data Register (MDR), etc.)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- == TAB 3: PURPOSES == -->
+            <div id="tab-purposes" class="tab-panel hidden bg-white rounded-b-xl rounded-t-lg md:rounded-t-none shadow-md p-6" role="tabpanel">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">Phase 2: Purposes</h2>
+                <p class="text-lg mb-4">The next prompts are: **What are its purposes?** and **What are the purposes of each of these parts?**</p>
+                <p class="mb-4">First, what is the *overall purpose* of the CPU as a whole? Then, what is the *specific job* of each part you listed in Phase 1?</p>
+
+                <!-- Student Input Area -->
+                <div class="space-y-4" id="purposes-inputs">
+                    <div>
+                        <label for="purpose_overall" class="block text-sm font-medium text-slate-700">Overall Purpose of CPU:</label>
+                        <textarea id="purpose_overall" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="The CPU's main job is to..."></textarea>
+                    </div>
+                    <div>
+                        <label for="purpose_part1" class="block text-sm font-medium text-slate-700">Purpose of Part 1 (e.g., CU):</label>
+                        <textarea id="purpose_part1" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="This part is responsible for..."></textarea>
+                    </div>
+                    <div>
+                        <label for="purpose_part2" class="block text-sm font-medium text-slate-700">Purpose of Part 2 (e.g., ALU):</label>
+                        <textarea id="purpose_part2" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="This part is used to perform..."></textarea>
+                    </div>
+                    <div>
+                        <label for="purpose_part3" class="block text-sm font-medium text-slate-700">Purpose of Part 3 (e.g., Registers):</label>
+                        <textarea id="purpose_part3" rows="3" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="These are used to temporarily hold..."></textarea>
+                    </div>
+                </div>
+
+                <!-- Hint/Answer -->
+                <button 
+                    id="btn-purposes" 
+                    disabled 
+                    onclick="toggleAnswer('answer-purposes', this)"
+                    class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-opacity">
+                    Show Sample Answer
+                </button>
+                
+                <div id="answer-purposes" class="hidden mt-4 bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <p class="font-semibold">Sample Answer (Purposes):</p>
+                    <ul class="list-disc list-inside text-slate-700 space-y-2">
+                        <li><strong>Overall Purpose of CPU:</strong> To continuously **fetch, decode, and execute** instructions stored in memory to carry out tasks.</li>
+                        <li><strong>Purpose of Control Unit (CU):</strong> To manage and coordinate all hardware operations. It decodes instructions and sends out control signals to the correct components (like the ALU or memory).</li>
+                        <li><strong>Purpose of Arithmetic Logic Unit (ALU):</strong> To perform all **calculations** (e.g., addition, subtraction) and **logical operations** (e.g., AND, OR, NOT).</li>
+                        <li><strong>Purpose of Registers:</strong> To provide small, extremely fast, temporary storage locations *inside* the CPU for data, instructions, or addresses that are being actively used.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- == TAB 4: COMPLEXITIES == -->
+            <div id="tab-complexities" class="tab-panel hidden bg-white rounded-b-xl rounded-t-lg md:rounded-t-none shadow-md p-6" role="tabpanel">
+                <h2 class="text-2xl font-bold text-blue-600 mb-4">Phase 3: Complexities</h2>
+                <p class="text-lg mb-4">The final prompt is: **How is it complicated?**</p>
+                <p class="mb-4">This is where we dig deeper. The complexity isn't just in the parts, but in how they *interact*. What makes this system work? What puzzles or questions do you have about it? Use the guiding questions below or write your own.</p>
+                
+                <ul class="list-disc list-inside text-slate-600 mb-4 space-y-1">
+                    <li>How does the Control Unit "know" whether to send a task to the ALU or to memory?</li>
+                    <li>What is the relationship between the CPU's registers and the main RAM? How do they "talk" to each other?</li>
+                    <li>How can a single CPU core seem to do multiple things at once (like play music and run a browser)?</li>
+                    <li>What happens *first*? How is the whole sequence managed so it doesn't break?</li>
+                </ul>
+
+                <!-- Student Input Area -->
+                <div id="complexities-inputs">
+                    <label for="complexities" class="block text-sm font-medium text-slate-700">My Puzzles & Questions:</label>
+                    <textarea id="complexities" rows="6" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2" placeholder="Type your thoughts on the complexities here. For example: 'It seems complicated that the CU has to manage everything. How does it get its instructions?'..."></textarea>
+                </div>
+
+                <!-- Hint/Answer -->
+                <button 
+                    id="btn-complexities" 
+                    disabled 
+                    onclick="toggleAnswer('answer-complexities', this)"
+                    class="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-700 transition-opacity">
+                    Show Sample Answer
+                </button>
+                
+                <div id="answer-complexities" class="hidden mt-4 bg-slate-50 rounded-lg border border-slate-200 p-4">
+                    <p class="font-semibold">The "Big Idea" (The Main Complexity):</p>
+                    <p>The core complexity is **synchronization and timing**. All these parts must work together perfectly, step-by-step, at incredible speeds (billions of times per second).</p>
+                    <p class="mt-2">This entire process is managed by a concept called the **Fetch-Decode-Execute Cycle**, which is timed by a **System Clock**. This cycle is the "engine" that answers most of these puzzles. It provides a simple, repeating sequence of steps that allows the CPU to process complex tasks one instruction at a time.</p>
+                </div>
+            </div>
+
+            <!-- == TAB 5: BONUS FDE Cycle == -->
+            <div id="tab-bonus" class="tab-panel hidden bg-white rounded-b-xl rounded-t-lg md:rounded-t-none shadow-md p-6" role="tabpanel">
+                <section class="bg-blue-800 text-white rounded-xl shadow-md p-6 -m-6"> <!-- Use negative margin to fill panel -->
+                    <h2 class="text-2xl font-bold mb-4">Bonus: "Taking the System Apart"</h2>
+                    <p class="text-lg mb-4 text-blue-100">To really understand the system, let's trace the path of one instruction. This is the **Fetch-Decode-Execute Cycle**.</p>
+                    <p class="mb-4">Imagine the CPU needs to process the instruction `ADD 100` (meaning: "add the data stored in memory address 100 to the value already in the Accumulator register").</p>
+
+                    <div class="space-y-6">
+                        <!-- Step 1: FETCH -->
+                        <div id="fetch-inputs">
+                            <h3 class="text-xl font-semibold text-blue-200">1. FETCH</h3>
+                            <p class="mb-2">The CPU must *get* the instruction from RAM.</p>
+                            <label for="fde_fetch" class="block text-sm font-medium text-blue-100">Which parts are involved in *fetching*?</label>
+                            <textarea id="fde_fetch" rows="4" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2 text-slate-800" placeholder="Hint: Which register holds the *address* of the next instruction? Which register holds the instruction *itself* after it's fetched?"></textarea>
+                            
+                            <button 
+                                id="btn-fetch" 
+                                disabled 
+                                onclick="toggleAnswer('answer-fetch', this)"
+                                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-opacity">
+                                Show Fetch Answer
+                            </button>
+                            
+                            <div id="answer-fetch" class="hidden mt-4 text-slate-800 bg-white rounded-lg border border-slate-200 p-3">
+                                <ul class="list-disc list-inside mt-2 space-y-1">
+                                    <li>The **Program Counter (PC)** holds the address of the `ADD 100` instruction.</li>
+                                    <li>The CU copies this address to the **Memory Address Register (MAR)**.</li>
+                                    <li>The CU sends a "read" signal on the **Control Bus**.</li>
+                                    <li>The instruction is sent from RAM via the **Data Bus** to the **Memory Data Register (MDR)**.</li>
+                                    <li>The instruction is copied to the **Current Instruction Register (CIR)**.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: DECODE -->
+                        <div id="decode-inputs">
+                            <h3 class="text-xl font-semibold text-blue-200">2. DECODE</h3>
+                            <p class="mb-2">The CPU must *understand* what the instruction means.</p>
+                            <label for="fde_decode" class="block text-sm font-medium text-blue-100">Which part is responsible for *decoding*?</label>
+                            <textarea id="fde_decode" rows="2" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2 text-slate-800" placeholder="Hint: Which part is the 'manager' or 'brain' of the operation?"></textarea>
+                            
+                            <button 
+                                id="btn-decode" 
+                                disabled 
+                                onclick="toggleAnswer('answer-decode', this)"
+                                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-opacity">
+                                Show Decode Answer
+                            </button>
+                            
+                            <div id="answer-decode" class="hidden mt-4 text-slate-800 bg-white rounded-lg border border-slate-200 p-3">
+                                <p class="mt-2">The **Control Unit (CU)** reads the instruction in the CIR. It understands the `ADD` part (the opcode) and the `100` part (the operand). It now knows it needs to get data from memory and then use the ALU.</p>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: EXECUTE -->
+                        <div id="execute-inputs">
+                            <h3 class="text-xl font-semibold text-blue-200">3. EXECUTE</h3>
+                            <p class="mb-2">The CPU must *perform* the action.</p>
+                            <label for="fde_execute" class="block text-sm font-medium text-blue-100">Which parts are involved in *executing* `ADD 100`?</label>
+                            <textarea id="fde_execute" rows="4" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm p-2 text-slate-800" placeholder="Hint: This is a multi-step process. It needs to get the data from address 100, then send it to the 'calculator', and store the result."></textarea>
+                            
+                            <button 
+                                id="btn-execute" 
+                                disabled 
+                                onclick="toggleAnswer('answer-execute', this)"
+                                class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-blue-600 transition-opacity">
+                                Show Execute Answer
+                            </button>
+                            
+                            <div id="answer-execute" class="hidden mt-4 text-slate-800 bg-white rounded-lg border border-slate-200 p-3">
+                                <ul class="list-disc list-inside mt-2 space-y-1">
+                                    <li>The CU copies the address `100` from the instruction into the **MAR**.</li>
+                                    <li>The data at address 100 is fetched (via the buses) into the **MDR**.</li>
+                                    <li>The CU sends this data and the data from the **Accumulator (ACC)** to the **ALU**.</li>
+                                    <li>The CU tells the **ALU** to perform 'ADD'.</li>
+                                    <li>The result from the ALU is written back into the **Accumulator (ACC)**.</li>
+                                    <li>The **Program Counter (PC)** is incremented to point to the next instruction.</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-slate-500 text-sm">
+            <p>This simulation is based on the "Parts, Purposes, Complexities" thinking routine from Project Zero, Harvard Graduate School of Education.</p>
+            <p>Applied to IGCSE Computing (Computer Architecture).</p>
+        </footer>
+
+    </div>
+
+    <!-- JavaScript for Tabs and Answer Locking -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabNav = document.getElementById('tab-nav');
+            const tabContentPanels = document.getElementById('tab-content').querySelectorAll('.tab-panel');
+            const tabButtons = tabNav.querySelectorAll('.tab-btn');
+
+            // --- Tab Switching Logic ---
+            tabNav.addEventListener('click', (e) => {
+                const clickedTab = e.target.closest('.tab-btn');
+                if (!clickedTab) return;
+
+                const targetTabId = clickedTab.dataset.tab;
+
+                // Update button active states
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.setAttribute('aria-selected', 'false');
+                });
+                clickedTab.classList.add('active');
+                clickedTab.setAttribute('aria-selected', 'true');
+
+                // Show/hide content panels
+                tabContentPanels.forEach(panel => {
+                    if (panel.id === targetTabId) {
+                        panel.classList.remove('hidden');
+                    } else {
+                        panel.classList.add('hidden');
+                    }
+                });
+            });
+
+            // --- Answer Locking Logic ---
+            
+            // Define which textareas control which button
+            const sections = [
+                { textAreas: ['part1', 'part2', 'part3'], button: 'btn-parts' },
+                { textAreas: ['purpose_overall', 'purpose_part1', 'purpose_part2', 'purpose_part3'], button: 'btn-purposes' },
+                { textAreas: ['complexities'], button: 'btn-complexities' },
+                { textAreas: ['fde_fetch'], button: 'btn-fetch' },
+                { textAreas: ['fde_decode'], button: 'btn-decode' },
+                { textAreas: ['fde_execute'], button: 'btn-execute' }
+            ];
+
+            // Set up event listeners for each section
+            sections.forEach(section => {
+                const textInputs = section.textAreas.map(id => document.getElementById(id));
+                const button = document.getElementById(section.button);
+
+                if (!button || textInputs.some(input => !input)) {
+                    console.warn('Skipping section due to missing elements:', section);
+                    return;
+                }
+
+                const checkInputs = () => {
+                    // Check if *all* textareas in this section have a value (after trimming whitespace)
+                    const allFilled = textInputs.every(ta => ta.value.trim() !== '');
+                    button.disabled = !allFilled;
+                };
+
+                // Add an 'input' event listener to each textarea
+                textInputs.forEach(input => {
+                    input.addEventListener('input', checkInputs);
+                });
+            });
+        });
+
+        // --- Toggle Answer Visibility Function (Global) ---
+        function toggleAnswer(answerId, btn) {
+            const answerEl = document.getElementById(answerId);
+            if (!answerEl) return;
+
+            const isHidden = answerEl.classList.toggle('hidden');
+            
+            if (btn.id === 'btn-parts' || btn.id === 'btn-purposes' || btn.id === 'btn-complexities') {
+                 btn.textContent = isHidden ? 'Show Sample Answer' : 'Hide Sample Answer';
+            } else if (btn.id === 'btn-fetch') {
+                btn.textContent = isHidden ? 'Show Fetch Answer' : 'Hide Fetch Answer';
+            } else if (btn.id === 'btn-decode') {
+                btn.textContent = isHidden ? 'Show Decode Answer' : 'Hide Decode Answer';
+            } else if (btn.id === 'btn-execute') {
+                btn.textContent = isHidden ? 'Show Execute Answer' : 'Hide Execute Answer';
+            }
+        }
+    </script>
+
+</body>
+</html>

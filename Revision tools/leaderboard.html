@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS Whiz - Public Leaderboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Font 'Inter' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020024;
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .leaderboard-box {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1.5rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+        }
+        .leaderboard-item:nth-child(odd) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        .leaderboard-item:hover {
+            background-color: rgba(99, 102, 241, 0.3);
+        }
+        .rank {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #aaa;
+            width: 3rem;
+        }
+        .name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #fff;
+            flex: 1;
+            truncate: true;
+        }
+        .score {
+            font-size: 1.5rem;
+            font-weight: 900;
+            color: #f59e0b; /* amber-500 */
+        }
+        
+        /* Special Ranks */
+        .leaderboard-item:nth-child(1) .rank { color: #f59e0b; } /* Gold */
+        .leaderboard-item:nth-child(2) .rank { color: #c0c0c0; } /* Silver */
+        .leaderboard-item:nth-child(3) .rank { color: #cd7f32; } /* Bronze */
+
+    </style>
+</head>
+<body>
+
+    <div class="leaderboard-box">
+        <h1 class="text-4xl md:text-5xl font-black text-center mb-2 text-amber-400">CS Whiz Leaderboard</h1>
+        <p class="text-center text-lg text-gray-300 mb-6">Top 25 Players</p>
+        
+        <ul id="leaderboard-list" class="space-y-2">
+            <!-- Scores will be injected here -->
+            <li class="leaderboard-item text-gray-300">Loading scores...</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        // --- Firebase SDK Imports ---
+        import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            query,
+            orderBy,
+            limit,
+            onSnapshot
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- IMPORTANT: This MUST match your game's config! ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCLcgsSsy4s5wPS68ByTLV8yfJ6qJOMUzU",
+            authDomain: "cs-whiz-game.firebaseapp.com",
+            projectId: "cs-whiz-game",
+            storageBucket: "cs-whiz-game.firebasestorage.app",
+            messagingSenderId: "962202955655",
+            appId: "1:962202955655:web:96c211a8aa23907592ad22",
+            measurementId: "G-7PGT0R9CZ3"
+        };
+        
+        const LEADERBOARD_COLLECTION = `leaderboard`;
+        let db, auth;
+        let unsubscribeLeaderboard = null;
+
+        /**
+         * Initializes Firebase and starts auth process
+         */
+        async function initFirebase() {
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                setLogLevel('debug');
+
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        // User is signed in, now we can listen for scores
+                        console.log("Authenticated anonymously. User ID:", user.uid);
+                        listenForLeaderboard();
+                    } else {
+                        // User is signed out, sign them in
+                        await signInAnonymously(auth);
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase init failed:", error);
+            }
+        }
+
+        /**
+         * Listens for real-time updates to the public leaderboard
+         */
+        function listenForLeaderboard() {
+            const leaderboardListEl = document.getElementById('leaderboard-list');
+            if (unsubscribeLeaderboard) unsubscribeLeaderboard(); // Stop previous listener
+
+            // Query for the Top 25, ordered by score
+            const q = query(
+                collection(db, LEADERBOARD_COLLECTION),
+                orderBy("score", "desc"),
+                limit(25)
+            );
+                
+            unsubscribeLeaderboard = onSnapshot(q, (snapshot) => {
+                let scores = [];
+                snapshot.forEach((doc) => {
+                    scores.push(doc.data());
+                });
+                renderLeaderboard(scores);
+            }, (error) => {
+                console.error("Error listening to leaderboard:", error);
+                leaderboardListEl.innerHTML = '<li class="leaderboard-item text-red-400">Error loading scores. Check rules.</li>';
+            });
+        }
+
+        /**
+         * Renders the leaderboard in the UI
+         */
+        function renderLeaderboard(scores) {
+            const leaderboardListEl = document.getElementById('leaderboard-list');
+            leaderboardListEl.innerHTML = ''; // Clear old scores
+            
+            if (scores.length === 0) {
+                leaderboardListEl.innerHTML = '<li class="leaderboard-item text-gray-300">No scores yet!</li>';
+                return;
+            }
+            
+            scores.forEach((entry, index) => {
+                const li = document.createElement('li');
+                li.className = 'leaderboard-item';
+                
+                li.innerHTML = `
+                    <span class="rank">${index + 1}</span>
+                    <span class="name">${entry.name}</span>
+                    <span class="score">${entry.score.toLocaleString()}</span>
+                `;
+                leaderboardListEl.appendChild(li);
+            });
+        }
+
+        // --- INITIALIZE THE APP ---
+        initFirebase(); // Start connection
+
+    </script>
+</body>
+</html>

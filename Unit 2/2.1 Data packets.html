@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Packet Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --node-size: 60px;
+            --packet-size: 25px;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+        }
+        .network-bg {
+            background-color: #1a1a1a;
+            background-image:
+                radial-gradient(circle at 25px 25px, rgba(200, 200, 255, 0.1) 2%, transparent 0%),
+                radial-gradient(circle at 75px 75px, rgba(200, 200, 255, 0.1) 2%, transparent 0%);
+            background-size: 100px 100px;
+        }
+        .node {
+            width: var(--node-size);
+            height: var(--node-size);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .node.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.6);
+        }
+        .packet {
+            width: var(--packet-size);
+            height: var(--packet-size);
+            position: absolute;
+            border-radius: 0.375rem;
+            transition: all 1s ease-in-out;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .packet:hover {
+            transform: scale(1.2);
+        }
+        .path-line {
+            stroke-dasharray: 5;
+            animation: dash 20s linear infinite;
+        }
+        @keyframes dash {
+            to {
+                stroke-dashoffset: 1000;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white flex flex-col h-screen antialiased">
+
+    <!-- Header -->
+    <header class="bg-gray-800/50 backdrop-blur-sm p-3 border-b border-gray-700 text-center shadow-lg">
+        <h1 class="text-xl font-bold tracking-wider text-blue-300">Network Data Packet Simulation</h1>
+    </header>
+
+    <div class="flex flex-grow overflow-hidden">
+        <!-- Control and Info Panel -->
+        <div class="w-1/4 min-w-[350px] bg-gray-900/80 p-4 flex flex-col space-y-4 border-r border-gray-700 overflow-y-auto">
+            <!-- Controls -->
+            <div class="bg-gray-800 rounded-lg p-4 shadow-md">
+                <h2 class="text-lg font-semibold mb-3 border-b border-gray-600 pb-2 text-blue-300">Controls</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="data-input" class="block text-sm font-medium text-gray-300 mb-1">Data to send:</label>
+                        <textarea id="data-input" rows="3" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition text-sm" placeholder="Type a message...">Hello, this is a test of the network simulation!</textarea>
+                    </div>
+                     <div>
+                        <label for="destination-select" class="block text-sm font-medium text-gray-300 mb-1">Select Destination:</label>
+                        <select id="destination-select" class="w-full bg-gray-700 border border-gray-600 rounded-md p-2 focus:ring-2 focus:ring-blue-500">
+                            <option value="receiver1">Receiver 1 (10.0.0.50)</option>
+                            <option value="receiver2">Receiver 2 (10.0.1.100)</option>
+                            <option value="receiver3">Receiver 3 (10.0.2.200)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="packet-size-slider" class="block text-sm font-medium text-gray-300 mb-1">Packet Size (chars): <span id="packet-size-value">10</span></label>
+                        <input type="range" id="packet-size-slider" min="5" max="25" value="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="send-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                            Send Data
+                        </button>
+                        <button id="reset-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition duration-300 ease-in-out transform hover:scale-105">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Packets Display -->
+            <div class="bg-gray-800 rounded-lg p-4 shadow-md flex-grow flex flex-col">
+                <h2 class="text-lg font-semibold mb-3 border-b border-gray-600 pb-2 text-blue-300">All Sent Packets</h2>
+                <div id="packet-info" class="text-sm text-gray-300 space-y-4 flex-grow overflow-y-auto pr-2">
+                    <p>Packet details will appear here after data is sent.</p>
+                </div>
+            </div>
+
+             <!-- Log -->
+            <div class="bg-gray-800 rounded-lg p-4 shadow-md h-48">
+                <h2 class="text-lg font-semibold mb-3 border-b border-gray-600 pb-2 text-blue-300">Event Log</h2>
+                <div id="log-container" class="h-full overflow-y-auto text-xs text-gray-400 pr-2"></div>
+            </div>
+        </div>
+
+        <!-- Simulation Area -->
+        <div id="simulation-area" class="flex-grow network-bg relative flex items-center justify-center p-4">
+            <!-- SVG for drawing lines -->
+            <svg id="path-svg" class="absolute top-0 left-0 w-full h-full" style="pointer-events: none;"></svg>
+            
+            <!-- Nodes -->
+            <div id="sender" class="node absolute flex flex-col items-center justify-center bg-gray-700 rounded-lg border-2 border-green-500">
+                <div class="text-2xl">💻</div>
+                <div class="text-xs font-bold mt-1">Sender</div>
+                <div class="text-xs text-green-400">192.168.1.10</div>
+            </div>
+
+            <div id="receiver1" class="node receiver absolute flex flex-col items-center justify-center bg-gray-700 rounded-lg border-2 border-green-500">
+                <div class="text-2xl">🖥️</div>
+                <div class="text-xs font-bold mt-1">Receiver 1</div>
+                <div class="text-xs text-green-400">10.0.0.50</div>
+                <div id="reassembled-data-1" class="reassembled-data absolute top-full mt-2 w-64 bg-gray-800 rounded p-2 text-xs break-words opacity-0 transition-opacity duration-500"></div>
+            </div>
+            
+            <div id="receiver2" class="node receiver absolute flex flex-col items-center justify-center bg-gray-700 rounded-lg border-2 border-purple-500">
+                <div class="text-2xl">📱</div>
+                <div class="text-xs font-bold mt-1">Receiver 2</div>
+                <div class="text-xs text-purple-400">10.0.1.100</div>
+                <div id="reassembled-data-2" class="reassembled-data absolute top-full mt-2 w-64 bg-gray-800 rounded p-2 text-xs break-words opacity-0 transition-opacity duration-500"></div>
+            </div>
+            
+            <div id="receiver3" class="node receiver absolute flex flex-col items-center justify-center bg-gray-700 rounded-lg border-2 border-yellow-500">
+                <div class="text-2xl">🖨️</div>
+                <div class="text-xs font-bold mt-1">Receiver 3</div>
+                <div class="text-xs text-yellow-400">10.0.2.200</div>
+                <div id="reassembled-data-3" class="reassembled-data absolute top-full mt-2 w-64 bg-gray-800 rounded p-2 text-xs break-words opacity-0 transition-opacity duration-500"></div>
+            </div>
+
+            <div id="router1" class="node router absolute flex items-center justify-center bg-gray-700 rounded-full border-2 border-blue-500">
+                <div class="text-2xl">📡</div>
+            </div>
+            <div id="router2" class="node router absolute flex items-center justify-center bg-gray-700 rounded-full border-2 border-blue-500">
+                 <div class="text-2xl">📡</div>
+            </div>
+            <div id="router3" class="node router absolute flex items-center justify-center bg-gray-700 rounded-full border-2 border-blue-500">
+                 <div class="text-2xl">📡</div>
+            </div>
+             <div id="router4" class="node router absolute flex items-center justify-center bg-gray-700 rounded-full border-2 border-blue-500">
+                 <div class="text-2xl">📡</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const simulationArea = document.getElementById('simulation-area');
+            const dataInput = document.getElementById('data-input');
+            const destinationSelect = document.getElementById('destination-select');
+            const sendBtn = document.getElementById('send-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const packetInfo = document.getElementById('packet-info');
+            const logContainer = document.getElementById('log-container');
+            const slider = document.getElementById('packet-size-slider');
+            const sliderValue = document.getElementById('packet-size-value');
+            
+            // Nodes
+            const sender = document.getElementById('sender');
+            const routers = Array.from(document.querySelectorAll('.router'));
+            const pathSvg = document.getElementById('path-svg');
+            
+            const receivers = {
+                receiver1: { el: document.getElementById('receiver1'), ip: '10.0.0.50', reassembledEl: document.getElementById('reassembled-data-1') },
+                receiver2: { el: document.getElementById('receiver2'), ip: '10.0.1.100', reassembledEl: document.getElementById('reassembled-data-2') },
+                receiver3: { el: document.getElementById('receiver3'), ip: '10.0.2.200', reassembledEl: document.getElementById('reassembled-data-3') }
+            };
+
+            // State
+            let packetCounter = 0;
+            let receivedPacketsByDest = {};
+            let totalPacketsToSend = 0;
+            let currentDestinationIp = '';
+            let simulationTimeouts = [];
+            let allSentPackets = [];
+
+
+            // --- Utility Functions ---
+            const logMessage = (msg, color = 'text-gray-400') => {
+                const time = new Date().toLocaleTimeString();
+                logContainer.innerHTML += `<p class="${color}"><span class="text-gray-500">${time}:</span> ${msg}</p>`;
+                logContainer.scrollTop = logContainer.scrollHeight;
+            };
+
+            const getRandomColor = () => {
+                const colors = ['bg-pink-500', 'bg-purple-500', 'bg-indigo-500', 'bg-teal-500', 'bg-yellow-500', 'bg-orange-500'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            };
+
+            const positionNodes = () => {
+                const areaRect = simulationArea.getBoundingClientRect();
+                const centerX = areaRect.width / 2;
+                const centerY = areaRect.height / 2;
+                const hOffset = areaRect.width * 0.4;
+                const vOffset = areaRect.height * 0.35;
+
+                sender.style.left = `${centerX - hOffset}px`;
+                sender.style.top = `${centerY}px`;
+                
+                receivers.receiver1.el.style.left = `${centerX + hOffset}px`;
+                receivers.receiver1.el.style.top = `${centerY}px`;
+                receivers.receiver2.el.style.left = `${centerX + hOffset}px`;
+                receivers.receiver2.el.style.top = `${centerY - vOffset}px`;
+                receivers.receiver3.el.style.left = `${centerX + hOffset}px`;
+                receivers.receiver3.el.style.top = `${centerY + vOffset}px`;
+
+                routers[0].style.left = `${centerX}px`;
+                routers[0].style.top = `${centerY - vOffset}px`;
+                routers[1].style.left = `${centerX}px`;
+                routers[1].style.top = `${centerY + vOffset}px`;
+                routers[2].style.left = `${centerX - hOffset / 2}px`;
+                routers[2].style.top = `${centerY}px`;
+                routers[3].style.left = `${centerX + hOffset / 2}px`;
+                routers[3].style.top = `${centerY}px`;
+                
+                [sender, ...Object.values(receivers).map(r => r.el), ...routers].forEach(node => {
+                    node.style.transform = 'translate(-50%, -50%)';
+                });
+
+                drawPaths();
+            };
+            
+            const getNodeCenter = (node) => {
+                return {
+                    x: node.offsetLeft + node.offsetWidth / 2,
+                    y: node.offsetTop + node.offsetHeight / 2
+                };
+            };
+            
+            const drawPaths = () => {
+                pathSvg.innerHTML = '';
+                const senderPos = getNodeCenter(sender);
+                const routerPositions = routers.map(getNodeCenter);
+                
+                const allReceiverPos = Object.values(receivers).map(r => getNodeCenter(r.el));
+
+                const paths = [
+                    [senderPos, routerPositions[2]],
+                    [routerPositions[2], routerPositions[0]],
+                    [routerPositions[2], routerPositions[1]],
+                    [routerPositions[0], routerPositions[3]],
+                    [routerPositions[1], routerPositions[3]],
+                ];
+
+                allReceiverPos.forEach(receiverPos => {
+                    paths.push([routerPositions[3], receiverPos]);
+                    paths.push([routerPositions[0], receiverPos]);
+                    paths.push([routerPositions[1], receiverPos]);
+                });
+
+                paths.forEach(path => {
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', path[0].x);
+                    line.setAttribute('y1', path[0].y);
+                    line.setAttribute('x2', path[1].x);
+                    line.setAttribute('y2', path[1].y);
+                    line.setAttribute('stroke', 'rgba(59, 130, 246, 0.2)');
+                    line.setAttribute('stroke-width', '2');
+                    line.classList.add('path-line');
+                    pathSvg.appendChild(line);
+                });
+            };
+
+            // --- Core Logic ---
+
+            const sendData = () => {
+                const data = dataInput.value.trim();
+                const packetSize = parseInt(slider.value);
+                if (!data) {
+                    logMessage('Cannot send empty data.', 'text-red-400');
+                    return;
+                }
+                
+                resetSimulation(true); // Soft reset before sending
+
+                const selectedDestinationId = destinationSelect.value;
+                const targetReceiver = receivers[selectedDestinationId];
+                currentDestinationIp = targetReceiver.ip;
+
+                sendBtn.disabled = true;
+                resetBtn.disabled = true;
+
+                logMessage(`Preparing to send data to ${targetReceiver.ip}`);
+
+                const packets = [];
+                for (let i = 0; i < data.length; i += packetSize) {
+                    packets.push(data.substring(i, i + packetSize));
+                }
+                
+                totalPacketsToSend = packets.length;
+                receivedPacketsByDest[currentDestinationIp] = [];
+                logMessage(`Data split into ${totalPacketsToSend} packets.`, 'text-yellow-300');
+
+                packets.forEach((chunk, index) => {
+                    const timeoutId = setTimeout(() => {
+                        createAndSendPacket(chunk, index, packets.length, targetReceiver);
+                    }, index * 500); // Stagger packet creation
+                    simulationTimeouts.push(timeoutId);
+                });
+            };
+
+            const createAndSendPacket = (dataChunk, sequence, total, targetReceiver) => {
+                packetCounter++;
+                const checksum = dataChunk.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0).toString(16);
+
+                const packetData = {
+                    id: packetCounter,
+                    header: {
+                        sourceIp: '192.168.1.10',
+                        destinationIp: targetReceiver.ip,
+                        sequenceNumber: sequence + 1,
+                        totalPackets: total,
+                    },
+                    payload: dataChunk,
+                    footer: { checksum: `0x${checksum}`, endOfPacket: true }
+                };
+                
+                allSentPackets.push(packetData);
+                renderAllPacketInfo();
+
+
+                const packetEl = document.createElement('div');
+                packetEl.className = `packet ${getRandomColor()}`;
+                packetEl.textContent = packetData.header.sequenceNumber;
+                
+                const senderPos = getNodeCenter(sender);
+                packetEl.style.left = `${senderPos.x - (packetEl.offsetWidth / 2)}px`;
+                packetEl.style.top = `${senderPos.y - (packetEl.offsetHeight / 2)}px`;
+                                
+                simulationArea.appendChild(packetEl);
+                logMessage(`Packet #${packetData.header.sequenceNumber} sent towards ${packetData.header.destinationIp}.`);
+                
+                const routes = [
+                    [routers[2], routers[0], routers[3], targetReceiver.el],
+                    [routers[2], routers[1], routers[3], targetReceiver.el],
+                ];
+                const route = routes[Math.floor(Math.random() * routes.length)];
+                
+                movePacket(packetEl, [sender, ...route], packetData);
+            };
+
+            const movePacket = async (packetEl, path, packetData) => {
+                for (let i = 0; i < path.length; i++) {
+                    const node = path[i];
+                    node.classList.add('active');
+                    if (node.classList.contains('router')) {
+                         logMessage(`Packet #${packetData.header.sequenceNumber} at Router, forwarding to ${packetData.header.destinationIp}...`);
+                    }
+
+                    await new Promise(resolve => setTimeout(resolve, 200)); 
+                    node.classList.remove('active');
+                    
+                    const nextNode = path[i+1];
+                    if (nextNode) {
+                        const nextPos = getNodeCenter(nextNode);
+                        packetEl.style.left = `${nextPos.x - (packetEl.offsetWidth / 2)}px`;
+                        packetEl.style.top = `${nextPos.y - (packetEl.offsetHeight / 2)}px`;
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+                handlePacketArrival(packetEl, packetData);
+            };
+            
+            const handlePacketArrival = (packetEl, packetData) => {
+                const destIp = packetData.header.destinationIp;
+                logMessage(`Packet #${packetData.header.sequenceNumber} arrived at ${destIp}.`, 'text-green-300');
+                packetEl.style.opacity = '0';
+                
+                if (receivedPacketsByDest[destIp]) {
+                    receivedPacketsByDest[destIp].push(packetData);
+                }
+                
+                setTimeout(() => packetEl.remove(), 500);
+
+                if (receivedPacketsByDest[destIp] && receivedPacketsByDest[destIp].length === totalPacketsToSend) {
+                    logMessage(`All packets for ${destIp} received. Reassembling...`, 'text-green-300');
+                    reassembleData(destIp);
+                }
+            };
+            
+            const reassembleData = (destIp) => {
+                const targetReceiver = Object.values(receivers).find(r => r.ip === destIp);
+                if (!targetReceiver) return;
+
+                const packets = receivedPacketsByDest[destIp];
+                packets.sort((a, b) => a.header.sequenceNumber - b.header.sequenceNumber);
+                const originalMessage = packets.map(p => p.payload).join('');
+                
+                logMessage(`Reassembled data for ${destIp}: "${originalMessage}"`, 'text-cyan-300');
+                
+                targetReceiver.reassembledEl.textContent = `Reassembled: ${originalMessage}`;
+                targetReceiver.reassembledEl.style.opacity = '1';
+                
+                sendBtn.disabled = false;
+                resetBtn.disabled = false;
+            };
+
+            const renderAllPacketInfo = () => {
+                if(allSentPackets.length === 0) {
+                     packetInfo.innerHTML = '<p>Packet details will appear here after data is sent.</p>';
+                     return;
+                }
+                packetInfo.innerHTML = ''; // Clear first
+                const sortedPackets = [...allSentPackets].sort((a,b) => a.header.sequenceNumber - b.header.sequenceNumber);
+                
+                sortedPackets.forEach(packetData => {
+                    const packetHtml = `
+                    <div class="border border-gray-600 rounded-lg p-3">
+                        <p class="text-center font-bold mb-2"><strong class="text-gray-200">Packet ${packetData.header.sequenceNumber} / ${packetData.header.totalPackets}</strong></p>
+                        <div class="border border-green-500/50 rounded-lg p-2 mb-2">
+                            <h3 class="font-bold text-green-400">Header</h3>
+                            <div class="pl-2 text-xs space-y-1 mt-1">
+                                <p><strong class="font-medium text-gray-300">Source IP:</strong> ${packetData.header.sourceIp}</p>
+                                <p><strong class="font-medium text-gray-300">Destination IP:</strong> ${packetData.header.destinationIp}</p>
+                            </div>
+                        </div>
+                        <div class="border border-blue-500/50 rounded-lg p-2 mb-2">
+                            <h3 class="font-bold text-blue-400">Payload (Data)</h3>
+                            <div class="pl-2 mt-1">
+                                <span class="bg-gray-700 p-1 rounded font-mono text-xs">${packetData.payload}</span>
+                            </div>
+                        </div>
+                        <div class="border border-red-500/50 rounded-lg p-2">
+                            <h3 class="font-bold text-red-400">Footer</h3>
+                            <div class="pl-2 text-xs space-y-1 mt-1">
+                                <p><strong class="font-medium text-gray-300">Checksum:</strong> ${packetData.footer.checksum}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                    packetInfo.innerHTML += packetHtml;
+                });
+                packetInfo.scrollTop = packetInfo.scrollHeight; // Auto-scroll
+            };
+
+            const resetSimulation = (soft = false) => {
+                simulationTimeouts.forEach(clearTimeout);
+                simulationTimeouts = [];
+
+                simulationArea.querySelectorAll('.packet').forEach(p => p.remove());
+                packetCounter = 0;
+                receivedPacketsByDest = {};
+                totalPacketsToSend = 0;
+                currentDestinationIp = '';
+                allSentPackets = [];
+                renderAllPacketInfo();
+                
+                document.querySelectorAll('.reassembled-data').forEach(el => {
+                    el.style.opacity = '0';
+                    el.textContent = '';
+                });
+                
+                if (!soft) {
+                    logContainer.innerHTML = '';
+                    dataInput.value = 'Hello, this is a test of the network simulation!';
+                    logMessage('Simulation reset.');
+                }
+                
+                sendBtn.disabled = false;
+                resetBtn.disabled = false;
+            };
+            
+            // --- Event Listeners & Initialization ---
+            sendBtn.addEventListener('click', sendData);
+            resetBtn.addEventListener('click', () => resetSimulation(false));
+            slider.addEventListener('input', (e) => {
+                sliderValue.textContent = e.target.value;
+            });
+            window.addEventListener('resize', positionNodes);
+
+            // Initial setup
+            positionNodes();
+            logMessage('Simulation initialized. Select a destination, enter data, and click send.');
+        });
+    </script>
+</body>
+</html>
+
+
+
+

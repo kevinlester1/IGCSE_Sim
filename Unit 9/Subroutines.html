@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Knowledge Graph: IGCSE CS Procedures and Functions</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 1rem 0;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #4A148C; /* Purple theme for this graph */
+        }
+        
+        .header p {
+            margin: 0.25rem 0 0;
+            color: #555;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 85px);
+            max-width: 100%;
+        }
+
+        #graph-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #info-panel {
+            width: 350px;
+            flex-shrink: 0;
+            background-color: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        #info-panel h2 {
+            margin-top: 0;
+            color: #4A148C;
+            border-bottom: 2px solid #7B1FA2;
+            padding-bottom: 0.5rem;
+        }
+        
+        #info-panel p {
+            line-height: 1.6;
+        }
+        
+        #info-panel strong {
+            color: #7B1FA2;
+        }
+        
+        #info-panel code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: pointer;
+            transition: r 0.15s ease-in-out;
+        }
+
+        .nodes circle.selected {
+            stroke: #ffab40; /* Amber color for selection */
+            stroke-width: 3px;
+        }
+
+        .labels text {
+            pointer-events: none;
+            font-size: 12px;
+            font-weight: 500;
+            text-anchor: middle;
+            paint-order: stroke;
+            stroke: white;
+            stroke-width: 2.5px;
+            stroke-linecap: butt;
+            stroke-linejoin: round;
+        }
+
+        .link-labels text {
+            pointer-events: none;
+            font-size: 10px;
+            fill: #555;
+            text-anchor: middle;
+        }
+
+        #info-panel > * {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>IGCSE Computer Science</h1>
+        <p>Procedures and Functions Concepts</p>
+    </div>
+
+    <div class="container">
+        <div id="graph-container"></div>
+        <div id="info-panel">
+            <h2>Welcome!</h2>
+            <p>This is an interactive knowledge graph based on the concepts from your <strong>Procedures and Functions</strong> presentation.</p>
+            <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>
+        </div>
+    </div>
+
+    <script>
+        const graphData = {
+            nodes: [
+                // Core Concepts
+                { id: "Subroutine", group: 1, radius: 25, description: "A self-contained block of code that performs a specific task. <br><br><strong>Real-world Example:</strong> A recipe to 'Make a lemon meringue pie' can be broken down into subroutines: 'Make the filling', 'Make the pastry', etc. <br><br><strong>Common Misconception:</strong> That 'subroutine' is just another word for 'function'. A subroutine is the general term for both procedures and functions. <br><br><strong>Sample Question:</strong> Explain, using an example, what is meant by a 'subroutine'. <br><br><strong>Model Answer:</strong> A subroutine is a named block of code that performs a specific task. For example, a program to calculate a restaurant bill might have a subroutine called `calculate_total()` to add up the cost of all items ordered." },
+                { id: "Procedure", group: 1, radius: 20, description: "A type of subroutine that executes code but does NOT return a value. <br><br><strong>Real-world Example:</strong> A <code>showMenu()</code> procedure in a game displays text on the screen. <br><br><strong>Common Misconception:</strong> That a procedure can send back a value to be stored in a variable. It can change a global variable, but it cannot `RETURN` a value. <br><br><strong>Sample Question:</strong> Explain why a procedure would be a suitable choice for displaying a user's score at the end of a game. <br><br><strong>Model Answer:</strong> A procedure is suitable because its job is to perform an action (displaying the score) without needing to send a value back to the main program. A procedure like `display_score(finalScore)` could be called to show the result to the user." },
+                { id: "Function", group: 1, radius: 20, description: "A type of subroutine that executes code and ALWAYS returns a single value. <br><br><strong>Real-world Example:</strong> A <code>random(1,6)</code> function which returns a number between 1 and 6. <br><br><strong>Common Misconception:</strong> That a function can return multiple values. A function is designed to return only one value. <br><br><strong>Sample Question:</strong> State why a function is more appropriate than a procedure for calculating the area of a circle. <br><br><strong>Model Answer:</strong> A function is more appropriate because it must return a single value (the calculated area) back to the main program to be used, for example, stored in a variable or printed." },
+                { id: "Call", group: 1, radius: 16, description: "An instruction that tells the program to execute a subroutine. <br><br><strong>Real-world Example:</strong> <code>CALL showMenu</code> or <code>answer ← sum(5, 3)</code>. <br><br><strong>Common Misconception:</strong> Forgetting that a function call must be part of an expression, while a procedure call is a standalone statement. <br><br><strong>Sample Question:</strong> Describe what happens when a subroutine is 'called'. <br><br><strong>Model Answer:</strong> When a subroutine is called, the program's main flow pauses and control transfers to the subroutine. The code inside is executed, and once finished, control returns to the point immediately after the call was made." },
+
+                // Data Flow
+                { id: "Parameters", group: 2, radius: 22, description: "Values passed into a subroutine for it to use. <br><br><strong>Real-world Example:</strong> In <code>sum(5, 3)</code>, the values `5` and `3` are the parameters. <br><br><strong>Common Misconception:</strong> Thinking the variable names used when calling a subroutine must match the parameter names inside the subroutine. <br><br><strong>Sample Question:</strong> Explain the purpose of using parameters in a subroutine. <br><br><strong>Model Answer:</strong> Parameters allow data to be passed into a subroutine from the calling code. This makes the subroutine flexible and reusable, as it can operate on different data each time it is called." },
+                { id: "Return Value", group: 2, radius: 18, description: "The single value that a function sends back to the part of the program that called it. <br><br><strong>Real-world Example:</strong> The function `sum(5, 3)` returns the value `8`. <br><br><strong>Common Misconception:</strong> Confusing a `RETURN` value with an `OUTPUT`. A return value is sent to the code; an output is displayed to the user. <br><br><strong>Sample Question:</strong> Identify which type of subroutine uses a return value and explain what it is. <br><br><strong>Model Answer:</strong> A function uses a return value. It is the single piece of data that the function sends back to the main program after it has finished its task. This value can then be assigned to a variable." },
+
+                // Variables & Scope
+                { id: "Scope", group: 3, radius: 25, description: "Defines where in a program a variable can be used. <br><br><strong>Real-world Example:</strong> Think of subroutines as houses. You can see global variables (outside), but you can't see the local variables inside other 'houses'. <br><br><strong>Common Misconception:</strong> Assuming all variables can be accessed from anywhere. <br><br><strong>Sample Question:</strong> Explain the term 'scope' in relation to variables. <br><br><strong>Model Answer:</strong> Scope refers to the part of the program where a variable is accessible. A variable can have a local scope (only usable within its subroutine) or a global scope (accessible from anywhere in the program)." },
+                { id: "Local Variable", group: 3, radius: 20, description: "A variable declared inside a subroutine, only accessible within that subroutine. <br><br><strong>Real-world Example:</strong> In <code>FUNCTION sum(a, b)</code>, a variable <code>total ← a + b</code> is local. <br><br><strong>Common Misconception:</strong> Thinking a local variable's value is remembered between calls. It is re-created every time. <br><br><strong>Sample Question:</strong> State two characteristics of a local variable. <br><br><strong>Model Answer:</strong> 1. It is declared inside a subroutine. 2. It can only be accessed from within that subroutine." },
+                { id: "Global Variable", group: 3, radius: 20, description: "A variable declared in the main program that is accessible from anywhere. <br><br><strong>Real-world Example:</strong> A constant like <code>VAT_RATE ← 0.20</code> can be global. <br><br><strong>Common Misconception:</strong> Thinking it's good practice to make all variables global. This can lead to hard-to-find bugs. <br><br><strong>Sample Question:</strong> Give one advantage and one disadvantage of using global variables. <br><br><strong>Model Answer:</strong> Advantage: They can be accessed from any part of the program. Disadvantage: Their value can be changed unexpectedly by any subroutine, making the program hard to debug." },
+
+                // Benefits
+                { id: "Why use Subroutines?", group: 4, radius: 28, description: "The collective advantages of using subroutines in programming. <br><br><strong>Real-world Example:</strong> Building a car on an assembly line where different teams (subroutines) work on different parts. <br><br><strong>Common Misconception:</strong> That using subroutines is only for 'expert' programmers. They make coding easier for everyone. <br><br><strong>Sample Question:</strong> State two benefits of using subroutines when writing a program. <br><br><strong>Model Answer:</strong> One benefit is code reusability, saving time. Another benefit is decomposition, breaking a large problem into smaller, manageable parts." },
+                { id: "Decomposition", group: 4, radius: 18, description: "Breaking down a large, complex problem into smaller, manageable sub-problems. <br><br><strong>Real-world Example:</strong> Planning an event by decomposing it into 'book venue', 'send invitations', etc. <br><br><strong>Common Misconception:</strong> That this makes a program slower. It makes it easier for humans to design and debug. <br><br><strong>Sample Question:</strong> Explain how decomposition helps programmers. <br><br><strong>Model Answer:</strong> Decomposition is breaking a large problem into smaller sub-problems. Each sub-problem can be solved individually (often as a subroutine), making the overall problem easier to understand and manage." },
+                { id: "Reusability", group: 4, radius: 18, description: "Subroutines can be saved and reused in different programs. <br><br><strong>Real-world Example:</strong> A chef reuses a basic tomato sauce recipe (subroutine) in many different dishes. <br><br><strong>Common Misconception:</strong> That reusability is just copying and pasting code. It means calling the same single piece of code. <br><br><strong>Sample Question:</strong> Describe what is meant by 'reusability' in the context of subroutines. <br><br><strong>Model Answer:</strong> Reusability means a subroutine can be called multiple times from different parts of a program, or even used in different programs, without having to be rewritten." },
+                { id: "Maintainability", group: 4, radius: 18, description: "Programs are easier to debug and update because changes only need to be made in one self-contained subroutine. <br><br><strong>Real-world Example:</strong> If a car's engine has a fault, mechanics fix the engine (subroutine) without rebuilding the whole car. <br><br><strong>Common Misconception:</strong> That you have to remember everywhere you used a subroutine to change it. You change it once. <br><br><strong>Sample Question:</strong> Explain how using subroutines improves program maintainability. <br><br><strong>Model Answer:</strong> Using subroutines means code is organized into logical blocks. If a bug needs fixing, the programmer only needs to edit the relevant subroutine, and the change will apply everywhere it is called." }
+            ],
+            links: [
+                { source: "Subroutine", target: "Procedure", label: "is a type of" },
+                { source: "Subroutine", target: "Function", label: "is a type of" },
+                { source: "Function", target: "Return Value", label: "produces a" },
+                { source: "Subroutine", target: "Call", label: "is executed by a" },
+                { source: "Subroutine", target: "Parameters", label: "can accept" },
+                { source: "Subroutine", target: "Scope", label: "operates within a" },
+                { source: "Scope", target: "Local Variable", label: "defines" },
+                { source: "Scope", target: "Global Variable", label: "defines" },
+                { source: "Local Variable", target: "Subroutine", label: "exists inside a" },
+                { source: "Subroutine", target: "Why use Subroutines?", label: "provides" },
+                { source: "Why use Subroutines?", target: "Decomposition", label: "benefit is" },
+                { source: "Why use Subroutines?", target: "Reusability", label: "benefit is" },
+                { source: "Why use Subroutines?", target: "Maintainability", label: "benefit is" }
+            ]
+        };
+
+        const width = document.getElementById('graph-container').offsetWidth;
+        const height = document.getElementById('graph-container').offsetHeight;
+
+        const color = d3.scaleOrdinal(d3.schemeAccent);
+
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-450))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY());
+
+        const svg = d3.select("#graph-container").append("svg")
+            .attr("viewBox", [0, 0, width, height])
+            .on("click", backgroundClicked);
+
+        const container = svg.append("g");
+        
+        const link = container.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graphData.links)
+            .enter().append("line")
+            .attr("stroke-width", 2);
+
+        const linkLabel = container.append("g")
+            .attr("class", "link-labels")
+            .selectAll("text")
+            .data(graphData.links)
+            .enter().append("text")
+            .text(d => d.label);
+
+        const node = container.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graphData.nodes)
+            .enter().append("circle")
+            .attr("r", d => d.radius)
+            .attr("fill", d => color(d.group))
+            .call(drag(simulation))
+            .on("click", nodeClicked)
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout);
+            
+        const label = container.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(graphData.nodes)
+            .enter().append("text")
+            .text(d => d.id)
+            .attr("dx", 0)
+            .attr("dy", ".35em");
+            
+        node.append("title")
+            .text(d => d.id);
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+            
+            linkLabel
+                .attr("x", d => (d.source.x + d.target.x) / 2)
+                .attr("y", d => (d.source.y + d.target.y) / 2);
+
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+            
+            label
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+        
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+        }
+
+        function mouseover(event, d) {
+            d3.select(this).attr("r", d.radius * 1.2);
+        }
+
+        function mouseout(event, d) {
+            if (!d3.select(this).classed("selected")) {
+                d3.select(this).attr("r", d.radius);
+            }
+        }
+
+        function nodeClicked(event, d) {
+            event.stopPropagation();
+            node.classed('selected', false).attr("r", n => n.radius);
+            d3.select(this).classed('selected', true).attr("r", d.radius * 1.2);
+            const infoPanel = d3.select("#info-panel");
+            infoPanel.html(`<h2>${d.id}</h2><p>${d.description}</p>`);
+        }
+
+        function backgroundClicked() {
+            node.classed('selected', false).attr("r", d => d.radius);
+            const infoPanel = d3.select("#info-panel");
+            infoPanel.html(`
+                <h2>Welcome!</h2>
+                <p>This is an interactive knowledge graph based on the concepts from your <strong>Procedures and Functions</strong> presentation.</p>
+                <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>`);
+        }
+        
+        const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => {
+            container.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+
+        window.addEventListener('resize', () => {
+            const newWidth = document.getElementById('graph-container').offsetWidth;
+            const newHeight = document.getElementById('graph-container').offsetHeight;
+            svg.attr("viewBox", [0, 0, newWidth, newHeight]);
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2)).restart();
+        });
+    </script>
+</body>
+</html>
+

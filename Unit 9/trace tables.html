@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Testing and Tracing Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .activity-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .code-block {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            white-space: pre;
+            line-height: 1.6;
+            overflow-x: auto;
+        }
+        .trace-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1.5rem;
+        }
+        .trace-table th, .trace-table td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .trace-table th {
+            background-color: #e5e7eb;
+        }
+        .trace-table input {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.25rem;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .code-highlight {
+           background-color: #4f46e5;
+           color: white;
+           padding: 0.1rem 0.3rem;
+           border-radius: 0.25rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            -webkit-appearance: none;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+         .btn-primary:disabled {
+            background-color: #a5b4fc;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #1f2937;
+        }
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+        .feedback {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+        }
+        .feedback-correct {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem 0.5rem 0 0;
+            font-weight: 600;
+            cursor: pointer;
+            background-color: #e5e7eb;
+            color: #4b5563;
+            border: 1px solid #d1d5db;
+            border-bottom: none;
+        }
+        .tab-btn.active {
+            background-color: white;
+            color: #4f46e5;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        .tab-content {
+            display: none;
+            background-color: white;
+            padding: 2rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0 0.75rem 0.75rem 0.75rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        /* Drag and Drop Styles */
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            min-height: 200px;
+            background-color: #f9fafb;
+        }
+        .drag-item {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.375rem;
+            cursor: grab;
+            font-family: monospace;
+            text-align: left;
+        }
+        .drag-item:active {
+            cursor: grabbing;
+        }
+        .drag-item.indent-1 {
+            margin-left: 2rem;
+        }
+         .drag-item.indent-2 {
+            margin-left: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container mx-auto p-4 md:p-8 max-w-6xl">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-bold text-gray-800">Testing & Tracing Practice</h1>
+            <p class="text-lg text-gray-600 mt-2">Learn concepts, practice tracing, and build algorithms.</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap border-b border-gray-300">
+            <button class="tab-btn active" onclick="openTab(event, 'testDataTab')">Understanding Test Data</button>
+            <button class="tab-btn" onclick="openTab(event, 'traceTablesTab')">Trace Table Practice</button>
+            <button class="tab-btn" onclick="openTab(event, 'pseudocodeTab')">Pseudocode Challenges</button>
+        </div>
+
+        <!-- Test Data Tab Content -->
+        <div id="testDataTab" class="tab-content active">
+            <div class="activity-card">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Types of Test Data</h2>
+                <p class="mb-4 text-gray-600">When we test a program, we use different types of data to make sure it works correctly and can handle unexpected inputs. Here are the main types:</p>
+                <ul class="list-disc list-inside space-y-3 text-gray-700">
+                    <li><strong>Normal Data:</strong> This is the type of data that you would expect a user to enter. It's valid, sensible, and falls well within the accepted range.</li>
+                    <li><strong>Extreme Data:</strong> This is data that is still valid but is at the very limits of the acceptable range. For example, the smallest and largest possible numbers.</li>
+                    <li><strong>Boundary Data:</strong> This is similar to extreme data, but it checks the values on both sides of the boundary. You test the last valid value and the first invalid value to see if the program handles the "edge cases" correctly.</li>
+                    <li><strong>Abnormal Data:</strong> This is data that should be rejected by the program. It can be of the wrong data type (e.g., text instead of a number) or completely outside the valid range.</li>
+                </ul>
+            </div>
+            <div class="activity-card" id="activity_test_1">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Question 1: Score Validation</h2>
+                <p class="mb-4 text-gray-600">A program asks for a score between 1 and 100 (inclusive). Provide examples for each type of test data.</p>
+                <div class="space-y-4">
+                    <div>
+                        <label for="normal-data" class="block font-medium text-gray-700">Normal Data:</label>
+                        <input type="text" id="normal-data" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 50">
+                    </div>
+                    <div>
+                        <label for="extreme-data" class="block font-medium text-gray-700">Extreme Data:</label>
+                        <input type="text" id="extreme-data" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 1, 100">
+                    </div>
+                    <div>
+                        <label for="boundary-data" class="block font-medium text-gray-700">Boundary Data:</label>
+                        <input type="text" id="boundary-data" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 0, 1, 100, 101">
+                    </div>
+                    <div>
+                        <label for="abnormal-data" class="block font-medium text-gray-700">Abnormal Data:</label>
+                        <input type="text" id="abnormal-data" class="mt-1 block w-full p-2 border border-gray-300 rounded-md" placeholder="e.g., 'hello' or -10">
+                    </div>
+                </div>
+                 <div id="feedback_test_1" class="feedback hidden"></div>
+                <div class="mt-6">
+                    <button id="check_btn_test_1" class="btn btn-primary">Check Answers</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Trace Tables Tab Content -->
+        <div id="traceTablesTab" class="tab-content">
+            <!-- All 5 practice problems from previous step -->
+            <div class="activity-card" id="practice1">
+                <h3 class="text-xl font-semibold mb-2 text-gray-700">Practice 1: Sum of Even Numbers</h3>
+                <p class="mb-4 text-gray-600">Trace this algorithm, which sums all even numbers from 2 up to 8.</p>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div class="code-block"><span id="p1-line-1">1: Total ← 0</span><span id="p1-line-2">2: Count ← 2</span><span id="p1-line-3">3: WHILE Count <= 8 DO</span><span id="p1-line-4">4:   Total ← Total + Count</span><span id="p1-line-5">5:   Count ← Count + 2</span><span id="p1-line-6">6: ENDWHILE</span><span id="p1-line-7">7: OUTPUT Total</span></div><div><table class="trace-table"><thead><tr><th>Line</th><th>Total</th><th>Count</th><th>Condition</th><th>Output</th></tr></thead><tbody id="p1-tbody"></tbody></table><div id="p1-feedback" class="feedback hidden"></div></div></div>
+                <div class="mt-6 flex gap-4"><button id="p1-step-btn" class="btn btn-primary">Next Step</button><button id="p1-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+            <div class="activity-card" id="practice2">
+                <h3 class="text-xl font-semibold mb-2 text-gray-700">Practice 2: Factorial Calculation</h3>
+                <p class="mb-4 text-gray-600">Trace this algorithm that calculates the factorial of 4 (4 * 3 * 2 * 1).</p>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div class="code-block"><span id="p2-line-1">1: Number ← 4</span><span id="p2-line-2">2: Factorial ← 1</span><span id="p2-line-3">3: FOR Counter ← 1 TO Number DO</span><span id="p2-line-4">4:   Factorial ← Factorial * Counter</span><span id="p2-line-5">5: ENDFOR</span><span id="p2-line-6">6: OUTPUT Factorial</span></div><div><table class="trace-table"><thead><tr><th>Line</th><th>Number</th><th>Factorial</th><th>Counter</th><th>Output</th></tr></thead><tbody id="p2-tbody"></tbody></table><div id="p2-feedback" class="feedback hidden"></div></div></div>
+                 <div class="mt-6 flex gap-4"><button id="p2-step-btn" class="btn btn-primary">Next Step</button><button id="p2-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+            <div class="activity-card" id="practice3">
+                <h3 class="text-xl font-semibold mb-2 text-gray-700">Practice 3: User Input Validation</h3>
+                <p class="mb-4 text-gray-600">Trace this algorithm. Assume the user inputs `12` first, and then `5`.</p>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div class="code-block"><span id="p3-line-1">1: Valid ← FALSE</span><span id="p3-line-2">2: REPEAT</span><span id="p3-line-3">3:   INPUT UserNum</span><span id="p3-line-4">4:   IF UserNum > 0 AND UserNum < 10 THEN</span><span id="p3-line-5">5:     Valid ← TRUE</span><span id="p3-line-6">6:   ELSE</span><span id="p3-line-7">7:     OUTPUT "Invalid input"</span><span id="p3-line-8">8:   ENDIF</span><span id="p3-line-9">9: UNTIL Valid = TRUE</span><span id="p3-line-10">10: OUTPUT "Success"</span></div><div><table class="trace-table"><thead><tr><th>Line</th><th>Valid</th><th>UserNum</th><th>Condition</th><th>Output</th></tr></thead><tbody id="p3-tbody"></tbody></table><div id="p3-feedback" class="feedback hidden"></div></div></div>
+                 <div class="mt-6 flex gap-4"><button id="p3-step-btn" class="btn btn-primary">Next Step</button><button id="p3-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+            <div class="activity-card" id="practice4">
+                <h3 class="text-xl font-semibold mb-2 text-gray-700">Practice 4: Finding the Largest Number</h3>
+                <p class="mb-4 text-gray-600">Trace this algorithm that finds the largest number in the list: [15, 27, 12, 43, 19].</p>
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div class="code-block"><span id="p4-line-1">1: Numbers ← [15, 27, 12, 43, 19]</span><span id="p4-line-2">2: Largest ← Numbers[0]</span><span id="p4-line-3">3: FOR i ← 1 TO 4 DO</span><span id="p4-line-4">4:   IF Numbers[i] > Largest THEN</span><span id="p4-line-5">5:     Largest ← Numbers[i]</span><span id="p4-line-6">6:   ENDIF</span><span id="p4-line-7">7: ENDFOR</span><span id="p4-line-8">8: OUTPUT Largest</span></div><div><table class="trace-table"><thead><tr><th>Line</th><th>Largest</th><th>i</th><th>Condition</th><th>Output</th></tr></thead><tbody id="p4-tbody"></tbody></table><div id="p4-feedback" class="feedback hidden"></div></div></div>
+                 <div class="mt-6 flex gap-4"><button id="p4-step-btn" class="btn btn-primary">Next Step</button><button id="p4-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+            <div class="activity-card" id="practice5">
+                 <h3 class="text-xl font-semibold mb-2 text-gray-700">Practice 5: Simple Division</h3>
+                 <p class="mb-4 text-gray-600">This algorithm performs division using subtraction. Trace it, assuming the user inputs `20` for A and `5` for B.</p>
+                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-8"><div class="code-block"><span id="p5-line-1">1: INPUT A, B</span><span id="p5-line-2">2: C ← 0</span><span id="p5-line-3">3: WHILE A >= B DO</span><span id="p5-line-4">4:   A ← A - B</span><span id="p5-line-5">5:   C ← C + 1</span><span id="p5-line-6">6: ENDWHILE</span><span id="p5-line-7">7: OUTPUT C</span><span id="p5-line-8">8: OUTPUT A</span></div><div><table class="trace-table"><thead><tr><th>Line</th><th>A</th><th>B</th><th>C</th><th>Condition</th><th>Output</th></tr></thead><tbody id="p5-tbody"></tbody></table><div id="p5-feedback" class="feedback hidden"></div></div></div>
+                 <div class="mt-6 flex gap-4"><button id="p5-step-btn" class="btn btn-primary">Next Step</button><button id="p5-reset-btn" class="btn btn-secondary">Reset</button></div>
+             </div>
+        </div>
+
+        <!-- Pseudocode Challenge Tab -->
+        <div id="pseudocodeTab" class="tab-content">
+            <!-- Challenge 1 -->
+            <div class="activity-card" id="pseudo-challenge-1">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Challenge 1: Find the Maximum</h2>
+                <p class="mb-4 text-gray-600">Create an algorithm that asks for two numbers and then outputs the larger one. Drag blocks from the pool to the answer area.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6"><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Code Blocks</h3><div id="c1-pool" class="drop-zone p-4 bg-gray-50"><div class="drag-item" draggable="true" id="c1-drag-1">INPUT Num1</div><div class="drag-item" draggable="true" id="c1-drag-2">INPUT Num2</div><div class="drag-item" draggable="true" id="c1-drag-3">IF Num1 > Num2 THEN</div><div class="drag-item indent-1" draggable="true" id="c1-drag-4">OUTPUT Num1</div><div class="drag-item" draggable="true" id="c1-drag-5">ELSE</div><div class="drag-item indent-1" draggable="true" id="c1-drag-6">OUTPUT Num2</div><div class="drag-item" draggable="true" id="c1-drag-7">ENDIF</div></div></div><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Your Algorithm</h3><div id="c1-answer" class="drop-zone"></div></div></div>
+                <div id="c1-feedback" class="feedback hidden mt-4"></div>
+                <div class="mt-6 flex gap-4"><button id="c1-check-btn" class="btn btn-primary">Check Answer</button><button id="c1-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+            <!-- Challenge 2 -->
+            <div class="activity-card" id="pseudo-challenge-2">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Challenge 2: Calculate Average</h2>
+                <p class="mb-4 text-gray-600">Create an algorithm that asks for three numbers, calculates their average, and outputs the result.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6"><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Code Blocks</h3><div id="c2-pool" class="drop-zone p-4 bg-gray-50"><div class="drag-item" draggable="true" id="c2-drag-1">INPUT Num1</div><div class="drag-item" draggable="true" id="c2-drag-2">INPUT Num2</div><div class="drag-item" draggable="true" id="c2-drag-3">INPUT Num3</div><div class="drag-item" draggable="true" id="c2-drag-4">Sum ← Num1 + Num2 + Num3</div><div class="drag-item" draggable="true" id="c2-drag-5">Average ← Sum / 3</div><div class="drag-item" draggable="true" id="c2-drag-6">OUTPUT Average</div></div></div><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Your Algorithm</h3><div id="c2-answer" class="drop-zone"></div></div></div>
+                <div id="c2-feedback" class="feedback hidden mt-4"></div>
+                <div class="mt-6 flex gap-4"><button id="c2-check-btn" class="btn btn-primary">Check Answer</button><button id="c2-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+             <!-- Challenge 3 -->
+            <div class="activity-card" id="pseudo-challenge-3">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Challenge 3: Countdown</h2>
+                <p class="mb-4 text-gray-600">Create an algorithm that counts down from 5 and outputs each number using a WHILE loop.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6"><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Code Blocks</h3><div id="c3-pool" class="drop-zone p-4 bg-gray-50"><div class="drag-item" draggable="true" id="c3-drag-1">Count ← 5</div><div class="drag-item" draggable="true" id="c3-drag-2">WHILE Count > 0 DO</div><div class="drag-item indent-1" draggable="true" id="c3-drag-3">OUTPUT Count</div><div class="drag-item indent-1" draggable="true" id="c3-drag-4">Count ← Count - 1</div><div class="drag-item" draggable="true" id="c3-drag-5">ENDWHILE</div></div></div><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Your Algorithm</h3><div id="c3-answer" class="drop-zone"></div></div></div>
+                <div id="c3-feedback" class="feedback hidden mt-4"></div>
+                <div class="mt-6 flex gap-4"><button id="c3-check-btn" class="btn btn-primary">Check Answer</button><button id="c3-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+             <!-- Challenge 4 -->
+            <div class="activity-card" id="pseudo-challenge-4">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Challenge 4: Positive, Negative, or Zero</h2>
+                <p class="mb-4 text-gray-600">Create an algorithm that takes a number and outputs whether it's "Positive", "Negative", or "Zero".</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6"><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Code Blocks</h3><div id="c4-pool" class="drop-zone p-4 bg-gray-50"><div class="drag-item" draggable="true" id="c4-drag-1">INPUT Number</div><div class="drag-item" draggable="true" id="c4-drag-2">IF Number > 0 THEN</div><div class="drag-item indent-1" draggable="true" id="c4-drag-3">OUTPUT "Positive"</div><div class="drag-item" draggable="true" id="c4-drag-4">ELSE IF Number < 0 THEN</div><div class="drag-item indent-2" draggable="true" id="c4-drag-5">OUTPUT "Negative"</div><div class="drag-item" draggable="true" id="c4-drag-6">ELSE</div><div class="drag-item indent-1" draggable="true" id="c4-drag-7">OUTPUT "Zero"</div><div class="drag-item" draggable="true" id="c4-drag-8">ENDIF</div></div></div><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Your Algorithm</h3><div id="c4-answer" class="drop-zone"></div></div></div>
+                <div id="c4-feedback" class="feedback hidden mt-4"></div>
+                <div class="mt-6 flex gap-4"><button id="c4-check-btn" class="btn btn-primary">Check Answer</button><button id="c4-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+             <!-- Challenge 5 -->
+            <div class="activity-card" id="pseudo-challenge-5">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-700">Challenge 5: Sum a List</h2>
+                <p class="mb-4 text-gray-600">Given the list `Numbers ← [10, 20, 30]`, create an algorithm that calculates and outputs the sum of its elements.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6"><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Code Blocks</h3><div id="c5-pool" class="drop-zone p-4 bg-gray-50"><div class="drag-item" draggable="true" id="c5-drag-1">Numbers ← [10, 20, 30]</div><div class="drag-item" draggable="true" id="c5-drag-2">Total ← 0</div><div class="drag-item" draggable="true" id="c5-drag-3">FOR EACH Num IN Numbers DO</div><div class="drag-item indent-1" draggable="true" id="c5-drag-4">Total ← Total + Num</div><div class="drag-item" draggable="true" id="c5-drag-5">ENDFOR</div><div class="drag-item" draggable="true" id="c5-drag-6">OUTPUT Total</div></div></div><div><h3 class="text-lg font-semibold mb-2 text-gray-700">Your Algorithm</h3><div id="c5-answer" class="drop-zone"></div></div></div>
+                <div id="c5-feedback" class="feedback hidden mt-4"></div>
+                <div class="mt-6 flex gap-4"><button id="c5-check-btn" class="btn btn-primary">Check Answer</button><button id="c5-reset-btn" class="btn btn-secondary">Reset</button></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openTab(evt, tabName) {
+            let i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tab-content");
+            for (i = 0; i < tabcontent.length; i++) { tabcontent[i].style.display = "none"; }
+            tablinks = document.getElementsByClassName("tab-btn");
+            for (i = 0; i < tablinks.length; i++) { tablinks[i].className = tablinks[i].className.replace(" active", ""); }
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.className += " active";
+        }
+
+        const testDataActivity1 = {
+            checkBtn: document.getElementById('check_btn_test_1'),
+            feedbackDiv: document.getElementById('feedback_test_1'),
+            init() { this.checkBtn.addEventListener('click', () => this.checkAnswers()); },
+            checkAnswers() {
+                const normalInput = document.getElementById('normal-data').value.trim();
+                const extremeInput = document.getElementById('extreme-data').value.trim().replace(/\s/g, '');
+                const boundaryInput = document.getElementById('boundary-data').value.trim().replace(/\s/g, '');
+                const abnormalInput = document.getElementById('abnormal-data').value.trim();
+                let isValid = true; let feedback = "Let's review your answers:\n\n";
+                const normalVal = parseInt(normalInput, 10);
+                if (!isNaN(normalVal) && normalVal > 1 && normalVal < 100) { feedback += '✅ Normal data looks good.\n'; } else { isValid = false; feedback += '❌ Normal data should be a number well within the valid range (e.g., between 2 and 99).\n'; }
+                if (extremeInput.split(',').sort().join(',') === '1,100') { feedback += '✅ Extreme data is correct.\n'; } else { isValid = false; feedback += '❌ Extreme data should be the exact smallest and largest valid values (1 and 100).\n'; }
+                const boundaryValues = ['0','1','100','101']; const userBoundaryValues = boundaryInput.split(',').filter(Boolean).sort();
+                if (boundaryValues.every(val => userBoundaryValues.includes(val)) && userBoundaryValues.length === boundaryValues.length) { feedback += '✅ Boundary data is perfect!\n'; } else { isValid = false; feedback += '❌ For boundary data, a complete set would be 0, 1, 100, and 101.\n'; }
+                if (isNaN(parseInt(abnormalInput,10)) || parseInt(abnormalInput,10) < 0 || parseInt(abnormalInput,10) > 101) { feedback += "✅ Abnormal data is correct.\n"; } else { isValid = false; feedback += "❌ Abnormal data should be the wrong type (like text) or clearly invalid (like -50).\n"; }
+                this.showFeedback(feedback, isValid);
+            },
+            showFeedback(message, isCorrect) { this.feedbackDiv.innerText = message; this.feedbackDiv.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect'); this.feedbackDiv.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect'); }
+        };
+        testDataActivity1.init();
+
+        class TraceTableActivity {
+            constructor(id, traceSteps, headers) {
+                this.id = id; this.traceSteps = traceSteps; this.headers = headers;
+                this.stepBtn = document.getElementById(`${id}-step-btn`);
+                this.resetBtn = document.getElementById(`${id}-reset-btn`);
+                this.tbody = document.getElementById(`${id}-tbody`);
+                this.feedbackDiv = document.getElementById(`${id}-feedback`);
+                this.codeLines = document.querySelectorAll(`#${id} .code-block span`);
+                if (!this.stepBtn) return;
+                this.resetBtn.addEventListener('click', () => this.reset());
+                this.stepBtn.addEventListener('click', () => this.nextStep());
+                this.reset();
+            }
+            reset() { this.currentState = { step: 0 }; this.tbody.innerHTML = ''; this.feedbackDiv.classList.add('hidden'); this.stepBtn.disabled = false; this.addRow(); this.updateHighlight(); }
+            addRow() {
+                const row = document.createElement('tr');
+                this.headers.forEach(header => {
+                    const td = document.createElement('td');
+                    if (header.toLowerCase() === 'line') { td.textContent = this.traceSteps[this.currentState.step].line; } else { const input = document.createElement('input'); input.type = 'text'; input.dataset.col = header.toLowerCase(); td.appendChild(input); }
+                    row.appendChild(td);
+                });
+                this.tbody.appendChild(row);
+                const firstInput = row.querySelector('input');
+                if (firstInput) firstInput.focus();
+            }
+            updateHighlight() {
+                this.codeLines.forEach(line => line.classList.remove('code-highlight'));
+                if (!this.traceSteps[this.currentState.step]) return;
+                const lineNum = this.traceSteps[this.currentState.step].line;
+                const lineToHighlight = document.getElementById(`${this.id}-line-${lineNum}`);
+                if (lineToHighlight) lineToHighlight.classList.add('code-highlight');
+            }
+            nextStep() {
+                const expected = this.traceSteps[this.currentState.step];
+                const currentRow = this.tbody.querySelector('tr:last-child');
+                let allCorrect = true;
+                this.headers.forEach(header => {
+                    if (header.toLowerCase() === 'line') return;
+                    const key = header.toLowerCase();
+                    const input = currentRow.querySelector(`input[data-col="${key}"]`);
+                    const userValue = input.value.trim().toUpperCase();
+                    const expectedValue = (expected[key] !== undefined ? String(expected[key]) : '').toUpperCase();
+                    if(userValue !== expectedValue) { allCorrect = false; }
+                });
+                if (allCorrect) {
+                    this.showFeedback('Correct!', true);
+                    currentRow.querySelectorAll('input').forEach(input => input.disabled = true);
+                    this.currentState.step++;
+                    if (this.currentState.step < this.traceSteps.length) { this.addRow(); this.updateHighlight(); } else { this.showFeedback('Congratulations! You have completed the trace.', true); this.stepBtn.disabled = true; }
+                } else { this.showFeedback('Not quite. Check your values for the current line and try again.', false); }
+            }
+            showFeedback(message, isCorrect) { this.feedbackDiv.textContent = message; this.feedbackDiv.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect'); this.feedbackDiv.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect'); }
+        }
+        
+        const p1Headers = ['Line', 'Total', 'Count', 'Condition', 'Output'];
+        const p1Steps = [ { line: 1, total: 0, count: '', condition: '', output: '' }, { line: 2, total: 0, count: 2, condition: '', output: '' }, { line: 3, total: 0, count: 2, condition: 'TRUE', output: '' }, { line: 4, total: 2, count: 2, condition: '', output: '' }, { line: 5, total: 2, count: 4, condition: '', output: '' }, { line: 3, total: 2, count: 4, condition: 'TRUE', output: '' }, { line: 4, total: 6, count: 4, condition: '', output: '' }, { line: 5, total: 6, count: 6, condition: '', output: '' }, { line: 3, total: 6, count: 6, condition: 'TRUE', output: '' }, { line: 4, total: 12, count: 6, condition: '', output: '' }, { line: 5, total: 12, count: 8, condition: '', output: '' }, { line: 3, total: 12, count: 8, condition: 'TRUE', output: '' }, { line: 4, total: 20, count: 8, condition: '', output: '' }, { line: 5, total: 20, count: 10, condition: '', output: '' }, { line: 3, total: 20, count: 10, condition: 'FALSE', output: '' }, { line: 7, total: 20, count: 10, condition: '', output: 20 }, ];
+        new TraceTableActivity('p1', p1Steps, p1Headers);
+        const p2Headers = ['Line', 'Number', 'Factorial', 'Counter', 'Output'];
+        const p2Steps = [ { line: 1, number: 4, factorial: '', counter: '', output: '' }, { line: 2, number: 4, factorial: 1, counter: '', output: '' }, { line: 3, number: 4, factorial: 1, counter: 1, output: '' }, { line: 4, number: 4, factorial: 1, counter: 1, output: '' }, { line: 3, number: 4, factorial: 1, counter: 2, output: '' }, { line: 4, number: 4, factorial: 2, counter: 2, output: '' }, { line: 3, number: 4, factorial: 2, counter: 3, output: '' }, { line: 4, number: 4, factorial: 6, counter: 3, output: '' }, { line: 3, number: 4, factorial: 6, counter: 4, output: '' }, { line: 4, number: 4, factorial: 24, counter: 4, output: '' }, { line: 6, number: 4, factorial: 24, counter: 4, output: 24 }, ];
+        new TraceTableActivity('p2', p2Steps, p2Headers);
+        const p3Headers = ['Line', 'Valid', 'UserNum', 'Condition', 'Output'];
+        const p3Steps = [ { line: 1, valid: 'FALSE', userNum: '', condition: '', output: '' }, { line: 3, valid: 'FALSE', userNum: 12, condition: '', output: '' }, { line: 4, valid: 'FALSE', userNum: 12, condition: 'FALSE', output: '' }, { line: 7, valid: 'FALSE', userNum: 12, condition: '', output: 'Invalid input' }, { line: 9, valid: 'FALSE', userNum: 12, condition: 'FALSE', output: '' }, { line: 3, valid: 'FALSE', userNum: 5, condition: '', output: '' }, { line: 4, valid: 'FALSE', userNum: 5, condition: 'TRUE', output: '' }, { line: 5, valid: 'TRUE', userNum: 5, condition: '', output: '' }, { line: 9, valid: 'TRUE', userNum: 5, condition: 'TRUE', output: '' }, { line: 10, valid: 'TRUE', userNum: 5, condition: '', output: 'Success' }, ];
+        new TraceTableActivity('p3', p3Steps, p3Headers);
+        const p4Headers = ['Line', 'Largest', 'i', 'Condition', 'Output'];
+        const p4Steps = [ { line: 2, largest: 15, i: '', condition: '', output: '' }, { line: 3, largest: 15, i: 1, condition: '', output: '' }, { line: 4, largest: 15, i: 1, condition: 'TRUE', output: '' }, { line: 5, largest: 27, i: 1, condition: '', output: '' }, { line: 3, largest: 27, i: 2, condition: '', output: '' }, { line: 4, largest: 27, i: 2, condition: 'FALSE', output: '' }, { line: 3, largest: 27, i: 3, condition: '', output: '' }, { line: 4, largest: 27, i: 3, condition: 'TRUE', output: '' }, { line: 5, largest: 43, i: 3, condition: '', output: '' }, { line: 3, largest: 43, i: 4, condition: '', output: '' }, { line: 4, largest: 43, i: 4, condition: 'FALSE', output: '' }, { line: 8, largest: 43, i: 4, condition: '', output: 43 }, ];
+        new TraceTableActivity('p4', p4Steps, p4Headers);
+        const p5Headers = ['Line', 'A', 'B', 'C', 'Condition', 'Output'];
+        const p5Steps = [ { line: 1, a: 20, b: 5, c: '', condition: '', output: '' }, { line: 2, a: 20, b: 5, c: 0, condition: '', output: '' }, { line: 3, a: 20, b: 5, c: 0, condition: 'TRUE', output: '' }, { line: 4, a: 15, b: 5, c: 0, condition: '', output: '' }, { line: 5, a: 15, b: 5, c: 1, condition: '', output: '' }, { line: 3, a: 15, b: 5, c: 1, condition: 'TRUE', output: '' }, { line: 4, a: 10, b: 5, c: 1, condition: '', output: '' }, { line: 5, a: 10, b: 5, c: 2, condition: '', output: '' }, { line: 3, a: 10, b: 5, c: 2, condition: 'TRUE', output: '' }, { line: 4, a: 5, b: 5, c: 2, condition: '', output: '' }, { line: 5, a: 5, b: 5, c: 3, condition: '', output: '' }, { line: 3, a: 5, b: 5, c: 3, condition: 'TRUE', output: '' }, { line: 4, a: 0, b: 5, c: 3, condition: '', output: '' }, { line: 5, a: 0, b: 5, c: 4, condition: '', output: '' }, { line: 3, a: 0, b: 5, c: 4, condition: 'FALSE', output: '' }, { line: 7, a: 0, b: 5, c: 4, condition: '', output: 4 }, { line: 8, a: 0, b: 5, c: 4, condition: '', output: 0 }, ];
+        new TraceTableActivity('p5', p5Steps, p5Headers);
+
+        class PseudocodeChallenge {
+            constructor(id, correctOrder, feedback) {
+                this.id = id;
+                this.correctOrder = correctOrder;
+                this.feedback = feedback;
+                this.checkBtn = document.getElementById(`${id}-check-btn`);
+                this.resetBtn = document.getElementById(`${id}-reset-btn`);
+                this.answerZone = document.getElementById(`${id}-answer`);
+                this.codePool = document.getElementById(`${id}-pool`);
+                this.feedbackDiv = document.getElementById(`${id}-feedback`);
+                
+                this.checkBtn.addEventListener('click', () => this.checkAnswer());
+                this.resetBtn.addEventListener('click', () => this.reset());
+
+                this.initDragAndDrop();
+                this.reset();
+            }
+
+            initDragAndDrop() {
+                const items = this.codePool.querySelectorAll('.drag-item');
+                items.forEach(item => {
+                    item.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', e.target.id));
+                });
+
+                [this.codePool, this.answerZone].forEach(zone => {
+                    zone.addEventListener('dragover', e => e.preventDefault());
+                    zone.addEventListener('drop', e => {
+                        e.preventDefault();
+                        const id = e.dataTransfer.getData('text');
+                        if (!id.startsWith(this.id)) return; // Ensure block belongs to this challenge
+                        const draggableElement = document.getElementById(id);
+                        const dropZone = e.target.closest('.drop-zone');
+                        if (dropZone) { dropZone.appendChild(draggableElement); }
+                    });
+                });
+            }
+
+            checkAnswer() {
+                const children = Array.from(this.answerZone.children);
+                const userAnswer = children.map(child => child.id);
+                this.feedbackDiv.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+                if (JSON.stringify(userAnswer) === JSON.stringify(this.correctOrder)) {
+                    this.feedbackDiv.textContent = this.feedback.correct;
+                    this.feedbackDiv.classList.add('feedback-correct');
+                } else {
+                    this.feedbackDiv.textContent = this.feedback.incorrect;
+                    this.feedbackDiv.classList.add('feedback-incorrect');
+                }
+            }
+
+            reset() {
+                while (this.answerZone.firstChild) {
+                    this.codePool.appendChild(this.answerZone.firstChild);
+                }
+                const items = Array.from(this.codePool.children);
+                // Fisher-Yates shuffle
+                for (let i = items.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    this.codePool.insertBefore(items[j], items[i]);
+                }
+                this.feedbackDiv.classList.add('hidden');
+            }
+        }
+
+        new PseudocodeChallenge('c1', 
+            ['c1-drag-1', 'c1-drag-2', 'c1-drag-3', 'c1-drag-4', 'c1-drag-5', 'c1-drag-6', 'c1-drag-7'],
+            { correct: "Correct! This algorithm correctly identifies and outputs the larger of the two numbers.", incorrect: "Not quite right. Check the order of your statements. Remember the logical flow: Input -> Compare -> Output." }
+        );
+        new PseudocodeChallenge('c2',
+            ['c2-drag-1', 'c2-drag-2', 'c2-drag-3', 'c2-drag-4', 'c2-drag-5', 'c2-drag-6'],
+            { correct: "Excellent! The algorithm correctly takes three inputs, calculates the sum and average, and shows the result.", incorrect: "Almost. Make sure you get all three inputs before you try to calculate the sum." }
+        );
+        new PseudocodeChallenge('c3',
+            ['c3-drag-1', 'c3-drag-2', 'c3-drag-3', 'c3-drag-4', 'c3-drag-5'],
+            { correct: "Perfect! This WHILE loop correctly counts down from 5 to 1.", incorrect: "Check the loop structure. The count must be changed inside the loop to avoid an infinite loop." }
+        );
+         new PseudocodeChallenge('c4',
+            ['c4-drag-1', 'c4-drag-2', 'c4-drag-3', 'c4-drag-4', 'c4-drag-5', 'c4-drag-6', 'c4-drag-7', 'c4-drag-8'],
+            { correct: "Great job! Your logic correctly handles all three cases: positive, negative, and zero.", incorrect: "The order of IF / ELSE IF / ELSE is important. Make sure you are checking the conditions in a logical sequence." }
+        );
+        new PseudocodeChallenge('c5',
+            ['c5-drag-1', 'c5-drag-2', 'c5-drag-3', 'c5-drag-4', 'c5-drag-5', 'c5-drag-6'],
+            { correct: "Well done! You correctly initialized the total, looped through the list, and outputted the final sum.", incorrect: "Be sure to initialize the Total to 0 before the loop starts. Otherwise, your sum will be incorrect." }
+        );
+
+    </script>
+</body>
+</html>
+

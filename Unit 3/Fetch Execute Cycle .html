@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch-Decode-Execute Cycle Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+        .component {
+            border: 2px solid #4a5568;
+            background-color: #2d3748;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease-in-out;
+            position: relative;
+        }
+        .component-title {
+            font-weight: 600;
+            color: #a0aec0;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .register-value {
+            font-weight: 700;
+            color: #63b3ed;
+            font-size: 1.25rem;
+            min-height: 30px;
+            transition: all 0.3s ease-in-out;
+        }
+        .highlight {
+            border-color: #63b3ed;
+            box-shadow: 0 0 15px rgba(99, 179, 237, 0.5);
+            transform: scale(1.05);
+        }
+        .value-flash {
+            animation: flash 0.5s ease-in-out;
+        }
+        @keyframes flash {
+            0% { color: #63b3ed; }
+            50% { color: #f6e05e; transform: scale(1.1); }
+            100% { color: #63b3ed; transform: scale(1); }
+        }
+        .arrow {
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+            stroke: #9f7aea;
+            stroke-width: 2.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+        .arrow.visible {
+            opacity: 1;
+        }
+        .control-bus {
+            stroke-dasharray: 4;
+            stroke: #f56565;
+        }
+        .memory-location {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            background-color: #4a5568;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+        .memory-location .address {
+            color: #a0aec0;
+        }
+        .memory-location .data {
+            color: #cbd5e0;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-7xl">
+        <h1 class="text-3xl font-bold text-center mb-6 text-white">Fetch-Decode-Execute Cycle Simulation</h1>
+
+        <!-- Main Simulation Grid -->
+        <div class="grid grid-cols-3 gap-8 items-start relative" style="height: 600px;">
+
+            <!-- Column 1: CPU -->
+            <div class="flex flex-col gap-4 h-full" id="cpu-container">
+                <div class="component flex-grow flex flex-col justify-between" id="cpu">
+                    <div class="component-title">Central Processing Unit (CPU)</div>
+                    <div class="grid grid-cols-2 gap-4 p-2 border-2 border-dashed border-gray-600 rounded-lg h-full">
+                        <!-- CU and ALU -->
+                        <div class="component col-span-2" id="cu">
+                            <div class="component-title">Control Unit (CU)</div>
+                        </div>
+                        <div class="component col-span-2" id="alu">
+                            <div class="component-title">Arithmetic Logic Unit (ALU)</div>
+                        </div>
+
+                        <!-- Registers -->
+                        <div class="component" id="pc">
+                            <div class="component-title">PC</div>
+                            <div class="register-value" id="pc-val">001</div>
+                        </div>
+                        <div class="component" id="acc">
+                            <div class="component-title">ACC</div>
+                            <div class="register-value" id="acc-val">0</div>
+                        </div>
+                        <div class="component" id="mar">
+                            <div class="component-title">MAR</div>
+                            <div class="register-value" id="mar-val"></div>
+                        </div>
+                        <div class="component" id="mdr">
+                            <div class="component-title">MDR</div>
+                            <div class="register-value" id="mdr-val"></div>
+                        </div>
+                        <div class="component col-span-2" id="cir">
+                            <div class="component-title">CIR</div>
+                            <div class="register-value" id="cir-val"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 2: Memory and I/O -->
+            <div class="flex flex-col gap-8 h-full items-center justify-center">
+                 <div class="component w-52" id="io">
+                    <div class="component-title">Input/Output</div>
+                </div>
+                <div class="component w-52 flex-grow" id="memory">
+                    <div class="component-title">Main Memory (RAM)</div>
+                    <div id="memory-content" class="space-y-1 p-2 bg-gray-800 rounded-md">
+                        <!-- Memory locations will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Column 3: Explanation and Controls -->
+            <div class="flex flex-col gap-4 h-full">
+                <div class="component flex-grow" id="explanation-box">
+                    <div class="component-title">Explanation</div>
+                    <div class="text-left space-y-2">
+                        <h3 class="text-xl font-semibold text-blue-300" id="step-title">Welcome!</h3>
+                        <div class="text-gray-300" id="step-description">
+                            This simulation demonstrates the Fetch-Decode-Execute cycle, the fundamental process by which computers run programs.
+                            <br/><br/>
+                            Press 'Next Step' to begin the first cycle. The components involved in each step will be highlighted.
+                        </div>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <button id="next-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105">Next Step</button>
+                    <button id="reset-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-lg transition-transform transform hover:scale-105">Reset</button>
+                </div>
+            </div>
+
+            <!-- SVG for Arrows -->
+            <svg id="arrow-svg" class="absolute top-0 left-0 w-full h-full pointer-events-none">
+                <defs>
+                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#9f7aea" />
+                    </marker>
+                    <marker id="arrowhead-control" markerWidth="10" markerHeight="7" refX="0" refY="3.5" orient="auto">
+                        <polygon points="0 0, 10 3.5, 0 7" fill="#f56565" />
+                    </marker>
+                </defs>
+                <!-- Data Arrows -->
+                <path id="pc-mar-arrow" class="arrow" d="M120 440 L280 440"></path>
+                <path id="mar-mem-arrow" class="arrow" d="M350 440 L450 440"></path>
+                <path id="mem-mdr-arrow" class="arrow" d="M450 475 L350 475"></path>
+                <path id="mdr-cir-arrow" class="arrow" d="M280 500 L200 500"></path>
+                <path id="mdr-acc-arrow" class="arrow" d="M280 470 L200 400"></path>
+                <path id="cir-cu-arrow" class="arrow" d="M160 520 L160 210"></path>
+                <path id="cir-mar-arrow" class="arrow" d="M160 520 L160 420 L280 420"></path>
+                <path id="alu-acc-arrow" class="arrow" d="M160 300 L160 400"></path>
+
+                <!-- Control Bus Arrows -->
+                <path id="cu-pc-arrow" class="arrow control-bus" d="M200 200 L120 200 L120 370"></path>
+                <path id="cu-mem-arrow" class="arrow control-bus" d="M220 180 L480 180 L480 250"></path>
+                <path id="cu-alu-arrow" class="arrow control-bus" d="M160 210 L160 270"></path>
+            </svg>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM ELEMENTS ---
+            const nextBtn = document.getElementById('next-btn');
+            const resetBtn = document.getElementById('reset-btn');
+
+            const stepTitle = document.getElementById('step-title');
+            const stepDescription = document.getElementById('step-description');
+
+            const pcVal = document.getElementById('pc-val');
+            const accVal = document.getElementById('acc-val');
+            const marVal = document.getElementById('mar-val');
+            const mdrVal = document.getElementById('mdr-val');
+            const cirVal = document.getElementById('cir-val');
+
+            const memoryContent = document.getElementById('memory-content');
+
+            // --- SIMULATION STATE ---
+            let currentStep = -1;
+            const initialPC = 1;
+            const initialACC = 0;
+
+            const memory = [
+                { address: '000', data: '---' },
+                { address: '001', data: 'LOAD 005' }, // Load value from address 005 into ACC
+                { address: '002', data: 'ADD 006' },  // Add value from address 006 to ACC
+                { address: '003', data: 'STORE 007'},// Store ACC value to address 007
+                { address: '004', data: 'HALT' },
+                { address: '005', data: '15' },      // Data value
+                { address: '006', data: '20' },      // Data value
+                { address: '007', data: '0' },       // Data value
+            ];
+            
+            // --- CYCLE STEPS DEFINITION ---
+            const cycleSteps = [
+                // --- FETCH CYCLE ---
+                {
+                    phase: 'FETCH',
+                    title: '1. PC -> MAR',
+                    description: `The address from the PC is copied to the MAR.<br/><br/><span class='font-semibold text-gray-400'>PC (Program Counter):</span> Holds the address of the next instruction to be executed.<br/><span class='font-semibold text-gray-400'>MAR (Memory Address Register):</span> Holds the address of the current instruction being executed.`,
+                    action: () => {
+                        const pcValue = pcVal.textContent;
+                        marVal.textContent = pcValue;
+                        flashValue(marVal);
+                    },
+                    highlights: ['pc', 'mar'],
+                    arrows: ['pc-mar-arrow']
+                },
+                {
+                    phase: 'FETCH',
+                    title: '2. CU Signals Read & PC Increments',
+                    description: `The CU sends a "read" signal to memory. The PC is then incremented to point to the next instruction.<br/><br/><span class='font-semibold text-gray-400'>PC:</span> Incremented to point to the next instruction's address.`,
+                    action: () => {
+                        let currentPC = parseInt(pcVal.textContent, 10);
+                        pcVal.textContent = String(currentPC + 1).padStart(3, '0');
+                        flashValue(pcVal);
+                    },
+                    highlights: ['cu', 'memory', 'pc'],
+                    arrows: ['cu-mem-arrow', 'cu-pc-arrow']
+                },
+                {
+                    phase: 'FETCH',
+                    title: '3. Memory -> MDR',
+                    description: `The instruction at the address specified by the MAR is copied from memory to the MDR.<br/><br/><span class='font-semibold text-gray-400'>MDR (Memory Data Register):</span> Holds the instruction copied from RAM.`,
+                    action: () => {
+                        const address = marVal.textContent;
+                        const instruction = memory.find(m => m.address === address)?.data || '???';
+                        mdrVal.textContent = instruction;
+                        flashValue(mdrVal);
+                    },
+                    highlights: ['memory', 'mdr', 'mar'],
+                    arrows: ['mar-mem-arrow', 'mem-mdr-arrow']
+                },
+                {
+                    phase: 'FETCH',
+                    title: '4. MDR -> CIR',
+                    description: `The instruction is copied from the MDR to the CIR.<br/><br/><span class='font-semibold text-gray-400'>CIR (Current Instruction Register):</span> Holds the instruction that is currently being decoded and executed.`,
+                    action: () => {
+                        cirVal.textContent = mdrVal.textContent;
+                        mdrVal.textContent = '';
+                        flashValue(cirVal);
+                    },
+                    highlights: ['mdr', 'cir'],
+                    arrows: ['mdr-cir-arrow']
+                },
+                // --- DECODE CYCLE ---
+                {
+                    phase: 'DECODE',
+                    title: '5. Decode Instruction',
+                    description: `The CU decodes the instruction in the CIR to determine what action to take.<br/><br/><span class='font-semibold text-gray-400'>CIR:</span> Holds the instruction that is currently being decoded.`,
+                    action: () => {},
+                    highlights: ['cir', 'cu'],
+                    arrows: ['cir-cu-arrow']
+                },
+                // --- EXECUTE CYCLE (for LOAD 005) ---
+                {
+                    phase: 'EXECUTE (LOAD)',
+                    title: '6. CIR Address -> MAR',
+                    description: `The address part of the instruction (005) is sent to the MAR.<br/><br/><span class='font-semibold text-gray-400'>MAR:</span> Now holds the address of the data that needs to be accessed.`,
+                    action: () => {
+                        const instruction = cirVal.textContent;
+                        const address = instruction.split(' ')[1];
+                        marVal.textContent = address;
+                        flashValue(marVal);
+                    },
+                    highlights: ['cir', 'mar', 'cu'],
+                    arrows: ['cir-mar-arrow']
+                },
+                 {
+                    phase: 'EXECUTE (LOAD)',
+                    title: '7. CU Signals Read',
+                    description: `The CU sends another "read" signal to memory to fetch the data.`,
+                    action: () => {},
+                    highlights: ['cu', 'memory'],
+                    arrows: ['cu-mem-arrow']
+                },
+                {
+                    phase: 'EXECUTE (LOAD)',
+                    title: '8. Memory -> MDR',
+                    description: `The data value (15) is copied from memory into the MDR.<br/><br/><span class='font-semibold text-gray-400'>MDR:</span> Now holds the data to be used in the instruction.`,
+                    action: () => {
+                        const address = marVal.textContent;
+                        const data = memory.find(m => m.address === address)?.data || '???';
+                        mdrVal.textContent = data;
+                        flashValue(mdrVal);
+                    },
+                    highlights: ['memory', 'mdr', 'mar'],
+                    arrows: ['mar-mem-arrow', 'mem-mdr-arrow']
+                },
+                {
+                    phase: 'EXECUTE (LOAD)',
+                    title: '9. MDR -> ACC',
+                    description: `The data is copied from the MDR to the ACC. The LOAD instruction is complete.<br/><br/><span class='font-semibold text-gray-400'>ACC (Accumulator):</span> Where arithmetic and logic results are temporarily stored.`,
+                    action: () => {
+                        accVal.textContent = mdrVal.textContent;
+                        mdrVal.textContent = '';
+                        flashValue(accVal);
+                    },
+                    highlights: ['mdr', 'acc'],
+                    arrows: ['mdr-acc-arrow']
+                },
+                 // --- Cycle for ADD 006 ---
+                {
+                    phase: 'FETCH (ADD)',
+                    title: '10. Fetch Next Instruction',
+                    description: `The next cycle begins by fetching the instruction at the address in the PC (002).`,
+                    action: () => { 
+                        marVal.textContent = pcVal.textContent;
+                        let currentPC = parseInt(pcVal.textContent, 10);
+                        pcVal.textContent = String(currentPC + 1).padStart(3, '0');
+                        mdrVal.textContent = memory.find(m => m.address === '002').data;
+                        cirVal.textContent = mdrVal.textContent;
+                        flashValue(pcVal);
+                        flashValue(cirVal);
+                    },
+                    highlights: ['pc', 'mar', 'mdr', 'cir', 'memory'],
+                    arrows: ['pc-mar-arrow', 'mem-mdr-arrow', 'mdr-cir-arrow'],
+                },
+                {
+                    phase: 'DECODE (ADD)',
+                    title: '11. Decode ADD',
+                    description: `The instruction "ADD 006" is decoded by the CU.<br/><br/><span class='font-semibold text-gray-400'>CIR:</span> Holds the instruction that is currently being decoded and executed.`,
+                    action: () => { 
+                        marVal.textContent = '';
+                        mdrVal.textContent = '';
+                    },
+                    highlights: ['cu', 'cir'],
+                    arrows: ['cir-cu-arrow'],
+                },
+                {
+                    phase: 'EXECUTE (ADD)',
+                    title: '12. Fetch Operand',
+                    description: `The address (006) is sent to the MAR, and the data (20) is fetched into the MDR.`,
+                    action: () => {
+                        marVal.textContent = '006';
+                        mdrVal.textContent = '20';
+                        flashValue(marVal);
+                        flashValue(mdrVal);
+                    },
+                    highlights: ['cir', 'mar', 'memory', 'mdr', 'cu'],
+                    arrows: ['cir-mar-arrow', 'mar-mem-arrow', 'mem-mdr-arrow'],
+                },
+                {
+                    phase: 'EXECUTE (ADD)',
+                    title: '13. ALU Executes ADD',
+                    description: `The CU instructs the ALU to add the value in the ACC (15) and the value in the MDR (20).`,
+                    action: () => {},
+                    highlights: ['cu', 'alu', 'acc', 'mdr'],
+                    arrows: ['cu-alu-arrow']
+                },
+                {
+                    phase: 'EXECUTE (ADD)',
+                    title: '14. Result -> ACC',
+                    description: `The result (35) is sent from the ALU to the Accumulator.<br/><br/><span class='font-semibold text-gray-400'>ACC:</span> The accumulator is where arithmetic and logic results are temporarily stored.`,
+                    action: () => {
+                        accVal.textContent = 35;
+                        mdrVal.textContent = '';
+                        flashValue(accVal);
+                    },
+                    highlights: ['alu', 'acc'],
+                    arrows: ['alu-acc-arrow']
+                },
+                {
+                    phase: 'CYCLE END',
+                    title: 'Cycle Complete',
+                    description: `The Fetch-Decode-Execute cycle is complete. The system is ready to fetch the next instruction. Press "Next Step" to continue or "Reset" to start over.`,
+                    action: () => {
+                        marVal.textContent = '';
+                        mdrVal.textContent = '';
+                        cirVal.textContent = '';
+                    },
+                    highlights: ['cpu'],
+                    arrows: []
+                },
+
+            ];
+
+            // --- FUNCTIONS ---
+            function populateMemory() {
+                memoryContent.innerHTML = '';
+                memory.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'memory-location';
+                    div.id = `mem-${item.address}`;
+                    div.innerHTML = `<span class="address">${item.address}</span><span class="data">${item.data}</span>`;
+                    memoryContent.appendChild(div);
+                });
+            }
+
+            function resetSimulation() {
+                currentStep = -1;
+                pcVal.textContent = String(initialPC).padStart(3, '0');
+                accVal.textContent = initialACC;
+                marVal.textContent = '';
+                mdrVal.textContent = '';
+                cirVal.textContent = '';
+                stepTitle.textContent = 'Welcome!';
+                stepDescription.innerHTML = "This simulation demonstrates the Fetch-Decode-Execute cycle...<br/><br/>Press 'Next Step' to begin.";
+                updateHighlightsAndArrows([], []);
+                populateMemory();
+                memory.find(m => m.address === '007').data = '0'; // Reset stored value
+            }
+
+            function updateHighlightsAndArrows(highlights, arrows) {
+                // Remove all highlights and hide arrows
+                document.querySelectorAll('.component, .memory-location').forEach(el => el.classList.remove('highlight'));
+                document.querySelectorAll('.arrow').forEach(el => el.classList.remove('visible'));
+
+                // Add new highlights
+                highlights.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('highlight');
+                });
+                
+                // Highlight memory if involved
+                const marAddress = marVal.textContent;
+                if (highlights.includes('memory') && marAddress) {
+                    const memEl = document.getElementById(`mem-${marAddress}`);
+                    if(memEl) memEl.classList.add('highlight');
+                }
+
+                // Show new arrows
+                arrows.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('visible');
+                });
+            }
+            
+            function flashValue(element) {
+                element.classList.add('value-flash');
+                setTimeout(() => element.classList.remove('value-flash'), 500);
+            }
+
+            function proceedToNextStep() {
+                currentStep = (currentStep + 1) % cycleSteps.length;
+                const step = cycleSteps[currentStep];
+
+                stepTitle.textContent = step.title;
+                stepDescription.innerHTML = step.description;
+
+                updateHighlightsAndArrows(step.highlights, step.arrows);
+                step.action();
+            }
+
+            // --- EVENT LISTENERS ---
+            nextBtn.addEventListener('click', proceedToNextStep);
+            resetBtn.addEventListener('click', resetSimulation);
+
+            // --- INITIALIZATION ---
+            resetSimulation();
+        });
+    </script>
+</body>
+</html>
+

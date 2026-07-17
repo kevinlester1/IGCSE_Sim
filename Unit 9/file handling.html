@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pseudocode File Handling Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .fira-code {
+            font-family: 'Fira Code', monospace;
+        }
+        .highlight {
+            background-color: #fbbf24; /* amber-400 */
+            border-radius: 4px;
+            transition: all 0.3s ease-in-out;
+        }
+        .status-open {
+            color: #22c55e; /* green-500 */
+            font-weight: 600;
+        }
+        .status-closed {
+            color: #ef4444; /* red-500 */
+            font-weight: 600;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-7xl bg-white rounded-2xl shadow-2xl p-6 md:p-8 grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        
+        <!-- Left Column: Code & Controls -->
+        <div class="flex flex-col space-y-6">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900">File Handling Simulation</h1>
+                <p class="text-slate-600 mt-1">Select an example and run the pseudocode step-by-step.</p>
+            </div>
+
+            <!-- Example Selector -->
+            <div>
+                <label for="example-selector" class="block text-sm font-medium text-slate-700 mb-2">Choose an Example:</label>
+                <select id="example-selector" class="w-full p-2 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition">
+                    <option value="read">Reading from a file</option>
+                    <option value="write">Writing to a file</option>
+                </select>
+            </div>
+
+            <!-- Pseudocode Editor -->
+            <div>
+                 <h2 class="text-lg font-semibold mb-2 text-slate-800">Pseudocode</h2>
+                <div id="code-display" class="fira-code bg-slate-900 text-white p-4 rounded-lg text-sm leading-relaxed shadow-inner h-80 overflow-y-auto">
+                    <!-- Code will be injected here -->
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col sm:flex-row gap-4">
+                <button id="run-btn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition-transform transform hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Run Code
+                </button>
+                <button id="reset-btn" class="w-full bg-slate-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-slate-600 transition-transform transform hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L20.49 2a9 9 0 0 1-14.85 3.36L3.51 9z"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L3.51 22a9 9 0 0 1 14.85-3.36L20.49 15z"></path></svg>
+                    Reset
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Column: Visualization -->
+        <div class="flex flex-col space-y-6 bg-slate-50 p-6 rounded-xl border border-slate-200">
+            <!-- Explanation Box -->
+            <div>
+                 <h2 class="text-lg font-semibold mb-2 text-slate-800">Explanation</h2>
+                <div id="explanation-box" class="bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg min-h-[80px] flex items-center justify-center text-center transition">
+                    <p>Click "Run Code" to start the simulation.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Virtual File -->
+                <div class="space-y-4">
+                    <h2 class="text-lg font-semibold text-slate-800">Virtual File: <span class="fira-code">marks.txt</span></h2>
+                    <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200 min-h-[150px]">
+                        <div class="flex justify-between items-center mb-2 pb-2 border-b">
+                            <h3 class="font-semibold">Status:</h3>
+                            <span id="file-status" class="status-closed">CLOSED</span>
+                        </div>
+                        <pre id="file-content" class="fira-code text-sm text-slate-700 whitespace-pre-wrap"></pre>
+                    </div>
+                </div>
+
+                <!-- Program State -->
+                <div class="space-y-4">
+                     <h2 class="text-lg font-semibold text-slate-800">Program State</h2>
+                    <div class="bg-white p-4 rounded-lg shadow-md border border-slate-200 min-h-[150px]">
+                        <!-- Variables -->
+                        <div class="mb-4">
+                            <h3 class="font-semibold mb-2 pb-2 border-b">Variables:</h3>
+                            <div id="variables-display" class="fira-code text-sm text-slate-700">
+                                <!-- Variables will be shown here -->
+                                <p class="text-slate-400">No variables yet.</p>
+                            </div>
+                        </div>
+                         <!-- Output -->
+                        <div>
+                            <h3 class="font-semibold mb-2 pb-2 border-b">Output:</h3>
+                            <div id="output-display" class="fira-code text-sm text-slate-700 min-h-[40px] bg-slate-900 text-green-400 p-2 rounded">
+                                <!-- Output will be shown here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const codeDisplay = document.getElementById('code-display');
+        const runBtn = document.getElementById('run-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const exampleSelector = document.getElementById('example-selector');
+        
+        const explanationBox = document.getElementById('explanation-box');
+        const fileStatus = document.getElementById('file-status');
+        const fileContent = document.getElementById('file-content');
+        const variablesDisplay = document.getElementById('variables-display');
+        const outputDisplay = document.getElementById('output-display');
+
+        const examples = {
+            read: [
+                'OPENFILE marks.txt FOR READ',
+                'WHILE NOT EndOfFile DO',
+                '  READFILE marks.txt, line',
+                '  OUTPUT line',
+                'ENDWHILE',
+                'CLOSEFILE marks.txt'
+            ],
+            write: [
+                'OPENFILE marks.txt FOR WRITE',
+                'INPUT name',
+                'INPUT mark',
+                'record <- name + "," + mark',
+                'WRITEFILE marks.txt, record',
+                'CLOSEFILE marks.txt'
+            ]
+        };
+
+        const initialFileContent = "Alice,92\nBob,78\nCharlie,85";
+
+        let state = {};
+        let executionInterval;
+
+        function resetState() {
+            state = {
+                currentLine: 0,
+                lines: [],
+                file: {
+                    name: "marks.txt",
+                    isOpen: false,
+                    mode: null,
+                    content: initialFileContent.split('\n'),
+                    pointer: 0
+                },
+                variables: {},
+                output: [],
+                isRunning: false,
+                looping: false,
+                loopStartLine: -1,
+            };
+        }
+
+        function updateUI() {
+            // Update code display with highlight
+            codeDisplay.innerHTML = state.lines.map((line, index) => {
+                const highlightClass = (index === state.currentLine && state.isRunning) ? 'highlight' : '';
+                return `<div class="${highlightClass}">${line.replace(/ /g, '&nbsp;')}</div>`;
+            }).join('');
+            
+            // Scroll to highlighted line
+            const highlightedEl = codeDisplay.querySelector('.highlight');
+            if (highlightedEl) {
+                highlightedEl.scrollIntoView({ block: 'center', behavior: 'smooth' });
+            }
+
+            // Update file status and content
+            fileStatus.textContent = state.file.isOpen ? `OPEN (${state.file.mode})` : 'CLOSED';
+            fileStatus.className = state.file.isOpen ? 'status-open' : 'status-closed';
+            
+            fileContent.innerHTML = '';
+            state.file.content.forEach((line, index) => {
+                const lineEl = document.createElement('div');
+                if (state.file.isOpen && state.file.mode === 'READ' && index === state.file.pointer) {
+                    lineEl.innerHTML = `&rarr; ${line}`;
+                    lineEl.classList.add('text-blue-600', 'font-semibold');
+                } else {
+                    lineEl.textContent = line;
+                }
+                fileContent.appendChild(lineEl);
+            });
+            if(state.file.content.length === 0) {
+                 fileContent.innerHTML = `<span class="text-slate-400">File is empty.</span>`;
+            }
+
+
+            // Update variables
+            const varKeys = Object.keys(state.variables);
+            if (varKeys.length === 0) {
+                variablesDisplay.innerHTML = `<p class="text-slate-400">No variables yet.</p>`;
+            } else {
+                variablesDisplay.innerHTML = varKeys.map(key => 
+                    `<div class="fade-in"><strong>${key}:</strong> "${state.variables[key]}"</div>`
+                ).join('');
+            }
+
+            // Update output
+            outputDisplay.innerHTML = state.output.map(line => `<div class="fade-in">${line}</div>`).join('');
+            
+            // Update buttons
+            runBtn.disabled = state.isRunning;
+            resetBtn.disabled = state.isRunning;
+        }
+
+        function setExplanation(text, type = 'info') {
+             const typeClasses = {
+                info: 'bg-blue-50 border-blue-500 text-blue-800',
+                success: 'bg-green-50 border-green-500 text-green-800',
+                warn: 'bg-amber-50 border-amber-500 text-amber-800',
+            };
+            explanationBox.className = `p-4 rounded-r-lg min-h-[80px] flex items-center justify-center text-center transition ${typeClasses[type] || typeClasses['info']}`;
+            explanationBox.innerHTML = `<p>${text}</p>`;
+        }
+        
+        function loadExample(name) {
+            clearInterval(executionInterval);
+            resetState();
+            state.lines = examples[name];
+            updateUI();
+            setExplanation('Click "Run Code" to start the simulation.');
+        }
+
+        function parseLine(line) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('OPENFILE')) {
+                const [, filename, , mode] = trimmed.split(' ');
+                return { command: 'OPENFILE', filename, mode };
+            }
+            if (trimmed.startsWith('CLOSEFILE')) {
+                const [, filename] = trimmed.split(' ');
+                return { command: 'CLOSEFILE', filename };
+            }
+            if (trimmed.startsWith('READFILE')) {
+                const [, rest] = trimmed.split('READFILE ');
+                const [filename, varName] = rest.split(',').map(s => s.trim());
+                return { command: 'READFILE', filename, varName };
+            }
+             if (trimmed.startsWith('WRITEFILE')) {
+                const [, rest] = trimmed.split('WRITEFILE ');
+                const [filename, varName] = rest.split(',').map(s => s.trim());
+                return { command: 'WRITEFILE', filename, varName };
+            }
+            if (trimmed.startsWith('OUTPUT')) {
+                 const [, varName] = trimmed.split(' ');
+                 return { command: 'OUTPUT', varName };
+            }
+            if (trimmed.startsWith('INPUT')) {
+                 const [, varName] = trimmed.split(' ');
+                 return { command: 'INPUT', varName };
+            }
+            if (trimmed.includes('<-')) {
+                const [varName, expression] = trimmed.split('<-').map(s => s.trim());
+                return { command: 'ASSIGN', varName, expression };
+            }
+            if (trimmed === 'WHILE NOT EndOfFile DO') {
+                return { command: 'WHILE' };
+            }
+            if (trimmed === 'ENDWHILE') {
+                return { command: 'ENDWHILE' };
+            }
+            return { command: 'UNKNOWN' };
+        }
+
+        function executeStep() {
+            if (state.currentLine >= state.lines.length) {
+                setExplanation('Execution finished!', 'success');
+                state.isRunning = false;
+                updateUI();
+                clearInterval(executionInterval);
+                return;
+            }
+
+            const line = state.lines[state.currentLine];
+            const parsed = parseLine(line);
+
+            switch(parsed.command) {
+                case 'OPENFILE':
+                    state.file.isOpen = true;
+                    state.file.mode = parsed.mode;
+                    setExplanation(`Opening file <strong>${parsed.filename}</strong> in <strong>${parsed.mode}</strong> mode.`);
+                    if(parsed.mode === 'WRITE') {
+                        state.file.content = [];
+                        state.file.pointer = 0;
+                        setExplanation(`File <strong>${parsed.filename}</strong> opened for writing. Existing content is cleared.`);
+                    }
+                    break;
+                case 'CLOSEFILE':
+                    state.file.isOpen = false;
+                    state.file.mode = null;
+                    state.file.pointer = 0;
+                    setExplanation(`Closing file <strong>${parsed.filename}</strong>. It cannot be read or written to now.`);
+                    break;
+                case 'WHILE':
+                    state.looping = true;
+                    state.loopStartLine = state.currentLine;
+                    if (state.file.pointer >= state.file.content.length) {
+                        // End of file reached, jump past ENDWHILE
+                        state.currentLine = state.lines.indexOf('ENDWHILE', state.loopStartLine);
+                        setExplanation(`End of file reached. Exiting the loop.`);
+                    } else {
+                        setExplanation(`Starting loop. Will continue until the end of the file.`);
+                    }
+                    break;
+                case 'ENDWHILE':
+                    if (state.looping) {
+                        state.currentLine = state.loopStartLine -1; // It will be incremented to loopStartLine
+                        setExplanation(`End of loop iteration. Returning to the start of the WHILE loop.`);
+                    }
+                    break;
+                case 'READFILE':
+                    if(state.file.isOpen && state.file.mode === 'READ' && state.file.pointer < state.file.content.length) {
+                        const data = state.file.content[state.file.pointer];
+                        state.variables[parsed.varName] = data;
+                        setExplanation(`Reading line ${state.file.pointer + 1} from <strong>${parsed.filename}</strong> into variable <strong>${parsed.varName}</strong>.`);
+                        state.file.pointer++;
+                    } else {
+                       setExplanation(`Cannot read from file. It's either closed, not in READ mode, or at the end.`, 'warn');
+                    }
+                    break;
+                case 'OUTPUT':
+                    const valueToOutput = state.variables[parsed.varName];
+                    if (valueToOutput !== undefined) {
+                       state.output.push(valueToOutput);
+                       setExplanation(`Outputting the value of variable <strong>${parsed.varName}</strong>: "${valueToOutput}".`);
+                    } else {
+                       setExplanation(`Variable <strong>${parsed.varName}</strong> has no value to output.`, 'warn');
+                    }
+                    break;
+                case 'INPUT':
+                    // Simulate input for the example
+                    let inputValue = '';
+                    if (parsed.varName === 'name') inputValue = 'Sandra';
+                    if (parsed.varName === 'mark') inputValue = '85';
+                    state.variables[parsed.varName] = inputValue;
+                    setExplanation(`Simulating user input. Storing "${inputValue}" in variable <strong>${parsed.varName}</strong>.`);
+                    break;
+                case 'ASSIGN':
+                    // More robust expression evaluation
+                    const expressionParts = parsed.expression.split('+').map(p => p.trim());
+                    let result = '';
+                    for (const part of expressionParts) {
+                        if (part.startsWith('"') && part.endsWith('"')) {
+                            result += part.substring(1, part.length - 1);
+                        } else if (state.variables[part] !== undefined) {
+                            result += state.variables[part];
+                        } else {
+                            result += 'undefined';
+                        }
+                    }
+                    state.variables[parsed.varName] = result;
+                    setExplanation(`Assigning the result of "${parsed.expression}" ("${result}") to variable <strong>${parsed.varName}</strong>.`);
+                    break;
+                 case 'WRITEFILE':
+                    const valueToWrite = state.variables[parsed.varName];
+                    if (state.file.isOpen && state.file.mode === 'WRITE' && valueToWrite !== undefined) {
+                       state.file.content.push(valueToWrite);
+                       setExplanation(`Writing the value of <strong>${parsed.varName}</strong> to the file.`);
+                    } else {
+                       setExplanation(`Cannot write to file. It's either closed or not in WRITE mode.`, 'warn');
+                    }
+                    break;
+            }
+
+            state.currentLine++;
+            updateUI();
+        }
+
+        runBtn.addEventListener('click', () => {
+            if (state.isRunning) return;
+            state.isRunning = true;
+            updateUI();
+            setExplanation('Starting execution...');
+            executionInterval = setInterval(executeStep, 1500);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            loadExample(exampleSelector.value);
+        });
+
+        exampleSelector.addEventListener('change', (e) => {
+            loadExample(e.target.value);
+        });
+
+        // Initial load
+        loadExample('read');
+
+    </script>
+
+</body>
+</html>
+

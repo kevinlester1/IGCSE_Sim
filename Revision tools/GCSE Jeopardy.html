@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Wants to Be a CS Whiz?</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Font 'Inter' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020024;
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            color: #ffffff;
+            overflow-y: auto; /* Allow scrolling on small screens */
+            min-height: 100vh;
+        }
+
+        /* Custom "Millionaire" styles */
+        .main-container {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "game aside";
+            grid-template-columns: 3fr 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            padding: 2rem;
+            gap: 2rem;
+        }
+
+        .header-area {
+            grid-area: header;
+        }
+
+        .game-area {
+            grid-area: game;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .aside-area {
+            grid-area: aside;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            max-height: calc(100vh - 4rem); /* Full height minus padding */
+        }
+
+        .question-box,
+        .answer-box,
+        .lifeline-box,
+        .aside-box { /* Renamed from leaderboard-box */
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1.5rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .leaderboard-content {
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .money-ladder-content {
+             max-height: 400px; /* Match leaderboard for consistency */
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .answer-box {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .answer-box:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.02);
+        }
+
+        .answer-box.selected {
+            background-color: #f59e0b; /* amber-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+
+        .answer-box.correct {
+            background-color: #22c55e; /* green-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+
+        .answer-box.incorrect {
+            background-color: #ef4444; /* red-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+
+        .answer-box.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .money-ladder {
+            list-style-type: decimal;
+            list-style-position: inside;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column-reverse; /* Puts 1,000,000 at the top */
+        }
+
+        .money-ladder li {
+            padding: 0.3rem 0.75rem;
+            margin: 0.15rem 0;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            text-align: right;
+            color: #f59e0b; /* amber-500 */
+        }
+
+        .money-ladder li.safe {
+            color: #ffffff;
+            font-weight: 900;
+        }
+
+        .money-ladder li.current {
+            background-color: #f59e0b; /* amber-500 */
+            color: #020024;
+            transform: scale(1.1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.85);
+        }
+
+        .modal-content {
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            border: 3px solid #6366f1;
+        }
+
+        /* Audience Poll Bars */
+        .poll-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #374151; /* gray-700 */
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .poll-bar {
+            height: 100%;
+            background-color: #22c55e; /* green-500 */
+            transition: width 0.5s ease-in-out;
+            text-align: right;
+            padding-right: 5px;
+            color: #020024;
+            font-size: 0.875rem;
+            font-weight: 600;
+            box-sizing: border-box;
+        }
+
+        /* Topic selection screen */
+        .topic-select-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+
+        .topic-button {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .topic-button:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.05);
+        }
+        
+        /* NEW Tab Styles */
+        .tab-button-container {
+            display: flex;
+            border-bottom: 3px solid #6366f1;
+        }
+        .tab-button {
+            flex: 1;
+            padding: 0.75rem 0.5rem;
+            background-color: rgba(10, 10, 80, 0.8);
+            color: #aaa;
+            font-weight: 600;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-top-left-radius: 1.25rem; /* Match parent */
+            border-top-right-radius: 1.25rem; /* Match parent */
+        }
+        .tab-button.active {
+            background-color: rgba(30, 30, 120, 0.9);
+            color: #fff;
+            border-bottom: 3px solid #f59e0b;
+            margin-bottom: -3px; /* Pull up to overlap border */
+        }
+        .tab-content {
+            display: none; /* Hidden by default */
+        }
+        .tab-content.active {
+            display: block; /* Shown when active */
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 768px) {
+            body {
+                overflow-y: auto; /* Ensure scrolling is enabled on mobile */
+            }
+            .main-container {
+                grid-template-areas:
+                    "header"
+                    "game"
+                    "aside";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto; /* Changed game to auto */
+                height: auto;
+                min-height: 100vh;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .aside-area {
+                max-height: none; /* Remove max-height for mobile */
+                overflow-y: visible;
+                flex-direction: column-reverse; /* Show leaderboard first */
+            }
+            .money-ladder li {
+                font-size: 1rem;
+                padding: 0.25rem 0.5rem;
+            }
+            .answer-box {
+                font-size: 1rem;
+                padding: 0.75rem;
+            }
+            .question-box {
+                font-size: 1.25rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Main App Container -->
+    <div id="app">
+
+        <!-- Loading Screen (NEW) -->
+        <div id="loading-screen" classM="fixed inset-0 z-50 flex flex-col items-center justify-center bg-gray-900 bg-opacity-90">
+            <h1 id="loading-message" class="text-4xl font-bold text-white">Connecting...</h1>
+            <p class="text-xl text-amber-400">Please wait.</p>
+        </div>
+
+        <!-- Name Entry Screen (NEW) -->
+        <div id="name-entry-screen" class="fixed inset-0 z-40 flex items-center justify-center p-8 hidden">
+             <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-8 text-center">
+                 <h2 class="text-4xl font-black text-amber-400 mb-4">Welcome to CS Whiz!</h2>
+                 <p class="text-2xl mb-6">What's your name?</p>
+                 <input type="text" id="name-input" class="w-full p-3 rounded-md text-gray-900 text-lg" placeholder="Enter your name...">
+                 <button id="name-submit-btn" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                     Let's Play!
+                 </button>
+             </div>
+         </div>
+
+        <!-- Topic Selection Screen -->
+        <div id="topic-selection" class="topic-select-container hidden">
+            <h1 class="text-4xl md:text-6xl font-black text-center mb-4">Who Wants to Be a CS Whiz?</h1>
+            <h2 id="welcome-message" class="text-2xl text-amber-400 font-semibold mb-8 text-center">First, pick your topic...</h2>
+            <div id="topic-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-auto">
+                <!-- Topic buttons will be injected here -->
+            </div>
+        </div>
+
+        <!-- Main Game Screen (Hidden by default) -->
+        <div id="main-game" class="main-container hidden">
+            <!-- Header -->
+            <header class="header-area text-center">
+                <h1 class="text-xl md:text-3xl font-black text-amber-400">Who Wants to Be a CS Whiz?</h1>
+                <p id="current-topic-title" class="text-lg md:text-2xl text-white font-semibold">Topic: Loading...</p>
+                <p id="user-id-display" class="text-xs text-gray-400">User ID: ...</p>
+            </header>
+
+            <!-- Game Area (Questions & Lifelines) -->
+            <div class="game-area">
+                <!-- Lifelines -->
+                <div class="lifeline-box p-4 mb-4">
+                    <div class="flex justify-center gap-6">
+                        <button id="lifeline-5050" class="lifeline-btn text-2xl md:text-4xl p-3 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="50:50">
+                            50:50
+                        </button>
+                        <button id="lifeline-audience" class="lifeline-btn text-2xl md:text-4xl p-3 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Ask the Audience">
+                            👥
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question Box -->
+                <div class="question-box p-6 md:p-10 text-center flex-grow flex items-center justify-center mb-4">
+                    <h2 id="question-text" class="text-xl md:text-3xl font-semibold">Loading question...</h2>
+                </div>
+
+                <!-- Answer Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="answer-A" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="A"><span class="text-amber-400 font-bold mr-3">A:</span> <span id="answer-text-A">...</span></div>
+                    <div id="answer-B" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="B"><span class="text-amber-400 font-bold mr-3">B:</span> <span id="answer-text-B">...</span></div>
+                    <div id="answer-C" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="C"><span class="text-amber-400 font-bold mr-3">C:</span> <span id="answer-text-C">...</span></div>
+                    <div id="answer-D" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="D"><span class="text-amber-400 font-bold mr-3">D:</span> <span id="answer-text-D">...</span></div>
+                </div>
+            </div>
+
+            <!-- Aside (Money & Leaderboard) -->
+            <aside class="aside-area">
+                <!-- NEW Tabbed Interface -->
+                <div class="aside-box p-0"> <!-- Removed padding, tabs will handle it -->
+                    <!-- Tab Buttons -->
+                    <div class="tab-button-container">
+                        <button id="tab-btn-money" class="tab-button active">Money</button>
+                        <button id="tab-btn-leaderboard" class="tab-button">Leaderboard</button>
+                    </div>
+                    
+                    <!-- Money Ladder Content -->
+                    <div id="tab-content-money" class="tab-content active">
+                        <div class="money-ladder-content">
+                            <ol id="money-ladder" class="money-ladder">
+                                <!-- Money values will be injected here -->
+                            </ol>
+                        </div>
+                    </div>
+                    
+                    <!-- Leaderboard Content -->
+                    <div id="tab-content-leaderboard" class="tab-content">
+                        <div class="leaderboard-content">
+                            <ul id="leaderboard-list" class="space-y-1">
+                                <!-- Leaderboard will be injected here -->
+                                <li class="text-gray-300">Loading scores...</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Audience Poll Modal -->
+    <div id="audience-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-6">
+            <h2 class="text-2xl font-bold text-center mb-6">The Audience Thinks...</h2>
+            <div class="space-y-4">
+                <!-- Poll results go here -->
+                <div id="poll-A">
+                    <span class="font-bold">A:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-A" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-B">
+                    <span class="font-bold">B:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-B" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-C">
+                    <span class="font-bold">C:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-C" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-D">
+                    <span class="font-bold">D:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-D" class="poll-bar"></div></div>
+                </div>
+            </div>
+            <button id="close-audience-modal" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Score Modal -->
+    <div id="end-game-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-8 text-center">
+            <h2 id="end-game-title" class="text-4xl font-black text-amber-400 mb-4">Game Over!</h2>
+            <p id="end-game-message" class="text-2xl mb-6">You won 0 points!</p>
+            <p id="new-high-score-message" class="text-lg text-green-400 font-semibold mb-6 hidden">That's a new personal best for this topic!</p>
+            <div class="flex gap-4">
+                <button id="play-again-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Play Again
+                </button>
+                <button id="quit-game-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Change Topic
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // --- Firebase SDK Imports ---
+        import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            signInAnonymously, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            collection, 
+            query, 
+            onSnapshot,
+            increment, // Import increment
+            updateDoc // Import updateDoc
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- FULL QUESTION BANK ---
+            // [Question bank is large and unchanged, redacting for brevity]
+            const questionBank = {
+                "Data Representation": [
+                    { question: "This base-2 number system is used by computers to represent all forms of data.", answers: { correct: "Binary", close: "Hexadecimal", possible: "Denary", wrong: "ASCII" } },
+                    { question: "What is the smallest unit of data in a computer?", answers: { correct: "A bit", close: "A byte", possible: "A kilobyte", wrong: "A pixel" } },
+                    { question: "How many bits are in one byte?", answers: { correct: "8", close: "4 (a nibble)", possible: "16", wrong: "10" } },
+                    { question: "This base-10 number system is what humans use daily.", answers: { correct: "Denary", close: "Binary", possible: "Hexadecimal", wrong: "Metric" } },
+                    { question: "This base-16 number system is a shorter way to represent binary, using digits 0-9 and A-F.", answers: { correct: "Hexadecimal", close: "Binary", possible: "Denary", wrong: "Octal" } },
+                    { question: "What is the 8-bit binary representation of the denary number 10?", answers: { correct: "00001010", close: "00000101", possible: "10100000", wrong: "00000010" } },
+                    { question: "This 7-bit character set is used for representing English characters.", answers: { correct: "ASCII", close: "Unicode", possible: "Hexadecimal", wrong: "Binary" } },
+                    { question: "This character set can represent characters from (almost) all writing systems.", answers: { correct: "Unicode", close: "ASCII", possible: "UTF-8", wrong: "Emoji" } },
+                    { question: "The number of pixels in an image is called its...", answers: { correct: "Resolution", close: "Color Depth", possible: "File Size", wrong: "Sample Rate" } },
+                    { question: "What is the denary (base-10) equivalent of the hexadecimal number 'A'?", answers: { correct: "10", close: "16", possible: "1", wrong: "26" } },
+                    { question: "Add the 8-bit binary numbers: 00001000 + 00000011", answers: { correct: "00001011", close: "00001000", possible: "10000011", wrong: "00000101" } },
+                    { question: "This type of compression reduces file size *without* permanently losing any data.", answers: { correct: "Lossless compression", close: "Lossy compression", possible: "Image compression", wrong: "File zipping" } },
+                    { question: "The number of bits used to store the color for each pixel is the...", answers: { correct: "Color depth", close: "Resolution", possible: "Bit rate", wrong: "Pixel count" } },
+                    { question: "A logical binary shift to the *right* by one position has what mathematical effect?", answers: { correct: "Integer division by 2", close: "Multiplying by 2", possible: "Subtracting 2", wrong: "Integer division by 1" } },
+                    { question: "This lossless compression algorithm works by replacing consecutive data with a count and a single data value.", answers: { correct: "Run-Length Encoding (RLE)", close: "Lossy compression", possible: "Huffman coding", wrong: "MP3 compression" } },
+                    { question: "The number of times per second a sound wave is measured is called the...", answers: { correct: "Sample rate", close: "Bit rate", possible: "Resolution", wrong: "Frequency" } },
+                    { question: "What error occurs when adding 1 to the 8-bit binary number 11111111?", answers: { correct: "An overflow error", close: "A syntax error", possible: "A parity error", wrong: "A shift error" } },
+                    { question: "A logical binary shift to the *left* by one position has what mathematical effect on a positive integer?", answers: { correct: "Multiplying by 2", close: "Integer division by 2", possible: "Adding 2", wrong: "Multiplying by 1" } },
+                    { question: "This system is used to represent negative numbers in binary, using the Most Significant Bit (MSB) as a sign bit.", answers: { correct: "Two's Complement", close: "ASCII", possible: "Sign and Magnitude", wrong: "One's Complement" } },
+                    { question: "How do you calculate the file size of an image in bits?", answers: { correct: "(Width * Height * Color Depth)", close: "(Width * Height) + Color Depth", possible: "(Width * Height * Resolution)", wrong: "(Width + Height + Color Depth)" } },
+                    { question: "How do you calculate the file size of a sound file in bits?", answers: { correct: "(Sample Rate * Sample Resolution * Seconds)", close: "(Sample Rate + Sample Resolution) * Seconds", possible: "(Sample Rate * Bit Rate)", wrong: "(Resolution * Seconds)" } },
+                    { question: "What is the 8-bit Two's Complement representation of the denary number -1?", answers: { correct: "11111111", close: "10000001", possible: "00000001", wrong: "11111110" } },
+                    { question: "Convert the hexadecimal number 1A to denary.", answers: { correct: "26 (1*16 + 10*1)", close: "10 (just the A)", possible: "11 (1 + 10)", wrong: "110 (1 and 10)" } },
+                    { question: "What is the 8-bit Two's Complement representation of the denary number -128?", answers: { correct: "10000000", close: "11111111", possible: "01111111", wrong: "10000001" } },
+                ],
+                "Data Transmission": [
+                    { question: "Data is broken down into these small units for transmission across a network.", answers: { correct: "Packets", close: "Bytes", possible: "Files", wrong: "Messages" } },
+                    { question: "This type of transmission, like a radio broadcast, sends data in only one direction.", answers: { correct: "Simplex", close: "Half-duplex", possible: "Full-duplex", wrong: "Serial" } },
+                    { question: "This type of transmission sends bits one after another over a single wire.", answers: { correct: "Serial", close: "Parallel", possible: "Simplex", wrong: "USB" } },
+                    { question: "This type of transmission, like a walkie-talkie, allows data to flow in both directions, but only one at a time.", answers: { correct: "Half-duplex", close: "Simplex", possible: "Full-duplex", wrong: "Parallel" } },
+                    { question: "This type of transmission sends multiple bits at the same time over multiple wires.", answers: { correct: "Parallel", close: "Serial", possible: "Full-duplex", wrong: "Ethernet" } },
+                    { question: "This error-checking method adds a single bit to a byte to make the total number of 1s either even or odd.", answers: { correct: "Parity check", close: "Checksum", possible: "ARQ", wrong: "Echo check" } },
+                    { question: "This type of transmission, like a telephone call, allows data to flow in both directions simultaneously.", answers: { correct: "Full-duplex", close: "Half-duplex", possible: "Simplex", wrong: "Serial" } },
+                    { question: "A common physical interface for connecting devices and transmitting data serially.", answers: { correct: "USB (Universal Serial Bus)", close: "Ethernet", possible: "Parallel Port", wrong: "HDMI" } },
+                    { question: "This part of a data packet contains information like the destination address and packet number.", answers: { correct: "Header", close: "Payload", possible: "Trailer", wrong: "Footer" } },
+                    { question: "This error-detection method is a value calculated from a block of data, often sent in the packet's trailer.", answers: { correct: "Checksum", close: "Parity check", possible: "Check digit", wrong: "ARQ" } },
+                    { question: "The process of scrambling data so it cannot be understood if intercepted.", answers: { correct: "Encryption", close: "Compression", possible: "Packet switching", wrong: "Error checking" } },
+                    { question: "This error-detection method sends data back to the sender to check if it was received correctly.", answers: { correct: "Echo check", close: "Parity check", possible: "Checksum", wrong: "Ping" } },
+                    { question: "An extra digit added to a number (like a bar code) used to detect data entry errors.", answers: { correct: "Check digit", close: "Checksum", possible: "Parity bit", wrong: "Error bit" } },
+                    { question: "This error-control protocol uses acknowledgements (ACKs) and timeouts to ensure packets are received correctly.", answers: { correct: "ARQ (Automatic Repeat Query)", close: "Parity check", possible: "Checksum", wrong: "TCP" } },
+                    { question: "This type of encryption uses a single, shared key to encrypt and decrypt data.", answers: { correct: "Symmetric encryption", close: "Asymmetric encryption", possible: "Public key encryption", wrong: "Password" } },
+                    { question: "What device controls the route a packet takes on a network?", answers: { correct: "A router", close: "A switch", possible: "A hub", wrong: "A server" } },
+                    { question: "This type of encryption uses a pair of keys, one public and one private, to secure data.", answers: { correct: "Asymmetric encryption", close: "Symmetric encryption", possible: "Password encryption", wrong: "SSL" } },
+                    { question: "This protocol, indicated by a padlock in the browser, uses encryption to secure website communication.", answers: { correct: "HTTPS (or SSL/TLS)", close: "HTTP", possible: "TCP/IP", wrong: "Firewall" } },
+                    { question: "In asymmetric encryption, which key is used to *encrypt* a message being sent to you?", answers: { correct: "Your *public* key", close: "Your *private* key", possible: "The *symmetric* key", wrong: "The *shared* key" } },
+                    { question: "In asymmetric encryption, which key is used to *decrypt* a message that was sent to you?", answers: { correct: "Your *private* key", close: "Your *public* key", possible: "The *symmetric* key", wrong: "The *sender's* public key" } },
+                    { question: "Why do HTTPS and other systems use *both* asymmetric and symmetric encryption?", answers: { correct: "Asymmetric is used to securely share a symmetric key (which is faster) for the session", close: "Asymmetric is faster for the whole session", possible: "Symmetric is used to share the public and private keys", wrong: "They don't, they only use asymmetric" } },
+                ],
+                "Computer Architecture & Storage": [
+                    { question: "The 'brain' of the computer that fetches, decodes, and executes instructions.", answers: { correct: "CPU (Central Processing Unit)", close: "RAM (Random Access Memory)", possible: "ALU (Arithmetic Logic Unit)", wrong: "The motherboard" } },
+                    { question: "This type of primary storage is volatile (loses data when powered off).", answers: { correct: "RAM (Random Access Memory)", close: "ROM (Read-Only Memory)", possible: "Cache Memory", wrong: "Hard Disk Drive (HDD)" } },
+                    { question: "Storage that is *not* directly accessed by the CPU and is non-volatile.", answers: { correct: "Secondary storage", close: "Primary storage", possible: "RAM", wrong: "Offline storage" } },
+                    { question: "This type of non-volatile primary storage holds the computer's startup instructions (e.g., BIOS).", answers: { correct: "ROM (Read-Only Memory)", close: "RAM (Random Access Memory)", possible: "Cache Memory", wrong: "SSD (Solid-State Drive)" } },
+                    { question: "This component of the CPU performs calculations and logical operations.", answers: { correct: "ALU (Arithmetic Logic Unit)", close: "Control Unit (CU)", possible: "CPU", wrong: "Cache" } },
+                    { question: "This type of secondary storage uses spinning magnetic platters.", answers: { correct: "Hard Disk Drive (HDD)", close: "SSD (Solid-State Drive)", possible: "Optical drive (CD/DVD)", wrong: "RAM" } },
+                    { question: "This component of the CPU coordinates all steps of the Fetch-Decode-Execute cycle.", answers: { correct: "Control Unit (CU)", close: "ALU (Arithmetic Logic Unit)", possible: "Program Counter (PC)", wrong: "RAM" } },
+                    { question: "This type of secondary storage has no moving parts and uses flash memory.", answers: { correct: "SSD (Solid-State Drive)", close: "Hard Disk Drive (HDD)", possible: "RAM", wrong: "USB stick" } },
+                    { question: "This type of secondary storage reads data using a laser to scan pits and lands.", answers: { correct: "Optical storage (e.g., CD, DVD)", close: "Magnetic storage (HDD)", possible: "Solid-state storage (SSD)", wrong: "Flash storage" } },
+                    { question: "This CPU register holds the address of the *next* instruction to be fetched.", answers: { correct: "Program Counter (PC)", close: "CIR (Current Instruction Register)", possible: "MAR (Memory Address Register)", wrong: "Accumulator (ACC)" } },
+                    { question: "A small, very fast type of memory located on the CPU, used to store frequently accessed instructions.", answers: { correct: "Cache memory", close: "RAM", possible: "Registers", wrong: "ROM" } },
+                    { question: "What are the three types of buses in the Von Neumann architecture?", answers: { correct: "Address Bus, Data Bus, and Control Bus", close: "ALU, CU, and Register Bus", possible: "CPU, RAM, and ROM Bus", wrong: "Input, Output, and Storage Bus" } },
+                    { question: "This CPU register holds the *current* instruction being decoded and executed.", answers: { correct: "CIR (Current Instruction Register)", close: "Program Counter (PC)", possible: "MDR (Memory Data Register)", wrong: "ALU" } },
+                    { question: "When RAM is full, this area on secondary storage is used as a temporary, slower extension of main memory.", answers: { correct: "Virtual memory", close: "Cache memory", possible: "ROM", wrong: "External storage" } },
+                    { question: "Name two factors that can affect the performance of a CPU.", answers: { correct: "Clock speed, cache size, or number of cores", close: "RAM size and Hard drive speed", possible: "Monitor resolution and keyboard type", wrong: "Number of USB ports and fan speed" } },
+                    { question: "This CPU register holds the *address* of the memory location to be read from or written to.", answers: { correct: "MAR (Memory Address Register)", close: "MDR (Memory Data Register)", possible: "Program Counter (PC)", wrong: "CIR (Current Instruction Register)" } },
+                    { question: "This CPU register holds the *data* that has just been read from or is about to be written to memory.", answers: { correct: "MDR (Memory Data Register)", close: "MAR (Memory Address Register)", possible: "CIR (Current Instruction Register)", wrong: "Accumulator (ACC)" } },
+                    { question: "A computer system built into a larger device, designed for a specific function (e.g., in a car or microwave).", answers: { correct: "An embedded system", close: "A CPU", possible: "A general-purpose computer", wrong: "A server" } },
+                    { question: "This general-purpose register in the CPU stores the results of calculations from the ALU.", answers: { correct: "Accumulator (ACC)", close: "Program Counter (PC)", possible: "MDR (Memory Data Register)", wrong: "Control Unit (CU)" } },
+                    { question: "Describe the 'Fetch' part of the Fetch-Decode-Execute cycle.", answers: { correct: "Copy PC to MAR, fetch instruction to MDR, increment PC, copy MDR to CIR", close: "Execute the instruction in the ALU", possible: "Decode the instruction in the Control Unit", wrong: "Save the result to the Hard Drive" } },
+                    { question: "What is the key *disadvantage* of virtual memory?", answers: { correct: "It is much slower than RAM (can cause 'disk thrashing')", close: "It is volatile (loses data on power off)", possible: "It is very expensive", wrong: "It takes up space on the CPU" } },
+                    { question: "What is the purpose of the *Control Bus*?", answers: { correct: "To carry timing signals and control signals (like read/write) from the CU to all components", close: "To carry data between the CPU and RAM", possible: "To carry addresses from the CPU to RAM", wrong: "To connect the CPU to the monitor" } },
+                ],
+                "The Internet & Networks": [
+                    { question: "The global *infrastructure* of interconnected computer networks.", answers: { correct: "The internet", close: "The World Wide Web", possible: "A LAN", wrong: "The cloud" } },
+                    { question: "A piece of software used to view web pages, such as Chrome or Safari.", answers: { correct: "A web browser", close: "A web server", possible: "The World Wide Web", wrong: "An IP address" } },
+                    { question: "A collection of multimedia web pages and content, accessed *via* the internet.", answers: { correct: "The World Wide Web", close: "The internet", possible: "A URL", wrong: "A web server" } },
+                    { question: "The unique address of a device on a network (e.g., 192.168.1.1).", answers: { correct: "An IP address", close: "A MAC address", possible: "A URL", wrong: "A DNS" } },
+                    { question: "A text-based address for a web page (e.g., 'www.google.com').", answers: { correct: "A URL", close: "An IP address", possible: "A DNS", wrong: "A host file" } },
+                    { question: "A hardware device that forwards data packets between computer networks.", answers: { correct: "A router", close: "A switch", possible: "A server", wrong: "A firewall" } },
+                    { question: "The set of rules for transferring web pages over the internet.", answers: { correct: "HTTP", close: "HTTPS", possible: "HTML", wrong: "TCP/IP" } },
+                    { question: "What hardware component does a computer need to access a network?", answers: { correct: "A Network Interface Card (NIC)", close: "A CPU", possible: "A router", wrong: "An IP address" } },
+                    { question: "What does 'DNS' stand for?", answers: { correct: "Domain Name Server", close: "Domain Name System", possible: "Digital Network Service", wrong: "Data Naming Standard" } },
+                    { question: "This server's job is to translate human-readable domain names (like 'google.com') into IP addresses.", answers: { correct: "A DNS (Domain Name Server)", close: "A web server", possible: "A router", wrong: "A web browser" } },
+                    { question: "A software or hardware barrier that prevents unauthorized access to a network.", answers: { correct: "A firewall", close: "A router", possible: "An anti-virus", wrong: "A password" } },
+                    { question: "The unique, permanent address built into a Network Interface Card (NIC).", answers: { correct: "A MAC address", close: "An IP address", possible: "A URL", wrong: "A network ID" } },
+                    { question: "Small text files stored on a user's computer by a website to track preferences or session information.", answers: { correct: "Cookies", close: "Cache", possible: "Passwords", wrong: "History" } },
+                    { question: "What is the *difference* between the Internet and the World Wide Web?", answers: { correct: "The Internet is the hardware/infrastructure, the WWW is the information/pages on it", close: "The WWW is the hardware, the Internet is the information", possible: "They are the same thing", wrong: "The Internet is just for email, the WWW is for websites" } },
+                    { question: "This is a computer that acts as an intermediary between a user and the internet, often used to hide an IP address.", answers: { correct: "A proxy server", close: "A web server", possible: "A DNS server", wrong: "A router" } },
+                    { question: "This is the security protocol used by HTTPS to encrypt data.", answers: { correct: "SSL (Secure Sockets Layer) or TLS", close: "HTTP", possible: "Firewall", wrong: "TCP" } },
+                    { question: "What is the difference between an IPv4 and an IPv6 address?", answers: { correct: "IPv4 is 32-bit (e.g., 1.2.3.4) and IPv6 is 128-bit (hexadecimal)", close: "IPv6 is 32-bit and IPv4 is 128-bit", possible: "IPv4 is for private networks, IPv6 is for public", wrong: "IPv4 is for websites, IPv6 is for devices" } },
+                    { question: "What is the difference between a MAC address and an IP address?", answers: { correct: "MAC is a permanent, physical hardware address; IP is a logical, temporary network address", close: "IP is a permanent hardware address; MAC is a temporary network address", possible: "MAC is for Apple, IP is for Windows", wrong: "They are the same thing" } },
+                    { question: "How does a 'pharming' attack work, technically?", answers: { correct: "It poisons a DNS server to redirect a legitimate URL to a malicious IP address", close: "It sends thousands of emails to trick a user", possible: "It installs a virus on your computer", wrong: "It guesses your password" } },
+                    { question: "Explain the process of how a DNS server resolves a URL.", answers: { correct: "Browser asks ISP's DNS -> ISP asks Root DNS -> Root directs to .com DNS -> .com DNS directs to google.com DNS -> IP is returned", close: "Browser asks the website directly for its IP address", possible: "Browser asks the router, which knows all IP addresses", wrong: "Browser sends the URL to every computer on the internet until one responds" } },
+                ],
+                "Inputs and Outputs": [
+                    { question: "A device used to put data *into* a computer, like a keyboard or mouse.", answers: { correct: "An input device", close: "An output device", possible: "A storage device", wrong: "A processor" } },
+                    { question: "A device used to get data *out* of a computer, like a monitor or printer.", answers: { correct: "An output device", close: "An input device", possible: "A storage device", wrong: "A processor" } },
+                    { question: "This input device scans the black and white lines on a product.", answers: { correct: "A barcode scanner", close: "A QR code scanner", possible: "A flatbed scanner", wrong: "A camera" } },
+                    { question: "This input device captures still or moving images.", answers: { correct: "A digital camera", close: "A flatbed scanner", possible: "A microphone", wrong: "A monitor" } },
+                    { question: "This output device produces a physical, solid object from a digital design.", answers: { correct: "A 3D printer", close: "A laser printer", possible: "A plotter", wrong: "A monitor" } },
+                    { question: "This input device scans a 2D matrix, often used for tickets or links.", answers: { correct: "A QR code scanner", close: "A barcode scanner", possible: "A flatbed scanner", wrong: "A printer" } },
+                    { question: "This output device sprays small dots of ink onto paper.", answers: { correct: "An inkjet printer", close: "A laser printer", possible: "A dot matrix printer", wrong: "A scanner" } },
+                    { question: "This output device uses powdered toner and a heated drum.", answers: { correct: "A laser printer", close: "An inkjet printer", possible: "A 3D printer", wrong: "A photocopier" } },
+                    { question: "These input devices capture data from the physical environment, such as temperature, light, or pressure.", answers: { correct: "Sensors", close: "Actuators", possible: "Microphones", wrong: "Speakers" } },
+                    { question: "This type of touch screen has a grid of light beams; breaking a beam registers a touch.", answers: { correct: "Infra-red", close: "Capacitive", possible: "Resistive", wrong: "Pressure" } },
+                    { question: "This type of touch screen has two flexible layers; pressing them together registers a touch.", answers: { correct: "Resistive", close: "Capacitive", possible: "Infra-red", wrong: "Flexible" } },
+                    { question: "This type of touch screen uses the electrical properties of the human body to detect touch.", answers: { correct: "Capacitive", close: "Resistive", possible: "Infra-red", wrong: "Electrical" } },
+                    { question: "This input device senses motion and is used in smartphones to rotate the screen.", answers: { correct: "An accelerometer", close: "A GPS sensor", possible: "A proximity sensor", wrong: "A touch screen" } },
+                    { question: "This output device is a component that moves or controls a mechanism (e.g., opens a valve or moves a robot arm).", answers: { correct: "An actuator", close: "A sensor", possible: "A motor", wrong: "A speaker" } },
+                    { question: "This type of projector uses thousands of tiny mirrors to reflect light.", answers: { correct: "A DLP (Digital Light Processing) projector", close: "An LCD projector", possible: "A laser projector", wrong: "A movie projector" } },
+                    { question: "This input sensor would be used to detect the dampness of soil.", answers: { correct: "A moisture sensor", close: "A temperature sensor", possible: "A pH sensor", wrong: "A water sensor" } },
+                    { question: "This input sensor would be used to measure the acidity or alkalinity of a liquid.", answers: { correct: "A pH sensor", close: "A moisture sensor", possible: "A chemical sensor", wrong: "A temperature sensor" } },
+                    { question: "This input sensor would be used in a car's ABS to detect how fast the wheels are turning.", answers: { correct: "A magnetic field sensor (or Hall effect sensor)", close: "An accelerometer", possible: "A speed sensor", wrong: "A proximity sensor" } },
+                    { question: "This input sensor would be used to detect if a door is open or closed, without touching it.", answers: { correct: "A proximity sensor", close: "A magnetic field sensor", possible: "A light sensor", wrong: "A motion sensor" } },
+                ],
+                "Emerging Technologies": [
+                    { question: "A branch of computer science that incorporates the design, construction, and operation of robots.", answers: { correct: "Robotics", close: "Artificial Intelligence (AI)", possible: "Automation", wrong: "Engineering" } },
+                    { question: "A branch of computer science dealing with the simulation of intelligent behaviors by computers.", answers: { correct: "Artificial Intelligence (AI)", close: "Robotics", possible: "Machine Learning", wrong: "Expert Systems" } },
+                    { question: "What is a main characteristic of a robot?", answers: { correct: "It has a mechanical structure, electrical components, and is programmable", close: "It is intelligent and can think for itself", possible: "It must look like a human", wrong: "It is a piece of software" } },
+                    { question: "Name one setting where robots are commonly used.", answers: { correct: "Industry (factories), medicine, transport, or domestic settings", close: "Only in science fiction movies", possible: "In computer programming", wrong: "Inside the CPU" } },
+                    { question: "In AI, this component is a collection of facts on a topic.", answers: { correct: "A knowledge base", close: "A rule base", possible: "An inference engine", wrong: "A database" } },
+                    { question: "In AI, this component is a set of 'IF...THEN' rules for using the knowledge base.", answers: { correct: "A rule base", close: "A knowledge base", possible: "An inference engine", wrong: "An algorithm" } },
+                    { question: "This component of an expert system processes the rules and knowledge to reach a conclusion.", answers: { correct: "An inference engine", close: "A knowledge base", possible: "A rule base", wrong: "A search engine" } },
+                    { question: "What are the three components of an expert system?", answers: { correct: "Knowledge base, rule base, and inference engine", close: "Input, processing, and output", possible: "Sensor, processor, and actuator", wrong: "Hardware, software, and data" } },
+                    { question: "This type of AI gives a program the ability to automatically adapt its own processes or data.", answers: { correct: "Machine learning", close: "An expert system", possible: "Artificial Intelligence (AI)", wrong: "Automation" } },
+                    { question: "This type of system uses sensors, microprocessors, and actuators to work together.", answers: { correct: "An automated system", close: "An expert system", possible: "A robot", wrong: "An input/output system" } },
+                    { question: "Give one advantage of using an automated system.", answers: { correct: "Faster, more accurate, can work 24/7, or can work in dangerous environments", close: "They are cheaper than human workers", possible: "They can think creatively", wrong: "They never break down" } },
+                    { question: "Give one disadvantage of using an automated system.", answers: { correct: "High initial cost, loss of human jobs, or lack of flexibility/common sense", close: "They are less accurate than humans", possible: "They are very slow", wrong: "They get tired easily" } },
+                    { question: "What is the main difference between a robot and an automated system?", answers: { correct: "Robots are typically mobile or reprogrammable for multiple tasks; automated systems are often fixed for one specific task", close: "Robots use AI, automated systems do not", possible: "Automated systems are hardware, robots are software", wrong: "There is no difference" } },
+                    { question: "What are the three main characteristics of AI?", answers: { correct: "Collection of data/rules, the ability to reason, and the ability to learn/adapt", close: "Input, processing, and output", possible: "Sensor, processor, and actuator", wrong: "Mechanical, electrical, and programmable" } },
+                    { question: "How do sensors, microprocessors, and actuators work together in an automated system?", answers: { correct: "Sensors (input) -> Microprocessor (processes data) -> Actuators (output/action)", close: "Microprocessor -> Sensors -> Actuators", possible: "Actuators -> Sensors -> Microprocessor", wrong: "Sensors (output) -> Microprocessor (input) -> Actuators (process)" } },
+                ]
+            };
+            const TOPICS = Object.keys(questionBank);
+
+            // --- DOM ELEMENTS ---
+            const loadingScreen = document.getElementById('loading-screen');
+            const loadingMessage = document.getElementById('loading-message');
+            const nameEntryScreen = document.getElementById('name-entry-screen');
+            const nameInput = document.getElementById('name-input');
+            const nameSubmitBtn = document.getElementById('name-submit-btn');
+            
+            const topicSelectionScreen = document.getElementById('topic-selection');
+            const topicButtonsContainer = document.getElementById('topic-buttons');
+            const welcomeMessage = document.getElementById('welcome-message');
+            
+            const mainGameScreen = document.getElementById('main-game');
+            const currentTopicTitle = document.getElementById('current-topic-title');
+            const userIdDisplay = document.getElementById('user-id-display');
+
+            const questionTextEl = document.getElementById('question-text');
+            const answerBoxes = document.querySelectorAll('.answer-box');
+            const answerTextEls = {
+                A: document.getElementById('answer-text-A'),
+                B: document.getElementById('answer-text-B'),
+                C: document.getElementById('answer-text-C'),
+                D: document.getElementById('answer-text-D'),
+            };
+
+            const moneyLadderEl = document.getElementById('money-ladder');
+            const leaderboardListEl = document.getElementById('leaderboard-list');
+            
+            const lifeline5050Btn = document.getElementById('lifeline-5050');
+            const lifelineAudienceBtn = document.getElementById('lifeline-audience');
+
+            const audienceModal = document.getElementById('audience-modal');
+            const closeAudienceModalBtn = document.getElementById('close-audience-modal');
+            const pollEls = {
+                A: { bar: document.getElementById('poll-bar-A'), container: document.getElementById('poll-A') },
+                B: { bar: document.getElementById('poll-bar-B'), container: document.getElementById('poll-B') },
+                C: { bar: document.getElementById('poll-bar-C'), container: document.getElementById('poll-C') },
+                D: { bar: document.getElementById('poll-bar-D'), container: document.getElementById('poll-D') },
+            };
+
+            const endGameModal = document.getElementById('end-game-modal');
+            const endGameTitle = document.getElementById('end-game-title');
+            const endGameMessage = document.getElementById('end-game-message');
+            const newHighScoreMessage = document.getElementById('new-high-score-message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const quitGameBtn = document.getElementById('quit-game-btn');
+            
+            // --- NEW Tab Elements ---
+            const tabBtnMoney = document.getElementById('tab-btn-money');
+            const tabBtnLeaderboard = document.getElementById('tab-btn-leaderboard');
+            const tabContentMoney = document.getElementById('tab-content-money');
+            const tabContentLeaderboard = document.getElementById('tab-content-leaderboard');
+
+            // --- GAME STATE ---
+            let currentTopic = "";
+            let currentQuestionSet = [];
+            let currentQuestionIndex = 0;
+            let currentCorrectAnswer = ""; // Will be 'A', 'B', 'C', or 'D'
+            let score = 0;
+            let safeScore = 0;
+            let lifelines = { "5050": true, "audience": true };
+            
+            // --- 15-LEVEL MONEY LADDER ---
+            const moneyValues = [
+                100, 200, 300, 500, 1000,  // Level 5 (Safe)
+                2000, 4000, 8000, 16000, 32000, // Level 10 (Safe)
+                64000, 125000, 250000, 500000, 1000000 // Level 15 (Win)
+            ];
+            const safeLevels = [1000, 32000]; // Safe levels
+            const numQuestions = 15;
+
+            // --- FIREBASE STATE ---
+            let db, auth;
+            let userId = null;
+            let userName = null;
+            let authReady = false;
+            let userOverallHighScore = 0; // User's *best* score across all topics
+            let userTopicScores = {}; // High scores *per topic*
+            let userQuizCount = 0; // Total quizzes played
+            let unsubscribeLeaderboard = null;
+
+            // --- IMPORTANT: Set these for your local project! ---
+            let LEADERBOARD_COLLECTION = `leaderboard`;
+            let USER_SCORE_DOC = `userScores/placeholder`; 
+            let USER_PROFILE_DOC = `userProfiles/placeholder`;
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyCLcgsSsy4s5wPS68ByTLV8yfJ6qJOMUzU",
+                authDomain: "cs-whiz-game.firebaseapp.com",
+                projectId: "cs-whiz-game",
+                storageBucket: "cs-whiz-game.firebasestorage.app",
+                messagingSenderId: "962202955655",
+                appId: "1:962202955655:web:96c211a8aa23907592ad22",
+                measurementId: "G-7PGT0R9CZ3"
+            };
+
+            // --- FIREBASE FUNCTIONS ---
+
+            /**
+             * Initializes Firebase and starts auth process
+             */
+            async function initFirebase() {
+                try {
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+                    setLogLevel('debug'); // Use 'debug' for more logs
+
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            userId = user.uid;
+                            authReady = true;
+                            
+                            // --- Set user-specific paths ---
+                            LEADERBOARD_COLLECTION = `leaderboard`;
+                            USER_SCORE_DOC = `userScores/${userId}`; 
+                            USER_PROFILE_DOC = `userProfiles/${userId}`;
+        
+                            console.log("Firebase Auth is READY. User ID:", userId);
+                            console.log("Attempting to access paths:");
+                            console.log("Profile:", USER_PROFILE_DOC);
+                            console.log("Score:", USER_SCORE_DOC);
+                            console.log("Leaderboard:", LEADERBOARD_COLLECTION);
+                            console.warn("If you see 'Missing or insufficient permissions' errors, you MUST update your Firebase Security Rules!");
+
+                            await loadUserScoreData(); // Load topic scores & overall high score
+                            listenForLeaderboard();
+                            await checkUserProfile(); // Check if name is set
+                        } else {
+                            // User is signed out
+                            authReady = false;
+                            userId = null;
+                            // Sign in anonymously
+                            await signInAnonymously(auth).catch(err => {
+                                console.error("Anonymous Sign-In Failed:", err);
+                                if (err.code === 'auth/configuration-not-found') {
+                                    loadingMessage.innerHTML = "Error: Anonymous Sign-In is not enabled.<br>Please enable it in your Firebase project's Authentication settings.";
+                                    loadingMessage.classList.add('text-red-500', 'text-lg');
+                                }
+                            });
+                        }
+                    });
+                } catch (error) {
+                    console.error("Firebase init failed:", error);
+                    loadingMessage.textContent = "Connection Failed. Check config.";
+                    loadingMessage.classList.add('text-red-500');
+                }
+            }
+
+            /**
+             * Checks if the user has a profile (name).
+             * If yes, proceeds to topic selection.
+             * If no, shows name entry screen.
+             */
+            async function checkUserProfile() {
+                if (!authReady) return;
+                try {
+                    const docRef = doc(db, USER_PROFILE_DOC);
+                    const docSnap = await getDoc(docRef);
+
+                    if (docSnap.exists() && docSnap.data().name) {
+                        const data = docSnap.data();
+                        userName = data.name;
+                        userQuizCount = data.quizCount || 0; // Load quiz count
+                        // Increment login count
+                        await updateDoc(docRef, { loginCount: increment(1) });
+                        showTopicSelection();
+                    } else {
+                        // First time user
+                        userQuizCount = 0;
+                        showNameEntry();
+                    }
+                } catch (error) {
+                    console.error("Error checking user profile:", error);
+                    loadingMessage.textContent = `Error: ${error.message}. Check Rules.`;
+                    loadingMessage.classList.add('text-red-500');
+                }
+            }
+            
+            /**
+             * Saves the user's name and login count
+             */
+            async function handleNameSubmit() {
+                const name = nameInput.value.trim();
+                if (name.length < 2) {
+                    alert("Please enter a name."); // Using custom modal is better, but alert is fine for this
+                    return;
+                }
+                
+                userName = name;
+                const profileData = {
+                    name: userName,
+                    loginCount: 1, // First login
+                    quizCount: 0, // NEW: Init quiz count
+                    createdAt: new Date()
+                };
+
+                try {
+                    await setDoc(doc(db, USER_PROFILE_DOC), profileData, { merge: true });
+                    showTopicSelection();
+                } catch (error) {
+                    console.error("Error saving name:", error);
+                    alert("Error saving your name. Please try again.");
+                }
+            }
+
+            /**
+             * Loads all user high scores *for each topic*
+             */
+            async function loadUserScoreData() {
+                if (!authReady) return;
+                try {
+                    const docRef = doc(db, USER_SCORE_DOC);
+                    const docSnap = await getDoc(docRef);
+                    if (docSnap.exists()) {
+                        userTopicScores = docSnap.data().scores || {};
+                        userOverallHighScore = docSnap.data().overallBest || 0;
+                    } else {
+                        console.log("No high score doc found for this user yet.");
+                        userTopicScores = {};
+                        userOverallHighScore = 0;
+                    }
+                } catch (error) {
+                    console.error("Error loading user high score:", error);
+                }
+            }
+
+            /**
+             * Listens for real-time updates to the public leaderboard
+             */
+            function listenForLeaderboard() {
+                if (unsubscribeLeaderboard) unsubscribeLeaderboard(); // Stop previous listener
+
+                const q = query(collection(db, LEADERBOARD_COLLECTION));
+                unsubscribeLeaderboard = onSnapshot(q, (snapshot) => {
+                    let scores = [];
+                    snapshot.forEach((doc) => {
+                        scores.push({
+                            name: doc.data().name,
+                            score: doc.data().score // This is the OVERALL best score
+                        });
+                    });
+                    // Sort by score descending, then by name
+                    scores.sort((a, b) => {
+                        if (b.score !== a.score) {
+                            return b.score - a.score;
+                        }
+                        return a.name.localeCompare(b.name);
+                    });
+                    renderLeaderboard(scores.slice(0, 10)); // Show top 10
+                }, (error) => {
+                    console.error("Error listening to leaderboard:", error);
+                    leaderboardListEl.innerHTML = '<li class="text-red-400">Error loading scores.</li>';
+                });
+            }
+
+            /**
+             * Saves a new high score to both private and public docs
+             * NEW: Also increments quiz count
+             */
+            async function saveGameData(finalScore) {
+                if (!authReady || !userName) return;
+
+                console.log(`Saving game data. Final score: ${finalScore} for topic: ${currentTopic}`);
+
+                // --- 1. Increment Quiz Count ---
+                try {
+                    await updateDoc(doc(db, USER_PROFILE_DOC), { 
+                        quizCount: increment(1) 
+                    });
+                    userQuizCount++; // Update local state
+                    console.log("Quiz count incremented.");
+                } catch (error) {
+                    console.error("Error incrementing quiz count:", error);
+                }
+
+                // --- 2. Check and Save High Scores ---
+                const currentTopicHighScore = userTopicScores[currentTopic] || 0;
+                if (finalScore > currentTopicHighScore) {
+                    newHighScoreMessage.classList.remove('hidden'); // Show "new high score" message
+                    
+                    const newOverallHighScore = Math.max(userOverallHighScore, finalScore);
+
+                    // --- Update private userScores doc ---
+                    const scoreData = {
+                        [`scores.${currentTopic}`]: finalScore, // Use dot notation to update map field
+                        overallBest: newOverallHighScore
+                    };
+                    
+                    try {
+                        await setDoc(doc(db, USER_SCORE_DOC), scoreData, { merge: true });
+                        console.log("User topic score updated.");
+                        
+                        // Update local state
+                        userTopicScores[currentTopic] = finalScore;
+
+                        // --- Update public leaderboard IF it's a new OVERALL best ---
+                        if (newOverallHighScore > userOverallHighScore) {
+                            userOverallHighScore = newOverallHighScore; // Update local state
+                            
+                            const leaderboardDocRef = doc(db, LEADERBOARD_COLLECTION, userId);
+                            await setDoc(leaderboardDocRef, {
+                                name: userName,
+                                score: newOverallHighScore, // Save their new *overall* best score
+                                userId: userId
+                            });
+                            console.log("Public leaderboard updated.");
+                        }
+                    } catch (error) {
+                        console.error("Error saving high score:", error);
+                    }
+                }
+            }
+
+
+            // --- UI FUNCTIONS ---
+            
+            function showLoadingScreen(message = "Connecting...") {
+                loadingMessage.textContent = message;
+                loadingMessage.classList.remove('text-red-500', 'text-lg');
+                loadingScreen.classList.remove('hidden');
+                
+                nameEntryScreen.classList.add('hidden');
+                topicSelectionScreen.classList.add('hidden');
+                mainGameScreen.classList.add('hidden');
+            }
+
+            function showNameEntry() {
+                loadingScreen.classList.add('hidden');
+                nameEntryScreen.classList.remove('hidden');
+            }
+
+            function showTopicSelection() {
+                loadingScreen.classList.add('hidden');
+                nameEntryScreen.classList.add('hidden');
+                mainGameScreen.classList.add('hidden');
+                
+                welcomeMessage.textContent = `Welcome, ${userName}! Pick your topic...`;
+                topicSelectionScreen.classList.remove('hidden');
+            }
+
+            /**
+             * Renders the leaderboard in the UI
+             */
+            function renderLeaderboard(scores) {
+                leaderboardListEl.innerHTML = '';
+                if (scores.length === 0) {
+                    leaderboardListEl.innerHTML = '<li class="text-gray-300">No scores yet!</li>';
+                    return;
+                }
+                scores.forEach((entry, index) => {
+                    const li = document.createElement('li');
+                    li.className = 'text-white flex justify-between';
+                    
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = `${index + 1}. ${entry.name}`;
+                    nameSpan.className = 'font-semibold truncate';
+                    
+                    const scoreSpan = document.createElement('span');
+                    scoreSpan.textContent = entry.score.toLocaleString();
+                    scoreSpan.className = 'font-bold text-amber-400';
+
+                    li.appendChild(nameSpan);
+                    li.appendChild(scoreSpan);
+                    leaderboardListEl.appendChild(li);
+                });
+            }
+
+            /**
+             * Initializes the topic selection screen
+             */
+            function initTopicSelection() {
+                topicButtonsContainer.innerHTML = '';
+                TOPICS.forEach(topic => {
+                    const button = document.createElement('button');
+                    button.className = 'topic-button';
+                    button.textContent = topic;
+                    button.addEventListener('click', () => startGame(topic));
+                    topicButtonsContainer.appendChild(button);
+                });
+            }
+
+            /**
+             * Shuffles an array in place
+             */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            /**
+             * Starts the game with the selected topic
+             */
+            function startGame(topic) {
+                currentTopic = topic;
+                currentTopicTitle.textContent = `Topic: ${topic}`;
+                currentQuestionIndex = 0;
+                score = 0;
+                safeScore = 0;
+                lifelines = { "5050": true, "audience": true };
+                lifeline5050Btn.disabled = false;
+                lifelineAudienceBtn.disabled = false;
+                
+                userIdDisplay.textContent = `User ID: ${userId}`; // Display User ID
+
+                // --- Generate the 15-question set ---
+                currentQuestionSet = [];
+                const allTopicQuestions = [...questionBank[topic]]; // Copy all questions for the topic
+                shuffleArray(allTopicQuestions); // Shuffle them
+                
+                // Take the first 15
+                currentQuestionSet = allTopicQuestions.slice(0, numQuestions);
+
+                // Failsafe: if topic has < 15 questions, just use what it has
+                if (currentQuestionSet.length < numQuestions) {
+                    console.warn(`Topic "${topic}" only has ${currentQuestionSet.length} questions.`);
+                    // We'll just play with however many we have. The game end logic will handle it.
+                }
+
+                // Show game screen, hide topic screen
+                topicSelectionScreen.classList.add('hidden');
+                mainGameScreen.classList.remove('hidden');
+                endGameModal.classList.add('hidden');
+                newHighScoreMessage.classList.add('hidden');
+
+                // Reset tabs to show Money
+                tabBtnMoney.click();
+
+                buildMoneyLadder();
+                loadQuestion();
+            }
+            
+            /**
+             * Builds the money ladder display
+             */
+            function buildMoneyLadder() {
+                moneyLadderEl.innerHTML = '';
+                moneyValues.forEach((value, index) => {
+                    const li = document.createElement('li');
+                    li.id = `money-${index}`;
+                    li.textContent = `${index + 1}. ${value.toLocaleString()} Points`;
+                    if (safeLevels.includes(value)) {
+                        li.classList.add('safe');
+                    }
+                    moneyLadderEl.appendChild(li);
+                });
+            }
+
+            /**
+             * Loads the next question
+             */
+            function loadQuestion() {
+                resetAnswerStyles();
+                
+                // Check if we ran out of questions OR passed level 15
+                if (currentQuestionIndex >= numQuestions || currentQuestionIndex >= currentQuestionSet.length) {
+                    score = 1000000; // Set to max score
+                    endGame(true); // Won the game
+                    return;
+                }
+
+                updateMoneyLadder();
+
+                const questionData = currentQuestionSet[currentQuestionIndex];
+                
+                questionTextEl.textContent = questionData.question;
+
+                // --- NEW: Use curated distractors ---
+                const { correct, close, possible, wrong } = questionData.answers;
+                let answers = shuffleArray([correct, close, possible, wrong]);
+                
+                const answerMap = {};
+                ['A', 'B', 'C', 'D'].forEach((option, index) => {
+                    answerMap[option] = answers[index];
+                    answerTextEls[option].textContent = answers[index];
+                });
+
+                // Store correct option letter
+                currentCorrectAnswer = Object.keys(answerMap).find(key => answerMap[key] === correct);
+            }
+
+            /**
+             * Resets answer box styles and enables them
+             */
+            function resetAnswerStyles() {
+                answerBoxes.forEach(box => {
+                    box.classList.remove('selected', 'correct', 'incorrect', 'disabled');
+                    box.style.display = 'flex'; // Make visible (for 50:50)
+                });
+            }
+
+            /**
+             * Updates the money ladder highlight
+             */
+            function updateMoneyLadder() {
+                document.querySelectorAll('#money-ladder li').forEach((li, index) => {
+                    if (index === currentQuestionIndex) {
+                        li.classList.add('current');
+                    } else {
+                        li.classList.remove('current');
+                    }
+                });
+                
+                // Set score to the *previous* level's value
+                score = currentQuestionIndex > 0 ? moneyValues[currentQuestionIndex - 1] : 0;
+                
+                // Update safe score if we just passed a safe level
+                if (safeLevels.includes(score)) {
+                    safeScore = score;
+                }
+            }
+
+            /**
+             * Handles the user selecting an answer
+             */
+            function selectAnswer(e) {
+                // Find the parent .answer-box if a child element was clicked
+                const selectedBox = e.target.closest('.answer-box');
+                if (!selectedBox) return; // Click was not on an answer box
+                
+                const selectedOption = selectedBox.dataset.option;
+
+                // Disable all boxes to prevent re-clicks
+                answerBoxes.forEach(box => box.classList.add('disabled'));
+
+                selectedBox.classList.add('selected');
+
+                // "Final Answer?" delay
+                setTimeout(() => {
+                    if (selectedOption === currentCorrectAnswer) {
+                        // --- CORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('correct');
+                        setTimeout(() => {
+                            currentQuestionIndex++;
+                            loadQuestion();
+                        }, 1500);
+                    } else {
+                        // --- INCORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('incorrect');
+                        // Show correct answer
+                        document.getElementById(`answer-${currentCorrectAnswer}`).classList.add('correct');
+                        setTimeout(() => {
+                            endGame(false); // Lost the game
+                        }, 2000);
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Handles the 50:50 lifeline
+             */
+            function use5050() {
+                if (!lifelines["5050"]) return;
+                lifelines["5050"] = false;
+                lifeline5050Btn.disabled = true;
+
+                let wrongOptions = ['A', 'B', 'C', 'D'].filter(opt => opt !== currentCorrectAnswer);
+                wrongOptions = shuffleArray(wrongOptions);
+                
+                // Hide two wrong answers
+                document.getElementById(`answer-${wrongOptions[0]}`).style.display = 'none';
+                document.getElementById(`answer-${wrongOptions[1]}`).style.display = 'none';
+            }
+
+            /**
+             * Handles the Ask the Audience lifeline
+             */
+            function useAudience() {
+                if (!lifelines["audience"]) return;
+                lifelines["audience"] = false;
+                lifelineAudienceBtn.disabled = true;
+
+                // Generate poll results
+                let percentages = [0, 0, 0, 0];
+                const options = ['A', 'B', 'C', 'D'];
+                const correctIndex = options.indexOf(currentCorrectAnswer);
+
+                // Give correct answer a big boost (40-79%)
+                percentages[correctIndex] = Math.floor(Math.random() * 40) + 40;
+                let remaining = 100 - percentages[correctIndex];
+                
+                let wrongIndices = options.map((o,i) => i).filter(i => i !== correctIndex);
+                shuffleArray(wrongIndices); // Shuffle order of wrong answers
+
+                // Distribute remaining % among wrong answers
+                for (let i = 0; i < wrongIndices.length; i++) {
+                    const index = wrongIndices[i];
+                    if (i === wrongIndices.length - 1) {
+                        percentages[index] = remaining; // Assign leftover to the last one
+                    } else {
+                        // Give a random amount to the others
+                        const val = Math.floor(Math.random() * remaining * 0.8); // Don't use up all remaining
+                        percentages[index] = val;
+                        remaining -= val;
+                    }
+                }
+
+                // Apply to modal bars
+                options.forEach((opt, index) => {
+                    const el = pollEls[opt];
+                    const percent = percentages[index];
+                    // Check if this answer is visible (not hidden by 50:50)
+                    if (document.getElementById(`answer-${opt}`).style.display !== 'none') {
+                        el.container.style.display = 'block';
+                        el.bar.style.width = `${percent}%`;
+                        el.bar.textContent = `${percent}%`;
+                    } else {
+                        // Hide this poll bar if the answer is hidden
+                        el.container.style.display = 'none';
+                    }
+                });
+
+                audienceModal.classList.remove('hidden');
+            }
+
+            /**
+             * Ends the game and shows the final score
+             */
+            async function endGame(didWin) {
+                let finalScore = 0;
+                newHighScoreMessage.classList.add('hidden'); // Hide by default
+
+                if (didWin) {
+                    finalScore = 1000000;
+                    endGameTitle.textContent = "You're a CS Whiz!";
+                    endGameMessage.innerHTML = `You answered all questions and won <span class="font-bold text-amber-400">${finalScore.toLocaleString()}</span> points!`;
+                } else {
+                    finalScore = safeScore;
+                    endGameTitle.textContent = "Game Over!";
+                    endGameMessage.innerHTML = `You walk away with your safe score of <span class="font-bold text-amber-400">${finalScore.toLocaleString()}</span> points.`;
+                }
+                
+                // --- NEW: Save game data (quiz count and score) ---
+                // This function handles all checks internally
+                await saveGameData(finalScore); 
+
+                endGameModal.classList.remove('hidden');
+            }
+
+            /**
+             * Resets the game to the topic selection screen
+             */
+            function resetGame() {
+                mainGameScreen.classList.add('hidden');
+                endGameModal.classList.add('hidden');
+                topicSelectionScreen.classList.remove('hidden');
+            }
+            
+            // --- NEW Tab Click Handlers ---
+            function handleTabClick(e) {
+                const clickedTab = e.currentTarget;
+                
+                // Buttons
+                tabBtnMoney.classList.remove('active');
+                tabBtnLeaderboard.classList.remove('active');
+                clickedTab.classList.add('active');
+                
+                // Content
+                tabContentMoney.classList.remove('active');
+                tabContentLeaderboard.classList.remove('active');
+                
+                if (clickedTab.id === 'tab-btn-money') {
+                    tabContentMoney.classList.add('active');
+                } else {
+                    tabContentLeaderboard.classList.add('active');
+                }
+            }
+
+            // --- EVENT LISTENERS ---
+            answerBoxes.forEach(box => box.addEventListener('click', selectAnswer));
+            lifeline5050Btn.addEventListener('click', use5050);
+            lifelineAudienceBtn.addEventListener('click', useAudience);
+            closeAudienceModalBtn.addEventListener('click', () => audienceModal.classList.add('hidden'));
+
+            playAgainBtn.addEventListener('click', () => {
+                endGameModal.classList.add('hidden');
+                startGame(currentTopic); // Play same topic again
+            });
+            quitGameBtn.addEventListener('click', resetGame); // Go back to topic select
+
+            nameSubmitBtn.addEventListener('click', handleNameSubmit);
+            nameInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    handleNameSubmit();
+                }
+            });
+            
+            // Tab listeners
+            tabBtnMoney.addEventListener('click', handleTabClick);
+            tabBtnLeaderboard.addEventListener('click', handleTabClick);
+
+            // --- INITIALIZE THE APP ---
+            showLoadingScreen();
+            initTopicSelection(); // Build topic buttons
+            initFirebase(); // Start connection
+
+        }); // End DOMContentLoaded
+    </script>
+</body>
+</html>

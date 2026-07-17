@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>8-Bit Register Shift Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #111827; /* bg-gray-900 */
+            color: #f3f4f6; /* text-gray-200 */
+        }
+        .register-bit {
+            font-family: 'Roboto Mono', monospace;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        .bit-container {
+            perspective: 500px;
+        }
+        .bit-enter {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+        .bit-exit-left {
+            opacity: 0;
+            transform: translateX(-50px) rotateY(90deg);
+        }
+        .bit-exit-right {
+            opacity: 0;
+            transform: translateX(50px) rotateY(-90deg);
+        }
+        .bit-shifted-in {
+            animation: fadeIn 0.5s 0.3s ease-in-out forwards;
+        }
+        .bit-shifted-out {
+            animation: fadeOutZoom 0.5s ease-in-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeOutZoom {
+             from { opacity: 1; transform: scale(1); }
+             to { opacity: 0; transform: scale(1.5); }
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto space-y-8">
+        <!-- Header -->
+        <div class="text-center">
+            <h1 class="text-4xl font-bold text-cyan-400">8-Bit Register Shift Simulation</h1>
+            <p class="mt-2 text-lg text-gray-400">Explore how bitwise shifts and overflows work on an 8-bit integer.</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700">
+            <label for="decimal-input" class="block text-xl font-medium text-gray-300 mb-2">Enter a value (0-255)</label>
+            <input type="number" id="decimal-input" min="0" max="255" value="141" class="w-full bg-gray-900 text-white border border-gray-600 rounded-lg p-3 text-2xl text-center focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 outline-none transition duration-200">
+        </div>
+
+        <!-- Main Display -->
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 space-y-6">
+            <h2 class="text-2xl font-semibold text-center text-white">Current Register State</h2>
+            
+            <!-- Bit Visualization -->
+            <div id="bit-display" class="flex justify-center items-center space-x-2 md:space-x-3 my-4 bit-container">
+                <!-- Bits will be generated here by JS -->
+            </div>
+
+            <!-- Value Representations -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                <div class="bg-gray-900/50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-cyan-400 uppercase tracking-wider">Binary 🟢</h3>
+                    <p id="binary-value" class="text-2xl font-mono"></p>
+                </div>
+                <div class="bg-gray-900/50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-cyan-400 uppercase tracking-wider">Decimal 🔢</h3>
+                    <p id="decimal-value" class="text-2xl font-mono"></p>
+                </div>
+                <div class="bg-gray-900/50 p-4 rounded-lg">
+                    <h3 class="text-sm font-medium text-cyan-400 uppercase tracking-wider">Hexadecimal #️⃣</h3>
+                    <p id="hex-value" class="text-2xl font-mono"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row justify-center gap-4">
+            <button id="shift-left" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg text-xl transition duration-300 shadow-lg transform hover:scale-105">
+                &larr; Shift Left
+            </button>
+            <button id="shift-right" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg text-xl transition duration-300 shadow-lg transform hover:scale-105">
+                Shift Right &rarr;
+            </button>
+             <button id="reset" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 px-8 rounded-lg text-xl transition duration-300 shadow-lg transform hover:scale-105">
+                Reset
+            </button>
+        </div>
+
+        <!-- Result/Explanation Section -->
+        <div id="result-container" class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 hidden">
+             <h2 class="text-2xl font-semibold text-center text-white mb-4">Shift Operation Result</h2>
+             <div class="flex flex-col md:flex-row items-center justify-around gap-6 text-center">
+                 <div class="flex flex-col items-center">
+                    <p class="text-lg text-gray-400">Bit Shifted Out</p>
+                    <div id="shifted-out-bit" class="w-16 h-16 flex items-center justify-center text-4xl font-mono bg-red-800/50 border-2 border-red-500 rounded-full mt-2">?</div>
+                 </div>
+                 <div id="explanation-text" class="flex-1 text-left text-lg text-gray-300 p-4 bg-gray-900/50 rounded-lg">
+                 </div>
+             </div>
+        </div>
+
+        <!-- Educational Guide Section -->
+        <div class="bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 space-y-6">
+            <h2 class="text-2xl font-semibold text-center text-white border-b border-gray-700 pb-4">Understanding Bitwise Shifts</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Impacts -->
+                <div class="space-y-4">
+                    <h3 class="text-xl text-cyan-400 font-medium">The Impact of Shifting</h3>
+                    
+                    <div class="bg-gray-900/50 p-4 rounded-lg">
+                        <h4 class="text-lg text-white font-semibold mb-2">&larr; Left Shift (&lt;&lt;)</h4>
+                        <ul class="list-disc list-inside text-gray-300 space-y-2 text-sm">
+                            <li>Moves all bits to the left by a specified number of positions.</li>
+                            <li><strong>Math Equivalent:</strong> Multiplies the number by 2 for each position shifted.</li>
+                            <li><strong>Impact of Lost Bits:</strong> The leftmost bit is pushed out (overflow). If a <strong>'1'</strong> is lost, the expected multiplied result exceeds our 8-bit limit (255) and wraps around, heavily altering the value (effectively subtracting 256). If a <strong>'0'</strong> is lost, the strict "multiply by 2" rule holds perfectly true. New '0' bits fill in on the right.</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-gray-900/50 p-4 rounded-lg">
+                        <h4 class="text-lg text-white font-semibold mb-2">Right Shift (&gt;&gt;) &rarr;</h4>
+                        <ul class="list-disc list-inside text-gray-300 space-y-2 text-sm">
+                            <li>Moves all bits to the right.</li>
+                            <li><strong>Math Equivalent:</strong> Integer division by 2 for each position shifted.</li>
+                            <li><strong>Impact of Lost Bits:</strong> The rightmost bit drops off. If a <strong>'1'</strong> drops off, the original number was odd, and this '1' acts as the fractional remainder (0.5) that gets truncated. If a <strong>'0'</strong> drops off, the original number was even and divides perfectly. New bits are added on the left (usually '0' for unsigned values).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Why use it -->
+                <div class="space-y-4">
+                    <h3 class="text-xl text-cyan-400 font-medium">Why Use Bit Shifting?</h3>
+                    <ul class="space-y-4 text-gray-300 text-sm mt-2">
+                        <li class="flex items-start">
+                            <span class="mr-3 text-xl">🚀</span>
+                            <div>
+                                <strong class="text-white block">Performance Optimization:</strong> Historically, CPU shift instructions evaluate much faster than complex multiplication or division circuits.
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 text-xl">🎨</span>
+                            <div>
+                                <strong class="text-white block">Color Processing:</strong> Used heavily in graphics to extract RGB values from a single 32-bit integer (e.g., <code class="bg-gray-900 px-1 rounded text-cyan-300 font-mono">color >> 16</code> to isolate Red).
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 text-xl">⚙️</span>
+                            <div>
+                                <strong class="text-white block">Hardware & Embedded Systems:</strong> Microcontrollers map specific hardware pins to individual bits in a memory register. Shifting is required to target exact pins without altering others.
+                            </div>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="mr-3 text-xl">🔐</span>
+                            <div>
+                                <strong class="text-white block">Cryptography & Hashing:</strong> Shifting is a core, fundamental operation in scrambling data and generating secure hashes (like SHA-256).
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // DOM Elements
+        const decimalInput = document.getElementById('decimal-input');
+        const bitDisplay = document.getElementById('bit-display');
+        const binaryValue = document.getElementById('binary-value');
+        const decimalValue = document.getElementById('decimal-value');
+        const hexValue = document.getElementById('hex-value');
+        const shiftLeftBtn = document.getElementById('shift-left');
+        const shiftRightBtn = document.getElementById('shift-right');
+        const resetBtn = document.getElementById('reset');
+        const resultContainer = document.getElementById('result-container');
+        const shiftedOutBitEl = document.getElementById('shifted-out-bit');
+        const explanationTextEl = document.getElementById('explanation-text');
+        
+        let currentValue = 141;
+        let initialValue = 141;
+
+        // --- Utility Functions ---
+        const toBinary = (dec) => dec.toString(2).padStart(8, '0');
+        const toHex = (dec) => dec.toString(16).toUpperCase().padStart(2, '0');
+
+        // --- Core Application Logic ---
+        function updateDisplay(value) {
+            currentValue = value;
+            const binaryString = toBinary(value);
+            
+            // Update value representations
+            binaryValue.textContent = binaryString.slice(0, 4) + ' ' + binaryString.slice(4);
+            decimalValue.textContent = value;
+            hexValue.textContent = '0x' + toHex(value);
+            
+            // Update visual bits
+            bitDisplay.innerHTML = '';
+            binaryString.split('').forEach(bit => {
+                const bitEl = document.createElement('div');
+                bitEl.className = 'register-bit w-10 h-14 md:w-12 md:h-16 flex items-center justify-center text-3xl md:text-4xl font-bold bg-gray-700 rounded-lg shadow-md bit-enter';
+                bitEl.textContent = bit;
+                if (bit === '1') {
+                    bitEl.classList.add('text-cyan-300');
+                }
+                bitDisplay.appendChild(bitEl);
+                // Trigger animation
+                requestAnimationFrame(() => bitEl.classList.remove('bit-enter'));
+            });
+        }
+
+        function handleInputChange() {
+            let value = parseInt(decimalInput.value, 10);
+            if (isNaN(value) || value < 0) value = 0;
+            if (value > 255) value = 255;
+            
+            decimalInput.value = value;
+            initialValue = value;
+            resultContainer.classList.add('hidden');
+            updateDisplay(value);
+        }
+
+        function handleReset() {
+             resultContainer.classList.add('hidden');
+             decimalInput.value = initialValue;
+             updateDisplay(initialValue);
+        }
+
+        function animateShift(oldBinary, newBinary, direction) {
+            const shiftedOutBit = direction === 'left' ? oldBinary[0] : oldBinary[7];
+            const children = Array.from(bitDisplay.children);
+            
+            children.forEach((child, index) => {
+                if (direction === 'left' && index === 0) {
+                     child.classList.add('bit-exit-left');
+                } else if (direction === 'right' && index === 7) {
+                     child.classList.add('bit-exit-right');
+                } else {
+                     child.style.transform = `translateX(${direction === 'left' ? '-' : ''}125%)`;
+                }
+            });
+
+            setTimeout(() => {
+                updateDisplay(parseInt(newBinary, 2));
+            }, 500);
+
+            return shiftedOutBit;
+        }
+
+        function handleShift(direction) {
+            const oldValue = currentValue;
+            const oldBinary = toBinary(oldValue);
+            let newValue;
+            let shiftedOutBit;
+            let explanation = '';
+
+            if (direction === 'left') {
+                shiftedOutBit = (oldValue & 128) ? '1' : '0'; // Check MSB
+                newValue = (oldValue << 1) & 255; // Shift and mask to 8 bits
+                
+                explanation = `
+                    <p>A <strong>left shift</strong> is equivalent to multiplying by 2.</p>
+                    <p class="mt-2">Original value was ${oldValue} (${oldValue} * 2 = ${oldValue * 2}).</p>
+                `;
+
+                if (shiftedOutBit === '1') {
+                    explanation += `<p class="mt-2 text-red-400 font-semibold">An overflow occurred! The most significant bit ('1') was discarded. This is why the result is ${newValue} instead of ${oldValue * 2}. The final value is (${oldValue * 2} - 256 = ${newValue}).</p>`;
+                    shiftedOutBitEl.classList.add('text-red-400');
+                } else {
+                    explanation += `<p class="mt-2 text-green-400 font-semibold">No overflow occurred. The leftmost bit was '0' and was discarded.</p>`;
+                    shiftedOutBitEl.classList.remove('text-red-400');
+                }
+
+            } else { // Right shift
+                shiftedOutBit = (oldValue & 1) ? '1' : '0'; // Check LSB
+                newValue = oldValue >> 1;
+
+                explanation = `
+                    <p>A <strong>logical right shift</strong> is equivalent to integer division by 2.</p>
+                    <p class="mt-2">Original value was ${oldValue} (${oldValue} / 2 = ${Math.floor(oldValue / 2)} with a remainder of ${oldValue % 2}).</p>
+                    <p class="mt-2">The bit shifted out ('${shiftedOutBit}') represents the remainder of the division.</p>
+                `;
+                 shiftedOutBitEl.classList.remove('text-red-400');
+            }
+
+            // Animate and update UI
+            animateShift(oldBinary, toBinary(newValue), direction);
+            shiftedOutBitEl.textContent = shiftedOutBit;
+            explanationTextEl.innerHTML = explanation;
+            resultContainer.classList.remove('hidden');
+        }
+
+        // --- Event Listeners ---
+        decimalInput.addEventListener('input', handleInputChange);
+        shiftLeftBtn.addEventListener('click', () => handleShift('left'));
+        shiftRightBtn.addEventListener('click', () => handleShift('right'));
+        resetBtn.addEventListener('click', handleReset);
+        
+        // --- Initial Load ---
+        window.addEventListener('load', () => {
+             updateDisplay(currentValue);
+        });
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoSpaces VR Interactive GDD Workspace</title>
+    <!-- Tailwind CSS for modern gaming design system -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Alpine App Logic State declared BEFORE Alpine.js loads to guarantee global registration -->
+    <script>
+        function gddWorkspace() {
+            return {
+                step: 1,
+                steps: [
+                    'Pitch Mad-Libs',
+                    'VR Game Benchmarks',
+                    'Core Gameplay Loop',
+                    'Logic Blueprint Script',
+                    '360° VR Spatial Plan',
+                    'Download GDD PDF'
+                ],
+                
+                // Form Variables
+                studentName: '',
+                gameTitle: '',
+                genre: '',
+                setting: '',
+                playerGoal: '',
+                primaryInteract: '',
+                audience: '',
+                atmosphere: '',
+
+                // Competitive benchmarks
+                similarGames: [
+                    { 
+                        name: 'Example VR Game A', 
+                        immersion: 4, 
+                        controls: 3, 
+                        feasibility: 4, 
+                        goodPoints: 'The spatial puzzles were simple and the click trigger mechanics were smooth.', 
+                        badPoints: 'Too much walking around back and forth made it feel slow.' 
+                    },
+                    { 
+                        name: 'Example VR Game B', 
+                        immersion: 3, 
+                        controls: 5, 
+                        feasibility: 2, 
+                        goodPoints: 'Fun multiplayer integration and smooth climbing mechanics.', 
+                        badPoints: 'CoSpaces does not natively support complex physics engine behaviors without lag.' 
+                    }
+                ],
+
+                // Core loop
+                coreLoop: {
+                    spawn: '',
+                    action: '',
+                    reward: '',
+                    exit: ''
+                },
+
+                // Mechanics selection checklist (Standard compliant array of objects to fix x-for in Alpine.js)
+                chosenMechanics: [
+                    { name: 'Collision Triggers', checked: true },
+                    { name: 'Gaze Interaction', checked: false },
+                    { name: 'Path Movement', checked: false },
+                    { name: 'Sound Triggers', checked: true },
+                    { name: 'Variable Counters', checked: false },
+                    { name: 'Quiz Panels', checked: false },
+                    { name: 'Hidden Keycards', checked: false },
+                    { name: 'Timer Countdown', checked: false }
+                ],
+
+                // CoBlocks visual stack
+                coblocks: [],
+
+                // Spatial 360 VR design state
+                selectedAsset: { id: 'key', icon: '🔑', label: 'Key / Object' },
+                assetTypes: [
+                    { id: 'player', icon: '👤', label: 'Player Spawn' },
+                    { id: 'key', icon: '🔑', label: 'Key / Item' },
+                    { id: 'monster', icon: '👾', label: 'Obstacle / Monster' },
+                    { id: 'portal', icon: '🌀', label: 'Portal / Finish' },
+                    { id: 'info', icon: 'ℹ️', label: 'Info Dialog Board' },
+                    { id: 'sound', icon: '🔊', label: 'Audio Speaker Source' },
+                ],
+                spatialDesign: [
+                    { icon: '👤', label: 'Player Spawn', x: 50, y: 50, direction: 'Center' },
+                    { icon: '🌀', label: 'Portal / Finish', x: 50, y: 15, direction: 'North (Far Ahead)' }
+                ],
+
+                // Initialize default step on startup
+                init() {
+                    console.log("CoSpaces VR GDD Workspace activated!");
+                },
+
+                changeStep(targetStep) {
+                    this.step = targetStep;
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                calculateProgress() {
+                    let totalItems = 7;
+                    let completedItems = 0;
+                    if (this.studentName) completedItems++;
+                    if (this.gameTitle) completedItems++;
+                    if (this.genre && this.setting && this.playerGoal) completedItems++;
+                    if (this.similarGames[0].name && this.similarGames[1].name) completedItems++;
+                    if (this.coreLoop.spawn && this.coreLoop.exit) completedItems++;
+                    if (this.coblocks.length > 0) completedItems++;
+                    if (this.spatialDesign.length > 2) completedItems++;
+
+                    return Math.round((completedItems / totalItems) * 100);
+                },
+
+                generatePitchText() {
+                    if (!this.genre || !this.setting || !this.playerGoal || !this.primaryInteract) {
+                        return "Complete all fields above to formulate your high-concept VR logic formula!";
+                    }
+                    return 'My game is a ' + this.genre + ' game set in a ' + this.setting + ' where the player must ' + this.playerGoal + ' by using their ' + this.primaryInteract + '.';
+                },
+
+                // Block programming helpers
+                addBlock(type, text) {
+                    this.coblocks.push({ type, text });
+                },
+
+                removeBlock(idx) {
+                    this.coblocks.splice(idx, 1);
+                },
+
+                // 360 Spatial Map coordinate calculator
+                placeObjectOnGrid(event) {
+                    const rect = event.currentTarget.getBoundingClientRect();
+                    const clickX = event.clientX - rect.left;
+                    const clickY = event.clientY - rect.top;
+
+                    // Calculate percentage coordinate
+                    const pctX = Math.round((clickX / rect.width) * 100);
+                    const pctY = Math.round((clickY / rect.height) * 100);
+
+                    // Determine cardinal sector relative to player center
+                    let dirStr = '';
+                    const dx = pctX - 50;
+                    const dy = pctY - 50;
+
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        dirStr = dx > 0 ? 'East (Right)' : 'West (Left)';
+                    } else {
+                        dirStr = dy > 0 ? 'South (Behind)' : 'North (Ahead)';
+                    }
+
+                    this.spatialDesign.push({
+                        icon: this.selectedAsset.icon,
+                        label: this.selectedAsset.label,
+                        x: pctX,
+                        y: pctY,
+                        direction: dirStr
+                    });
+                }
+            }
+        }
+    </script>
+
+    <!-- Alpine.js script tag loaded AFTER gddWorkspace is declared with defer for perfect execution order -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .heading-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        
+        /* Print Styles for generating a clean GDD Document */
+        @media print {
+            body {
+                background-color: #ffffff;
+                color: #000000;
+                font-size: 12pt;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-layout {
+                display: block !important;
+                background: white !important;
+                color: black !important;
+            }
+            .card-print {
+                border: 1px solid #cbd5e1 !important;
+                background: transparent !important;
+                color: black !important;
+                page-break-inside: avoid;
+            }
+            .text-indigo-400, .text-cyan-400, .text-amber-400 {
+                color: #1e1b4b !important;
+            }
+            .bg-slate-900, .bg-slate-800, .bg-slate-950 {
+                background: transparent !important;
+                border: 1px solid #ddd !important;
+                color: black !important;
+            }
+        }
+    </style>
+</head>
+<body x-data="gddWorkspace()" class="antialiased min-h-screen flex flex-col">
+
+    <!-- Header Navigation (Hide on Print) -->
+    <header class="no-print bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-50 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-600 rounded-lg text-white shadow-lg shadow-indigo-500/20">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="heading-font text-xl font-bold tracking-tight bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">VR Game Design Document</h1>
+                    <p class="text-xs text-slate-500">CoSpaces Interactive Blueprint Workspace &bull; Year 7 Edition</p>
+                </div>
+            </div>
+            
+            <!-- Step Navigation Tabs -->
+            <nav class="flex flex-wrap gap-1 bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                <template x-for="(label, i) in steps">
+                    <button 
+                        @click="changeStep(i + 1)" 
+                        :class="step === (i + 1) ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'"
+                        class="px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 flex items-center gap-1.5"
+                    >
+                        <span x-text="i + 1" class="w-4 h-4 rounded-full bg-slate-200/60 flex items-center justify-center text-[10px]" :class="step === (i + 1) ? 'bg-black/20 text-white' : 'text-slate-700'"></span>
+                        <span x-text="label"></span>
+                    </button>
+                </template>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Workspace Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+        
+        <!-- Gamified Progress & Achievements Bar (Hide on Print) -->
+        <div class="no-print bg-gradient-to-r from-slate-50 to-indigo-50/50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+            <div class="w-full md:w-1/3">
+                <div class="flex justify-between text-xs font-semibold mb-1 text-slate-600">
+                    <span>GDD BLUEPRINT COMPLETION</span>
+                    <span class="text-indigo-600" x-text="calculateProgress() + '%'"></span>
+                </div>
+                <div class="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                    <div class="bg-gradient-to-r from-indigo-600 to-cyan-500 h-full transition-all duration-500" :style="'width: ' + calculateProgress() + '%'"></div>
+                </div>
+            </div>
+            
+            <!-- Quick Project Details Setup -->
+            <div class="flex flex-wrap items-center gap-4 w-full md:w-auto">
+                <div class="flex-grow">
+                    <label class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Your Name</label>
+                    <input type="text" x-model="studentName" placeholder="Enter Designer Name..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+                <div class="flex-grow">
+                    <label class="block text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-1">Game Project Name</label>
+                    <input type="text" x-model="gameTitle" placeholder="Enter Cool Game Title..." class="w-full bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-sm text-slate-900 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- STAGES -->
+        
+        <!-- STEP 1: The Pitch Mad-Libs (Hide on Print) -->
+        <section x-show="step === 1" class="no-print space-y-6" x-transition>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-2 bg-pink-100 text-pink-600 rounded-lg font-bold">01</span>
+                    <h2 class="heading-font text-2xl font-bold text-slate-800">The Game Elevator Pitch</h2>
+                </div>
+                <p class="text-sm text-slate-600 mb-6">
+                    Professional game studios start with an "elevator pitch" to capture attention. Let's create your game idea using our VR Pitch Builder! Fill in the blanks below to formulate your high-concept logic.
+                </p>
+
+                <!-- Interactive Mad-Libs Form -->
+                <div class="bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-6">
+                    <div class="text-lg leading-relaxed text-slate-700">
+                        "My game is a 
+                        <select x-model="genre" class="bg-indigo-50 border border-indigo-200 rounded px-2 py-1 text-indigo-950 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="">[Select Genre]</option>
+                            <option value="Puzzle & Escape Room">Puzzle & Escape Room</option>
+                            <option value="Rollercoaster & Park Ride">Rollercoaster & Park Ride</option>
+                            <option value="Historical Exhibition">Historical Exhibition</option>
+                            <option value="Physics Simulator">Physics Simulator</option>
+                            <option value="Adventure RPG">Adventure RPG</option>
+                        </select>
+                        game set in a 
+                        <input type="text" x-model="setting" placeholder="e.g. Ancient Temple / Mars space" class="bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-base w-64 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                        where the player must 
+                        <input type="text" x-model="playerGoal" placeholder="e.g. decode ancient codes / find keys" class="bg-white border border-slate-300 rounded px-2 py-1 text-slate-900 text-base w-80 placeholder-slate-400 focus:ring-2 focus:ring-indigo-500 focus:outline-none font-medium">
+                        by using their 
+                        <select x-model="primaryInteract" class="bg-indigo-50 border border-indigo-200 rounded px-2 py-1 text-indigo-950 text-base font-medium focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="">[Primary VR Interaction]</option>
+                            <option value="Gaze / Looking Interaction">Gaze (Looking at things to trigger them)</option>
+                            <option value="Click Interaction">Click Interaction (Pointing & Clicking objects)</option>
+                            <option value="Pathfinding Guides">Following pathways / Physics Triggers</option>
+                            <option value="Keyboard navigation & Dragging">Keyboard Nav & Dragging 3D assets</option>
+                        </select>."
+                    </div>
+
+                    <!-- Output Realtime Box -->
+                    <div class="bg-indigo-50 border border-indigo-100 p-4 rounded-lg">
+                        <span class="text-[10px] text-indigo-600 uppercase font-bold tracking-wider block mb-1">Your Generated Game Pitch:</span>
+                        <p class="text-slate-800 italic font-medium" x-text="generatePitchText()"></p>
+                    </div>
+                </div>
+
+                <!-- Targeted Questions -->
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Who is this game designed for? (Target Audience)</label>
+                        <textarea x-model="audience" rows="2" placeholder="e.g. Other Year 7 students studying space, or younger students who want to explore history in VR..." class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">What is the main feeling or atmosphere of your game world?</label>
+                        <textarea x-model="atmosphere" rows="2" placeholder="e.g. Mysterious and quiet with dark ambient sounds, or high-energy and exciting with bright sci-fi neon lights..." class="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visual Help Alert -->
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 flex gap-3">
+                <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                <div class="text-xs text-blue-800">
+                    <strong class="font-bold">Year 7 Pro-Tip:</strong> High-impact VR games often focus on *one* primary action really well rather than attempting 10 complicated mechanics. Decide if your game is mainly an exploration, a puzzle, or an action game!
+                </div>
+            </div>
+
+            <div class="flex justify-end">
+                <button @click="changeStep(2)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm tracking-wide text-white transition shadow-lg shadow-indigo-500/20">Next Section: Similar Products &rarr;</button>
+            </div>
+        </section>
+
+        <!-- STEP 2: Similar Products Analysis (Hide on Print) -->
+        <section x-show="step === 2" class="no-print space-y-6" x-transition>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-2 bg-cyan-100 text-cyan-600 rounded-lg font-bold">02</span>
+                    <h2 class="heading-font text-2xl font-bold text-slate-800">Similar VR Product Analysis (Benchmarking)</h2>
+                </div>
+                <p class="text-sm text-slate-600 mb-6">
+                    Before building inside CoSpaces, analyze existing games or projects. Use this interactive scorecard to rate up to two games you researched or played.
+                </p>
+
+                <!-- Comparison Cards Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <template x-for="(comp, idx) in similarGames">
+                        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 space-y-4 relative">
+                            <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                                <h3 class="font-bold text-indigo-600 flex items-center gap-2">
+                                    <span>Game Analysed #</span><span x-text="idx + 1"></span>
+                                </h3>
+                                <input type="text" x-model="comp.name" placeholder="Enter Game Title..." class="bg-white border border-slate-300 rounded px-2.5 py-1 text-sm text-slate-900 font-semibold focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <!-- Immersion Rating -->
+                                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                    <label class="block text-xs text-slate-500 font-semibold mb-1">360° Immersion</label>
+                                    <div class="flex gap-1 text-amber-500 text-lg">
+                                        <template x-for="star in 5">
+                                            <button @click="comp.immersion = star" class="hover:scale-110 transition">
+                                                <span x-text="star <= comp.immersion ? '★' : '☆'"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1">Does it use the whole 360 space well?</p>
+                                </div>
+
+                                <!-- Comfort / Control Rating -->
+                                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                    <label class="block text-xs text-slate-500 font-semibold mb-1">VR Control Feel</label>
+                                    <div class="flex gap-1 text-amber-500 text-lg">
+                                        <template x-for="star in 5">
+                                            <button @click="comp.controls = star" class="hover:scale-110 transition">
+                                                <span x-text="star <= comp.controls ? '★' : '☆'"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1">Is navigating comfortable/easy?</p>
+                                </div>
+
+                                <!-- Feasibility Rating -->
+                                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                                    <label class="block text-xs text-slate-500 font-semibold mb-1">CoSpaces Feasibility</label>
+                                    <div class="flex gap-1 text-cyan-600 text-lg">
+                                        <template x-for="star in 5">
+                                            <button @click="comp.feasibility = star" class="hover:scale-110 transition">
+                                                <span x-text="star <= comp.feasibility ? '★' : '☆'"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <p class="text-[10px] text-slate-400 mt-1">Can we build this using CoBlocks?</p>
+                                </div>
+
+                                <!-- Overall Score -->
+                                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex flex-col justify-center items-center text-center">
+                                    <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Overall Rating</span>
+                                    <span class="text-2xl font-black text-slate-800 mt-1" x-text="((comp.immersion + comp.controls + comp.feasibility) / 3).toFixed(1) + '/5'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Qualitative Prompts -->
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs text-slate-600 font-semibold mb-1">What worked really well? (Cool Mechanics/Visuals to 'steal')</label>
+                                    <textarea x-model="comp.goodPoints" rows="2" placeholder="e.g. When you hover over objects, a cool description box floats near it..." class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-600 font-semibold mb-1">What was annoying? (Issues to avoid in your project)</label>
+                                    <textarea x-model="comp.badPoints" rows="2" placeholder="e.g. Teleportation was confusing and you kept getting stuck in the walls..." class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs text-slate-800 focus:outline-none focus:border-indigo-500"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button @click="changeStep(1)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm text-slate-700 tracking-wide transition">&larr; Back</button>
+                <button @click="changeStep(3)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white tracking-wide transition shadow-lg shadow-indigo-500/20">Next Section: Core Gameplay Loop &rarr;</button>
+            </div>
+        </section>
+
+        <!-- STEP 3: Core Gameplay Loop (Hide on Print) -->
+        <section x-show="step === 3" class="no-print space-y-6" x-transition>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-2 bg-emerald-100 text-emerald-600 rounded-lg font-bold">03</span>
+                    <h2 class="heading-font text-2xl font-bold text-slate-800">The Core Gameplay Loop</h2>
+                </div>
+                <p class="text-sm text-slate-600 mb-6">
+                    Every game has a <strong>"core loop."</strong> This is the sequence of actions that players repeat throughout the entire game. Design your loop by filling in the chronological blocks below.
+                </p>
+
+                <!-- Interactive Card/Arrow Loop visualization -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 relative">
+                    <!-- Step 1: Start -->
+                    <div class="bg-white border border-indigo-100 p-4 rounded-xl flex flex-col items-center text-center space-y-2 shadow-sm">
+                        <div class="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm shadow">1</div>
+                        <h4 class="font-bold text-slate-800 text-sm">SPAWN / OBJECTIVE</h4>
+                        <p class="text-[10px] text-slate-500">How does the player start and find out what they need to do?</p>
+                        <textarea x-model="coreLoop.spawn" rows="3" placeholder="e.g. Player wakes up inside a mysterious locked lab, a text sign tells them they need to search for 3 batteries..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 resize-none focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Step 2: Action -->
+                    <div class="bg-white border border-cyan-100 p-4 rounded-xl flex flex-col items-center text-center space-y-2 shadow-sm">
+                        <div class="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center font-bold text-sm shadow">2</div>
+                        <h4 class="font-bold text-slate-800 text-sm">ACTION / DISCOVERY</h4>
+                        <p class="text-[10px] text-slate-500">What actions does the player repeat in order to search or build?</p>
+                        <textarea x-model="coreLoop.action" rows="3" placeholder="e.g. Player explores the desks, clicking on drawers and drawers slide out, looking for hidden items..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 resize-none focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Step 3: Challenge -->
+                    <div class="bg-white border border-amber-100 p-4 rounded-xl flex flex-col items-center text-center space-y-2 shadow-sm">
+                        <div class="w-8 h-8 rounded-full bg-amber-600 text-white flex items-center justify-center font-bold text-sm shadow">3</div>
+                        <h4 class="font-bold text-slate-800 text-sm">CHALLENGE & UPGRADE</h4>
+                        <p class="text-[10px] text-slate-500">What challenge stops them, and what reward unlocks progress?</p>
+                        <textarea x-model="coreLoop.reward" rows="3" placeholder="e.g. To open the main safe, they must answer a math puzzle found on the board. Finding the battery unlocks doors..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 resize-none focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+
+                    <!-- Step 4: Repeat/Win -->
+                    <div class="bg-white border border-emerald-100 p-4 rounded-xl flex flex-col items-center text-center space-y-2 shadow-sm">
+                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm shadow">4</div>
+                        <h4 class="font-bold text-slate-800 text-sm">VICTORY / EXIT</h4>
+                        <p class="text-[10px] text-slate-500">How does the player escape or win the game at the end?</p>
+                        <textarea x-model="coreLoop.exit" rows="3" placeholder="e.g. Once 3 batteries are placed in the control panel, the exit portal spawns and play transitions to next level..." class="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs text-slate-800 resize-none focus:outline-none focus:border-indigo-500"></textarea>
+                    </div>
+                </div>
+
+                <!-- Game Elements Selection Checklist -->
+                <div class="mt-6 bg-slate-50 p-5 rounded-xl border border-slate-200">
+                    <h3 class="font-semibold text-slate-700 mb-3">Which VR Interaction Mechanics will you build into CoSpaces? (Select all that apply)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <template x-for="mechanic in chosenMechanics">
+                            <button 
+                                @click="mechanic.checked = !mechanic.checked"
+                                :class="mechanic.checked ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-100'"
+                                class="px-3 py-2.5 rounded-lg border text-xs font-semibold flex items-center justify-between gap-2 transition-all"
+                            >
+                                <span x-text="mechanic.name"></span>
+                                <span x-show="mechanic.checked">✓</span>
+                            </button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button @click="changeStep(2)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm text-slate-700 tracking-wide transition">&larr; Back</button>
+                <button @click="changeStep(4)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white tracking-wide transition shadow-lg shadow-indigo-500/20">Next Section: Visual CoBlocks Logic &rarr;</button>
+            </div>
+        </section>
+
+        <!-- STEP 4: Visual CoBlocks Planner (Hide on Print) -->
+        <section x-show="step === 4" class="no-print space-y-6" x-transition>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-2 bg-yellow-100 text-yellow-600 rounded-lg font-bold">04</span>
+                    <h2 class="heading-font text-2xl font-bold text-slate-800">The CoBlocks Logic Script Builder</h2>
+                </div>
+                <p class="text-sm text-slate-600 mb-6">
+                    Don't open CoSpaces empty-handed! Plan your game logic beforehand. Click standard coding blocks below to add them to your game logic stack to define your core script structure.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <!-- ToolBox of available blocks -->
+                    <div class="lg:col-span-5 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 shadow-inner">
+                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-500 mb-2">Block Palette</h3>
+                        
+                        <!-- Event Blocks (Yellow) -->
+                        <div class="space-y-2">
+                            <span class="text-[10px] text-amber-600 font-bold uppercase tracking-wider">Event Blocks (Triggers)</span>
+                            <div class="grid grid-cols-1 gap-1.5">
+                                <button @click="addBlock('event', 'When [Game Start] is clicked...')" class="w-full bg-amber-500 hover:bg-amber-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>When [Game Start] clicked</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('event', 'When [Object] is clicked by Player...')" class="w-full bg-amber-500 hover:bg-amber-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>When [Object] clicked</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('event', 'When [Player] collides with [Object]...')" class="w-full bg-amber-500 hover:bg-amber-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>When Player collides with</span>
+                                    <span>+</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Action Blocks (Blue) -->
+                        <div class="space-y-2">
+                            <span class="text-[10px] text-blue-600 font-bold uppercase tracking-wider">Action Blocks</span>
+                            <div class="grid grid-cols-1 gap-1.5">
+                                <button @click="addBlock('action', 'Move [Object] by [X] meters...')" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>Move [Object]</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('action', 'Play Sound Effect [Sound]...')" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>Play Sound Effect</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('action', 'Show Text Alert [Message]...')" class="w-full bg-blue-500 hover:bg-blue-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>Show Text Alert</span>
+                                    <span>+</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Variable / Logic Blocks (Purple) -->
+                        <div class="space-y-2">
+                            <span class="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Variables &amp; Logic</span>
+                            <div class="grid grid-cols-1 gap-1.5">
+                                <button @click="addBlock('logic', 'If [Variable] equals [Value] then...')" class="w-full bg-purple-500 hover:bg-purple-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>If [Variable] = [Value]</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('logic', 'Add [+1] to Score...')" class="w-full bg-purple-500 hover:bg-purple-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>Add +1 to Score</span>
+                                    <span>+</span>
+                                </button>
+                                <button @click="addBlock('logic', 'Wait [3 seconds]...')" class="w-full bg-purple-500 hover:bg-purple-600 text-white text-left text-xs font-semibold px-3 py-2.5 rounded shadow-sm transition flex items-center justify-between">
+                                    <span>Wait [X] seconds</span>
+                                    <span>+</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sandbox Workspace -->
+                    <div class="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col min-h-[300px] shadow-inner">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3 mb-4">
+                            <span class="font-bold text-xs uppercase tracking-wider text-slate-500">Your CoBlocks Script Flow</span>
+                            <button @click="coblocks = []" class="text-[10px] bg-red-50 border border-red-200 text-red-600 px-2 py-1 rounded hover:bg-red-100 transition font-bold">Clear All</button>
+                        </div>
+
+                        <!-- Stacked Blocks -->
+                        <div class="flex-grow space-y-1.5 overflow-y-auto max-h-[350px] p-2 bg-white/60 rounded-lg border border-slate-100">
+                            <template x-if="coblocks.length === 0">
+                                <div class="h-full flex flex-col items-center justify-center text-center p-8">
+                                    <span class="text-3xl mb-2">💻</span>
+                                    <p class="text-sm text-slate-400">Workspace is empty. Click block actions on the left to plan your game's main logic sequence!</p>
+                                </div>
+                            </template>
+                            
+                            <template x-for="(block, idx) in coblocks">
+                                <div class="flex items-center gap-2 group">
+                                    <div class="flex-grow p-3 rounded text-xs font-bold font-mono tracking-wide text-white shadow-sm transition-all flex items-center justify-between"
+                                         :class="block.type === 'event' ? 'bg-amber-500 border-l-4 border-amber-300 ml-0' : 
+                                                 block.type === 'action' ? 'bg-blue-500 border-l-4 border-blue-300 ml-4' : 
+                                                 'bg-purple-500 border-l-4 border-purple-300 ml-8'">
+                                        <div class="flex items-center gap-2">
+                                            <span x-text="(idx+1) + '.'" class="opacity-70 text-[10px]"></span>
+                                            <span x-text="block.text"></span>
+                                        </div>
+                                        <button @click="removeBlock(idx)" class="text-white/80 hover:text-white ml-2 text-sm font-bold">&times;</button>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button @click="changeStep(3)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm text-slate-700 tracking-wide transition">&larr; Back</button>
+                <button @click="changeStep(5)" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white tracking-wide transition shadow-lg shadow-indigo-500/20">Next Section: 360° VR Spatial Plan &rarr;</button>
+            </div>
+        </section>
+
+        <!-- STEP 5: 360 Spatial Design Map (Hide on Print) -->
+        <section x-show="step === 5" class="no-print space-y-6" x-transition>
+            <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <span class="p-2 bg-pink-100 text-pink-600 rounded-lg font-bold">05</span>
+                    <h2 class="heading-font text-2xl font-bold text-slate-800">VR 360° Spatial Scene Layout</h2>
+                </div>
+                <p class="text-sm text-slate-600 mb-6">
+                    In VR, the player doesn't look at a flat screen—they are in the exact center of a 360° sphere! Use this interactive mapper to plan where items will be relative to the player.
+                </p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                    <!-- Tool Palette -->
+                    <div class="lg:col-span-4 bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4 shadow-inner">
+                        <span class="text-[10px] text-indigo-600 uppercase font-bold tracking-wider">Step 1: Select Spatial Object</span>
+                        <div class="grid grid-cols-2 gap-2">
+                            <template x-for="item in assetTypes">
+                                <button 
+                                    @click="selectedAsset = item"
+                                    :class="selectedAsset.id === item.id ? 'bg-indigo-600 border-indigo-500 text-white shadow-sm' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-100'"
+                                    class="p-2 rounded-lg border text-xs font-semibold flex flex-col items-center gap-1 transition"
+                                >
+                                    <span x-text="item.icon" class="text-xl"></span>
+                                    <span x-text="item.label"></span>
+                                </button>
+                            </template>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic">Select an object above, then click anywhere on the 360° circular grid radar map to position it in your virtual space.</p>
+                    </div>
+
+                    <!-- Canvas Grid -->
+                    <div class="lg:col-span-8 flex flex-col items-center">
+                        <span class="text-xs text-slate-500 uppercase tracking-widest font-bold mb-4">VR HEADSET COMPASS SPACE (360° RADAR PLANNER)</span>
+                        <div class="relative w-72 h-72 sm:w-96 sm:h-96 rounded-full border border-slate-300 bg-slate-100 flex items-center justify-center shadow-inner cursor-crosshair" @click="placeObjectOnGrid($event)">
+                            
+                            <!-- Cardinal Direction Indicators -->
+                            <span class="absolute top-2 text-[10px] font-bold tracking-wider text-slate-600">NORTH (Directly Ahead)</span>
+                            <span class="absolute bottom-2 text-[10px] font-bold tracking-wider text-slate-600">SOUTH (Behind Player)</span>
+                            <span class="absolute right-2 text-[10px] font-bold tracking-wider text-slate-600">EAST (Right)</span>
+                            <span class="absolute left-2 text-[10px] font-bold tracking-wider text-slate-600">WEST (Left)</span>
+                            
+                            <!-- Radar concentric guidelines -->
+                            <div class="absolute w-3/4 h-3/4 border border-dashed border-slate-300 rounded-full"></div>
+                            <div class="absolute w-1/2 h-1/2 border border-dashed border-slate-300 rounded-full"></div>
+                            
+                            <!-- Center Player Indicator -->
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-indigo-600 shadow-md flex items-center justify-center text-white text-[10px] font-bold z-10 select-none animate-pulse">
+                                PLAYER
+                            </div>
+
+                            <!-- Placed Objects Layer -->
+                            <template x-for="(obj, idx) in spatialDesign">
+                                <div class="absolute group cursor-pointer" :style="'left: calc(' + obj.x + '% - 14px); top: calc(' + obj.y + '% - 14px);'" @click.stop="spatialDesign.splice(idx,1)">
+                                    <div class="relative flex items-center justify-center w-8 h-8 rounded-full bg-white border-2 border-indigo-500 shadow-md select-none hover:scale-110 hover:border-red-500 transition-all">
+                                        <span x-text="obj.icon" class="text-sm"></span>
+                                        <span class="absolute -bottom-5 bg-slate-800 px-1.5 py-0.5 rounded text-[8px] whitespace-nowrap text-white" x-text="obj.label"></span>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <button @click="spatialDesign = []" class="mt-8 text-xs bg-red-50 border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition font-bold">Clear Scene Layout</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between">
+                <button @click="changeStep(4)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm text-slate-700 tracking-wide transition">&larr; Back</button>
+                <button @click="changeStep(6)" class="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold text-sm text-white tracking-wide transition shadow-lg shadow-emerald-500/20">Build Final Blueprint GDD &rarr;</button>
+            </div>
+        </section>
+
+        <!-- STEP 6: Finished GDD & Print view -->
+        <section x-show="step === 6" class="space-y-6" x-transition>
+            <!-- UI Notification Box (Hide on Print) -->
+            <div class="no-print bg-white border border-slate-200 rounded-2xl p-6 shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="space-y-1">
+                    <h2 class="heading-font text-2xl font-bold text-emerald-600">🎉 Game Design Blueprint Ready!</h2>
+                    <p class="text-sm text-slate-600">Your interactive Game Design Document has been compiled. You can print this directly or export it as a PDF.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button @click="window.print()" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-xl font-bold text-sm text-white tracking-wide transition flex items-center gap-2 shadow shadow-indigo-500/10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        <span>Print GDD / Save to PDF</span>
+                    </button>
+                    <button @click="changeStep(1)" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl font-bold text-sm text-slate-700 tracking-wide transition">Edit Sections</button>
+                </div>
+            </div>
+
+            <!-- UNIFIED COMPREHENSIVE GDD DOCUMENT LAYOUT (Styled cleanly for printing) -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 print-layout space-y-8 shadow-xl text-slate-800">
+                
+                <!-- Document Header -->
+                <div class="border-b border-slate-200 pb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <span class="text-xs text-indigo-600 uppercase font-bold tracking-widest block mb-1">COSPACES VR GAME BLUEPRINT</span>
+                        <h1 class="heading-font text-3xl font-black tracking-tight text-slate-900" x-text="gameTitle || 'Untitled VR Project'"></h1>
+                        <p class="text-sm text-slate-500">Created by: <span class="font-bold text-slate-800" x-text="studentName || 'Student Designer'"></span></p>
+                    </div>
+                    <div class="text-left sm:text-right">
+                        <span class="text-xs text-slate-500 block">Class / Section: Year 7 Design &amp; Technology</span>
+                        <span class="text-xs text-slate-500 block" x-text="'Generated: ' + new Date().toLocaleDateString()"></span>
+                    </div>
+                </div>
+
+                <!-- Section 1: The Pitch -->
+                <div class="space-y-3 card-print p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg text-indigo-600 border-b border-slate-200 pb-1 uppercase tracking-wider">1. The Game Elevator Pitch</h3>
+                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-lg italic text-slate-800 text-sm">
+                        <span class="font-bold text-indigo-600 block mb-1">Generated Mission Statement:</span>
+                        <span x-text="generatePitchText()"></span>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-sm">
+                        <div>
+                            <span class="font-semibold text-slate-500 block">Target Audience:</span>
+                            <p class="text-slate-800 font-medium" x-text="audience || 'Not specified'"></p>
+                        </div>
+                        <div>
+                            <span class="font-semibold text-slate-500 block">Atmosphere &amp; Theme:</span>
+                            <p class="text-slate-800 font-medium" x-text="atmosphere || 'Not specified'"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: Competitive Analysis -->
+                <div class="space-y-4 card-print p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg text-cyan-600 border-b border-slate-200 pb-1 uppercase tracking-wider">2. Benchmarked VR Products (Similar Game Analyses)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <template x-for="(comp, i) in similarGames">
+                            <div class="bg-white p-4 rounded-lg border border-slate-200 space-y-3 shadow-sm">
+                                <h4 class="font-bold text-slate-800 flex justify-between">
+                                    <span x-text="comp.name || 'Unnamed Game ' + (i+1)"></span>
+                                    <span class="text-amber-500" x-text="'★ ' + ((comp.immersion + comp.controls + comp.feasibility)/3).toFixed(1)"></span>
+                                </h4>
+                                <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-500 uppercase font-bold tracking-wider text-center">
+                                    <div class="bg-slate-50 p-1.5 rounded border border-slate-100">
+                                        <span>360° Space:</span> <span class="text-amber-600 block" x-text="comp.immersion + '/5'"></span>
+                                    </div>
+                                    <div class="bg-slate-50 p-1.5 rounded border border-slate-100">
+                                        <span>Comfort:</span> <span class="text-amber-600 block" x-text="comp.controls + '/5'"></span>
+                                    </div>
+                                    <div class="bg-slate-50 p-1.5 rounded border border-slate-100">
+                                        <span>Feasibility:</span> <span class="text-cyan-600 block" x-text="comp.feasibility + '/5'"></span>
+                                    </div>
+                                </div>
+                                <div class="text-xs space-y-1.5">
+                                    <p><strong class="text-emerald-600">What to replicate:</strong> <span class="text-slate-700 block" x-text="comp.goodPoints || 'No entry'"></span></p>
+                                    <p><strong class="text-rose-500">What to avoid:</strong> <span class="text-slate-700 block" x-text="comp.badPoints || 'No entry'"></span></p>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Section 3: Gameplay Loops -->
+                <div class="space-y-3 card-print p-4 bg-slate-50 rounded-xl border border-slate-200">
+                    <h3 class="font-bold text-lg text-emerald-600 border-b border-slate-200 pb-1 uppercase tracking-wider">3. The Core Gameplay Loop</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+                        <div class="bg-white p-3 rounded border border-slate-200 shadow-sm">
+                            <span class="font-bold text-indigo-600 block mb-1">1. Objective / Spawn:</span>
+                            <p class="text-slate-700" x-text="coreLoop.spawn || 'Not configured'"></p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-slate-200 shadow-sm">
+                            <span class="font-bold text-cyan-600 block mb-1">2. Core Loop Action:</span>
+                            <p class="text-slate-700" x-text="coreLoop.action || 'Not configured'"></p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-slate-200 shadow-sm">
+                            <span class="font-bold text-amber-600 block mb-1">3. Quest / Barrier:</span>
+                            <p class="text-slate-700" x-text="coreLoop.reward || 'Not configured'"></p>
+                        </div>
+                        <div class="bg-white p-3 rounded border border-slate-200 shadow-sm">
+                            <span class="font-bold text-emerald-600 block mb-1">4. Level Finish:</span>
+                            <p class="text-slate-700" x-text="coreLoop.exit || 'Not configured'"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two columns for visual planners: Logic Code & 360 Scene -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Logic Script column -->
+                    <div class="space-y-3 card-print p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <h3 class="font-bold text-sm text-yellow-600 border-b border-slate-200 pb-1 uppercase tracking-wider">4. Programmed CoBlocks Logic Flow</h3>
+                        <div class="space-y-1 font-mono text-[10px] bg-white p-3 rounded border border-slate-200 max-h-[250px] overflow-y-auto shadow-inner">
+                            <template x-if="coblocks.length === 0">
+                                <span class="text-slate-400 italic">No script blocks planned.</span>
+                            </template>
+                            <template x-for="(block, idx) in coblocks">
+                                <div class="p-1 rounded text-white mb-1 shadow-sm" 
+                                     :class="block.type === 'event' ? 'bg-amber-500 ml-0' : block.type === 'action' ? 'bg-blue-500 ml-3' : 'bg-purple-500 ml-6'">
+                                    <span x-text="(idx+1) + '. ' + block.text"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- Spatial coordinate blueprint column -->
+                    <div class="space-y-3 card-print p-4 bg-slate-50 rounded-xl border border-slate-200 flex flex-col">
+                        <h3 class="font-bold text-sm text-pink-600 border-b border-slate-200 pb-1 uppercase tracking-wider">5. Planned 360° VR Scene Layout</h3>
+                        <div class="bg-white p-3 rounded border border-slate-200 flex-grow flex flex-col items-center justify-center shadow-inner">
+                            <template x-if="spatialDesign.length === 0">
+                                <span class="text-slate-400 italic text-xs">No spatial objects placed.</span>
+                            </template>
+                            <template x-if="spatialDesign.length > 0">
+                                <div class="grid grid-cols-2 gap-x-4 gap-y-1 text-xs w-full">
+                                    <template x-for="obj in spatialDesign">
+                                        <div class="flex items-center gap-2 border-b border-slate-100 py-1">
+                                            <span x-text="obj.icon"></span>
+                                            <span x-text="obj.label" class="font-semibold text-slate-700"></span>
+                                            <span class="text-[9px] text-slate-400" x-text="`(${obj.direction})`"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Footer Signoffs (Crucial for school grading) -->
+                <div class="border-t border-slate-200 pt-6 mt-8 grid grid-cols-2 gap-4 text-xs text-slate-500">
+                    <div>
+                        <p class="mb-8"><strong>Student Declaration:</strong> I verify that this is my original logic design and that I have verified the programming logic can be executed using CoSpaces CoBlocks code structures.</p>
+                        <div class="w-48 border-b border-slate-300"></div>
+                        <span class="block mt-1">Student Signature / Date</span>
+                    </div>
+                    <div>
+                        <p class="mb-8"><strong>Teacher Assessment &amp; Feedback:</strong> Comments regarding the implementation accuracy, benchmark thoroughness, and logic feasibility.</p>
+                        <div class="w-48 border-b border-slate-300"></div>
+                        <span class="block mt-1">Instructor Signature / Grade Approval</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- App Footer -->
+    <footer class="no-print bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400 shadow-inner">
+        <p>Interactive VR GDD &copy; 2026. Made for Game Design &amp; Technology classes.</p>
+    </footer>
+
+</body>
+</html>

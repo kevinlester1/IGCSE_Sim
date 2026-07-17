@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image File Size Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for range sliders */
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-5xl bg-white rounded-2xl shadow-lg p-6 md:p-8 m-4">
+        <div class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Image File Size Calculator</h1>
+            <p class="text-gray-500 mt-2">See how resolution and color depth affect uncompressed image file size.</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Left side: Controls -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-700 mb-5">Parameters</h2>
+                
+                <!-- Width Control -->
+                <div class="mb-6">
+                    <label for="width" class="block font-medium text-gray-600 mb-2">Image Width (<span id="widthValue">1024</span>px)</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="width" min="1" max="4096" value="1024" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <input type="number" id="widthNumber" min="1" max="4096" value="1024" class="w-24 text-center border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Height Control -->
+                <div class="mb-6">
+                    <label for="height" class="block font-medium text-gray-600 mb-2">Image Height (<span id="heightValue">768</span>px)</label>
+                    <div class="flex items-center space-x-4">
+                        <input type="range" id="height" min="1" max="4096" value="768" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <input type="number" id="heightNumber" min="1" max="4096" value="768" class="w-24 text-center border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                </div>
+
+                <!-- Color Depth Control -->
+                <div class="mb-4">
+                    <label for="colorDepth" class="block font-medium text-gray-600 mb-2">Color Depth</label>
+                    <select id="colorDepth" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="1">1-bit (2 Colors)</option>
+                        <option value="4">4-bit (16 Colors)</option>
+                        <option value="8">8-bit (256 Colors)</option>
+                        <option value="16">16-bit (65,536 Colors)</option>
+                        <option value="24" selected>24-bit (16.7 Million Colors)</option>
+                        <option value="32">32-bit (4.3 Billion Colors)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Right side: Calculation and Visual -->
+            <div class="flex flex-col space-y-4">
+                 <!-- Calculation Display -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 flex-grow">
+                    <h2 class="text-xl font-semibold text-gray-700 mb-4">Calculation</h2>
+                    <div class="space-y-3 text-gray-600">
+                        <p>1. Total Pixels: <br><span class="font-mono text-blue-800 text-lg" id="totalPixels">1024px × 768px = 786,432</span></p>
+                        <p>2. File Size (bits): <br><span class="font-mono text-blue-800 text-lg" id="fileSizeBits">786,432 pixels × 24 bits/pixel = 18,874,368</span></p>
+                        <p>3. File Size (Bytes): <br><span class="font-mono text-blue-800 text-lg" id="fileSizeBytes">18,874,368 bits / 8 = 2,359,296</span></p>
+                    </div>
+                    <hr class="my-4 border-blue-200">
+                    <div class="text-center">
+                        <p class="text-gray-600 font-medium">Final File Size</p>
+                        <p class="text-4xl font-bold text-blue-600" id="finalSize">2304.00 KB</p>
+                        <p class="text-lg text-gray-500" id="finalSizeMB">(2.25 MB)</p>
+                    </div>
+                </div>
+                
+                <!-- Visual Representation -->
+                <div class="bg-gray-800 rounded-lg p-4 flex flex-col items-center justify-center h-96 relative overflow-hidden">
+                    <div class="w-full flex justify-between items-center mb-2 px-2 z-10">
+                        <p class="text-white text-sm font-medium">Image Preview (Simulated)</p>
+                        <label class="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white text-xs py-1.5 px-3 rounded shadow transition-colors">
+                            Upload Image
+                            <input type="file" id="imageUpload" accept="image/*" class="hidden">
+                        </label>
+                    </div>
+                    <div class="flex-grow w-full flex items-center justify-center bg-black rounded-sm border border-gray-600 overflow-hidden relative">
+                         <!-- Spinner while loading -->
+                         <div id="loadingSpinner" class="absolute text-white animate-spin">
+                             <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                         </div>
+                         <canvas id="pixelCanvas" class="max-w-full max-h-full object-contain"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Explanation Section -->
+        <div class="mt-8 pt-6 border-t">
+            <h3 class="text-lg font-semibold text-gray-700">How is this calculated?</h3>
+            <p class="text-gray-600 mt-2">The size of an uncompressed bitmap image is determined by its resolution and color depth. The formula is:</p>
+            <div class="bg-gray-100 rounded-md p-4 mt-2 text-center">
+                <p class="font-mono text-gray-800">File Size (bits) = Width × Height × Color Depth</p>
+            </div>
+        </div>
+        
+        <!-- Challenge Section -->
+        <div id="challenge-section" class="mt-8 pt-6 border-t">
+            <h3 class="text-2xl font-bold text-gray-800 text-center mb-4">Test Your Knowledge!</h3>
+            <div class="bg-indigo-50 rounded-lg p-6 max-w-2xl mx-auto">
+                <div class="text-center mb-4">
+                    <p class="text-gray-700">Calculate the file size in KB for an image with these properties:</p>
+                    <div id="challenge-prompt" class="font-bold text-indigo-700 text-xl my-3">
+                        <!-- Challenge text will be injected here -->
+                    </div>
+                </div>
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <input type="number" id="userAnswer" placeholder="Enter size in KB" class="w-full sm:w-48 text-center border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 p-2">
+                    <button id="checkAnswerBtn" class="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 transition-colors">Check Answer</button>
+                </div>
+                <div id="feedback" class="mt-4 text-center font-medium h-6">
+                    <!-- Feedback will appear here -->
+                </div>
+                <div class="text-center mt-4">
+                    <button id="newChallengeBtn" class="text-indigo-600 hover:text-indigo-800 font-semibold">Get New Challenge</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // === Main Calculator Elements and Logic ===
+        const widthSlider = document.getElementById('width');
+        const heightSlider = document.getElementById('height');
+        const widthNumber = document.getElementById('widthNumber');
+        const heightNumber = document.getElementById('heightNumber');
+        const widthValueSpan = document.getElementById('widthValue');
+        const heightValueSpan = document.getElementById('heightValue');
+        const colorDepthSelect = document.getElementById('colorDepth');
+        const totalPixelsSpan = document.getElementById('totalPixels');
+        const fileSizeBitsSpan = document.getElementById('fileSizeBits');
+        const fileSizeBytesSpan = document.getElementById('fileSizeBytes');
+        const finalSizeSpan = document.getElementById('finalSize');
+        const finalSizeMBSpan = document.getElementById('finalSizeMB');
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        // --- Image Loading and Setup ---
+        const imageUpload = document.getElementById('imageUpload');
+        const loadingSpinner = document.getElementById('loadingSpinner');
+        
+        let sourceImage = new Image();
+        sourceImage.crossOrigin = "Anonymous"; // Allows loading external images
+        // Default high-res landscape image
+        sourceImage.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1024&auto=format&fit=crop';
+        
+        let isImageLoaded = false;
+        
+        sourceImage.onload = () => {
+            isImageLoaded = true;
+            loadingSpinner.classList.add('hidden');
+            calculateAndDisplay();
+        };
+        
+        sourceImage.onerror = () => {
+            console.error("Failed to load image.");
+            loadingSpinner.classList.add('hidden');
+        };
+
+        if (imageUpload) {
+            imageUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    isImageLoaded = false;
+                    loadingSpinner.classList.remove('hidden');
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        sourceImage.src = event.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('en-US').format(num);
+        }
+
+        function calculateAndDisplay() {
+            const width = parseInt(widthSlider.value);
+            const height = parseInt(heightSlider.value);
+            const bitDepth = parseInt(colorDepthSelect.value);
+            const totalPixels = width * height;
+            const fileSizeBits = totalPixels * bitDepth;
+            const fileSizeBytes = fileSizeBits / 8;
+            const fileSizeKB = fileSizeBytes / 1024;
+            const fileSizeMB = fileSizeKB / 1024;
+
+            widthValueSpan.textContent = width;
+            heightValueSpan.textContent = height;
+            totalPixelsSpan.innerHTML = `${formatNumber(width)}px × ${formatNumber(height)}px = <strong class="text-black">${formatNumber(totalPixels)}</strong>`;
+            fileSizeBitsSpan.innerHTML = `${formatNumber(totalPixels)} pixels × ${bitDepth} bits/pixel = <strong class="text-black">${formatNumber(fileSizeBits)}</strong>`;
+            fileSizeBytesSpan.innerHTML = `${formatNumber(fileSizeBits)} bits / 8 = <strong class="text-black">${formatNumber(fileSizeBytes)}</strong>`;
+            finalSizeSpan.textContent = `${fileSizeKB.toFixed(2)} KB`;
+            finalSizeMBSpan.textContent = `(${(fileSizeMB).toFixed(2)} MB)`;
+
+            updateImagePreview(width, height, bitDepth);
+        }
+        
+        function updateImagePreview(targetWidth, targetHeight, bitDepth) {
+            if (!isImageLoaded) return;
+            
+            // 1. Setup offscreen canvas to scale down the image exactly to the slider dimensions
+            const offCanvas = document.createElement('canvas');
+            const offCtx = offCanvas.getContext('2d', { willReadFrequently: true });
+            
+            // Cap at 4096 to prevent extreme memory spikes, ensure minimum 1px
+            const drawWidth = Math.min(4096, Math.max(1, Math.floor(targetWidth)));
+            const drawHeight = Math.min(4096, Math.max(1, Math.floor(targetHeight)));
+            
+            offCanvas.width = drawWidth;
+            offCanvas.height = drawHeight;
+            
+            // Draw image scaled to the target resolution (this causes the pixelation)
+            offCtx.drawImage(sourceImage, 0, 0, drawWidth, drawHeight);
+            
+            // 2. Apply Color Depth Reduction
+            if (bitDepth < 24) {
+                const imgData = offCtx.getImageData(0, 0, drawWidth, drawHeight);
+                const data = imgData.data;
+                
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i];
+                    let g = data[i+1];
+                    let b = data[i+2];
+                    
+                    if (bitDepth === 1) {
+                        // 1-bit: Black & White threshold using luminance
+                        const lum = (r * 299 + g * 587 + b * 114) / 1000;
+                        const val = lum > 127 ? 255 : 0;
+                        data[i] = data[i+1] = data[i+2] = val;
+                    } else if (bitDepth === 4) {
+                        // 4-bit (16 colors): Map to 16 levels of grayscale for a distinct retro look
+                        const lum = (r * 299 + g * 587 + b * 114) / 1000;
+                        const val = Math.round(lum / 255 * 15) * 17;
+                        data[i] = data[i+1] = data[i+2] = val;
+                    } else if (bitDepth === 8) {
+                        // 8-bit (256 colors): Web-safe palette quantization (reduces channel depth)
+                        data[i]   = Math.round(r / 51) * 51;
+                        data[i+1] = Math.round(g / 51) * 51;
+                        data[i+2] = Math.round(b / 51) * 51;
+                    } else if (bitDepth === 16) {
+                        // 16-bit: High color (reduce bit depth slightly, dropping lower bits)
+                        data[i]   = (r >> 3) << 3;
+                        data[i+1] = (g >> 2) << 2;
+                        data[i+2] = (b >> 3) << 3;
+                    }
+                }
+                offCtx.putImageData(imgData, 0, 0);
+            }
+            
+            // 3. Draw onto main display canvas
+            const container = canvas.parentElement;
+            const maxCanvasWidth = container.clientWidth;
+            const maxCanvasHeight = container.clientHeight;
+            
+            // Calculate display sizing preserving the new aspect ratio of our math
+            const displayAspect = drawWidth / drawHeight;
+            let finalWidth = maxCanvasWidth;
+            let finalHeight = maxCanvasWidth / displayAspect;
+            
+            if (finalHeight > maxCanvasHeight) {
+                finalHeight = maxCanvasHeight;
+                finalWidth = maxCanvasHeight * displayAspect;
+            }
+            
+            canvas.width = finalWidth;
+            canvas.height = finalHeight;
+            
+            // CRITICAL: Disable smoothing to make pixels blocky and visible when scaling up low resolutions!
+            ctx.imageSmoothingEnabled = false;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(offCanvas, 0, 0, canvas.width, canvas.height);
+        }
+
+        widthSlider.addEventListener('input', () => { widthNumber.value = widthSlider.value; calculateAndDisplay(); });
+        heightSlider.addEventListener('input', () => { heightNumber.value = heightSlider.value; calculateAndDisplay(); });
+        widthNumber.addEventListener('input', () => { widthSlider.value = widthNumber.value; calculateAndDisplay(); });
+        heightNumber.addEventListener('input', () => { heightSlider.value = heightNumber.value; calculateAndDisplay(); });
+        colorDepthSelect.addEventListener('change', calculateAndDisplay);
+        
+        // === Challenge Mode Elements and Logic ===
+        const challengePrompt = document.getElementById('challenge-prompt');
+        const userAnswerInput = document.getElementById('userAnswer');
+        const checkAnswerBtn = document.getElementById('checkAnswerBtn');
+        const newChallengeBtn = document.getElementById('newChallengeBtn');
+        const feedbackDiv = document.getElementById('feedback');
+        
+        let challengeState = {
+            correctAnswer: 0
+        };
+
+        function generateChallenge() {
+            const resolutions = [
+                { w: 320, h: 240 }, { w: 640, h: 480 }, { w: 800, h: 600 },
+                { w: 1024, h: 768 }, { w: 1280, h: 720 }, { w: 1920, h: 1080 }
+            ];
+            const bitDepths = [
+                { value: 1, text: "1-bit" }, { value: 4, text: "4-bit" },
+                { value: 8, text: "8-bit" }, { value: 24, text: "24-bit" }
+            ];
+
+            const randomRes = resolutions[Math.floor(Math.random() * resolutions.length)];
+            const randomDepth = bitDepths[Math.floor(Math.random() * bitDepths.length)];
+
+            challengeState.width = randomRes.w;
+            challengeState.height = randomRes.h;
+            challengeState.bitDepth = randomDepth.value;
+
+            challengePrompt.innerHTML = `Width: <span class="text-black">${randomRes.w}px</span> &nbsp;&nbsp; Height: <span class="text-black">${randomRes.h}px</span> &nbsp;&nbsp; Color Depth: <span class="text-black">${randomDepth.text}</span>`;
+            
+            const answer = (challengeState.width * challengeState.height * challengeState.bitDepth) / 8 / 1024;
+            challengeState.correctAnswer = parseFloat(answer.toFixed(2));
+
+            // Reset UI
+            feedbackDiv.textContent = '';
+            feedbackDiv.className = 'mt-4 text-center font-medium h-6';
+            userAnswerInput.value = '';
+        }
+
+        function checkAnswer() {
+            const userAnswer = parseFloat(userAnswerInput.value);
+            if (isNaN(userAnswer)) {
+                feedbackDiv.textContent = 'Please enter a valid number.';
+                feedbackDiv.className = 'mt-4 text-center font-medium h-6 text-yellow-600';
+                return;
+            }
+
+            if (Math.abs(userAnswer - challengeState.correctAnswer) < 0.01) {
+                feedbackDiv.textContent = 'Correct! Well done!';
+                feedbackDiv.className = 'mt-4 text-center font-medium h-6 text-green-600';
+            } else {
+                feedbackDiv.textContent = `Not quite. The correct answer is ${challengeState.correctAnswer} KB.`;
+                feedbackDiv.className = 'mt-4 text-center font-medium h-6 text-red-600';
+            }
+        }
+        
+        newChallengeBtn.addEventListener('click', generateChallenge);
+        checkAnswerBtn.addEventListener('click', checkAnswer);
+        userAnswerInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                checkAnswer();
+            }
+        });
+
+        // --- Initial Calls on Page Load ---
+        window.addEventListener('load', () => {
+            calculateAndDisplay();
+            generateChallenge();
+        });
+
+    </script>
+</body>
+</html>

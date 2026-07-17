@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decimal & Binary Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        .bit-box {
+            transition: all 0.2s ease-in-out;
+        }
+        .bit-box.active {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+            transform: scale(1.05);
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5), 0 2px 4px -1px rgba(59, 130, 246, 0.3);
+        }
+        .bit-box.inactive {
+            background-color: #e2e8f0;
+            color: #64748b;
+            border-color: #cbd5e1;
+        }
+        .bit-box:hover {
+            cursor: pointer;
+            filter: brightness(0.95);
+        }
+        
+        /* Focus styles for accessibility */
+        input:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: -1px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-2xl shadow-xl max-w-3xl w-full overflow-hidden border border-slate-200">
+        
+        <!-- Header -->
+        <div class="bg-slate-50 border-b border-slate-200 p-6 text-center">
+            <h1 class="text-2xl font-bold text-slate-800">Decimal, Binary & Hex Explorer</h1>
+            <p class="text-slate-500 mt-2 text-sm">Toggle the bits below or type a number to see how base conversions work.</p>
+        </div>
+
+        <div class="p-8 space-y-10">
+            
+            <!-- Input Fields -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Decimal Input -->
+                <div class="space-y-2">
+                    <label for="decimal-input" class="block text-sm font-semibold text-slate-700 uppercase tracking-wider">Decimal (Base 10)</label>
+                    <div class="relative">
+                        <input type="number" id="decimal-input" min="0" max="255" value="11" 
+                            class="w-full text-3xl font-bold text-slate-900 bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 transition-colors hover:border-slate-300">
+                        <div class="absolute inset-y-0 right-4 flex items-center pointer-events-none">
+                            <span class="text-slate-400 text-sm font-medium">0-255</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Binary Input -->
+                <div class="space-y-2">
+                    <label for="binary-input" class="block text-sm font-semibold text-slate-700 uppercase tracking-wider">Binary (Base 2)</label>
+                    <input type="text" id="binary-input" value="00001011" maxlength="8"
+                        class="w-full text-3xl font-bold text-slate-900 bg-slate-50 border-2 border-slate-200 rounded-xl px-4 py-3 tracking-widest text-center transition-colors hover:border-slate-300">
+                </div>
+
+                <!-- Hex Input -->
+                <div class="space-y-2">
+                    <label for="hex-input" class="block text-sm font-semibold text-slate-700 uppercase tracking-wider">Hex (Base 16)</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-4 flex items-center text-slate-400 font-bold text-2xl pointer-events-none">#</span>
+                        <input type="text" id="hex-input" value="0B" maxlength="2"
+                            class="w-full text-3xl font-bold text-slate-900 bg-slate-50 border-2 border-slate-200 rounded-xl pl-10 pr-4 py-3 tracking-widest text-center transition-colors hover:border-slate-300 uppercase">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Bits Grid -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-slate-800">8-Bit Visualizer</h2>
+                    <button id="reset-btn" class="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors">Reset to Zero</button>
+                </div>
+                
+                <div class="grid grid-cols-8 gap-2 sm:gap-3" id="bit-container">
+                    <!-- Bits will be generated here by JS -->
+                </div>
+                
+                <div class="flex justify-between px-2 text-xs font-semibold text-slate-400 uppercase tracking-wider mt-1">
+                    <span>Most Significant Bit (MSB)</span>
+                    <span>Least Significant (LSB)</span>
+                </div>
+            </div>
+
+            <!-- Math Breakdown Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Binary to Decimal -->
+                <div class="bg-blue-50 border border-blue-100 rounded-xl p-6 flex flex-col">
+                    <h3 class="text-sm font-semibold text-blue-800 uppercase tracking-wider mb-4">Binary &rarr; Decimal (Positional)</h3>
+                    
+                    <div class="space-y-2 text-sm text-slate-700 font-mono flex-grow" id="bin-to-dec-math">
+                        <!-- JS generated -->
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-blue-200/60 flex items-center justify-between">
+                        <span class="text-sm text-slate-500 font-medium">Sum Positional Values</span>
+                        <div class="text-3xl font-bold text-blue-600" id="bin-to-dec-total">11</div>
+                    </div>
+                </div>
+
+                <!-- Decimal to Binary -->
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-6 flex flex-col">
+                    <h3 class="text-sm font-semibold text-emerald-800 uppercase tracking-wider mb-4">Decimal &rarr; Binary</h3>
+                    
+                    <div class="space-y-2 text-sm text-slate-700 font-mono flex-grow" id="dec-to-bin-math">
+                        <!-- JS generated -->
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-emerald-200/60 flex items-center justify-between">
+                        <span class="text-sm text-slate-500 font-medium">Read Remainders &uarr;</span>
+                        <div class="text-3xl font-bold text-emerald-600 tracking-widest" id="dec-to-bin-total">1011</div>
+                    </div>
+                </div>
+
+                <!-- Decimal to Hex -->
+                <div class="bg-purple-50 border border-purple-100 rounded-xl p-6 flex flex-col">
+                    <h3 class="text-sm font-semibold text-purple-800 uppercase tracking-wider mb-4">Decimal &rarr; Hex</h3>
+                    
+                    <div class="space-y-2 text-sm text-slate-700 font-mono flex-grow" id="dec-to-hex-math">
+                        <!-- JS generated -->
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-purple-200/60 flex items-center justify-between">
+                        <span class="text-sm text-slate-500 font-medium">Read Remainders &uarr;</span>
+                        <div class="text-3xl font-bold text-purple-600 tracking-widest" id="dec-to-hex-total">0B</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // State
+            let decimalValue = 11;
+            const NUM_BITS = 8;
+            const POWERS = [128, 64, 32, 16, 8, 4, 2, 1];
+            
+            // DOM Elements
+            const decimalInput = document.getElementById('decimal-input');
+            const binaryInput = document.getElementById('binary-input');
+            const hexInput = document.getElementById('hex-input');
+            const bitContainer = document.getElementById('bit-container');
+            const resetBtn = document.getElementById('reset-btn');
+
+            // Initialize Bit UI
+            function initBits() {
+                bitContainer.innerHTML = '';
+                for (let i = 0; i < NUM_BITS; i++) {
+                    const power = POWERS[i];
+                    
+                    const bitWrapper = document.createElement('div');
+                    bitWrapper.className = 'flex flex-col gap-2 items-center';
+                    
+                    // Power Label (e.g., 2^7)
+                    const labelTop = document.createElement('div');
+                    labelTop.className = 'text-xs font-semibold text-slate-500';
+                    labelTop.innerHTML = `2<sup>${7-i}</sup>`;
+                    
+                    // The clickable bit box
+                    const bitBox = document.createElement('div');
+                    bitBox.className = 'bit-box inactive w-full aspect-square border-2 rounded-lg flex flex-col items-center justify-center select-none';
+                    bitBox.dataset.index = i;
+                    bitBox.dataset.power = power;
+                    bitBox.innerHTML = `
+                        <span class="text-2xl sm:text-3xl font-bold leading-none bit-value">0</span>
+                    `;
+                    
+                    // Decimal value label below box
+                    const labelBottom = document.createElement('div');
+                    labelBottom.className = 'text-xs font-bold text-slate-400';
+                    labelBottom.textContent = power;
+
+                    // Interaction
+                    bitBox.addEventListener('click', () => {
+                        toggleBit(i);
+                    });
+
+                    bitWrapper.appendChild(labelTop);
+                    bitWrapper.appendChild(bitBox);
+                    bitWrapper.appendChild(labelBottom);
+                    
+                    bitContainer.appendChild(bitWrapper);
+                }
+            }
+
+            // Core Logic: Update everything from a decimal value
+            function updateFromDecimal(val) {
+                // Constrain value
+                let num = Math.floor(Number(val));
+                if (isNaN(num)) num = 0;
+                num = Math.max(0, Math.min(255, num));
+                
+                decimalValue = num;
+                decimalInput.value = num;
+                
+                // Convert to binary string padded to 8 bits
+                const binStr = num.toString(2).padStart(NUM_BITS, '0');
+                binaryInput.value = binStr;
+
+                // Convert to hex string padded to 2 chars
+                hexInput.value = num.toString(16).toUpperCase().padStart(2, '0');
+
+                updateUI(binStr);
+            }
+
+            // Core Logic: Update everything from a binary string
+            function updateFromBinary(str) {
+                // Clean input: keep only 1s and 0s, max 8 chars
+                let cleanStr = str.replace(/[^01]/g, '').slice(0, NUM_BITS);
+                
+                // If empty or user is typing, don't pad yet, let them type
+                // But for calculation, we need 8 bits
+                binaryInput.value = cleanStr;
+                
+                const paddedStr = cleanStr.padStart(NUM_BITS, '0');
+                const num = parseInt(paddedStr, 2);
+                
+                decimalValue = isNaN(num) ? 0 : num;
+                decimalInput.value = decimalValue;
+                
+                hexInput.value = decimalValue.toString(16).toUpperCase().padStart(2, '0');
+
+                updateUI(paddedStr);
+            }
+
+            // Core Logic: Update everything from a hex string
+            function updateFromHex(str) {
+                // Clean input: keep only hex characters, max 2 chars
+                let cleanStr = str.replace(/[^0-9A-Fa-f]/g, '').slice(0, 2);
+                
+                hexInput.value = cleanStr.toUpperCase();
+                
+                // Calculate Decimal
+                const num = parseInt(cleanStr || '0', 16);
+                decimalValue = isNaN(num) ? 0 : num;
+                decimalInput.value = decimalValue;
+
+                // Calculate Binary
+                const binStr = decimalValue.toString(2).padStart(NUM_BITS, '0');
+                binaryInput.value = binStr;
+
+                updateUI(binStr);
+            }
+
+            // Toggle a specific bit
+            function toggleBit(index) {
+                // Get current binary string
+                let binStr = decimalValue.toString(2).padStart(NUM_BITS, '0');
+                let binArray = binStr.split('');
+                
+                // Flip the bit
+                binArray[index] = binArray[index] === '1' ? '0' : '1';
+                
+                // Update
+                updateFromBinary(binArray.join(''));
+            }
+
+            // Update visuals (Boxes and Math Breakdown)
+            function updateUI(binStr) {
+                const bitBoxes = bitContainer.querySelectorAll('.bit-box');
+                const bitValues = bitContainer.querySelectorAll('.bit-value');
+                
+                let activePowers = [];
+                
+                for (let i = 0; i < NUM_BITS; i++) {
+                    const isOne = binStr[i] === '1';
+                    
+                    // Update box styles
+                    if (isOne) {
+                        bitBoxes[i].classList.remove('inactive');
+                        bitBoxes[i].classList.add('active');
+                        bitValues[i].textContent = '1';
+                        activePowers.push(POWERS[i]);
+                    } else {
+                        bitBoxes[i].classList.remove('active');
+                        bitBoxes[i].classList.add('inactive');
+                        bitValues[i].textContent = '0';
+                    }
+                }
+
+                // --- Binary to Decimal Breakdown ---
+                const binToDecMath = document.getElementById('bin-to-dec-math');
+                const binToDecTotal = document.getElementById('bin-to-dec-total');
+                binToDecMath.innerHTML = '';
+                
+                let equationParts = [];
+                for (let i = 0; i < NUM_BITS; i++) {
+                    const bit = binStr[i];
+                    const power = POWERS[i];
+                    // Highlight active bits in blue
+                    const colorClass = bit === '1' ? 'text-blue-700 font-bold bg-blue-100 rounded px-1' : 'text-slate-400';
+                    equationParts.push(`
+                        <div class="flex justify-between items-center bg-white/50 px-3 py-1 rounded">
+                            <span>2<sup class="text-xs">${7-i}</sup> &times; <span class="${colorClass}">${bit}</span></span>
+                            <span>= <span class="${colorClass}">${bit * power}</span></span>
+                        </div>
+                    `);
+                }
+                binToDecMath.innerHTML = equationParts.join('');
+                binToDecTotal.textContent = decimalValue;
+
+                // --- Decimal to Binary Breakdown ---
+                const decToBinMath = document.getElementById('dec-to-bin-math');
+                const decToBinTotal = document.getElementById('dec-to-bin-total');
+                decToBinMath.innerHTML = '';
+                
+                let steps = [];
+                let currentVal = decimalValue;
+                
+                if (currentVal === 0) {
+                    steps.push(`<div class="flex justify-between items-center bg-white/50 px-3 py-1 rounded text-slate-400">
+                        <span>0 &divide; 2</span>
+                        <span>= 0 R <strong class="text-emerald-700 font-bold bg-emerald-100 rounded px-1">0</strong></span>
+                    </div>`);
+                } else {
+                    while (currentVal > 0) {
+                        let quotient = Math.floor(currentVal / 2);
+                        let remainder = currentVal % 2;
+                        steps.push(`<div class="flex justify-between items-center bg-white/50 px-3 py-1 rounded">
+                            <span>${currentVal} &divide; 2</span>
+                            <span>= ${quotient} R <strong class="text-emerald-700 font-bold bg-emerald-100 rounded px-1">${remainder}</strong></span>
+                        </div>`);
+                        currentVal = quotient;
+                    }
+                }
+                decToBinMath.innerHTML = steps.join('');
+                
+                // Trim leading zeros for the division method result to match the steps shown
+                const trimmedBinStr = decimalValue === 0 ? "0" : decimalValue.toString(2);
+                decToBinTotal.textContent = trimmedBinStr;
+
+                // --- Decimal to Hex Breakdown ---
+                const decToHexMath = document.getElementById('dec-to-hex-math');
+                const decToHexTotal = document.getElementById('dec-to-hex-total');
+                decToHexMath.innerHTML = '';
+                
+                let hexSteps = [];
+                let currHexVal = decimalValue;
+                const hexChars = "0123456789ABCDEF";
+                
+                if (currHexVal === 0) {
+                    hexSteps.push(`<div class="flex justify-between items-center bg-white/50 px-3 py-1 rounded text-slate-400">
+                        <span>0 &divide; 16</span>
+                        <span>= 0 R <strong class="text-purple-700 font-bold bg-purple-100 rounded px-1">0</strong></span>
+                    </div>`);
+                } else {
+                    while (currHexVal > 0) {
+                        let quotient = Math.floor(currHexVal / 16);
+                        let remainder = currHexVal % 16;
+                        let hexChar = hexChars[remainder];
+                        let remDisplay = remainder > 9 ? `${remainder} (${hexChar})` : hexChar;
+
+                        hexSteps.push(`<div class="flex justify-between items-center bg-white/50 px-3 py-1 rounded">
+                            <span>${currHexVal} &divide; 16</span>
+                            <span>= ${quotient} R <strong class="text-purple-700 font-bold bg-purple-100 rounded px-1">${remDisplay}</strong></span>
+                        </div>`);
+                        currHexVal = quotient;
+                    }
+                }
+                decToHexMath.innerHTML = hexSteps.join('');
+                decToHexTotal.textContent = decimalValue.toString(16).toUpperCase();
+            }
+
+            // Event Listeners
+            decimalInput.addEventListener('input', (e) => {
+                updateFromDecimal(e.target.value);
+            });
+
+            decimalInput.addEventListener('blur', (e) => {
+                // On blur, ensure it's a valid number if they left it empty
+                if (e.target.value === '') updateFromDecimal(0);
+            });
+
+            binaryInput.addEventListener('input', (e) => {
+                updateFromBinary(e.target.value);
+            });
+            
+            binaryInput.addEventListener('blur', (e) => {
+                 // On blur, pad the binary input fully
+                 const val = e.target.value || '0';
+                 updateFromBinary(val.padStart(NUM_BITS, '0'));
+            });
+
+            hexInput.addEventListener('input', (e) => {
+                updateFromHex(e.target.value);
+            });
+            
+            hexInput.addEventListener('blur', (e) => {
+                 // On blur, pad the hex input fully
+                 const val = e.target.value || '0';
+                 updateFromHex(val.padStart(2, '0'));
+            });
+
+            resetBtn.addEventListener('click', () => {
+                updateFromDecimal(0);
+            });
+
+            // Initialize
+            initBits();
+            updateFromDecimal(11); // Start with 11
+        });
+    </script>
+</body>
+</html>

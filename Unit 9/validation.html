@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Validation Checks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .message-success {
+            color: #16a34a; /* green-600 */
+        }
+        .message-error {
+            color: #dc2626; /* red-600 */
+        }
+        .pseudocode {
+            background-color: #f3f4f6; /* gray-100 */
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            font-size: 0.875rem; /* text-sm */
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Courier New', Courier, monospace;
+            margin-top: 1rem;
+        }
+        .steps {
+            background-color: #e5e7eb; /* gray-200 */
+            border-left: 4px solid #4b5563; /* gray-600 */
+            margin-top: 1rem;
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #1f2937; /* gray-800 */
+        }
+        .steps p {
+            margin-bottom: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Interactive Data Validation Simulations</h1>
+            <p class="mt-2 text-lg text-gray-600">Enter data into the fields below to see different validation checks in action.</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+            <!-- 1. Presence Check Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">1. Presence Check</h2>
+                <p class="text-sm text-gray-600 mb-4">Ensures the input is not empty. Scenario: A username is required.</p>
+                <div class="space-y-3">
+                    <label for="username" class="font-medium">Username</label>
+                    <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="e.g., JaneDoe">
+                    <button onclick="validatePresence()" class="w-full bg-blue-600 text-white font-semibold py-2 rounded-md hover:bg-blue-700 transition">Check Presence</button>
+                    <p id="presenceMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE presence_check()
+  INPUT username
+  IF username = "" THEN
+    OUTPUT "Error: Cannot be empty."
+  ELSE
+    OUTPUT "Success."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="presenceSteps" class="steps"></div>
+            </div>
+
+            <!-- 2. Length Check Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">2. Length Check</h2>
+                <p class="text-sm text-gray-600 mb-4">Verifies the input is at least a certain number of characters. Scenario: Password must be 8+ characters.</p>
+                <div class="space-y-3">
+                    <label for="password" class="font-medium">Password</label>
+                    <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="8+ characters">
+                    <button onclick="validateLength()" class="w-full bg-indigo-600 text-white font-semibold py-2 rounded-md hover:bg-indigo-700 transition">Check Length</button>
+                    <p id="lengthMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE length_check()
+  INPUT password
+  IF LENGTH(password) < 8 THEN
+    OUTPUT "Error: Too short."
+  ELSE
+    OUTPUT "Success."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="lengthSteps" class="steps"></div>
+            </div>
+
+            <!-- 3. Range Check Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">3. Range Check</h2>
+                <p class="text-sm text-gray-600 mb-4">Ensures a number is within a specific range. Scenario: Age must be between 18 and 99.</p>
+                <div class="space-y-3">
+                    <label for="age" class="font-medium">Age</label>
+                    <input type="text" id="age" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="18-99">
+                    <button onclick="validateRange()" class="w-full bg-green-600 text-white font-semibold py-2 rounded-md hover:bg-green-700 transition">Check Range</button>
+                    <p id="rangeMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE range_check()
+  INPUT age
+  IF age < 18 OR age > 99 THEN
+    OUTPUT "Error: Out of range."
+  ELSE
+    OUTPUT "Success."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="rangeSteps" class="steps"></div>
+            </div>
+
+            <!-- 4. Type Check Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">4. Type Check</h2>
+                <p class="text-sm text-gray-600 mb-4">Confirms the data is of the correct type. Scenario: Quantity must be a whole number (integer).</p>
+                <div class="space-y-3">
+                    <label for="quantity" class="font-medium">Quantity</label>
+                    <input type="text" id="quantity" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="e.g., 10">
+                    <button onclick="validateType()" class="w-full bg-yellow-500 text-white font-semibold py-2 rounded-md hover:bg-yellow-600 transition">Check Type</button>
+                    <p id="typeMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE type_check()
+  INPUT quantity
+  IF IS_INTEGER(quantity) = FALSE THEN
+    OUTPUT "Error: Not an integer."
+  ELSE
+    OUTPUT "Success."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="typeSteps" class="steps"></div>
+            </div>
+
+            <!-- 5. Format Check Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">5. Format Check</h2>
+                <p class="text-sm text-gray-600 mb-4">Checks if data follows a specific pattern. Scenario: Product code must be a letter then three digits (e.g., A123).</p>
+                <div class="space-y-3">
+                    <label for="productCode" class="font-medium">Product Code</label>
+                    <input type="text" id="productCode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="e.g., A123">
+                    <button onclick="validateFormat()" class="w-full bg-purple-600 text-white font-semibold py-2 rounded-md hover:bg-purple-700 transition">Check Format</button>
+                    <p id="formatMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE format_check()
+  INPUT productCode
+  // Regex: Letter then 3 digits
+  IF MATCHES_FORMAT(productCode) THEN
+    OUTPUT "Success."
+  ELSE
+    OUTPUT "Error: Invalid format."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="formatSteps" class="steps"></div>
+            </div>
+
+            <!-- 6. Check Digit Card -->
+            <div class="card">
+                <h2 class="text-xl font-semibold mb-2">6. Check Digit</h2>
+                <p class="text-sm text-gray-600 mb-4">Validates a number using a calculated final digit. Scenario: '4837' -> sum is 22 -> check digit is 2. Full number: '48372'.</p>
+                <div class="space-y-3">
+                    <label for="checkDigitNumber" class="font-medium">Number (with check digit)</label>
+                    <input type="text" id="checkDigitNumber" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500" placeholder="e.g., 48372">
+                    <button onclick="validateCheckDigit()" class="w-full bg-pink-600 text-white font-semibold py-2 rounded-md hover:bg-pink-700 transition">Check Digit</button>
+                    <p id="checkDigitMessage" class="text-center text-sm font-medium h-5"></p>
+                </div>
+                <pre class="pseudocode"><code>PROCEDURE check_digit()
+  INPUT number
+  // Separate base & last digit
+  base ← SUBSTRING(number, 1, 4)
+  provided ← SUBSTRING(number, 5, 1)
+
+  // Calculate correct digit
+  sum ← 0
+  FOR each digit IN base
+    sum ← sum + digit
+  END FOR
+  calculated ← sum MOD 10
+  
+  IF calculated = provided THEN
+    OUTPUT "Success."
+  ELSE
+    OUTPUT "Error: Invalid check digit."
+  END IF
+END PROCEDURE</code></pre>
+                <div id="checkDigitSteps" class="steps"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Helper function to display messages
+        function showMessage(elementId, text, isSuccess) {
+            const messageEl = document.getElementById(elementId);
+            messageEl.textContent = text;
+            messageEl.className = isSuccess ? 'message-success text-center text-sm font-medium h-5' : 'message-error text-center text-sm font-medium h-5';
+        }
+
+        // Helper function to display steps with a delay
+        function displaySteps(elementId, steps) {
+            const stepsEl = document.getElementById(elementId);
+            stepsEl.innerHTML = ''; // Clear previous steps
+            let delay = 0;
+            steps.forEach(step => {
+                setTimeout(() => {
+                    const p = document.createElement('p');
+                    p.textContent = `> ${step}`;
+                    stepsEl.appendChild(p);
+                }, delay);
+                delay += 600; // 0.6 second delay between steps
+            });
+        }
+
+        // 1. Presence Check
+        function validatePresence() {
+            const username = document.getElementById('username').value;
+            const steps = [];
+            steps.push(`Reading input value: "${username}"`);
+            if (username.trim() !== '') {
+                steps.push(`Input is not empty.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('presenceMessage', 'Success: Username is present!', true);
+            } else {
+                steps.push(`Input is empty.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('presenceMessage', 'Error: Username cannot be empty.', false);
+            }
+            displaySteps('presenceSteps', steps);
+        }
+
+        // 2. Length Check
+        function validateLength() {
+            const password = document.getElementById('password').value;
+            const steps = [];
+            steps.push(`Reading input value: "${password}"`);
+            steps.push(`Checking if length (${password.length}) is >= 8.`);
+            if (password.length >= 8) {
+                steps.push(`Condition is true.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('lengthMessage', 'Success: Password length is valid.', true);
+            } else {
+                steps.push(`Condition is false.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('lengthMessage', 'Error: Password must be at least 8 characters.', false);
+            }
+            displaySteps('lengthSteps', steps);
+        }
+
+        // 3. Range Check
+        function validateRange() {
+            const ageInput = document.getElementById('age').value;
+            const age = parseInt(ageInput, 10);
+            const steps = [];
+            steps.push(`Reading input value: "${ageInput}"`);
+            steps.push(`Converting to a number: ${age}`);
+            if (!isNaN(age) && age >= 18 && age <= 99) {
+                steps.push(`Checking if ${age} is between 18 and 99.`);
+                steps.push(`Condition is true.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('rangeMessage', 'Success: Age is within the valid range.', true);
+            } else {
+                steps.push(`Checking if ${age} is between 18 and 99.`);
+                steps.push(`Condition is false or input is not a number.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('rangeMessage', 'Error: Age must be a number between 18 and 99.', false);
+            }
+            displaySteps('rangeSteps', steps);
+        }
+
+        // 4. Type Check
+        function validateType() {
+            const quantityInput = document.getElementById('quantity').value;
+            const steps = [];
+            steps.push(`Reading input value: "${quantityInput}"`);
+            // Check if it's a number and has no decimal part
+            const isInteger = quantityInput.trim() !== '' && !isNaN(quantityInput) && parseInt(Number(quantityInput)) == quantityInput && !isNaN(parseInt(quantityInput, 10));
+            steps.push(`Checking if input is a whole number.`);
+            if (isInteger) {
+                steps.push(`Input is a valid integer.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('typeMessage', 'Success: Input is a valid integer.', true);
+            } else {
+                steps.push(`Input is not an integer (it may be empty, text, or a decimal).`);
+                steps.push(`Validation FAILS.`);
+                showMessage('typeMessage', 'Error: Please enter a whole number.', false);
+            }
+            displaySteps('typeSteps', steps);
+        }
+
+        // 5. Format Check
+        function validateFormat() {
+            const productCode = document.getElementById('productCode').value;
+            const steps = [];
+            steps.push(`Reading input value: "${productCode}"`);
+            // Regular expression for: a letter (upper/lower) followed by exactly 3 digits
+            const formatRegex = /^[A-Za-z]\d{3}$/;
+            steps.push(`Checking if format matches 'A123'.`);
+            if (formatRegex.test(productCode)) {
+                steps.push(`Input matches the required format.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('formatMessage', 'Success: Product code format is correct.', true);
+            } else {
+                steps.push(`Input does not match the format.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('formatMessage', 'Error: Format must be a letter then 3 digits.', false);
+            }
+            displaySteps('formatSteps', steps);
+        }
+
+        // 6. Check Digit
+        function validateCheckDigit() {
+            const numberStr = document.getElementById('checkDigitNumber').value;
+            const steps = [];
+            steps.push(`Reading input value: "${numberStr}"`);
+
+            if (numberStr.length !== 5 || isNaN(numberStr)) {
+                steps.push(`Input is not a 5-digit number.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('checkDigitMessage', 'Error: Must be a 5-digit number.', false);
+                displaySteps('checkDigitSteps', steps);
+                return;
+            }
+
+            const baseNumberStr = numberStr.substring(0, 4);
+            const providedCheckDigit = parseInt(numberStr.substring(4, 5), 10);
+            steps.push(`Separating base number (${baseNumberStr}) from provided check digit (${providedCheckDigit}).`);
+
+            let sum = 0;
+            for (let i = 0; i < baseNumberStr.length; i++) {
+                sum += parseInt(baseNumberStr[i], 10);
+            }
+            steps.push(`Calculating sum of base digits: ${baseNumberStr.split('').join(' + ')} = ${sum}.`);
+
+            const calculatedCheckDigit = sum % 10;
+            steps.push(`Calculating check digit: ${sum} MOD 10 = ${calculatedCheckDigit}.`);
+            steps.push(`Comparing calculated digit (${calculatedCheckDigit}) with provided digit (${providedCheckDigit}).`);
+
+            if (calculatedCheckDigit === providedCheckDigit) {
+                steps.push(`Digits match.`);
+                steps.push(`Validation SUCCEEDS.`);
+                showMessage('checkDigitMessage', `Success: Check digit is valid. (Sum=${sum})`, true);
+            } else {
+                steps.push(`Digits do not match.`);
+                steps.push(`Validation FAILS.`);
+                showMessage('checkDigitMessage', `Error: Invalid check digit. Should be ${calculatedCheckDigit}.`, false);
+            }
+            displaySteps('checkDigitSteps', steps);
+        }
+    </script>
+
+</body>
+</html>
+
+
+
+

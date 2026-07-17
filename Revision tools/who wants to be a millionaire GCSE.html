@@ -1,0 +1,1824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Wants to Be a CS Whiz?</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Font 'Inter' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020024;
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            color: #ffffff;
+            /* Prevent main window scrolling for app-like feel */
+            height: 100vh;
+            overflow: hidden;
+            margin: 0;
+        }
+        
+        /* Hide scrollbar for main body */
+        body::-webkit-scrollbar {
+            width: 0 !important;
+        }
+
+        #app {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Custom "Millionaire" styles */
+        .main-container {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "game money";
+            grid-template-columns: 3fr 1fr;
+            grid-template-rows: auto 1fr; /* Header auto, rest fills space */
+            height: 100%; /* Fill the app container */
+            padding: 1rem; /* Reduced padding for laptop fit */
+            gap: 1rem;     /* Reduced gap for laptop fit */
+        }
+        
+        .header-area { 
+            grid-area: header; 
+            padding-bottom: 0.5rem;
+        }
+        
+        .game-area { 
+            grid-area: game;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 0; /* Fix for flexbox overflow */
+            gap: 1rem;
+        }
+        
+        .money-area { 
+            grid-area: money;
+            display: flex;
+            flex-direction: column;
+            min-height: 0; /* Fix for flexbox overflow */
+        }
+
+        .question-box, .answer-box, .lifeline-box, .points-box {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1rem; /* Slightly smaller radius */
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .question-box {
+            /* Reduced padding */
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-grow: 1; /* Takes available space */
+        }
+
+        .answer-box {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            padding: 1rem; /* Reduced padding */
+            font-size: 1.1rem;
+        }
+        .answer-box:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.01);
+        }
+        .answer-box.selected {
+            background-color: #f59e0b; /* amber-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.correct {
+            background-color: #22c55e; /* green-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.incorrect {
+            background-color: #ef4444; /* red-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .lifeline-box {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .points-box {
+            padding: 1rem;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent box itself from scrolling if possible */
+        }
+
+        .points-ladder {
+            list-style-type: decimal;
+            list-style-position: inside;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column-reverse; /* Puts 1,000,000 at the top */
+            height: 100%;
+            justify-content: space-evenly; /* Distribute evenly to fill height */
+        }
+        .points-ladder li {
+            /* UPDATED: Compact styling for laptops */
+            padding: 0.2rem 0.5rem; 
+            margin: 0; 
+            font-size: 0.95rem; 
+            font-weight: 600;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-align: right;
+            color: #f59e0b; /* amber-500 */
+            white-space: nowrap;
+        }
+        .points-ladder li.safe {
+            color: #ffffff;
+            font-weight: 800;
+        }
+        .points-ladder li.current {
+            background-color: #f59e0b; /* amber-500 */
+            color: #020024;
+            transform: scale(1.05);
+            font-weight: 900;
+        }
+
+        /* Timer */
+        #timer-display {
+            width: 4rem; /* 64px */
+            height: 4rem; /* 64px */
+            font-size: 1.5rem;
+            border-width: 3px;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 60;
+        }
+        .modal-content {
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            border: 3px solid #6366f1;
+        }
+
+        /* Audience Poll Bars */
+        .poll-bar-container {
+            width: 100%;
+            height: 16px;
+            background-color: #374151; /* gray-700 */
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .poll-bar {
+            height: 100%;
+            background-color: #22c55e; /* green-500 */
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Topic selection screen */
+        .topic-select-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            overflow-y: auto;
+            padding: 2rem;
+        }
+        .topic-button {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 0.75rem;
+            padding: 0.75rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+        }
+        .topic-button:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.03);
+        }
+
+        /* Leaderboard Page Styles */
+        .leaderboard-container {
+            width: 100%;
+            max-width: 6xl;
+            margin: 0 auto;
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            padding: 1.5rem;
+            height: 100%;
+            max-height: 100%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .table-wrapper {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .table-wrapper th {
+            position: sticky;
+            top: 0;
+            background-color: #1e1b4b; /* indigo-950 */
+            z-index: 10;
+            padding: 0.75rem;
+            font-size: 0.9rem;
+        }
+        .table-wrapper td {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+         /* Custom scrollbar */
+         .table-wrapper::-webkit-scrollbar {
+            width: 6px;
+        }
+        .table-wrapper::-webkit-scrollbar-track {
+            background: #1e1b4b;
+            border-radius: 10px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb {
+            background: #4f46e5; /* indigo-600 */
+            border-radius: 10px;
+        }
+        .table-wrapper::-webkit-scrollbar-thumb:hover {
+            background: #6366f1; /* indigo-500 */
+        }
+        
+        /* Main Nav Tab Styles */
+        .main-nav-button {
+            background-color: #1e1b4b; /* indigo-950 */
+            border: 2px solid #4f46e5; /* indigo-600 */
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+        }
+        .main-nav-button.active {
+            background-color: #4f46e5; /* indigo-600 */
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        /* Google Button Style */
+        .google-btn {
+            background-color: white;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .google-btn:hover {
+            background-color: #f3f4f6;
+            transform: scale(1.02);
+        }
+
+        /* Responsive Layout - Smaller screens collapse to column */
+        @media (max-width: 768px) {
+            body {
+                height: auto;
+                overflow-y: auto; /* Allow scrolling on mobile */
+            }
+            .main-container {
+                grid-template-areas:
+                    "header"
+                    "game"
+                    "money";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto auto;
+                height: auto;
+                padding: 0.5rem;
+            }
+            .game-area {
+                min-height: 60vh;
+            }
+            .points-ladder li {
+                font-size: 0.85rem;
+                padding: 0.1rem 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body> <!-- Removed p-4 md:p-8 to let container handle padding -->
+
+    <!-- Main App Container -->
+    <div id="app">
+
+        <!-- 1. Full Screen Loading -->
+        <div id="loading-screen" class="fixed inset-0 bg-gray-900/90 flex flex-col items-center justify-center z-50">
+            <h1 id="loading-message" class="text-3xl text-amber-400 font-bold">Connecting to user...</h1>
+            <p class="text-xl text-amber-400">Please wait.</p>
+        </div>
+
+        <!-- 2. Login Screen -->
+        <div id="login-screen" class="hidden min-h-screen flex items-center justify-center bg-gray-900">
+            <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-md p-8 text-center">
+                <h1 class="text-3xl md:text-4xl font-black text-center mb-4">Who Wants to Be a CS Whiz?</h1>
+                <p class="text-lg text-amber-400 font-semibold mb-8 text-center">Ready to play?</p>
+                
+                <button id="login-btn" class="google-btn w-full shadow-lg">
+                    <svg class="w-6 h-6" viewBox="0 0 24 24">
+                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                    </svg>
+                    Sign in with Google
+                </button>
+                
+                <p class="text-sm text-gray-400 mt-6">Requires Google Account</p>
+                <p id="login-error-message" class="text-red-400 mt-4"></p>
+            </div>
+        </div>
+
+        <!-- 3. Class Code Entry Screen (Hidden by default) -->
+        <div id="class-code-screen" class="hidden min-h-screen flex items-center justify-center bg-gray-900">
+            <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-md p-8 text-center">
+                <h1 id="welcome-name" class="text-2xl font-bold text-center mb-4">Welcome!</h1>
+                <p class="text-md text-gray-300 mb-6">Please enter your class code to continue.</p>
+                <form id="class-code-form" class="space-y-4">
+                    <!-- Name input removed, autodetected from Google -->
+                    <div>
+                        <label for="class-code-input" class="block text-left text-gray-300 mb-1 font-semibold text-sm">Class Code</label>
+                        <input type="text" id="class-code-input" class="w-full p-2 bg-gray-800 border-2 border-indigo-500 rounded-lg text-white text-lg text-center" placeholder="e.g. CS101" required>
+                    </div>
+                    
+                    <p id="class-code-error" class="text-red-500 text-sm h-4"></p>
+                    
+                    <button id="class-code-submit" type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg text-lg">
+                        Save and Play
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 4. Main Logged-In Container (Hidden by default) -->
+        <div id="main-container" class="hidden">
+            <!-- Header Nav -->
+            <div class="w-full max-w-6xl mx-auto mb-2 p-2 rounded-lg bg-indigo-950/50 flex flex-col md:flex-row justify-between items-center gap-2">
+                <div class="flex items-center gap-2">
+                    <span class="text-md font-semibold">Player:</span>
+                    <span id="user-name" class="text-lg text-amber-400 font-bold">...</span>
+                </div>
+                <div class="flex gap-2">
+                    <button id="nav-play-btn" class="main-nav-button rounded-lg hover:bg-indigo-700 transition-colors">Play</button>
+                    <button id="nav-leaderboard-btn" class="main-nav-button rounded-lg hover:bg-indigo-700 transition-colors">Leaderboard</button>
+                    <button id="logout-btn" class="bg-red-600 border-2 border-red-500 text-white text-sm py-1 px-3 rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2" title="Log Out">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span class="hidden md:inline">Logout</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Page 1: Topic Selection Screen -->
+            <div id="page-topic-selection" class="topic-select-container">
+                <h1 class="text-3xl md:text-5xl font-black text-center mb-4">Who Wants to Be a CS Whiz?</h1>
+                <h2 class="text-xl text-amber-400 font-semibold mb-6 text-center">First, pick your topic...</h2>
+                <div id="topic-buttons" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 w-full max-w-4xl">
+                    <!-- Topic buttons will be injected here -->
+                </div>
+            </div>
+
+            <!-- Page 2: Main Game Screen (Hidden by default) -->
+            <div id="page-main-game" class="main-container hidden">
+                <!-- Header -->
+                <header class="header-area text-center flex justify-between items-center">
+                    <div class="text-left">
+                        <h1 class="text-xl md:text-2xl font-black text-amber-400">CS Whiz</h1>
+                        <p id="current-topic-title" class="text-sm md:text-lg text-white font-semibold">Topic: Loading...</p>
+                    </div>
+                    
+                    <!-- Timer placed in header area for better space usage on laptops -->
+                    <div id="timer-display" class="w-16 h-16 bg-indigo-700 rounded-full flex items-center justify-center text-2xl font-bold border-4 border-amber-400 transition-colors duration-300 shadow-lg">
+                        30
+                    </div>
+
+                    <button id="quit-to-menu-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-1 px-3 rounded-lg text-sm">
+                        Quit
+                    </button>
+                </header>
+
+                <!-- Game Area (Questions & Lifelines) -->
+                <div class="game-area">
+                    <!-- Question Box -->
+                    <div class="question-box text-center flex items-center justify-center">
+                        <h2 id="question-text" class="text-lg md:text-2xl font-semibold">Loading question...</h2>
+                    </div>
+                    
+                    <!-- Lifelines -->
+                     <div class="flex justify-center gap-4 my-1">
+                        <button id="lifeline-5050" class="lifeline-btn text-2xl p-2 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg border-2 border-indigo-400 w-16 h-16 flex items-center justify-center font-bold" aria-label="50:50">
+                            50:50
+                        </button>
+                        <button id="lifeline-audience" class="lifeline-btn text-2xl p-2 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-lg border-2 border-indigo-400 w-16 h-16 flex items-center justify-center" aria-label="Ask the Audience">
+                            👥
+                        </button>
+                    </div>
+
+                    <!-- Answer Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div id="answer-A" class="answer-box flex items-center" data-option="A"><span class="text-amber-400 font-bold mr-2 text-lg">A:</span> <span id="answer-text-A">...</span></div>
+                        <div id="answer-B" class="answer-box flex items-center" data-option="B"><span class="text-amber-400 font-bold mr-2 text-lg">B:</span> <span id="answer-text-B">...</span></div>
+                        <div id="answer-C" class="answer-box flex items-center" data-option="C"><span class="text-amber-400 font-bold mr-2 text-lg">C:</span> <span id="answer-text-C">...</span></div>
+                        <div id="answer-D" class="answer-box flex items-center" data-option="D"><span class="text-amber-400 font-bold mr-2 text-lg">D:</span> <span id="answer-text-D">...</span></div>
+                    </div>
+                </div>
+
+                <!-- Points Ladder -->
+                <aside class="money-area">
+                    <div class="points-box">
+                        <h2 class="text-lg font-bold text-center text-amber-400 mb-2">Ladder</h2>
+                        <ol id="points-ladder" class="points-ladder">
+                            <!-- Points values will be injected here -->
+                        </ol>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Page 3: Public Leaderboard (Hidden by default) -->
+            <div id="page-leaderboard" class="leaderboard-container hidden">
+                <h1 class="text-3xl font-black text-center mb-4 text-amber-400">Public Leaderboard</h1>
+                <p id="leaderboard-loading-message" class="text-center text-lg text-amber-400">Loading scores...</p>
+                
+                <div class="table-wrapper hidden" id="leaderboard-table-wrapper">
+                    <table class="min-w-full divide-y divide-indigo-800">
+                        <thead class="bg-indigo-950">
+                            <tr>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Rank</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Name</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Overall High Score</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Played</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 1</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 2</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 3</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 4</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 5</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 6</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 7</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 8</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 9</th>
+                                <th scope="col" class="text-left text-gray-300 uppercase tracking-wider">Unit 10</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="bg-indigo-950/50 divide-y divide-indigo-900">
+                            <!-- Data will be injected here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div> <!-- End #main-container -->
+    </div> <!-- End #app -->
+
+
+    <!-- Audience Poll Modal -->
+    <div id="audience-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-md p-6">
+            <h2 class="text-xl font-bold text-center mb-4">The Audience Thinks...</h2>
+            <div class="space-y-3">
+                <!-- Poll results go here -->
+                <div id="poll-A">
+                    <span class="font-bold text-sm">A:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-A" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-B">
+                    <span class="font-bold text-sm">B:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-B" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-C">
+                    <span class="font-bold text-sm">C:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-C" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-D">
+                    <span class="font-bold text-sm">D:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-D" class="poll-bar"></div></div>
+                </div>
+            </div>
+            <button id="close-audience-modal" class="mt-4 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Score Modal -->
+    <div id="end-game-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-8 text-center">
+            <h2 id="end-game-title" class="text-3xl font-black text-amber-400 mb-4">Game Over!</h2>
+            <p id="end-game-message" class="text-xl mb-6">You won 0 points!</p>
+            <p id="new-high-score-message" class="text-md text-green-400 font-semibold mb-6 hidden">That's a new personal best for this topic!</p>
+            <div class="flex flex-col md:flex-row gap-4">
+                <button id="play-again-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg text-lg">
+                    Play Again
+                </button>
+                <button id="quit-game-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg text-lg">
+                    Change Topic
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // --- Firebase SDK Imports ---
+        import { initializeApp, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            GoogleAuthProvider, // Added Google Provider
+            signInWithPopup,    // Added Popup Sign-in
+            signOut
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            getDoc, 
+            setDoc, 
+            collection, 
+            query, 
+            onSnapshot,
+            increment,
+            updateDoc,
+            orderBy, 
+            limit,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- Configuration ---
+            // Prioritize global environment config if available, otherwise fall back to hardcoded.
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                apiKey: "AIzaSyCLcgsSsy4s5wPS68ByTLV8yfJ6qJOMUzU",
+                authDomain: "cs-whiz-game.firebaseapp.com",
+                projectId: "cs-whiz-game",
+                storageBucket: "cs-whiz-game.firebasestorage.app",
+                messagingSenderId: "962202955655",
+                appId: "1:962202955655:web:96c211a8aa23907592ad22",
+                measurementId: "G-7PGT0R9CZ3"
+            };
+
+            // Critical: Use global app ID if provided, otherwise fallback to a safe default.
+            // The prompt requires appId to be used in paths to avoid permission errors.
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+            // --- FULL QUESTION BANK (Expanded to cover all syllabus units with increasing difficulty) ---
+            // Units map to the Cambridge IGCSE 0478 Syllabus
+            // NO DOTS in keys to prevent Firestore updateDoc issues
+            const questionBank = {
+                "Unit 1 Data Representation": [
+                    // Easy (1-5)
+                    { question: "Which base-2 system do computers use to represent all data?", answers: { correct: "Binary", close: "Denary", possible: "Hexadecimal", wrong: "ASCII" }, difficulty: 1 },
+                    { question: "How many bits are in a single byte?", answers: { correct: "8", close: "4", possible: "16", wrong: "1" }, difficulty: 1 },
+                    { question: "What is the smallest unit of data in a computer?", answers: { correct: "Bit", close: "Byte", possible: "Nibble", wrong: "Pixel" }, difficulty: 2 },
+                    { question: "Which number system is Base-16?", answers: { correct: "Hexadecimal", close: "Denary", possible: "Binary", wrong: "Octal" }, difficulty: 2 },
+                    { question: "What is the denary equivalent of binary 00001010?", answers: { correct: "10", close: "12", possible: "1010", wrong: "8" }, difficulty: 3 },
+                    { question: "What is a group of 4 bits called?", answers: { correct: "Nibble", close: "Byte", possible: "Bit", wrong: "Word" }, difficulty: 3 },
+                    { question: "Which base-10 system do humans use in daily life?", answers: { correct: "Denary", close: "Binary", possible: "Hexadecimal", wrong: "Base-64" }, difficulty: 1 },
+                    { question: "What is the maximum value an 8-bit binary number can represent?", answers: { correct: "255", close: "256", possible: "128", wrong: "127" }, difficulty: 4 },
+                    { question: "Which character encoding uses 7 bits to represent text?", answers: { correct: "ASCII", close: "Unicode", possible: "ANSI", wrong: "UTF-8" }, difficulty: 2 },
+                    { question: "What is the purpose of binary in computing?", answers: { correct: "To represent data in a state computers can process", close: "To make files smaller", possible: "To encrypt data", wrong: "To speed up the internet" }, difficulty: 4 },
+
+                    // Medium (6-10)
+                    { question: "What is the effect of a logical left shift by 1 place on a binary number?", answers: { correct: "Multiplies by 2", close: "Divides by 2", possible: "Adds 1", wrong: "Subtracts 1" }, difficulty: 6 },
+                    { question: "Which character set supports various global languages and emojis?", answers: { correct: "Unicode", close: "ASCII", possible: "Extended ASCII", wrong: "EBCDIC" }, difficulty: 6 },
+                    { question: "In sound sampling, what increases the accuracy of the digital file?", answers: { correct: "Higher sample rate", close: "Lower bit rate", possible: "Smaller file size", wrong: "Lower resolution" }, difficulty: 7 },
+                    { question: "How many bytes are in one Kibibyte (KiB)?", answers: { correct: "1024", close: "1000", possible: "1024 bits", wrong: "8" }, difficulty: 7 },
+                    { question: "What happens if a binary calculation result exceeds the allocated bit size?", answers: { correct: "Overflow error", close: "Syntax error", possible: "Logic error", wrong: "System crash" }, difficulty: 8 },
+                    { question: "What is the denary equivalent of Hexadecimal '1F'?", answers: { correct: "31", close: "15", possible: "32", wrong: "16" }, difficulty: 8 },
+                    { question: "What effect does a logical right shift by 2 places have?", answers: { correct: "Divides by 4", close: "Divides by 2", possible: "Subtracts 2", wrong: "Multiplies by 4" }, difficulty: 9 },
+                    { question: "What determines the range of colours available in an image?", answers: { correct: "Colour depth", close: "Resolution", possible: "Pixel density", wrong: "File format" }, difficulty: 8 },
+                    { question: "Which data unit is equal to 1024 Gibibytes?", answers: { correct: "Tebibyte", close: "Terabyte", possible: "Pebibyte", wrong: "Mebibyte" }, difficulty: 10 },
+                    { question: "What is metadata in an image file?", answers: { correct: "Data about data (e.g., dimensions, colour depth)", close: "The pixel data itself", possible: "The compression algorithm", wrong: "The file name" }, difficulty: 7 },
+
+                    // Hard (11-15)
+                    { question: "In 8-bit Two's Complement, what does 10000001 represent?", answers: { correct: "-127", close: "-1", possible: "129", wrong: "-128" }, difficulty: 12 },
+                    { question: "Which compression method allows the original file to be perfectly reconstructed?", answers: { correct: "Lossless", close: "Lossy", possible: "RLE", wrong: "JPEG" }, difficulty: 12 },
+                    { question: "What is the size in bits of a 10x10 image with 8-bit colour depth?", answers: { correct: "800 bits", close: "100 bits", possible: "100 bytes", wrong: "80 bits" }, difficulty: 13 },
+                    { question: "What is the largest positive number in 8-bit Two's Complement?", answers: { correct: "127", close: "128", possible: "255", wrong: "256" }, difficulty: 14 },
+                    { question: "How does Run-Length Encoding (RLE) compress data?", answers: { correct: "Stores count and value of repeated data", close: "Removes similar colours", possible: "Converts to Hex", wrong: "Deletes every other bit" }, difficulty: 15 },
+                    { question: "Why is Hexadecimal often preferred over Binary for programmers?", answers: { correct: "Easier for humans to read/debug", close: "Computers process it faster", possible: "Takes less memory", wrong: "It allows negative numbers" }, difficulty: 11 },
+                    { question: "What represents -128 in 8-bit Two's Complement?", answers: { correct: "10000000", close: "11111111", possible: "10000001", wrong: "01111111" }, difficulty: 15 },
+                    { question: "Why might lossy compression be unsuitable for text files?", answers: { correct: "Removing data makes text unreadable", close: "Text files are already small", possible: "Text cannot be compressed", wrong: "It changes the font" }, difficulty: 13 },
+                    { question: "Calculate sound file size: 44.1kHz, 16-bit, 2 channels, 1 minute.", answers: { correct: "~10 MB", close: "~5 MB", possible: "~1 MB", wrong: "~100 MB" }, difficulty: 15 },
+                    { question: "How does increasing sample resolution affect sound?", answers: { correct: "Increases dynamic range and accuracy", close: "Increases pitch", possible: "Decreases file size", wrong: "Makes it monaural" }, difficulty: 14 }
+                ],
+                "Unit 2 Data Transmission": [
+                    // Easy
+                    { question: "What are data broken down into for transmission?", answers: { correct: "Packets", close: "Bytes", possible: "Files", wrong: "Blocks" }, difficulty: 1 },
+                    { question: "What is transmission in one direction only (e.g. Radio) called?", answers: { correct: "Simplex", close: "Half-Duplex", possible: "Full-Duplex", wrong: "Serial" }, difficulty: 2 },
+                    { question: "What is transmission in both directions simultaneously called?", answers: { correct: "Full-Duplex", close: "Half-Duplex", possible: "Simplex", wrong: "Parallel" }, difficulty: 2 },
+                    { question: "Which transmission method sends one bit at a time over a single wire?", answers: { correct: "Serial", close: "Parallel", possible: "Simplex", wrong: "USB" }, difficulty: 3 },
+                    { question: "What does USB stand for?", answers: { correct: "Universal Serial Bus", close: "Uniform Serial Bus", possible: "Universal System Bus", wrong: "Unique Serial Bus" }, difficulty: 1 },
+                    { question: "Which method sends multiple bits simultaneously over multiple wires?", answers: { correct: "Parallel", close: "Serial", possible: "Duplex", wrong: "Simplex" }, difficulty: 3 },
+                    { question: "What device connects a local network to the internet?", answers: { correct: "Router", close: "Switch", possible: "Hub", wrong: "Repeater" }, difficulty: 4 },
+                    { question: "Which transmission mode is like a walkie-talkie?", answers: { correct: "Half-Duplex", close: "Simplex", possible: "Full-Duplex", wrong: "Multiplex" }, difficulty: 2 },
+                    { question: "What is the main benefit of serial transmission over long distances?", answers: { correct: "Reliability / Lower cost", close: "Speed", possible: "Complexity", wrong: "Voltage" }, difficulty: 5 },
+                    { question: "What checks for errors by adding a bit to ensure an even number of 1s?", answers: { correct: "Parity Check", close: "Checksum", possible: "CRC", wrong: "Echo" }, difficulty: 4 },
+
+                    // Medium
+                    { question: "Which error check counts the number of 1s to ensure it is odd/even?", answers: { correct: "Parity Check", close: "Checksum", possible: "ARQ", wrong: "Echo Check" }, difficulty: 6 },
+                    { question: "What is the 'payload' in a data packet?", answers: { correct: "The actual data", close: "The destination IP", possible: "The error check code", wrong: "The sender IP" }, difficulty: 7 },
+                    { question: "Which USB feature allows devices to be detected automatically?", answers: { correct: "Plug and Play", close: "Serial transmission", possible: "Universal standard", wrong: "Backward compatibility" }, difficulty: 7 },
+                    { question: "What happens in packet switching if packets arrive out of order?", answers: { correct: "Reordered at destination", close: "Discarded", possible: "Sent back", wrong: "Computer crashes" }, difficulty: 8 },
+                    { question: "What is the main advantage of serial over parallel transmission?", answers: { correct: "Less interference/crosstalk over long distances", close: "Faster transfer rate", possible: "Can send more bits at once", wrong: "Simpler to manufacture" }, difficulty: 6 },
+                    { question: "What allows data to be scrambled so it is unreadable?", answers: { correct: "Encryption", close: "Compression", possible: "Transmission", wrong: "Translation" }, difficulty: 6 },
+                    { question: "Which error detection method uses a calculated value sent with the block of data?", answers: { correct: "Checksum", close: "Parity", possible: "Echo Check", wrong: "ARQ" }, difficulty: 8 },
+                    { question: "What does ARQ stand for?", answers: { correct: "Automatic Repeat Query", close: "Automatic Request Query", possible: "Automated Return Queue", wrong: "Address Resolution Query" }, difficulty: 7 },
+                    { question: "What is 'skew' in data transmission?", answers: { correct: "Bits arriving at different times in parallel transmission", close: "Data corruption", possible: "Lost packets", wrong: "Signal weakness" }, difficulty: 9 },
+                    { question: "Which encryption uses the same key for locking and unlocking?", answers: { correct: "Symmetric", close: "Asymmetric", possible: "Public Key", wrong: "Hashing" }, difficulty: 8 },
+
+                    // Hard
+                    { question: "In asymmetric encryption, which key decrypts the message?", answers: { correct: "Private Key", close: "Public Key", possible: "Symmetric Key", wrong: "Session Key" }, difficulty: 12 },
+                    { question: "How does ARQ handle a timeout without acknowledgement?", answers: { correct: "Resends the packet", close: "Cancels transmission", possible: "Sends an error", wrong: "Requests a checksum" }, difficulty: 13 },
+                    { question: "What is a check digit used for (e.g. in barcodes)?", answers: { correct: "Detect entry errors", close: "Encrypt data", possible: "Compress data", wrong: "Identify product" }, difficulty: 11 },
+                    { question: "Why is parallel transmission rarely used over long distances?", answers: { correct: "Data skew / Interference", close: "It is too slow", possible: "Cables are too thin", wrong: "Only 1 bit at a time" }, difficulty: 14 },
+                    { question: "Which value is calculated from data to verify integrity after transmission?", answers: { correct: "Checksum", close: "Parity Bit", possible: "Packet ID", wrong: "Echo" }, difficulty: 12 },
+                    { question: "What protocol secures HTTP traffic?", answers: { correct: "TLS / SSL", close: "TCP", possible: "IP", wrong: "FTP" }, difficulty: 13 },
+                    { question: "What does the 'Handshake' in SSL/TLS establish?", answers: { correct: "Secure connection parameters", close: "File transfer speed", possible: "User identity", wrong: "Website layout" }, difficulty: 14 },
+                    { question: "Why are packets routed independently?", answers: { correct: "To avoid congestion/failures", close: "To arrive faster", possible: "To be encrypted", wrong: "To simplify routing" }, difficulty: 11 },
+                    { question: "What is the primary drawback of Symmetric Encryption?", answers: { correct: "Key distribution security", close: "Slow speed", possible: "Complex math", wrong: "Large key size" }, difficulty: 15 },
+                    { question: "How does an Echo Check verify data?", answers: { correct: "Receiver sends data back to sender for comparison", close: "Receiver calculates a sum", possible: "Sender sends data twice", wrong: "Receiver sends an ACK" }, difficulty: 12 }
+                ],
+                "Unit 3 Hardware": [
+                    // Easy
+                    { question: "Which component is the 'brain' of the computer?", answers: { correct: "CPU", close: "RAM", possible: "HDD", wrong: "GPU" }, difficulty: 1 },
+                    { question: "Which storage is volatile?", answers: { correct: "RAM", close: "ROM", possible: "HDD", wrong: "SSD" }, difficulty: 2 },
+                    { question: "Which of these is an example of an output device?", answers: { correct: "Monitor", close: "Keyboard", possible: "Mouse", wrong: "Scanner" }, difficulty: 2 },
+                    { question: "Which optical media has the largest capacity?", answers: { correct: "Blu-ray", close: "DVD", possible: "CD", wrong: "Floppy" }, difficulty: 3 },
+                    { question: "What does CPU stand for?", answers: { correct: "Central Processing Unit", close: "Computer Processing Unit", possible: "Central Program Unit", wrong: "Control Processing Unit" }, difficulty: 1 },
+                    { question: "Which device captures physical data for the computer?", answers: { correct: "Sensor", close: "Actuator", possible: "Monitor", wrong: "Speaker" }, difficulty: 3 },
+                    { question: "Which storage is non-volatile and read-only?", answers: { correct: "ROM", close: "RAM", possible: "Cache", wrong: "Register" }, difficulty: 2 },
+                    { question: "What is a bit?", answers: { correct: "Binary Digit (0 or 1)", close: "Byte", possible: "Data packet", wrong: "Pixel" }, difficulty: 1 },
+                    { question: "Which device produces hard copy output?", answers: { correct: "Printer", close: "Scanner", possible: "Monitor", wrong: "Projector" }, difficulty: 2 },
+                    { question: "What connects components on the motherboard?", answers: { correct: "Buses", close: "Wires", possible: "Cables", wrong: "Ports" }, difficulty: 4 },
+
+                    // Medium
+                    { question: "What stores the startup instructions (BIOS/Bootstrap)?", answers: { correct: "ROM", close: "RAM", possible: "HDD", wrong: "Cache" }, difficulty: 6 },
+                    { question: "Which part of the CPU performs calculations?", answers: { correct: "ALU", close: "CU", possible: "Register", wrong: "Bus" }, difficulty: 7 },
+                    { question: "Which register holds the address of the next instruction?", answers: { correct: "Program Counter (PC)", close: "MAR", possible: "MDR", wrong: "CIR" }, difficulty: 8 },
+                    { question: "What is the role of the Control Unit (CU)?", answers: { correct: "Decodes instructions & controls timing", close: "Performs math", possible: "Stores data temporarily", wrong: "Connects to internet" }, difficulty: 8 },
+                    { question: "What technology does an SSD use?", answers: { correct: "Flash Memory", close: "Magnetic platters", possible: "Laser pits", wrong: "Tape" }, difficulty: 6 },
+                    { question: "What is the function of the MDR (Memory Data Register)?", answers: { correct: "Holds data fetched from or to be written to memory", close: "Holds the address of data", possible: "Counts instructions", wrong: "Performs logic" }, difficulty: 9 },
+                    { question: "Which bus carries the memory location address?", answers: { correct: "Address Bus", close: "Data Bus", possible: "Control Bus", wrong: "System Bus" }, difficulty: 6 },
+                    { question: "What is an embedded system?", answers: { correct: "Computer system built into a larger device", close: "A laptop", possible: "A server", wrong: "A supercomputer" }, difficulty: 7 },
+                    { question: "Why is cache memory used?", answers: { correct: "Faster access to frequently used instructions", close: "Permanent storage", possible: "Virtual memory", wrong: "Graphics processing" }, difficulty: 8 },
+                    { question: "What happens during the 'Decode' stage?", answers: { correct: "CU interprets the instruction", close: "Data is fetched", possible: "Calculation is performed", wrong: "Result is stored" }, difficulty: 7 },
+
+                    // Hard
+                    { question: "In the F-D-E cycle, where is data copied to from the MAR?", answers: { correct: "Address Bus", close: "Data Bus", possible: "MDR", wrong: "ALU" }, difficulty: 12 },
+                    { question: "What allows a computer to run more programs than fits in RAM?", answers: { correct: "Virtual Memory", close: "Cache", possible: "Cloud Storage", wrong: "Flash Memory" }, difficulty: 11 },
+                    { question: "Which storage uses floating gate transistors?", answers: { correct: "Solid State (SSD)", close: "Magnetic (HDD)", possible: "Optical", wrong: "Tape" }, difficulty: 13 },
+                    { question: "What defines the Von Neumann architecture?", answers: { correct: "Data & Instructions in same memory", close: "Separate memory for data", possible: "Multiple cores", wrong: "No RAM" }, difficulty: 14 },
+                    { question: "What is the MAC address primarily used for?", answers: { correct: "Uniquely identifying a NIC", close: "Routing over internet", possible: "Assigning IP", wrong: "Encrypting data" }, difficulty: 11 },
+                    { question: "Which bus is bi-directional?", answers: { correct: "Data Bus", close: "Address Bus", possible: "Control Bus", wrong: "Universal Bus" }, difficulty: 12 },
+                    { question: "What causes 'Thrashing' in virtual memory?", answers: { correct: "Excessive swapping between RAM and Disk", close: "Overheating CPU", possible: "Hard drive failure", wrong: "Network congestion" }, difficulty: 15 },
+                    { question: "How does the clock speed affect CPU performance?", answers: { correct: "More cycles per second = more instructions processed", close: "Makes storage larger", possible: "Increases internet speed", wrong: "Reduces power usage" }, difficulty: 11 },
+                    { question: "What is the specific role of the Accumulator (ACC)?", answers: { correct: "Stores intermediate ALU results", close: "Counts programs", possible: "Stores addresses", wrong: "Decodes instructions" }, difficulty: 13 },
+                    { question: "Why might an embedded system use ROM instead of HDD?", answers: { correct: "Robustness and no moving parts", close: "Cheaper", possible: "More capacity", wrong: "Faster write speed" }, difficulty: 14 }
+                ],
+                "Unit 4 Software": [
+                    // Easy
+                    { question: "Which software manages computer hardware?", answers: { correct: "System Software", close: "Application Software", possible: "Utility", wrong: "Firmware" }, difficulty: 2 },
+                    { question: "Which of these is an example of Application Software?", answers: { correct: "Word Processor", close: "Operating System", possible: "Compiler", wrong: "Driver" }, difficulty: 2 },
+                    { question: "What signal enables the CPU to stop and handle a task?", answers: { correct: "Interrupt", close: "Buffer", possible: "Polling", wrong: "Bus" }, difficulty: 3 },
+                    { question: "What is the main program that controls the computer?", answers: { correct: "Operating System", close: "Browser", possible: "Word", wrong: "BIOS" }, difficulty: 1 },
+                    { question: "Which type of software is a virus scanner?", answers: { correct: "Utility Software", close: "Application Software", possible: "Firmware", wrong: "OS" }, difficulty: 3 },
+                    { question: "What translates high-level code to machine code?", answers: { correct: "Translator", close: "Editor", possible: "Debugger", wrong: "Executor" }, difficulty: 2 },
+                    { question: "What language does the CPU directly understand?", answers: { correct: "Machine Code", close: "Python", possible: "Java", wrong: "Assembly" }, difficulty: 3 },
+                    { question: "Which interface uses icons and menus?", answers: { correct: "GUI", close: "CLI", possible: "API", wrong: "VDU" }, difficulty: 2 },
+                    { question: "What handles the communication between OS and hardware?", answers: { correct: "Driver", close: "App", possible: "Kernel", wrong: "Shell" }, difficulty: 4 },
+                    { question: "What is the purpose of a linker?", answers: { correct: "Combines object files into executable", close: "Compiles code", possible: "Debugs code", wrong: "Edits text" }, difficulty: 5 },
+
+                    // Medium
+                    { question: "Which translator converts code line-by-line?", answers: { correct: "Interpreter", close: "Compiler", possible: "Assembler", wrong: "Editor" }, difficulty: 6 },
+                    { question: "Which language uses mnemonics (e.g. ADD, SUB)?", answers: { correct: "Assembly", close: "Python", possible: "Machine Code", wrong: "Java" }, difficulty: 7 },
+                    { question: "What translates Assembly into Machine Code?", answers: { correct: "Assembler", close: "Compiler", possible: "Interpreter", wrong: "Decoder" }, difficulty: 7 },
+                    { question: "Which of the following is a function of an Operating System?", answers: { correct: "Memory Management", close: "Editing photos", possible: "Sending emails", wrong: "Creating spreadsheets" }, difficulty: 6 },
+                    { question: "What is the benefit of using an Interpreter during development?", answers: { correct: "Easy to debug errors immediately", close: "Faster final execution", possible: "Creates an executable", wrong: "Protects source code" }, difficulty: 8 },
+                    { question: "What does an IDE stand for?", answers: { correct: "Integrated Development Environment", close: "Internal Data Editor", possible: "International Design Engine", wrong: "Immediate Debugging Environment" }, difficulty: 6 },
+                    { question: "What happens to the OS when the computer starts?", answers: { correct: "Loaded from storage into RAM", close: "Downloaded from internet", possible: "Stored in CPU", wrong: "Deleted" }, difficulty: 7 },
+                    { question: "Which translator produces an executable file?", answers: { correct: "Compiler", close: "Interpreter", possible: "Assembler", wrong: "Editor" }, difficulty: 8 },
+                    { question: "What is 'multitasking' in an OS?", answers: { correct: "Sharing CPU time between processes", close: "Running multiple CPUs", possible: "User using two mice", wrong: "Connecting to two networks" }, difficulty: 9 },
+                    { question: "What is a syntax error?", answers: { correct: "Breaking the rules of the language", close: "Program crashes", possible: "Wrong output", wrong: "Hardware failure" }, difficulty: 7 },
+
+                    // Hard
+                    { question: "What is a main advantage of a Compiler over an Interpreter?", answers: { correct: "Faster execution of final code", close: "Easier to debug", possible: "Runs line by line", wrong: "No intermediate file" }, difficulty: 11 },
+                    { question: "What is 'Firmware'?", answers: { correct: "Software permanently on hardware (ROM)", close: "The physical case", possible: "Anti-virus", wrong: "Cloud software" }, difficulty: 12 },
+                    { question: "Which IDE feature helps highlight syntax errors?", answers: { correct: "Error diagnostics", close: "Auto-complete", possible: "Pretty print", wrong: "Run-time environment" }, difficulty: 10 },
+                    { question: "What happens when an interrupt is received?", answers: { correct: "CPU pauses current task, runs ISR", close: "Computer shuts down", possible: "Task is deleted", wrong: "Nothing" }, difficulty: 13 },
+                    { question: "Why are High-Level Languages used?", answers: { correct: "Portable & human-readable", close: "Direct hardware control", possible: "Faster to execute", wrong: "Uses binary only" }, difficulty: 11 },
+                    { question: "What handles the scheduling of processes?", answers: { correct: "OS Scheduler", close: "User", possible: "RAM", wrong: "HDD" }, difficulty: 12 },
+                    { question: "What is the role of the 'Linker'?", answers: { correct: "Combines object modules into a single executable", close: "Translates code", possible: "Loads program to RAM", wrong: "Finds errors" }, difficulty: 14 },
+                    { question: "How does a buffer help with printing?", answers: { correct: "Stores data to compensate for speed difference", close: "Speeds up the printer", possible: "Compresses the file", wrong: "Translates the file" }, difficulty: 13 },
+                    { question: "What distinguishes a hardware interrupt from a software interrupt?", answers: { correct: "Hardware = device signal; Software = program error/request", close: "Hardware is faster", possible: "Software is ignored", wrong: "Hardware stops the PC" }, difficulty: 15 },
+                    { question: "Why might Assembly be used over High-Level languages?", answers: { correct: "Direct hardware manipulation / Speed", close: "Easier to write", possible: "Portable", wrong: "More libraries" }, difficulty: 14 }
+                ],
+                "Unit 5 The Internet & Its Uses": [
+                    // Easy
+                    { question: "What is the global system of interconnected networks called?", answers: { correct: "Internet", close: "WWW", possible: "LAN", wrong: "Intranet" }, difficulty: 1 },
+                    { question: "What is the text-based address of a website (e.g. www.google.com)?", answers: { correct: "URL", close: "IP", possible: "DNS", wrong: "HTML" }, difficulty: 2 },
+                    { question: "Which protocol is used for secure web browsing?", answers: { correct: "HTTPS", close: "HTTP", possible: "FTP", wrong: "SMTP" }, difficulty: 3 },
+                    { question: "What software allows you to view web pages?", answers: { correct: "Web Browser", close: "Search Engine", possible: "Web Server", wrong: "ISP" }, difficulty: 1 },
+                    { question: "What does HTML stand for?", answers: { correct: "HyperText Markup Language", close: "High Tech Machine Language", possible: "Hyper Transfer Mark Logic", wrong: "Home Tool Markup Language" }, difficulty: 2 },
+                    { question: "What is a common method to steal passwords via fake emails?", answers: { correct: "Phishing", close: "Farming", possible: "Virus", wrong: "Spamming" }, difficulty: 3 },
+                    { question: "What locks a browser session to a server securely?", answers: { correct: "SSL/TLS", close: "HTML", possible: "CSS", wrong: "URL" }, difficulty: 4 },
+                    { question: "Which currency exists only digitally?", answers: { correct: "Digital Currency", close: "Fiat", possible: "Gold", wrong: "Cash" }, difficulty: 2 },
+                    { question: "What protects a network from unauthorized access?", answers: { correct: "Firewall", close: "Cookie", possible: "Modem", wrong: "Switch" }, difficulty: 3 },
+                    { question: "What identifies a device on the Internet?", answers: { correct: "IP Address", close: "MAC Address", possible: "URL", wrong: "Email" }, difficulty: 4 },
+
+                    // Medium
+                    { question: "What translates a Domain Name to an IP address?", answers: { correct: "DNS", close: "Router", possible: "Browser", wrong: "Server" }, difficulty: 7 },
+                    { question: "Which malicious software is designed to replicate itself?", answers: { correct: "Virus", close: "Spyware", possible: "Phishing", wrong: "Cookie" }, difficulty: 6 },
+                    { question: "What is attempting to get data by fake emails called?", answers: { correct: "Phishing", close: "Pharming", possible: "Hacking", wrong: "Spam" }, difficulty: 6 },
+                    { question: "What is a decentralized digital ledger technology?", answers: { correct: "Blockchain", close: "Bitcoin", possible: "Database", wrong: "Cloud" }, difficulty: 8 },
+                    { question: "What is the structure of a URL?", answers: { correct: "Protocol://Domain/Path", close: "Domain://Protocol/Path", possible: "Path://Domain/Protocol", wrong: "Name://Address/File" }, difficulty: 7 },
+                    { question: "What is 'Social Engineering'?", answers: { correct: "Manipulating people into giving up data", close: "Coding a social network", possible: "Building robots", wrong: "Hacking a server" }, difficulty: 8 },
+                    { question: "How does a firewall work?", answers: { correct: "Filters traffic based on rules", close: "Deletes viruses", possible: "Encrypts data", wrong: "Speeds up internet" }, difficulty: 7 },
+                    { question: "What is 'Spyware'?", answers: { correct: "Software that records user activity", close: "Software that deletes files", possible: "Software that shows ads", wrong: "Software that locks files" }, difficulty: 6 },
+                    { question: "What is the role of an ISP?", answers: { correct: "Provide access to the Internet", close: "Host websites", possible: "Create browsers", wrong: "Fix computers" }, difficulty: 6 },
+                    { question: "What is a 'Cookie'?", answers: { correct: "Small text file stored by browser", close: "A virus", possible: "A program", wrong: "A password" }, difficulty: 6 },
+
+                    // Hard
+                    { question: "What attack floods a server with traffic?", answers: { correct: "DDoS", close: "Brute force", possible: "Pharming", wrong: "Injection" }, difficulty: 11 },
+                    { question: "What is the function of a Proxy Server?", answers: { correct: "Intermediary; hides user IP", close: "Hosts websites", possible: "Assigns MAC addresses", wrong: "Generates Cookies" }, difficulty: 12 },
+                    { question: "What involves redirection to a fake website via DNS poisoning?", answers: { correct: "Pharming", close: "Phishing", possible: "Smishing", wrong: "Spyware" }, difficulty: 13 },
+                    { question: "How does Blockchain prevent tampering?", answers: { correct: "Hash of previous block included", close: "Central admin", possible: "Hidden servers", wrong: "Encryption only" }, difficulty: 15 },
+                    { question: "What is the difference between Session and Persistent cookies?", answers: { correct: "Session deleted on close; Persistent saved", close: "Persistent deleted on close", possible: "No difference", wrong: "Session is safer" }, difficulty: 12 },
+                    { question: "How does a Brute-Force attack work?", answers: { correct: "Trying all possible password combinations", close: "Guessing based on personal info", possible: "Stealing the database", wrong: "Asking the user" }, difficulty: 11 },
+                    { question: "What is 'Ransomware'?", answers: { correct: "Malware that encrypts data and demands payment", close: "Malware that steals passwords", possible: "Fake antivirus", wrong: "Adware" }, difficulty: 12 },
+                    { question: "Why are biometrics more secure than passwords?", answers: { correct: "Unique to individual and hard to fake", close: "Easier to remember", possible: "Cheaper", wrong: "Digital only" }, difficulty: 11 },
+                    { question: "How does two-step verification improve security?", answers: { correct: "Requires two forms of identification", close: "Requires a longer password", possible: "Checks IP address", wrong: "Encrypts the drive" }, difficulty: 13 },
+                    { question: "What is the purpose of the 'Handshake' in HTTPS?", answers: { correct: "Negotiate encryption keys securely", close: "Transfer the file", possible: "Check internet speed", wrong: "Verify email" }, difficulty: 14 }
+                ],
+                "Unit 6 Automated & Emerging Tech": [
+                    // Easy
+                    { question: "Which device is used to measure physical properties (e.g. temp)?", answers: { correct: "Sensor", close: "Actuator", possible: "Microprocessor", wrong: "Motor" }, difficulty: 2 },
+                    { question: "What is the branch of CS dealing with robots called?", answers: { correct: "Robotics", close: "AI", possible: "Automation", wrong: "Mechanics" }, difficulty: 2 },
+                    { question: "What is a machine simulating intelligent behavior called?", answers: { correct: "AI", close: "Robot", possible: "Sensor", wrong: "Computer" }, difficulty: 2 },
+                    { question: "Which component produces movement?", answers: { correct: "Actuator", close: "Sensor", possible: "ADC", wrong: "Chip" }, difficulty: 3 },
+                    { question: "What sensor detects light levels?", answers: { correct: "Light Sensor", close: "Temp Sensor", possible: "Pressure Sensor", wrong: "Motion Sensor" }, difficulty: 1 },
+                    { question: "What is an automated system?", answers: { correct: "System working with minimal human intervention", close: "A robot", possible: "A computer", wrong: "A factory" }, difficulty: 2 },
+                    { question: "Which sensor is used in a burglar alarm for movement?", answers: { correct: "Infra-red / Motion", close: "Gas", possible: "pH", wrong: "Moisture" }, difficulty: 3 },
+                    { question: "What is a 'Chatbot' an example of?", answers: { correct: "Weak AI", close: "Strong AI", possible: "Robotics", wrong: "Hardware" }, difficulty: 4 },
+                    { question: "Where are robots commonly used?", answers: { correct: "Manufacturing / Industry", close: "Offices", possible: "Schools", wrong: "Parks" }, difficulty: 2 },
+                    { question: "What device converts analogue sensor data to digital?", answers: { correct: "ADC", close: "DAC", possible: "CPU", wrong: "USB" }, difficulty: 5 },
+
+                    // Medium
+                    { question: "Which component creates movement in a system?", answers: { correct: "Actuator", close: "Sensor", possible: "ADC", wrong: "Lens" }, difficulty: 6 },
+                    { question: "What is the role of the Microprocessor in automation?", answers: { correct: "Process inputs & decide outputs", close: "Detect light", possible: "Move the arm", wrong: "Store the data" }, difficulty: 7 },
+                    { question: "Which of these is a characteristic of AI?", answers: { correct: "Ability to Learn and Adapt", close: "Ability to Move", possible: "Ability to Feel emotion", wrong: "Ability to Sleep" }, difficulty: 6 },
+                    { question: "Scenario: Controlling a greenhouse temperature. Steps?", answers: { correct: "Sensor -> ADC -> CPU -> DAC -> Actuator", close: "CPU -> Sensor -> Actuator", possible: "Sensor -> Actuator -> CPU", wrong: "Actuator -> Sensor" }, difficulty: 9 },
+                    { question: "What is 'Machine Learning'?", answers: { correct: "Algorithms improving through experience/data", close: "Programming a robot", possible: "Fixing hardware", wrong: "Installing OS" }, difficulty: 8 },
+                    { question: "What sensor would detect a gas leak?", answers: { correct: "Gas Sensor", close: "Pressure Sensor", possible: "Flow Sensor", wrong: "Level Sensor" }, difficulty: 6 },
+                    { question: "What is a disadvantage of automation?", answers: { correct: "Job losses / Initial cost", close: "Lower accuracy", possible: "Slower production", wrong: "Needs breaks" }, difficulty: 7 },
+                    { question: "What is an advantage of automation?", answers: { correct: "Consistent quality / Safety", close: "Cheap to set up", possible: "Creates jobs", wrong: "More flexible" }, difficulty: 7 },
+                    { question: "What does a DAC do?", answers: { correct: "Converts Digital to Analogue", close: "Converts Analogue to Digital", possible: "Stores data", wrong: "Processes logic" }, difficulty: 8 },
+                    { question: "Which AI type focuses on one specific task?", answers: { correct: "Narrow AI", close: "General AI", possible: "Super AI", wrong: "Deep AI" }, difficulty: 9 },
+
+                    // Hard
+                    { question: "What is an advantage of using robots in industry?", answers: { correct: "Work 24/7 in dangerous conditions", close: "Cheaper initial cost", possible: "Can think creatively", wrong: "No maintenance" }, difficulty: 10 },
+                    { question: "What are the three parts of an Expert System?", answers: { correct: "Knowledge Base, Inference Engine, Interface", close: "Input, Process, Output", possible: "Sensor, CPU, Actuator", wrong: "Rule base, CPU, RAM" }, difficulty: 13 },
+                    { question: "What is the main difference between an Automated System and a Robot?", answers: { correct: "Robots are flexible/reprogrammable", close: "Robots are faster", possible: "Automated systems use AI", wrong: "Robots don't use sensors" }, difficulty: 12 },
+                    { question: "Scenario: Monitoring crop moisture. Which sensor would be used?", answers: { correct: "Moisture Sensor", close: "Humidity Sensor", possible: "Light Sensor", wrong: "pH Sensor" }, difficulty: 9 },
+                    { question: "How does Machine Learning differ from standard code?", answers: { correct: "Adapts rules based on data", close: "Follows fixed rules", possible: "Runs faster", wrong: "Uses no data" }, difficulty: 14 },
+                    { question: "What is the 'Inference Engine' in an Expert System?", answers: { correct: "Applies rules to knowledge base", close: "Stores the facts", possible: "The user screen", wrong: "The sensor input" }, difficulty: 13 },
+                    { question: "Why is a feedback loop important in control systems?", answers: { correct: "To adjust output based on result", close: "To save power", possible: "To speed up", wrong: "To stop the system" }, difficulty: 12 },
+                    { question: "What is a characteristic of 'Strong AI'?", answers: { correct: "Human-level intelligence & understanding", close: "Good at chess", possible: "Fast calculation", wrong: "Voice recognition" }, difficulty: 15 },
+                    { question: "Which sensor measures acidity?", answers: { correct: "pH Sensor", close: "Gas Sensor", possible: "Flow Sensor", wrong: "Level Sensor" }, difficulty: 11 },
+                    { question: "What allows a self-driving car to 'see'?", answers: { correct: "LiDAR / Cameras + AI Processing", close: "GPS only", possible: "Maps", wrong: "Internet" }, difficulty: 14 }
+                ],
+                "Unit 7 Algorithm Design & Problem-solving": [
+                    // Easy
+                    { question: "What is a step-by-step set of instructions called?", answers: { correct: "Algorithm", close: "Program", possible: "Flowchart", wrong: "Code" }, difficulty: 1 },
+                    { question: "What is breaking a problem into smaller parts called?", answers: { correct: "Decomposition", close: "Abstraction", possible: "Pattern Rec.", wrong: "Coding" }, difficulty: 3 },
+                    { question: "Which flowchart shape is used for a Decision?", answers: { correct: "Diamond", close: "Rectangle", possible: "Parallelogram", wrong: "Oval" }, difficulty: 2 },
+                    { question: "Which flowchart shape represents Start/End?", answers: { correct: "Oval / Terminator", close: "Square", possible: "Circle", wrong: "Diamond" }, difficulty: 1 },
+                    { question: "Which flowchart shape represents Input/Output?", answers: { correct: "Parallelogram", close: "Rectangle", possible: "Diamond", wrong: "Oval" }, difficulty: 2 },
+                    { question: "What is 'Pseudocode'?", answers: { correct: "Structured English description of code", close: "Real code", possible: "Binary", wrong: "A flowchart" }, difficulty: 2 },
+                    { question: "What is a dry run?", answers: { correct: "Manually tracing algorithm logic", close: "Running code on PC", possible: "Deleting code", wrong: "Compiling" }, difficulty: 3 },
+                    { question: "Which error causes a crash during execution?", answers: { correct: "Runtime Error", close: "Syntax Error", possible: "Logic Error", wrong: "Typo" }, difficulty: 4 },
+                    { question: "Which error allows the program to run but gives wrong results?", answers: { correct: "Logic Error", close: "Syntax Error", possible: "Runtime Error", wrong: "Crash" }, difficulty: 4 },
+                    { question: "What is the first stage of the program life cycle?", answers: { correct: "Analysis", close: "Design", possible: "Coding", wrong: "Testing" }, difficulty: 3 },
+
+                    // Medium
+                    { question: "Which check ensures data meets specific criteria (e.g. range)?", answers: { correct: "Validation", close: "Verification", possible: "Testing", wrong: "Proofing" }, difficulty: 6 },
+                    { question: "Which check ensures data is copied correctly?", answers: { correct: "Verification", close: "Validation", possible: "Sanitisation", wrong: "Authentication" }, difficulty: 7 },
+                    { question: "Test data: What is a value on the edge of acceptability called?", answers: { correct: "Boundary", close: "Extreme", possible: "Normal", wrong: "Abnormal" }, difficulty: 7 },
+                    { question: "Test data: What is a value that should be rejected called?", answers: { correct: "Abnormal / Erroneous", close: "Extreme", possible: "Boundary", wrong: "Normal" }, difficulty: 6 },
+                    { question: "Which validation check ensures text is not too long?", answers: { correct: "Length Check", close: "Range Check", possible: "Type Check", wrong: "Format Check" }, difficulty: 6 },
+                    { question: "Which validation check ensures a field is not empty?", answers: { correct: "Presence Check", close: "Exist Check", possible: "Null Check", wrong: "Void Check" }, difficulty: 6 },
+                    { question: "What is a 'Structure Diagram'?", answers: { correct: "Hierarchical view of decomposed problem", close: "Flowchart", possible: "Code", wrong: "Database" }, difficulty: 8 },
+                    { question: "What is 'Normal' test data?", answers: { correct: "Expected data within range", close: "Data that causes errors", possible: "Edge case data", wrong: "Invalid data" }, difficulty: 6 },
+                    { question: "Which validation ensures data matches a pattern (e.g. DD/MM/YYYY)?", answers: { correct: "Format Check", close: "Type Check", possible: "Range Check", wrong: "Length Check" }, difficulty: 8 },
+                    { question: "What does a 'Process' box look like in a flowchart?", answers: { correct: "Rectangle", close: "Diamond", possible: "Circle", wrong: "Arrow" }, difficulty: 6 },
+
+                    // Hard
+                    { question: "Which algorithm searches item by item?", answers: { correct: "Linear Search", close: "Binary Search", possible: "Bubble Sort", wrong: "Quick Sort" }, difficulty: 9 },
+                    { question: "Which algorithm sorts by swapping adjacent items?", answers: { correct: "Bubble Sort", close: "Linear Sort", possible: "Insertion Sort", wrong: "Merge Sort" }, difficulty: 9 },
+                    { question: "What is the purpose of a Trace Table?", answers: { correct: "Track variable values (Dry run)", close: "Test speed", possible: "Find syntax errors", wrong: "Compile code" }, difficulty: 11 },
+                    { question: "Which validation check confirms if data exists?", answers: { correct: "Presence Check", close: "Type Check", possible: "Range Check", wrong: "Format Check" }, difficulty: 10 },
+                    { question: "What is 'Abstraction'?", answers: { correct: "Removing unnecessary details", close: "Breaking down problems", possible: "Writing code", wrong: "Testing" }, difficulty: 12 },
+                    { question: "How does Totalling work in a loop?", answers: { correct: "Total = Total + Value", close: "Total = Value", possible: "Total = Total + 1", wrong: "Total = Total * Value" }, difficulty: 11 },
+                    { question: "How does Counting work in a loop?", answers: { correct: "Count = Count + 1", close: "Count = Count + Value", possible: "Count = Value", wrong: "Count = 0" }, difficulty: 11 },
+                    { question: "What is the efficiency of Linear Search?", answers: { correct: "Checks every item (Slow for large lists)", close: "Very fast", possible: "Instant", wrong: "Only checks first item" }, difficulty: 13 },
+                    { question: "What is a condition for Binary Search?", answers: { correct: "List must be sorted", close: "List must be unsorted", possible: "List must be short", wrong: "List must be numbers" }, difficulty: 14 },
+                    { question: "What is 'Extreme' test data?", answers: { correct: "Valid data at the limits of the range", close: "Invalid data", possible: "Average data", wrong: "Random data" }, difficulty: 12 }
+                ],
+                "Unit 8 Programming": [
+                    // Easy
+                    { question: "What is a named storage location that can change called?", answers: { correct: "Variable", close: "Constant", possible: "Array", wrong: "Loop" }, difficulty: 2 },
+                    { question: "Which data type is used for whole numbers?", answers: { correct: "Integer", close: "Real", possible: "String", wrong: "Boolean" }, difficulty: 2 },
+                    { question: "Which construct is used for repeating code?", answers: { correct: "Iteration (Loop)", close: "Sequence", possible: "Selection", wrong: "Declaration" }, difficulty: 3 },
+                    { question: "What represents text data?", answers: { correct: "String", close: "Integer", possible: "Char", wrong: "Float" }, difficulty: 1 },
+                    { question: "What represents a single character?", answers: { correct: "Char", close: "String", possible: "Bit", wrong: "Byte" }, difficulty: 2 },
+                    { question: "What represents decimal numbers?", answers: { correct: "Real / Float", close: "Integer", possible: "Boolean", wrong: "String" }, difficulty: 2 },
+                    { question: "What represents True or False?", answers: { correct: "Boolean", close: "Binary", possible: "Switch", wrong: "Logic" }, difficulty: 2 },
+                    { question: "What is a value that cannot change during execution?", answers: { correct: "Constant", close: "Variable", possible: "Function", wrong: "Loop" }, difficulty: 3 },
+                    { question: "What is the symbol for assignment in Pseudocode?", answers: { correct: "<-", close: "=", possible: "==", wrong: ":" }, difficulty: 3 },
+                    { question: "What executes code line by line in order?", answers: { correct: "Sequence", close: "Selection", possible: "Iteration", wrong: "Function" }, difficulty: 3 },
+
+                    // Medium
+                    { question: "What is the operator for 'Not Equal To'?", answers: { correct: "<>", close: "!=", possible: "==", wrong: "=" }, difficulty: 6 },
+                    { question: "Which loop runs a set number of times?", answers: { correct: "For Loop", close: "While Loop", possible: "Repeat Until", wrong: "If Statement" }, difficulty: 6 },
+                    { question: "Which data structure stores a list of same-type items?", answers: { correct: "Array", close: "Record", possible: "String", wrong: "Variable" }, difficulty: 7 },
+                    { question: "What is the main difference between a Function and a Procedure?", answers: { correct: "Function returns a value", close: "Procedure returns a value", possible: "No difference", wrong: "Function has no params" }, difficulty: 8 },
+                    { question: "How do you refer to an item in an array?", answers: { correct: "Index", close: "Key", possible: "Value", wrong: "Name" }, difficulty: 6 },
+                    { question: "What is 'Selection' in programming?", answers: { correct: "IF / CASE statements", close: "Loops", possible: "Variables", wrong: "Functions" }, difficulty: 7 },
+                    { question: "What operator calculates the remainder?", answers: { correct: "MOD", close: "DIV", possible: "/", wrong: "*" }, difficulty: 8 },
+                    { question: "What operator calculates integer division?", answers: { correct: "DIV", close: "MOD", possible: "/", wrong: "%" }, difficulty: 8 },
+                    { question: "What is a 'nested' loop?", answers: { correct: "A loop inside another loop", close: "A loop that never ends", possible: "A broken loop", wrong: "A loop with an IF" }, difficulty: 7 },
+                    { question: "What does 'concatenation' do?", answers: { correct: "Joins two strings", close: "Splits a string", possible: "Deletes a string", wrong: "Compares strings" }, difficulty: 8 },
+
+                    // Hard
+                    { question: "What type of variable is available throughout the program?", answers: { correct: "Global", close: "Local", possible: "Static", wrong: "Constant" }, difficulty: 10 },
+                    { question: "Finding the length of a string is an example of what?", answers: { correct: "String manipulation", close: "Casting", possible: "Validation", wrong: "Iteration" }, difficulty: 9 },
+                    { question: "Which library routine finds the remainder?", answers: { correct: "MOD", close: "DIV", possible: "ROUND", wrong: "RANDom" }, difficulty: 11 },
+                    { question: "Which loop checks the condition AFTER execution?", answers: { correct: "Post-condition (Repeat)", close: "Pre-condition (While)", possible: "For Loop", wrong: "Infinite Loop" }, difficulty: 12 },
+                    { question: "Which loop checks the condition BEFORE execution?", answers: { correct: "Pre-condition (While)", close: "Post-condition (Repeat)", possible: "For Loop", wrong: "Infinite Loop" }, difficulty: 11 },
+                    { question: "What is the scope of a Local Variable?", answers: { correct: "Only within the subroutine", close: "Whole program", possible: "Within the file", wrong: "Global" }, difficulty: 12 },
+                    { question: "Why use procedures/functions?", answers: { correct: "Reuse code / Break down problem", close: "Run faster", possible: "Use less memory", wrong: "Avoid variables" }, difficulty: 11 },
+                    { question: "What is a 2D Array?", answers: { correct: "A table/grid of data (Rows & Cols)", close: "A list", possible: "A database", wrong: "A variable" }, difficulty: 13 },
+                    { question: "How do you access the 2nd item in 3rd row of 2D array 'Grid'?", answers: { correct: "Grid[3,2]", close: "Grid[2,3]", possible: "Grid[3]", wrong: "Grid(3,2)" }, difficulty: 14 },
+                    { question: "What is 'Casting'?", answers: { correct: "Converting data types", close: "Throwing error", possible: "Looping", wrong: "Saving file" }, difficulty: 13 }
+                ],
+                "Unit 9 Databases": [
+                    // Easy
+                    { question: "What is a single column in a database table called?", answers: { correct: "Field", close: "Record", possible: "Table", wrong: "Query" }, difficulty: 3 },
+                    { question: "What is a single row representing one item called?", answers: { correct: "Record", close: "Field", possible: "Key", wrong: "Type" }, difficulty: 3 },
+                    { question: "Which field uniquely identifies a record?", answers: { correct: "Primary Key", close: "Foreign Key", possible: "Secondary Key", wrong: "Index" }, difficulty: 4 },
+                    { question: "What is a database?", answers: { correct: "Structured collection of data", close: "A file", possible: "A spreadsheet", wrong: "A website" }, difficulty: 1 },
+                    { question: "Which data type stores 'Yes/No'?", answers: { correct: "Boolean", close: "Text", possible: "Number", wrong: "Date" }, difficulty: 2 },
+                    { question: "What represents alphanumeric data?", answers: { correct: "Text / String", close: "Integer", possible: "Boolean", wrong: "Float" }, difficulty: 2 },
+                    { question: "What prevents duplicate Primary Keys?", answers: { correct: "Uniqueness check", close: "Range check", possible: "Format check", wrong: "Type check" }, difficulty: 4 },
+                    { question: "Example of a likely Primary Key for Students.", answers: { correct: "StudentID", close: "FirstName", possible: "DOB", wrong: "Class" }, difficulty: 3 },
+                    { question: "What is 'Data Type' in a database?", answers: { correct: "Format of data in a field", close: "Name of the table", possible: "Number of records", wrong: "Security level" }, difficulty: 3 },
+                    { question: "What is a 'Flat File' database?", answers: { correct: "Single table", close: "Multiple linked tables", possible: "Cloud database", wrong: "SQL" }, difficulty: 4 },
+
+                    // Medium
+                    { question: "Which SQL command is used to retrieve data?", answers: { correct: "SELECT", close: "GET", possible: "SEARCH", wrong: "FIND" }, difficulty: 6 },
+                    { question: "Which SQL command is used to filter results?", answers: { correct: "WHERE", close: "WHEN", possible: "IF", wrong: "FILTER" }, difficulty: 7 },
+                    { question: "Which data type represents True/False?", answers: { correct: "Boolean", close: "Text", possible: "Integer", wrong: "Real" }, difficulty: 5 },
+                    { question: "Which SQL command specifies the table?", answers: { correct: "FROM", close: "IN", possible: "AT", wrong: "TABLE" }, difficulty: 6 },
+                    { question: "How do you sort data in SQL?", answers: { correct: "ORDER BY", close: "SORT BY", possible: "ORGANIZE", wrong: "ARRANGE" }, difficulty: 7 },
+                    { question: "What does 'SELECT *' do?", answers: { correct: "Selects all fields", close: "Selects all records", possible: "Selects nothing", wrong: "Selects primary key" }, difficulty: 7 },
+                    { question: "What links two tables together?", answers: { correct: "Foreign Key", close: "Primary Key", possible: "Data Link", wrong: "Joiner" }, difficulty: 8 },
+                    { question: "What does SQL stand for?", answers: { correct: "Structured Query Language", close: "Standard Query Logic", possible: "Simple Question Language", wrong: "System Query Link" }, difficulty: 6 },
+                    { question: "In 'ORDER BY Age DESC', what does DESC mean?", answers: { correct: "Descending", close: "Describe", possible: "Decimal", wrong: "Destination" }, difficulty: 6 },
+                    { question: "What is a Relational Database?", answers: { correct: "Tables linked by keys", close: "Single table", possible: "Text file", wrong: "Spreadsheet" }, difficulty: 8 },
+
+                    // Hard
+                    { question: "Which SQL command sorts results from Z to A?", answers: { correct: "ORDER BY ... DESC", close: "SORT ... DESC", possible: "ORDER ... ASC", wrong: "ALIGN ... Z-A" }, difficulty: 11 },
+                    { question: "Which SQL function counts rows?", answers: { correct: "COUNT", close: "SUM", possible: "TOTAL", wrong: "ADD" }, difficulty: 10 },
+                    { question: "What is the purpose of a Foreign Key?", answers: { correct: "Link two tables", close: "Unique ID", possible: "Sort data", wrong: "Delete record" }, difficulty: 12 },
+                    { question: "What does the query 'SELECT Name FROM Students WHERE Age > 15' return?", answers: { correct: "Names of students older than 15", close: "All student data", possible: "Ages of students", wrong: "Count of students" }, difficulty: 10 },
+                    { question: "What is Referential Integrity?", answers: { correct: "Ensuring links between tables remain valid", close: "Checking password strength", possible: "Backing up data", wrong: "Sorting data" }, difficulty: 14 },
+                    { question: "What does SQL 'SUM()' do?", answers: { correct: "Adds up values in a column", close: "Counts rows", possible: "Averages values", wrong: "Multiplies values" }, difficulty: 11 },
+                    { question: "How do you combine conditions in SQL (e.g. Age>10 AND Class='9A')?", answers: { correct: "AND operator", close: "PLUS operator", possible: "WITH operator", wrong: "& symbol" }, difficulty: 11 },
+                    { question: "What does 'Validation' in a database ensure?", answers: { correct: "Data is reasonable/sensible", close: "Data is correct", possible: "Data is secure", wrong: "Data is backed up" }, difficulty: 12 },
+                    { question: "Which query finds names starting with 'A'?", answers: { correct: "LIKE 'A%'", close: "EQUALS 'A'", possible: "STARTS 'A'", wrong: "IS 'A'" }, difficulty: 13 },
+                    { question: "Why use a relational database over a flat file?", answers: { correct: "Reduces data redundancy / Inconsistency", close: "Simpler to set up", possible: "Uses less RAM", wrong: "Easier to read manually" }, difficulty: 13 }
+                ],
+                "Unit 10 Boolean Logic": [
+                    // Easy
+                    { question: "Which gate outputs 1 only if the Input is 0?", answers: { correct: "NOT", close: "AND", possible: "OR", wrong: "XOR" }, difficulty: 2 },
+                    { question: "Which gate outputs 1 only if BOTH inputs are 1?", answers: { correct: "AND", close: "OR", possible: "NAND", wrong: "XOR" }, difficulty: 2 },
+                    { question: "Which gate outputs 1 if at least one input is 1?", answers: { correct: "OR", close: "AND", possible: "NOR", wrong: "NOT" }, difficulty: 3 },
+                    { question: "How many inputs does a NOT gate have?", answers: { correct: "1", close: "2", possible: "0", wrong: "3" }, difficulty: 1 },
+                    { question: "What is the output of NOT 1?", answers: { correct: "0", close: "1", possible: "True", wrong: "Null" }, difficulty: 1 },
+                    { question: "What values are used in Boolean logic?", answers: { correct: "1 and 0 (True/False)", close: "1 to 10", possible: "A to Z", wrong: "Yes, No, Maybe" }, difficulty: 1 },
+                    { question: "Standard symbol for AND gate?", answers: { correct: "D-shape", close: "Triangle", possible: "Curved Arrow", wrong: "Circle" }, difficulty: 3 },
+                    { question: "Standard symbol for OR gate?", answers: { correct: "Arrowhead/Curved", close: "D-shape", possible: "Square", wrong: "Line" }, difficulty: 3 },
+                    { question: "What is a Truth Table?", answers: { correct: "Shows all input/output combinations", close: "Shows errors", possible: "Shows voltage", wrong: "Shows time" }, difficulty: 4 },
+                    { question: "Output of: 0 AND 0?", answers: { correct: "0", close: "1", possible: "2", wrong: "Null" }, difficulty: 2 },
+
+                    // Medium
+                    { question: "Which gate outputs 1 only if inputs are DIFFERENT?", answers: { correct: "XOR", close: "OR", possible: "NAND", wrong: "NOR" }, difficulty: 7 },
+                    { question: "Which gate outputs 0 only if BOTH inputs are 1?", answers: { correct: "NAND", close: "NOR", possible: "AND", wrong: "XOR" }, difficulty: 7 },
+                    { question: "Which gate is represented by a triangle with a circle at the tip?", answers: { correct: "NOT", close: "AND", possible: "OR", wrong: "NAND" }, difficulty: 5 },
+                    { question: "What is a Logic Circuit?", answers: { correct: "Combination of logic gates", close: "A battery", possible: "A microchip", wrong: "A program" }, difficulty: 6 },
+                    { question: "Output of: 1 XOR 1?", answers: { correct: "0", close: "1", possible: "2", wrong: "Error" }, difficulty: 7 },
+                    { question: "Output of: 0 XOR 1?", answers: { correct: "1", close: "0", possible: "2", wrong: "Error" }, difficulty: 7 },
+                    { question: "What does the circle on a NAND/NOR gate symbol signify?", answers: { correct: "Inversion (NOT)", close: "Input", possible: "Power", wrong: "Ground" }, difficulty: 6 },
+                    { question: "Output of: NOT (0 OR 0)?", answers: { correct: "1", close: "0", possible: "False", wrong: "Error" }, difficulty: 8 },
+                    { question: "Output of: 1 NAND 1?", answers: { correct: "0", close: "1", possible: "True", wrong: "Error" }, difficulty: 8 },
+                    { question: "Expression for OR gate?", answers: { correct: "A + B", close: "A . B", possible: "A - B", wrong: "A / B" }, difficulty: 9 },
+
+                    // Hard
+                    { question: "What is the output of 1 AND 0?", answers: { correct: "0", close: "1", possible: "True", wrong: "Error" }, difficulty: 8 },
+                    { question: "What is the output of 1 OR 0?", answers: { correct: "1", close: "0", possible: "False", wrong: "Null" }, difficulty: 8 },
+                    { question: "What is a table showing all input/output combinations called?", answers: { correct: "Truth Table", close: "Trace Table", possible: "Logic Table", wrong: "Data Table" }, difficulty: 6 },
+                    { question: "What is the result of '(A AND B) OR C' if A=1, B=1, and C=0?", answers: { correct: "1", close: "0", possible: "Null", wrong: "Error" }, difficulty: 13 },
+                    { question: "What does a NOR gate do?", answers: { correct: "NOT OR (1 if both 0)", close: "NOT AND", possible: "XOR", wrong: "AND OR" }, difficulty: 11 },
+                    { question: "Which single gate can be used to make all other gates?", answers: { correct: "NAND", close: "AND", possible: "OR", wrong: "XOR" }, difficulty: 14 },
+                    { question: "Logic Expression: X = NOT A AND B. If A=1, B=1?", answers: { correct: "0", close: "1", possible: "True", wrong: "Error" }, difficulty: 12 },
+                    { question: "Logic Expression: X = A OR (B AND C). A=0, B=1, C=1?", answers: { correct: "1", close: "0", possible: "False", wrong: "Null" }, difficulty: 12 },
+                    { question: "How many rows in a truth table for 3 inputs?", answers: { correct: "8", close: "6", possible: "4", wrong: "16" }, difficulty: 13 },
+                    { question: "What is the Boolean algebra notation for NOT A?", answers: { correct: "Ā (Bar over A)", close: "A*", possible: "A+", wrong: "A/" }, difficulty: 15 }
+                ]
+            };
+            
+            // --- DOM ELEMENTS ---
+            const loadingScreen = document.getElementById('loading-screen');
+            const loadingMessage = document.getElementById('loading-message');
+            const loginScreen = document.getElementById('login-screen');
+            const classCodeScreen = document.getElementById('class-code-screen');
+            const mainContainer = document.getElementById('main-container');
+
+            // --- DOM ELEMENTS (Nav) ---
+            const navPlayBtn = document.getElementById('nav-play-btn');
+            const navLeaderboardBtn = document.getElementById('nav-leaderboard-btn');
+            const logoutBtn = document.getElementById('logout-btn');
+            const userNameEl = document.getElementById('user-name');
+
+            // --- DOM ELEMENTS (Pages) ---
+            const pageTopicSelection = document.getElementById('page-topic-selection');
+            const pageMainGame = document.getElementById('page-main-game');
+            const pageLeaderboard = document.getElementById('page-leaderboard');
+
+            // --- DOM ELEMENTS (Login) ---
+            const loginBtn = document.getElementById('login-btn');
+            const welcomeName = document.getElementById('welcome-name');
+            const classCodeForm = document.getElementById('class-code-form');
+            const classCodeInput = document.getElementById('class-code-input');
+            const classCodeError = document.getElementById('class-code-error');
+            const classCodeSubmit = document.getElementById('class-code-submit');
+            
+            // --- DOM ELEMENTS (Game) ---
+            const topicButtonsContainer = document.getElementById('topic-buttons');
+            const currentTopicTitle = document.getElementById('current-topic-title');
+            const questionTextEl = document.getElementById('question-text');
+            const answerBoxes = document.querySelectorAll('.answer-box');
+            const answerTextEls = {
+                A: document.getElementById('answer-text-A'),
+                B: document.getElementById('answer-text-B'),
+                C: document.getElementById('answer-text-C'),
+                D: document.getElementById('answer-text-D'),
+            };
+            const pointsLadderEl = document.getElementById('points-ladder');
+            const lifeline5050Btn = document.getElementById('lifeline-5050');
+            const lifelineAudienceBtn = document.getElementById('lifeline-audience');
+            const quitToMenuBtn = document.getElementById('quit-to-menu-btn'); 
+            const timerDisplay = document.getElementById('timer-display'); 
+            
+            // --- DOM ELEMENTS (Modals) ---
+            const audienceModal = document.getElementById('audience-modal');
+            const closeAudienceModalBtn = document.getElementById('close-audience-modal');
+            const pollEls = {
+                A: { bar: document.getElementById('poll-bar-A'), container: document.getElementById('poll-A') },
+                B: { bar: document.getElementById('poll-bar-B'), container: document.getElementById('poll-B') },
+                C: { bar: document.getElementById('poll-bar-C'), container: document.getElementById('poll-C') },
+                D: { bar: document.getElementById('poll-bar-D'), container: document.getElementById('poll-D') },
+            };
+            const endGameModal = document.getElementById('end-game-modal');
+            const endGameTitle = document.getElementById('end-game-title');
+            const endGameMessage = document.getElementById('end-game-message');
+            const newHighScoreMessage = document.getElementById('new-high-score-message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const quitGameBtn = document.getElementById('quit-game-btn');
+
+            // --- DOM ELEMENTS (Leaderboard) ---
+            const leaderboardLoadingMessage = document.getElementById('leaderboard-loading-message');
+            const leaderboardTableWrapper = document.getElementById('leaderboard-table-wrapper');
+            const leaderboardBody = document.getElementById('leaderboard-body');
+            
+            // --- FIREBASE STATE ---
+            let db, auth;
+            let authReady = false;
+            let userId = null;
+            let userProfile = null; // Will hold { name, email, classCode, loginCount, etc. }
+            let unsubscribeLeaderboard = null;
+            
+            // --- GAME STATE ---
+            let currentTopic = "";
+            let currentQuestionSet = [];
+            let currentQuestionIndex = 0;
+            let currentCorrectAnswer = ""; // Will be 'A', 'B', 'C', or 'D'
+            let score = 0;
+            let safeScore = 0;
+            let lifelines = { "5050": true, "audience": true };
+            let timerInterval = null;
+            const QUESTION_TIME = 30;
+            let quizStartTime = 0; // For total time tracking
+
+            // --- 15-LEVEL POINTS LADDDER ---
+            const pointsValues = [
+                100, 200, 300, 500, 1000, 
+                2000, 4000, 8000, 16000, 32000, 
+                64000, 125000, 250000, 500000, 1000000
+            ];
+            const safeLevels = [1000, 32000]; // Safe levels
+            const numQuestions = 15;
+
+
+            /**
+             * Controls which main page is visible
+             */
+            function showPage(pageId) {
+                // Hide all main pages
+                [pageTopicSelection, pageMainGame, pageLeaderboard].forEach(page => {
+                    if (page) page.classList.add('hidden');
+                });
+                
+                // Deactivate all nav buttons
+                [navPlayBtn, navLeaderboardBtn].forEach(btn => {
+                    if(btn) btn.classList.remove('active');
+                });
+
+                // Show the requested page
+                const pageToShow = document.getElementById(pageId);
+                if (pageToShow) {
+                    pageToShow.classList.remove('hidden');
+                }
+
+                // Activate the correct nav button
+                if (pageId === 'page-topic-selection' || pageId === 'page-main-game') {
+                    navPlayBtn.classList.add('active');
+                } else if (pageId === 'page-leaderboard') {
+                    navLeaderboardBtn.classList.add('active');
+                    listenForLeaderboard(); // Refresh leaderboard data when tab is clicked
+                }
+            }
+            
+            /**
+             * Initializes Firebase and starts auth process
+             */
+            async function initFirebase() {
+                if (!firebaseConfig || !firebaseConfig.apiKey) {
+                    loadingMessage.textContent = "Error: Firebase config is missing.";
+                    return;
+                }
+                
+                try {
+                    setLogLevel('Debug');
+                    const app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    auth = getAuth(app);
+
+                    // Handle Auth state changes
+                    onAuthStateChanged(auth, async (user) => {
+                        if (user) {
+                            authReady = true;
+                            userId = user.uid;
+                            await checkUserProfile(user);
+                        } else {
+                            authReady = false;
+                            userId = null;
+                            userProfile = null;
+                            loadingScreen.classList.add('hidden');
+                            loginScreen.classList.remove('hidden');
+                            mainContainer.classList.add('hidden');
+                        }
+                    });
+
+                    // Auto-login if token is present
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } catch (e) {
+                            console.warn("Initial token auth failed", e);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error("Firebase init failed:", error);
+                    loadingMessage.textContent = "Error: Connection failed.";
+                }
+            }
+
+            /**
+             * Handles Login Button Click
+             */
+            async function handleLogin() {
+                document.getElementById('login-error-message').textContent = "Connecting...";
+                
+                try {
+                    // Attempt Custom Token Auth First if token is available
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                            return; // Success, onAuthStateChanged will handle the rest
+                        } catch (e) {
+                            console.warn("Custom token invalid/expired, falling back to anonymous auth.", e);
+                        }
+                    }
+
+                    // Use Google Sign-In
+                    const provider = new GoogleAuthProvider();
+                    await signInWithPopup(auth, provider);
+
+                } catch (error) {
+                    console.error("Login Failed:", error);
+                    document.getElementById('login-error-message').textContent = "Login failed: " + error.message;
+                }
+            }
+
+             /**
+             * Handles Logout Button Click
+             */
+            async function handleLogout() {
+                try {
+                    await signOut(auth);
+                    // onAuthStateChanged will handle the UI update
+                    resetGame();
+                } catch (error) {
+                    console.error("Logout Failed:", error);
+                }
+            }
+
+            /**
+             * Checks if user exists in Firestore, if not, shows class code screen
+             */
+            async function checkUserProfile(user) {
+                if (!user) return;
+                
+                // Updated Path: artifacts/{appId}/users/{userId}/profile/main
+                // Use global appId to ensure permission compliance
+                const userDocRef = doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'main');
+                
+                try {
+                    const docSnap = await getDoc(userDocRef);
+                    
+                    if (docSnap.exists()) {
+                        // User exists, load profile and go to game
+                        userProfile = docSnap.data();
+                        
+                        // Increment login count (don't wait for it)
+                        updateDoc(userDocRef, {
+                            loginCount: increment(1)
+                        });
+                        
+                        // Show main game
+                        userNameEl.textContent = userProfile.name;
+                        loadingScreen.classList.add('hidden');
+                        loginScreen.classList.add('hidden');
+                        classCodeScreen.classList.add('hidden');
+                        mainContainer.classList.remove('hidden');
+                        showPage('page-topic-selection');
+                        
+                    } else {
+                        // New user, show class code entry (skip name input as we have it from Google)
+                        
+                        // Extract name from Google User object
+                        const displayName = user.displayName || `Player (${user.uid.slice(0, 4)})`;
+                        
+                        userProfile = {
+                            name: displayName,
+                            email: user.email || "guest@example.com",
+                            loginCount: 1,
+                            quizCount: 0,
+                            overallBest: 0,
+                            scores: {},
+                            classCode: ""
+                        };
+                        welcomeName.textContent = `Welcome, ${displayName}!`;
+                        loadingScreen.classList.add('hidden');
+                        loginScreen.classList.add('hidden');
+                        classCodeScreen.classList.remove('hidden');
+                    }
+                } catch (error) {
+                    console.error("Error checking user profile:", error);
+                    loadingMessage.textContent = "Error: " + error.message;
+                }
+            }
+            
+            /**
+             * Handles submission of the class code form
+             */
+            async function handleClassCodeSubmit(e) {
+                e.preventDefault();
+                const classCode = classCodeInput.value.trim().toUpperCase();
+                if (!classCode) {
+                    classCodeError.textContent = "Class code cannot be empty.";
+                    return;
+                }
+                
+                classCodeSubmit.disabled = true;
+                classCodeSubmit.textContent = "Saving...";
+                
+                userProfile.classCode = classCode;
+                
+                try {
+                      // Updated Path: artifacts/{appId}/users/{userId}/profile/main
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'main');
+                    await setDoc(userDocRef, userProfile); // Save new profile
+                    
+                    // Show main game
+                    userNameEl.textContent = userProfile.name;
+                    classCodeScreen.classList.add('hidden');
+                    mainContainer.classList.remove('hidden');
+                    showPage('page-topic-selection');
+                    
+                } catch (error) {
+                    console.error("Error saving profile:", error);
+                    classCodeError.textContent = "Error: Could not save profile. " + error.message;
+                } finally {
+                    classCodeSubmit.disabled = false;
+                    classCodeSubmit.textContent = "Save and Play";
+                }
+            }
+
+            /**
+             * Initializes the topic selection screen
+             */
+            function initTopicSelection() {
+                topicButtonsContainer.innerHTML = '';
+                Object.keys(questionBank).forEach(topic => {
+                    const button = document.createElement('button');
+                    button.className = 'topic-button';
+                    button.textContent = topic;
+                    button.addEventListener('click', () => startGame(topic));
+                    topicButtonsContainer.appendChild(button);
+                });
+            }
+
+            /**
+             * Shuffles an array in place
+             */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            /**
+             * Starts the game with the selected topic
+             */
+            function startGame(topic) {
+                currentTopic = topic;
+                currentTopicTitle.textContent = `Topic: ${topic}`;
+                currentQuestionIndex = 0;
+                score = 0;
+                safeScore = 0;
+                quizStartTime = Date.now(); // Start timer
+                lifelines = { "5050": true, "audience": true };
+                lifeline5050Btn.disabled = false;
+                lifelineAudienceBtn.disabled = false;
+                
+                const allTopicQuestions = [...questionBank[topic]];
+                
+                // 1. Filter questions into difficulty buckets
+                const easyQs = allTopicQuestions.filter(q => q.difficulty <= 5);
+                const mediumQs = allTopicQuestions.filter(q => q.difficulty > 5 && q.difficulty <= 10);
+                const hardQs = allTopicQuestions.filter(q => q.difficulty > 10);
+
+                // 2. Shuffle each bucket independently to ensure unique selection each game
+                shuffleArray(easyQs);
+                shuffleArray(mediumQs);
+                shuffleArray(hardQs);
+
+                // 3. Select 5 from each bucket to form the 15-question ladder
+                // Note: Slice handles cases where array length < 5 gracefully, though we added enough Qs to avoid this.
+                currentQuestionSet = [
+                    ...easyQs.slice(0, 5),
+                    ...mediumQs.slice(0, 5),
+                    ...hardQs.slice(0, 5)
+                ];
+
+                // Show game screen, hide topic screen
+                showPage('page-main-game');
+                endGameModal.classList.add('hidden');
+
+                buildPointsLadder();
+                loadQuestion();
+            }
+            
+            /**
+             * Builds the points ladder display
+             */
+            function buildPointsLadder() {
+                pointsLadderEl.innerHTML = '';
+                pointsValues.forEach((value, index) => {
+                    const li = document.createElement('li');
+                    li.id = `points-${index}`;
+                    li.textContent = `${value.toLocaleString()} Points`;
+                    if (safeLevels.includes(value)) {
+                        li.classList.add('safe');
+                    }
+                    pointsLadderEl.appendChild(li);
+                });
+            }
+
+            /**
+             * Loads the next question
+             */
+            function loadQuestion() {
+                resetAnswerStyles();
+                startTimer(); // Start the timer
+                
+                // Check if we ran out of questions OR passed level 15
+                if (currentQuestionIndex >= numQuestions || currentQuestionIndex >= currentQuestionSet.length) {
+                    score = 1000000; // Set to max score
+                    endGame(true); // Won the game
+                    return;
+                }
+
+                updatePointsLadder();
+
+                const questionData = currentQuestionSet[currentQuestionIndex];
+                
+                // Failsafe if question set is incomplete
+                if (!questionData) {
+                    console.error("Ran out of questions!");
+                    endGame(true); // End game as a win
+                    return;
+                }
+                
+                questionTextEl.textContent = questionData.question;
+                
+                // --- Get pre-defined answers ---
+                const { correct, close, possible, wrong } = questionData.answers;
+                
+                // --- Assign answers to A, B, C, D ---
+                let answers = shuffleArray([correct, close, possible, wrong]);
+                const answerMap = {};
+                ['A', 'B', 'C', 'D'].forEach((option, index) => {
+                    answerMap[option] = answers[index];
+                    answerTextEls[option].textContent = answers[index];
+                });
+
+                // Store correct option
+                currentCorrectAnswer = Object.keys(answerMap).find(key => answerMap[key] === correct);
+            }
+
+            /**
+             * Resets answer box styles and enables them
+             */
+            function resetAnswerStyles() {
+                answerBoxes.forEach(box => {
+                    box.classList.remove('selected', 'correct', 'incorrect', 'disabled');
+                    box.style.display = 'flex'; // Make visible (for 50:50)
+                });
+            }
+
+            /**
+             * Updates the points ladder highlight
+             */
+            function updatePointsLadder() {
+                document.querySelectorAll('#points-ladder li').forEach((li, index) => {
+                    if (index === currentQuestionIndex) {
+                        li.classList.add('current');
+                    } else {
+                        li.classList.remove('current');
+                    }
+                });
+                
+                // Set score to the *previous* level's value
+                score = currentQuestionIndex > 0 ? pointsValues[currentQuestionIndex - 1] : 0;
+                
+                // Update safe score if we just passed a safe level
+                if (safeLevels.includes(score)) {
+                    safeScore = score;
+                }
+            }
+
+            // --- TIMER FUNCTIONS ---
+
+            /**
+             * Starts/Resets the question timer
+             */
+            function startTimer() {
+                clearInterval(timerInterval); // Stop any existing timer
+                let timeLeft = QUESTION_TIME;
+                timerDisplay.textContent = timeLeft;
+                // Reset colors
+                timerDisplay.classList.remove('bg-red-600', 'border-red-600');
+                timerDisplay.classList.add('bg-indigo-700', 'border-amber-400');
+
+                timerInterval = setInterval(() => {
+                    timeLeft--;
+                    timerDisplay.textContent = timeLeft;
+
+                    if (timeLeft <= 10 && timeLeft > 0) {
+                        // Warning style
+                        timerDisplay.classList.remove('bg-indigo-700', 'border-amber-400');
+                        timerDisplay.classList.add('bg-red-600', 'border-red-600');
+                    } else if (timeLeft <= 0) {
+                        timeUp();
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Stops the question timer
+             */
+            function stopTimer() {
+                clearInterval(timerInterval);
+            }
+
+            /**
+             * Called when the timer runs out
+             */
+            function timeUp() {
+                stopTimer();
+                // Disable all boxes
+                answerBoxes.forEach(box => box.classList.add('disabled'));
+                // Show correct answer
+                document.getElementById(`answer-${currentCorrectAnswer}`).classList.add('correct');
+                // Set game over message
+                endGameTitle.textContent = "Out of Time!";
+                setTimeout(() => {
+                    endGame(false); // Lost the game
+                }, 2000);
+            }
+
+            // --- END TIMER FUNCTIONS ---
+
+
+            /**
+             * Handles the user selecting an answer
+             */
+            function selectAnswer(e) {
+                const selectedBox = e.target.closest('.answer-box');
+                if (!selectedBox) return; // Click was not on an answer box
+                
+                stopTimer(); // Stop the timer
+                
+                const selectedOption = selectedBox.dataset.option;
+
+                // Disable all boxes to prevent re-clicks
+                answerBoxes.forEach(box => box.classList.add('disabled'));
+
+                selectedBox.classList.add('selected');
+
+                setTimeout(() => {
+                    if (selectedOption === currentCorrectAnswer) {
+                        // --- CORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('correct');
+                        setTimeout(() => {
+                            currentQuestionIndex++;
+                            loadQuestion();
+                        }, 1500);
+                    } else {
+                        // --- INCORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('incorrect');
+                        // Show correct answer
+                        document.getElementById(`answer-${currentCorrectAnswer}`).classList.add('correct');
+                        setTimeout(() => {
+                            endGame(false);
+                        }, 2000);
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Handles the 50:50 lifeline
+             */
+            function use5050() {
+                if (!lifelines["5050"]) return;
+                lifelines["5050"] = false;
+                lifeline5050Btn.disabled = true;
+
+                let wrongOptions = ['A', 'B', 'C', 'D'].filter(opt => opt !== currentCorrectAnswer);
+                wrongOptions = shuffleArray(wrongOptions);
+                
+                document.getElementById(`answer-${wrongOptions[0]}`).style.display = 'none';
+                document.getElementById(`answer-${wrongOptions[1]}`).style.display = 'none';
+            }
+
+            /**
+             * Handles the Ask the Audience lifeline
+             */
+            function useAudience() {
+                if (!lifelines["audience"]) return;
+                lifelines["audience"] = false;
+                lifelineAudienceBtn.disabled = true;
+
+                // Generate poll results
+                let percentages = [0, 0, 0, 0];
+                const options = ['A', 'B', 'C', 'D'];
+                const correctIndex = options.indexOf(currentCorrectAnswer);
+
+                // Give correct answer a big boost
+                percentages[correctIndex] = Math.floor(Math.random() * 40) + 40; // 40-79%
+                let remaining = 100 - percentages[correctIndex];
+                
+                // Distribute remaining %
+                for (let i = 0; i < 3; i++) {
+                    const index = (correctIndex + 1 + i) % 4;
+                    if (i === 2) {
+                        percentages[index] = remaining; // Assign leftover
+                    } else {
+                        const val = Math.floor(Math.random() * remaining);
+                        percentages[index] = val;
+                        remaining -= val;
+                    }
+                }
+                
+                // Re-assign to ensure correct answer has the high value,
+                // but this time shuffle the *indices* of the wrong answers
+                let wrongIndices = options.map((o,i) => i).filter(i => i !== correctIndex);
+                let wrongPercentages = percentages.filter((p,i) => i !== correctIndex);
+                shuffleArray(wrongPercentages);
+                
+                wrongIndices.forEach((wrongIndex, i) => {
+                    percentages[wrongIndex] = wrongPercentages[i];
+                });
+
+
+                // Apply to modal bars
+                options.forEach((opt, index) => {
+                    const el = pollEls[opt];
+                    if (document.getElementById(`answer-${opt}`).style.display !== 'none') { // Check if not hidden by 50:50
+                        el.bar.style.width = `${percentages[index]}%`;
+                        el.bar.textContent = `${percentages[index]}%`;
+                    } else {
+                        el.bar.style.width = '0%';
+                        el.bar.textContent = '';
+                    }
+                });
+
+                audienceModal.classList.remove('hidden');
+            }
+
+            /**
+             * Ends the game and shows the final score
+             */
+            async function endGame(didWin) {
+                stopTimer(); // Stop any active timers
+                let finalScore = 0;
+                newHighScoreMessage.classList.add('hidden'); // Hide by default
+                
+                if (didWin) {
+                    finalScore = 1000000;
+                    endGameTitle.textContent = "You're a CS Whiz!";
+                    endGameMessage.innerHTML = `You answered all 15 questions and won <span class="font-bold text-amber-400">${finalScore.toLocaleString()}</span> points!`;
+                } else {
+                    finalScore = score; // CHANGED: Use current score instead of safeScore
+                    endGameTitle.textContent = "Game Over!";
+                    endGameMessage.innerHTML = `You walk away with <span class="font-bold text-amber-400">${finalScore.toLocaleString()}</span> points.`;
+                }
+                
+                // Calculate total time
+                const totalTimeInSeconds = Math.round((Date.now() - quizStartTime) / 1000);
+                
+                // Save data
+                await saveGameData(finalScore, totalTimeInSeconds);
+                
+                endGameModal.classList.remove('hidden');
+            }
+
+            /**
+             * Saves all relevant data to Firestore after a game
+             */
+            async function saveGameData(finalScore, totalTimeInSeconds) {
+                if (!authReady || !userId || !userProfile) return; // Not signed in
+                
+                try {
+                    // Updated Path: artifacts/{appId}/users/{userId}/profile/main
+                    const userDocRef = doc(db, 'artifacts', appId, 'users', userId, 'profile', 'main');
+                    
+                    // Get current bests
+                    const currentTopicBest = userProfile.scores[currentTopic]?.score || 0;
+                    const currentOverallBest = userProfile.overallBest || 0;
+                    
+                    const updates = {
+                        quizCount: increment(1)
+                    };
+                    
+                    let newTopicHighScore = false;
+                    
+                    // Check for new topic high score
+                    if (finalScore > currentTopicBest) {
+                        newTopicHighScore = true;
+                        newHighScoreMessage.classList.remove('hidden');
+                        
+                        // Set new topic score and time
+                        updates[`scores.${currentTopic}`] = {
+                            score: finalScore,
+                            time: totalTimeInSeconds
+                        };
+                        
+                        // Update in-memory profile
+                        userProfile.scores[currentTopic] = { score: finalScore, time: totalTimeInSeconds };
+                    }
+                    
+                    // Check for new overall high score
+                    if (finalScore > currentOverallBest) {
+                        updates.overallBest = finalScore;
+                        
+                        // Update in-memory profile
+                        userProfile.overallBest = finalScore;
+                    }
+                    
+                    // Update the user's private profile
+                    await updateDoc(userDocRef, updates);
+
+                    // --- UPDATED: Surgical Update for Public Leaderboard ---
+                    // We only update specific fields to avoid overwriting other topic scores
+                    
+                    // Updated Path: artifacts/{appId}/public/data/leaderboard/{userId}
+                    const leaderboardDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'leaderboard', userId);
+                    
+                    // Construct the update object using dot notation for specific fields
+                    const leaderboardUpdate = {
+                        quizCount: increment(1),
+                        // This syntax [`scores.${currentTopic}`] tells Firestore to update ONLY this nested field
+                        [`scores.${currentTopic}`]: { 
+                            score: finalScore, 
+                            time: totalTimeInSeconds 
+                        }
+                    };
+
+                    // If we have a new overall high score, update that too
+                    if (finalScore > currentOverallBest) {
+                        leaderboardUpdate.score = finalScore;
+                        leaderboardUpdate.lastHighScoreTime = serverTimestamp();
+                    }
+                    
+                    // Also update basic info in case it changed (e.g. name)
+                    leaderboardUpdate.name = userProfile.name;
+                    leaderboardUpdate.classCode = userProfile.classCode;
+
+                    // Attempt the update
+                    await updateDoc(leaderboardDocRef, leaderboardUpdate).catch(async (err) => {
+                        // If doc doesn't exist (first time playing), we must create it with setDoc
+                        if (err.code === 'not-found') {
+                            // For the very first creation, we need to send the whole scores object
+                            await setDoc(leaderboardDocRef, {
+                                name: userProfile.name,
+                                classCode: userProfile.classCode,
+                                score: userProfile.overallBest, // Current best
+                                scores: userProfile.scores,     // All current scores
+                                quizCount: 1,
+                                lastHighScoreTime: serverTimestamp()
+                            });
+                        } else {
+                            console.error("Error updating leaderboard:", err);
+                        }
+                    });
+                    
+                    console.log("Game data saved!");
+
+                } catch (error) {
+                    console.error("Error saving game data:", error);
+                }
+            }
+            
+            /**
+             * Resets the game to the topic selection screen
+             */
+            function resetGame() {
+                stopTimer(); // Stop timer if quitting mid-game
+                endGameModal.classList.add('hidden'); // Ensure modal is hidden
+                showPage('page-topic-selection');
+            }
+
+            /**
+             * Listens for real-time updates to the public leaderboard (Top 25)
+             */
+            function listenForLeaderboard() {
+                if (!authReady) return; // Don't run if not logged in
+                if (unsubscribeLeaderboard) unsubscribeLeaderboard(); // Stop old listener
+
+                leaderboardLoadingMessage.classList.remove('hidden');
+                leaderboardTableWrapper.classList.add('hidden');
+
+                 // Updated Path: artifacts/{appId}/public/data/leaderboard
+                const leaderboardQuery = query(
+                    collection(db, 'artifacts', appId, 'public', 'data', 'leaderboard'),
+                    orderBy("score", "desc"), // Order by overall score descending
+                    limit(25) // Get Top 25
+                );
+
+                unsubscribeLeaderboard = onSnapshot(leaderboardQuery, (snapshot) => {
+                    const scores = [];
+                    snapshot.forEach(doc => {
+                        scores.push(doc.data());
+                    });
+                    renderLeaderboard(scores);
+                    leaderboardLoadingMessage.classList.add('hidden');
+                    leaderboardTableWrapper.classList.remove('hidden');
+                }, (error) => {
+                    console.error("Error listening to leaderboard:", error);
+                    leaderboardLoadingMessage.textContent = "Error: " + error.message;
+                    if (error.code === 'failed-precondition') {
+                          leaderboardLoadingMessage.innerHTML = `Error: Database index missing.<br>Please ask your teacher to create the index. (See browser console for details).`;
+                    }
+                });
+            }
+
+            /**
+             * Renders the leaderboard in the UI
+             */
+            function renderLeaderboard(scores) {
+                leaderboardBody.innerHTML = ''; // Clear old list
+                
+                if (scores.length === 0) {
+                    leaderboardBody.innerHTML = `<tr><td colspan="10" class="text-center text-lg text-gray-400 py-8">No scores yet. Be the first!</td></tr>`;
+                    return;
+                }
+                
+                // Get all topic keys
+                const allTopics = Object.keys(questionBank);
+
+                scores.forEach((entry, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-indigo-900 transition-colors';
+                    
+                    const rank = index + 1;
+                    const rankColor = rank === 1 ? 'text-amber-300' : (rank === 2 ? 'text-gray-300' : (rank === 3 ? 'text-amber-600' : 'text-white'));
+                    
+                    let topicScoresHTML = '';
+                    const userScores = entry.scores || {};
+                    
+                    allTopics.forEach(topic => {
+                        const topicScore = userScores[topic]?.score || 0;
+                        topicScoresHTML += `<td class="px-4 py-4 whitespace-nowrap text-lg text-gray-300">${topicScore.toLocaleString()}</td>`;
+                    });
+
+                    tr.innerHTML = `
+                        <td class="px-4 py-4 whitespace-nowrap text-2xl font-bold ${rankColor}">#${rank}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-xl font-medium text-white">${entry.name || 'N/A'}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-xl font-bold text-green-400">${(entry.score || 0).toLocaleString()}</td>
+                        <td class="px-4 py-4 whitespace-nowrap text-lg text-gray-300">${entry.quizCount || 0}</td>
+                        ${topicScoresHTML}
+                    `;
+                    leaderboardBody.appendChild(tr);
+                });
+            }
+
+
+            // --- EVENT LISTENERS ---
+            
+            // Login
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', handleLogout);
+            classCodeForm.addEventListener('submit', handleClassCodeSubmit);
+
+            // Nav
+            navPlayBtn.addEventListener('click', () => showPage('page-topic-selection'));
+            navLeaderboardBtn.addEventListener('click', () => showPage('page-leaderboard'));
+            
+            // Game
+            answerBoxes.forEach(box => box.addEventListener('click', selectAnswer));
+            lifeline5050Btn.addEventListener('click', use5050);
+            lifelineAudienceBtn.addEventListener('click', useAudience);
+            closeAudienceModalBtn.addEventListener('click', () => audienceModal.classList.add('hidden'));
+
+            // Modals
+            playAgainBtn.addEventListener('click', () => {
+                endGameModal.classList.add('hidden');
+                startGame(currentTopic); // Play same topic again
+            });
+            quitGameBtn.addEventListener('click', resetGame); // Go back to topic select
+            quitToMenuBtn.addEventListener('click', resetGame); // New quit button
+            
+
+            // --- INITIALIZE THE APP ---
+            initTopicSelection(); // Build topic buttons
+            initFirebase(); // Start connection
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compression Methods Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .simulator-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            padding: 2rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease-in-out;
+        }
+        .simulator-card:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #4f46e5;
+            color: white;
+            font-weight: 600;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #4338ca;
+        }
+        input[type="text"], input[type="file"] {
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            width: 100%;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        input[type="text"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+        .result-box {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            word-wrap: break-word;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .stats-box {
+            border-left: 4px solid #4f46e5;
+            padding-left: 1rem;
+            margin-top: 1rem;
+        }
+        .image-container {
+            width: 100%;
+            height: 300px;
+            background-color: #f3f4f6;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px dashed #d1d5db;
+        }
+        .image-container img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            color: #4b5563;
+        }
+        .rle-grid-container {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 2px;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background-color: #e5e7eb;
+            border-radius: 0.5rem;
+        }
+        .rle-grid-cell {
+            width: 100%;
+            padding-bottom: 100%; /* Creates a square aspect ratio */
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+    </style>
+            <!-- Run-Length Encoding (Lossless) Simulator -->
+            <div class="simulator-card">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-1">1. Run-Length Encoding (RLE)</h2>
+                <p class="text-gray-500 mb-6">A lossless technique for simple graphics. Use characters like R, G, B, W, K (for black) to represent pixels.</p>
+                
+                <div class="mb-4">
+                    <span class="text-sm font-medium text-gray-700 mr-2 block mb-2">Try a preset:</span>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="rle-preset-btn px-3 py-1 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-md text-sm font-medium transition" data-preset="heart">Heart</button>
+                        <button class="rle-preset-btn px-3 py-1 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-md text-sm font-medium transition" data-preset="smiley">Smiley</button>
+                        <button class="rle-preset-btn px-3 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-md text-sm font-medium transition" data-preset="stripes">Stripes (Best Case)</button>
+                        <button class="rle-preset-btn px-3 py-1 bg-red-100 text-red-700 hover:bg-red-200 rounded-md text-sm font-medium transition" data-preset="checker">Checker (Worst Case)</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="rle-input" class="font-medium text-gray-700 block mb-2">Enter pixel data:</label>
+                    <input type="text" id="rle-input" placeholder="e.g., WWWWWWBBBBWBB" value="WWWWWWWWWWWWWWWWKKKKKKKKKKKKKKKKWWWWWWWWKKKKKKKKWWWWWWWWKKKKKKKK">
+                </div>
+
+                <div class="mt-4">
+                    <h3 class="font-semibold text-gray-700">Original Pixel Grid:</h3>
+                    <div id="rle-grid-original" class="rle-grid-container"></div>
+                </div>
+                
+                <button id="compress-rle" class="btn mt-6 w-full">Compress</button>
+
+                <div class="mt-6">
+                    <h3 class="font-semibold text-gray-700">Compressed Result (RLE):</h3>
+                    <div id="rle-output" class="result-box text-gray-800"></div>
+                </div>
+
+                <div id="rle-stats" class="stats-box"></div>
+            </div>
+
+            <div class="simulator-card">
+                <h2 class="text-2xl font-semibold text-gray-700 mb-1">2. Lossy Image Compression</h2>
+                <p class="text-gray-500 mb-6">This method permanently removes some data to reduce file size. Adjust resolution and quality to see the trade-off.</p>
+
+                <div>
+                    <label for="image-upload" class="font-medium text-gray-700 block mb-2">Upload an image:</label>
+                    <input type="file" id="image-upload" accept="image/*">
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+                    <div>
+                        <div class="slider-label">
+                            <label for="quality-slider" class="font-medium text-gray-700">JPEG Quality</label>
+                            <span id="quality-value">100%</span>
+                        </div>
+                        <input type="range" id="quality-slider" min="1" max="100" value="100" class="w-full mt-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="resolution-slider" class="font-medium text-gray-700">Resolution</label>
+                            <span id="resolution-value">100%</span>
+                        </div>
+                        <input type="range" id="resolution-slider" min="10" max="100" value="100" class="w-full mt-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div>
+                        <h3 class="font-semibold text-center text-gray-700 mb-2">Original</h3>
+                        <div class="image-container">
+                            <img id="original-image" src="https://placehold.co/400x300/e2e8f0/4a5568?text=Upload+Image" alt="Original">
+                        </div>
+                        <div id="original-stats" class="text-center mt-2 font-medium text-gray-600">Size: -</div>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-center text-gray-700 mb-2">Compressed</h3>
+                        <div class="image-container">
+                            <!-- Fixed typo in placeholder URL here -->
+                            <img id="compressed-image" src="https://placehold.co/400x300/e2e8f0/4a5568?text=Compressed+Result" alt="Compressed">
+                        </div>
+                        <div id="compressed-stats" class="text-center mt-2 font-medium text-indigo-600">Size: -</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- RLE Simulator Logic ---
+        const rleInput = document.getElementById('rle-input');
+        const rleOutput = document.getElementById('rle-output');
+        const rleStats = document.getElementById('rle-stats');
+        const compressRleBtn = document.getElementById('compress-rle');
+        const rleGridOriginal = document.getElementById('rle-grid-original');
+        const presetBtns = document.querySelectorAll('.rle-preset-btn');
+
+        const presets = {
+            'heart': 'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWRRRRWWRRRRWWWWWRRRRRRRRRRRRWWWRRRRRRRRRRRRRRWWRRRRRRRRRRRRRRWWRRRRRRRRRRRRRRWWWWRRRRRRRRRRRRWWWWWRRRRRRRRRRWWWWWWWRRRRRRRRWWWWWWWWWRRRRRRWWWWWWWWWWWRRRRWWWWWWWWWWWWWRRWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
+            'smiley': 'WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWYYYYYYYYWWWWWWYYYYYYYYYYYYWWWYYYYYYYYYYYYYYWWYYYKKYYYYKKYYYWWYYYKKYYYYKKYYYWWYYYYYYYYYYYYYYWWYYKYYYYYYYYKYYWWYYYKKKKKKKKYYYWWWYYYYYYYYYYYYWWWWWWYYYYYYYYWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW',
+            'stripes': 'RRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            'checker': 'BWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBW'
+        };
+
+        const colorMap = {
+            'W': '#FFFFFF', // White
+            'K': '#000000', // Black (K)
+            'R': '#EF4444', // Red
+            'G': '#22C55E', // Green
+            'B': '#3B82F6', // Blue
+            'Y': '#EAB308', // Yellow
+            'P': '#A855F7', // Purple
+            'O': '#F97316', // Orange
+        };
+
+        function drawGrid(container, text) {
+            container.innerHTML = ''; // Clear previous grid
+            for (const char of text) {
+                const cell = document.createElement('div');
+                cell.className = 'rle-grid-cell';
+                const color = colorMap[char.toUpperCase()] || '#D1D5DB'; // Default to gray
+                cell.style.backgroundColor = color;
+                container.appendChild(cell);
+            }
+        }
+
+        function runLengthEncode(text) {
+            if (!text) return "";
+            let result = "";
+            let count = 1;
+            for (let i = 0; i < text.length; i++) {
+                if (text[i].toUpperCase() === text[i + 1]?.toUpperCase()) {
+                    count++;
+                } else {
+                    result += count + text[i].toUpperCase() + " ";
+                    count = 1;
+                }
+            }
+            return result.trim();
+        }
+
+        function updateRLE() {
+            const originalText = rleInput.value;
+            drawGrid(rleGridOriginal, originalText);
+            
+            const compressedText = runLengthEncode(originalText);
+            rleOutput.textContent = compressedText || "Nothing to compress.";
+
+            const originalSize = originalText.length;
+            // Calculate compressed size without spaces for a more accurate comparison
+            const compressedSize = compressedText.replace(/\s/g, '').length;
+            
+            if (originalSize > 0) {
+                const ratio = (1 - (compressedSize / originalSize)) * 100;
+                rleStats.innerHTML = `
+                    <p class="text-sm text-gray-600">Original Size: <span class="font-semibold">${originalSize} bytes</span></p>
+                    <p class="text-sm text-gray-600">Compressed Size: <span class="font-semibold">${compressedSize} bytes</span></p>
+                    <p class="text-sm font-bold ${ratio >= 0 ? 'text-green-600' : 'text-red-600'}">
+                        Reduction: ${ratio.toFixed(2)}%
+                    </p>
+                `;
+            } else {
+                rleStats.innerHTML = '';
+            }
+        }
+
+        presetBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const presetKey = e.target.getAttribute('data-preset');
+                if (presets[presetKey]) {
+                    rleInput.value = presets[presetKey];
+                    updateRLE();
+                }
+            });
+        });
+
+        compressRleBtn.addEventListener('click', updateRLE);
+        // Initial compression on load
+        updateRLE();
+
+
+        // --- Image Compression Simulator Logic ---
+        const imageUpload = document.getElementById('image-upload');
+        const qualitySlider = document.getElementById('quality-slider');
+        const resolutionSlider = document.getElementById('resolution-slider');
+        const qualityValue = document.getElementById('quality-value');
+        const resolutionValue = document.getElementById('resolution-value');
+
+        const originalImageEl = document.getElementById('original-image');
+        const compressedImageEl = document.getElementById('compressed-image');
+        const originalStats = document.getElementById('original-stats');
+        const compressedStats = document.getElementById('compressed-stats');
+        
+        let originalImageFile = null;
+        let image = new Image();
+
+        imageUpload.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                originalImageFile = e.target.files[0];
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    image.onload = () => {
+                         originalImageEl.src = event.target.result;
+                         originalStats.textContent = `Size: ${(originalImageFile.size / 1024).toFixed(2)} KB`;
+                         updateCompressedImage();
+                    };
+                    image.src = event.target.result;
+                };
+                reader.readAsDataURL(originalImageFile);
+            }
+        });
+
+        qualitySlider.addEventListener('input', () => {
+            qualityValue.textContent = `${qualitySlider.value}%`;
+            updateCompressedImage();
+        });
+
+        resolutionSlider.addEventListener('input', () => {
+            resolutionValue.textContent = `${resolutionSlider.value}%`;
+            updateCompressedImage();
+        });
+
+        function updateCompressedImage() {
+            if (!originalImageFile) return;
+
+            const quality = parseInt(qualitySlider.value) / 100;
+            const resolution = parseInt(resolutionSlider.value) / 100;
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const newWidth = image.naturalWidth * resolution;
+            const newHeight = image.naturalHeight * resolution;
+
+            canvas.width = newWidth;
+            canvas.height = newHeight;
+            
+            ctx.drawImage(image, 0, 0, newWidth, newHeight);
+
+            try {
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                compressedImageEl.src = compressedDataUrl;
+                
+                // Estimate size from base64 string
+                const head = 'data:image/jpeg;base64,';
+                const imageSize = Math.round((compressedDataUrl.length - head.length) * 3 / 4);
+                
+                compressedStats.textContent = `Size: ${(imageSize / 1024).toFixed(2)} KB`;
+            } catch (err) {
+                console.error("Error compressing image:", err);
+            }
+        }
+    </script>
+</body>
+</html>

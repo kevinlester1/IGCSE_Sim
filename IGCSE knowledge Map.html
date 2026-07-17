@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Computer Science (0478) Syllabus Explorer</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Custom styles */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Hide scrollbar for the main body but allow scrolling */
+        body::-webkit-scrollbar {
+            display: none;
+        }
+        body {
+            -ms-overflow-style: none; /* IE and Edge */
+            scrollbar-width: none; /* Firefox */
+        }
+        /* Custom scrollbar for modal content */
+        .modal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .modal-content::-webkit-scrollbar-thumb {
+            background-color: #9ca3af; /* gray-400 */
+            border-radius: 4px;
+        }
+        .modal-content::-webkit-scrollbar-track {
+            background-color: #e5e7eb; /* gray-200 */
+        }
+
+        /* Quiz Button Styles */
+        .quiz-start-btn {
+            background-color: #ecfdf5; /* green-50 */
+            color: #065f46; /* green-800 */
+            border: 1px solid #6ee7b7; /* green-300 */
+            padding: 4px 10px;
+            border-radius: 9999px; /* rounded-full */
+            font-size: 0.75rem; /* text-xs */
+            font-weight: 600; /* font-semibold */
+            transition: all 0.2s;
+            flex-shrink: 0;
+            margin-left: 1rem;
+        }
+        .quiz-start-btn:hover {
+            background-color: #d1fae5; /* green-100 */
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+
+        .quiz-option-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 16px;
+            background-color: #f8fafc; /* slate-50 */
+            border: 1px solid #e2e8f0; /* slate-200 */
+            border-radius: 0.5rem; /* rounded-lg */
+            font-weight: 500; /* font-medium */
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .quiz-option-btn:hover:not(:disabled) {
+            background-color: #f1f5f9; /* slate-100 */
+            border-color: #cbd5e1; /* slate-300 */
+        }
+        .quiz-option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+        .quiz-option-btn.correct {
+            background-color: #ecfdf5; /* green-50 */
+            border-color: #6ee7b7; /* green-300 */
+            color: #065f46; /* green-800 */
+            font-weight: 600;
+        }
+        .quiz-option-btn.incorrect {
+            background-color: #fef2f2; /* red-50 */
+            border-color: #fca5a5; /* red-300 */
+            color: #991b1b; /* red-800 */
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen p-4 md:p-8">
+
+    <div class="container mx-auto max-w-7xl">
+        <!-- Header -->
+        <header class="text-center mb-8 md:mb-12">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800">IGCSE Computer Science (0478)</h1>
+            <p class="text-lg md:text-xl text-slate-600 mt-2">Syllabus Knowledge & Skills Explorer</p>
+        </header>
+
+        <!-- Main Content Area -->
+        <main id="main-content">
+            
+            <!-- Paper Selection (Initial View) -->
+            <div id="paper-selection" class="text-center">
+                <p class="text-lg text-slate-700 mb-8">Select a paper to explore its units.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10 max-w-4xl mx-auto">
+                    
+                    <!-- Paper 1 Card -->
+                    <div id="select-paper1" class="bg-white p-6 md:p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out cursor-pointer transform hover:-translate-y-1">
+                        <h2 class="text-2xl md:text-3xl font-bold text-blue-700 mb-3">Paper 1</h2>
+                        <h3 class="text-xl md:text-2xl font-semibold text-slate-700">Computer Systems</h3>
+                        <p class="text-slate-600 mt-4">Covers the core theory of computing, from data representation and hardware to networks and cyber security.</p>
+                        <div class="mt-6 text-blue-600 font-medium flex items-center justify-center">
+                            Explore Units
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Paper 2 Card -->
+                    <div id="select-paper2" class="bg-white p-6 md:p-8 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out cursor-pointer transform hover:-translate-y-1">
+                        <h2 class="text-2xl md:text-3xl font-bold text-green-700 mb-3">Paper 2</h2>
+                        <h3 class="text-xl md:text-2xl font-semibold text-slate-700">Algorithms, Programming & Logic</h3>
+                        <p class="text-slate-600 mt-4">Focuses on the practical and logical skills of problem-solving, programming, databases, and Boolean logic.</p>
+                        <div class="mt-6 text-green-600 font-medium flex items-center justify-center">
+                            Explore Units
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ml-2" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paper 1 Units (Hidden by default) -->
+            <div id="paper1-units" class="hidden">
+                <button class="back-button mb-6 text-blue-600 font-medium flex items-center group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Papers
+                </button>
+                <h2 class="text-3xl font-bold text-blue-700 text-center mb-8">Paper 1: Computer Systems Units</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit1">
+                        <h3 class="text-xl font-semibold text-slate-800">1. Data Representation</h3>
+                        <p class="text-slate-600 text-sm mt-2">Number systems, text, sound, images, and data compression.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit2">
+                        <h3 class="text-xl font-semibold text-slate-800">2. Data Transmission</h3>
+                        <p class="text-slate-600 text-sm mt-2">Packet switching, transmission methods, error detection, and encryption.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit3">
+                        <h3 class="text-xl font-semibold text-slate-800">3. Hardware</h3>
+                        <p class="text-slate-600 text-sm mt-2">Von Neumann architecture, FDE cycle, I/O devices, storage, and networking.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit4">
+                        <h3 class="text-xl font-semibold text-slate-800">4. Software</h3>
+                        <p class="text-slate-600 text-sm mt-2">System vs. application, operating systems, interrupts, and translators.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit5">
+                        <h3 class="text-xl font-semibold text-slate-800">5. The Internet & Its Uses</h3>
+                        <p class="text-slate-600 text-sm mt-2">Internet vs. WWW, web browsers, DNS, cyber security, and digital currency.</p>
+
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit6">
+                        <h3 class="text-xl font-semibold text-slate-800">6. Automated & Emerging Tech</h3>
+                        <p class="text-slate-600 text-sm mt-2">Automated systems, robotics, and artificial intelligence (AI).</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Paper 2 Units (Hidden by default) -->
+            <div id="paper2-units" class="hidden">
+                <button class="back-button mb-6 text-green-600 font-medium flex items-center group">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 transform group-hover:-translate-x-1 transition-transform" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                    </svg>
+                    Back to Papers
+                </button>
+                <h2 class="text-3xl font-bold text-green-700 text-center mb-8">Paper 2: Algorithms, Programming & Logic Units</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit7">
+                        <h3 class="text-xl font-semibold text-slate-800">7. Algorithm Design</h3>
+                        <p class="text-slate-600 text-sm mt-2">Problem-solving, life cycle, decomposition, standard algorithms, and testing.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit8">
+                        <h3 class="text-xl font-semibold text-slate-800">8. Programming</h3>
+                        <p class="text-slate-600 text-sm mt-2">Concepts, data types, control structures, arrays, procedures, and file handling.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit9">
+                        <h3 class="text-xl font-semibold text-slate-800">9. Databases</h3>
+                        <p class="text-slate-600 text-sm mt-2">Design (fields, records), primary keys, and SQL queries.</p>
+                    </div>
+                    <div class="unit-card bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow cursor-pointer" data-unit="unit10">
+                        <h3 class="text-xl font-semibold text-slate-800">10. Boolean Logic</h3>
+                        <p class="text-slate-600 text-sm mt-2">Logic gates, logic circuits, truth tables, and logic expressions.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Info Modal (Hidden by default) -->
+    <div id="modal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all" id="modal-content-box">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center p-5 border-b border-slate-200">
+                <h3 id="modal-title" class="text-2xl font-bold text-slate-800">Unit Details</h3>
+                <button id="close-modal" class="text-slate-500 hover:text-slate-800 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <!-- Modal Body -->
+            <div id="modal-body" class="p-6 max-h-[70vh] overflow-y-auto modal-content">
+                <div id="modal-list-container">
+                    <!-- Knowledge, Skills, and Concepts will be dynamically inserted here -->
+                </div>
+            </div>
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl text-right">
+                 <button id="close-modal-footer" class="px-5 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors font-medium">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Modal (Hidden by default) -->
+    <div id="quiz-modal" class="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-xl transform transition-all" id="quiz-modal-content-box">
+            <!-- Quiz Modal Header -->
+            <div class="flex justify-between items-center p-5 border-b border-slate-200">
+                <h3 id="quiz-modal-title" class="text-xl font-bold text-slate-800">Quiz</h3>
+                <div id="quiz-progress" class="text-sm font-medium text-slate-500">Question 1 / 5</div>
+            </div>
+            <!-- Quiz Modal Body -->
+            <div class="p-6">
+                <h4 id="quiz-question" class="text-lg font-semibold text-slate-900 mb-5">...</h4>
+                <div id="quiz-options" class="space-y-3 mb-4">
+                    <!-- Option buttons will be injected here -->
+                </div>
+                <div id="quiz-feedback" class="text-sm font-medium p-3 rounded-lg hidden">...</div>
+            </div>
+            <!-- Quiz Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 rounded-b-xl flex justify-between items-center">
+                 <button id="quiz-close-btn" class="px-5 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium">Close</D>
+                 <button id="quiz-next-btn" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium hidden">Next Question</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Data store for all syllabus concepts ---
+        const syllabusData = {
+            'unit1': {
+                title: 'Unit 1: Data Representation',
+                knowledge: [
+                    {
+                        text: 'Understand Binary, Denary & Hexadecimal Number Systems',
+                        quiz: [
+                            { question: "Which number system is base-16?", options: ["Binary", "Denary", "Hexadecimal", "ASCII"], answer: "Hexadecimal" },
+                            { question: "Denary is a base-__ system.", options: ["2", "10", "16", "8"], answer: "10" },
+                            { question: "The binary system uses which two digits?", options: ["0 and 1", "0 and 2", "1 and 2", "A and F"], answer: "0 and 1" },
+                            { question: "What is the primary number system used by computer hardware?", options: ["Denary", "Hexadecimal", "Binary", "Unicode"], answer: "Binary" },
+                            { question: "Which system is often used as a 'shorthand' for binary to make it easier for humans to read?", options: ["Denary", "Hexadecimal", "ASCII", "Two's Complement"], answer: "Hexadecimal" },
+                            { question: "How many unique digits/characters are used in hexadecimal?", options: ["2", "10", "16", "256"], answer: "16" },
+                            { question: "The denary number 10 is what in binary?", options: ["1010", "1100", "0010", "1000"], answer: "1010" },
+                            { question: "The binary number 1111 is what in denary?", options: ["10", "12", "15", "16"], answer: "15" },
+                            { question: "The hexadecimal digit 'A' represents what in denary?", options: ["10", "16", "1", "11"], answer: "10" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the uses of Hexadecimal',
+                        quiz: [
+                            { question: "Which of these is a common use for hexadecimal?", options: ["Representing sound waves", "MAC addresses", "Calculating file sizes", "Running loops"], answer: "MAC addresses" },
+                            { question: "Why is hexadecimal often used in error messages?", options: ["It is the only system for errors", "It's faster for the computer to process", "It's a shorter, more readable representation of a memory location", "It can store more colors"], answer: "It's a shorter, more readable representation of a memory location" },
+                            { question: "What other computer-science area commonly uses hex?", options: ["Defining database primary keys", "Writing pseudocode", "Representing RGB colour values", "CPU clock speed measurement"], answer: "Representing RGB colour values" },
+                            { question: "A MAC address is made of 6 pairs of ___ digits.", options: ["Denary", "Binary", "Hexadecimal", "ASCII"], answer: "Hexadecimal" },
+                            { question: "Hexadecimal is a good 'shorthand' for which other system?", options: ["Denary", "Binary", "ASCII", "Unicode"], answer: "Binary" },
+                            { question: "An RGB colour code like #FF0000 uses which system?", options: ["Binary", "Denary", "Hexadecimal", "Two's Complement"], answer: "Hexadecimal" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the uses of Hexadecimal',
+                        quiz: [
+                            { question: "Which of these is a common use for hexadecimal?", options: ["Representing sound waves", "MAC addresses", "Calculating file sizes", "Running loops"], answer: "MAC addresses" },
+                            { question: "Why is hexadecimal often used in error messages?", options: ["It is the only system for errors", "It's faster for the computer to process", "It's a shorter, more readable representation of a memory location", "It can store more colors"], answer: "It's a shorter, more readable representation of a memory location" },
+                            { question: "What other computer-science area commonly uses hex?", options: ["Defining database primary keys", "Writing pseudocode", "Representing RGB colour values", "CPU clock speed measurement"], answer: "Representing RGB colour values" },
+                            { question: "A MAC address is made of 6 pairs of ___ digits.", options: ["Denary", "Binary", "Hexadecimal", "ASCII"], answer: "Hexadecimal" },
+                            { question: "Hexadecimal is a good 'shorthand' for which other system?", options: ["Denary", "Binary", "ASCII", "Unicode"], answer: "Binary" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Text Representation: ASCII & Unicode',
+                        quiz: [
+                            { question: "What does ASCII stand for?", options: ["American Standard Code for Information Interchange", "Advanced Standard Code for Image Interchange", "American System for Code and Information", "A Standard Coded Image"], answer: "American Standard Code for Information Interchange" },
+                            { question: "What is the main advantage of Unicode over ASCII?", options: ["It uses less storage space", "It can represent a much larger range of characters", "It is faster to transmit", "It includes data compression"], answer: "It can represent a much larger range of characters" },
+                            { question: "Original ASCII used 7 bits. How many characters could it represent?", options: ["128", "256", "1024", "64"], answer: "128" },
+                            { question: "Why was Unicode created?", options: ["To replace all number systems", "To handle characters from all world languages", "To make text files smaller", "To encrypt text messages"], answer: "To handle characters from all world languages" },
+                            { question: "If a text file needs to store emojis and non-English characters (e.g., '€', 'ü', 'ñ'), which standard should be used?", options: ["ASCII-7", "Hexadecimal", "Binary", "Unicode"], answer: "Unicode" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Sound Representation: Sampling, Sample Rate, Sample Resolution',
+                        quiz: [
+                            { question: "What is 'sampling' in the context of digital sound?", options: ["Recording the amplitude of a sound wave at regular intervals", "Compressing the sound file", "Removing background noise", "Converting the file to MP3"], answer: "Recording the amplitude of a sound wave at regular intervals" },
+                            { question: "What does 'sample rate' measure?", options: ["How many bits are used for each sample", "How loud the sound is", "The total length of the recording", "The number of samples taken per second"], answer: "The number of samples taken per second" },
+                            { question: "What is 'sample resolution' (or 'bit depth')?", options: ["The number of samples taken per second", "The number of bits used to store each sample's value", "How loud the sound is", "The format of the sound file (WAV, MP3)"], answer: "The number of bits used to store each sample's value" },
+                            { question: "If you increase the sample rate and sample resolution, what is the most likely outcome?", options: ["Smaller file size, lower quality", "Smaller file size, higher quality", "Larger file size, lower quality", "Larger file size, higher quality"], answer: "Larger file size, higher quality" },
+                            { question: "A sound wave is ___, and a computer stores data as ___.", options: ["analogue, digital", "digital, analogue", "binary, denary", "mono, stereo"], answer: "analogue, digital" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Image Representation: Pixels, Resolution, Colour Depth',
+                        quiz: [
+                            { question: "What is the smallest unit of a digital image called?", options: ["A bit", "A byte", "A pixel", "A vector"], answer: "A pixel" },
+                            { question: "What does image 'resolution' refer to?", options: ["The number of bits used for each pixel", "The number of pixels in the image (e.g., 1920x1080)", "The physical size of the image in cm", "How compressed the image is"], answer: "The number of pixels in the image (e.g., 1920x1080)" },
+                            { question: "What is 'colour depth'?", options: ["The number of pixels in an image", "The total file size of the image", "The number of bits used to represent the colour of a single pixel", "The brightness of the image"], answer: "The number of bits used to represent the colour of a single pixel" },
+                            { question: "A 1-bit colour depth allows for how many colours?", options: ["1", "2", "8", "16"], answer: "2" },
+                            { question: "What happens if you increase both the resolution and the colour depth of an image?", options: ["File size decreases, quality decreases", "File size increases, quality increases", "File size increases, quality decreases", "File size decreases, quality increases"], answer: "File size increases, quality increases" }
+                        ]
+                    },
+                    {
+                        text: 'Know Data Storage Units (bit, nibble, byte, KiB, MiB, GiB, TiB...)',
+                        quiz: [
+                            { question: "How many bits are in a nibble?", options: ["2", "4", "8", "16"], answer: "4" },
+                            { question: "How many bits are in a byte?", options: ["2", "4", "8", "16"], answer: "8" },
+                            { question: "How many kibibytes (KiB) are in one mebibyte (MiB)?", options: ["1000", "1024", "8", "100"], answer: "1024" },
+                            { question: "Which is the smallest unit of data?", options: ["Byte", "Nibble", "Bit", "KiB"], answer: "Bit" },
+                            { question: "Which unit is largest?", options: ["GiB (gibibyte)", "MiB (mebibyte)", "KiB (kibibyte)", "TiB (tebibyte)"], answer: "TiB (tebibyte)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the need & purpose for Data Compression',
+                        quiz: [
+                            { question: "What is the main purpose of data compression?", options: ["To increase the quality of a file", "To reduce the file size", "To make the file more secure", "To convert the file to binary"], answer: "To reduce the file size" },
+                            { question: "A reduced file size leads to...", options: ["Longer download times and more storage used", "Shorter download times and less storage used", "Shorter download times and more storage used", "Longer download times and less storage used"], answer: "Shorter download times and less storage used" },
+                            { question: "Which of these is a benefit of compression for streaming video?", options: ["It allows for higher resolution at the same speed", "It reduces buffering by sending a smaller file", "It increases the number of colours available", "It encrypts the video stream"], answer: "It reduces buffering by sending a smaller file" },
+                            { question: "Compression is needed because...", options: ["Uncompressed files are often too large to store or transmit efficiently", "Computers can only read compressed files", "All files are analogue", "Data gets corrupted easily"], answer: "Uncompressed files are often too large to store or transmit efficiently" },
+                            { question: "What two main categories does compression fall into?", options: ["Fast and Slow", "Secure and Insecure", "Audio and Video", "Lossy and Lossless"], answer: "Lossy and Lossless" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Lossy vs. Lossless Compression Methods',
+                        quiz: [
+                            { question: "What is the key feature of 'lossless' compression?", options: ["It removes data permanently", "It is only used for images", "The original file can be perfectly reconstructed", "It achieves the smallest possible file size"], answer: "The original file can be perfectly reconstructed" },
+                            { question: "What is the key feature of 'lossy' compression?", options: ["It permanently removes data to reduce file size", "The original file can be perfectly reconstructed", "It is only used for text files", "It makes the file larger but higher quality"], answer: "It permanently removes data to reduce file size" },
+                            { question: "Which type of compression would be essential for a text document or a computer program?", options: ["Lossy", "Lossless", "Both would work equally well", "Neither, they can't be compressed"], answer: "Lossless" },
+                            { question: "Which type of compression is often used for streaming video or music, where a tiny loss of quality is acceptable?", options: ["Lossy", "Lossless", "Parity checking", "ASCII"], answer: "Lossy" },
+                            { question: "Which statement is correct?", options: ["Lossy always results in a larger file than lossless", "Lossless permanently removes data", "Lossy is best when no data can be lost", "Lossy generally achieves a greater reduction in file size than lossless"], answer: "Lossy generally achieves a greater reduction in file size than lossless" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Run-Length Encoding (RLE) as a lossless example',
+                        quiz: [
+                            { question: "What type of compression is Run-Length Encoding (RLE)?", options: ["Lossy", "Lossless", "Image-only", "Sound-only"], answer: "Lossless" },
+                            { question: "How does RLE work?", options: ["It removes every other pixel", "It stores repeating sequences of data as a single value and a count", "It changes the sample rate", "It encrypts the data"], answer: "It stores repeating sequences of data as a single value and a count" },
+                            { question: "RLE would be most effective on which data string?", options: ["ABCDEFGHI", "ABABABABABA", "AAAAABBBCCC", "ACEGIKMOQ"], answer: "AAAAABBBCCC" },
+                            { question: "The data 'WWWWWHHBB' could be compressed by RLE to:", options: ["W5H2B2", "WWHHB", "5W2H2B", "W(5)H(2)B(2)"], answer: "5W2H2B" },
+                            { question: "Why is RLE considered lossless?", options: ["It only works on text", "It adds extra data", "The original data can be perfectly rebuilt from the compressed form", "It's an old algorithm"], answer: "The original data can be perfectly rebuilt from the compressed form" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Convert between Denary, Binary & Hexadecimal',
+                    'Perform 8-bit Binary Addition & identify Overflow Errors',
+                    'Perform Logical Binary Shifts (Left & Right) & understand their effect',
+                    'Use Two\'s Complement to represent 8-bit negative integers',
+                    'Calculate File Size (Sound & Image)'
+                ],
+                concepts: [
+                    'Abstraction: Representing complex real-world data (sound, images, text) using binary',
+                    'Trade-offs: Balancing file size vs. quality/accuracy (e.g., in compression, sample rate)',
+                    'Standards: The need for universal standards like ASCII & Unicode for data interchange'
+                ]
+            },
+            'unit2': {
+                title: 'Unit 2: Data Transmission',
+                knowledge: [
+                    {
+                        text: 'Understand Packet Structure (Header, Payload, Trailer)',
+                        quiz: [
+                            { question: "Which part of a data packet contains the actual data being sent?", options: ["Header", "Payload", "Trailer", "IP Address"], answer: "Payload" },
+                            { question: "Which part of the packet typically contains the destination IP address?", options: ["Header", "Payload", "Trailer", "Checksum"], answer: "Header" },
+                            { question: "What part of the packet might contain a checksum or error-checking data?", options: ["Header", "Payload", "Trailer", "Packet Number"], answer: "Trailer" },
+                            { question: "What information in the header allows packets to be reassembled in the correct order?", options: ["Packet number / sequence number", "Destination Address", "Originator's Address", "Checksum"], answer: "Packet number / sequence number" },
+                            { question: "Which of these is NOT typically in the packet header?", options: ["Destination Address", "Packet Number", "The actual data of the file", "Originator's Address"], answer: "The actual data of the file" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the process of Packet Switching',
+                        quiz: [
+                            { question: "What is the first step in packet switching?", options: ["Data is broken down into packets", "Packets are reordered", "Packets are routed", "A checksum is calculated"], answer: "Data is broken down into packets" },
+                            { question: "What device controls the route a packet takes on a network?", options: ["Router", "NIC", "Web Server", "Firewall"], answer: "Router" },
+                            { question: "In packet switching, do all packets from the same file take the same route?", options: ["Yes, always", "No, they can take different routes", "Only if the file is small", "Yes, but only on a LAN"], answer: "No, they can take different routes" },
+                            { question: "What happens if packets arrive out of order?", options: ["The file is corrupted and deleted", "They are reordered at the destination using sequence numbers", "The sender is asked to resend the whole file", "An error message is sent to the user"], answer: "They are reordered at the destination using sequence numbers" },
+                            { question: "What is a major advantage of packet switching?", options: ["It's very simple to implement", "It's efficient as it can use many different paths", "No errors ever occur", "Packets never get lost"], answer: "It's efficient as it can use many different paths" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Serial vs. Parallel Transmission',
+                        quiz: [
+                            { question: "How many bits are sent at a time in serial transmission?", options: ["1 bit", "8 bits", "16 bits", "Depends on the cable"], answer: "1 bit" },
+                            { question: "How are bits sent in parallel transmission?", options: ["One after another down a single wire", "Multiple bits at the same time over multiple wires", "In packets", "Using radio waves only"], answer: "Multiple bits at the same time over multiple wires" },
+                            { question: "Which transmission method is faster over short distances, like inside a computer?", options: ["Serial", "Parallel", "Simplex", "Half-duplex"], answer: "Parallel" },
+                            { question: "Which method is better for long distances, as data 'skew' is not a problem?", options: ["Serial", "Parallel", "Full-duplex", "Simplex"], answer: "Serial" },
+                            { question: "USB (Universal Serial Bus) is an example of which type of transmission?", options: ["Serial", "Parallel", "Simplex", "It uses both"], answer: "Serial" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Simplex, Half-Duplex & Full-Duplex Transmission',
+                        quiz: [
+                            { question: "Which mode allows data to travel in both directions, but only one way at a time?", options: ["Simplex", "Half-duplex", "Full-duplex", "Multiplex"], answer: "Half-duplex" },
+                            { question: "Which mode allows data to travel in only one direction?", options: ["Simplex", "Half-duplex", "Full-duplex", "Serial"], answer: "Simplex" },
+                            { question: "Which mode allows data to travel in both directions simultaneously?", options: ["Simplex", "Half-duplex", "Full-duplex", "Parallel"], answer: "Full-duplex" },
+                            { question: "A radio broadcast (e.g., from a station to your car) is an example of:", options: ["Simplex", "Half-duplex", "Full-duplex", "Packet switching"], answer: "Simplex" },
+                            { question: "A telephone conversation is an example of:", options: ["Simplex", "Half-duplex", "Full-duplex", "Error checking"], answer: "Full-duplex" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Universal Serial Bus (USB) Interface',
+                        quiz: [
+                            { question: "What does USB stand for?", options: ["Universal Serial Bus", "Unified System Bus", "Universal System Block", "Unified Serial Block"], answer: "Universal Serial Bus" },
+                            { question: "Is USB an example of serial or parallel transmission?", options: ["Serial", "Parallel", "It uses both", "It uses neither"], answer: "Serial" },
+                            { question: "Which of these is a benefit of USB?", options: ["It is the fastest connection type possible", "It can also supply power to the device", "It only works with one type of device", "It requires the computer to be off to connect devices"], answer: "It can also supply power to the device" },
+                            { question: "When a device is plugged in via USB, what happens?", options: ["The computer must be restarted", "The computer automatically detects the device", "The user must manually install a driver every time", "The internet is disconnected"], answer: "The computer automatically detects the device" },
+                            { question: "How many wires are typically in a USB 2.0 cable?", options: ["1", "2", "4", "8"], answer: "4" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the need for Error Checking',
+                        quiz: [
+                            { question: "Why is error checking needed in data transmission?", options: ["To make the data smaller", "To encrypt the data", "Data can be corrupted by interference", "To speed up the transmission"], answer: "Data can be corrupted by interference" },
+                            { question: "What is 'interference' in data transmission?", options: ["Data arriving too quickly", "Unwanted signals that can change the data", "When two files are sent at once", "A type of encryption"], answer: "Unwanted signals that can change the data" },
+                            { question: "Which of these is NOT a type of data error?", options: ["Data loss (bits missing)", "Data gain (bits added)", "Data change (bits flipped)", "Data compression (bits reduced)"], answer: "Data compression (bits reduced)" },
+                            { question: "What is the general purpose of methods like parity check and checksum?", options: ["To detect if an error has occurred", "To correct any errors that occur", "To make the data smaller", "To hide the data from others"], answer: "To detect if an error has occurred" },
+                            { question: "Error checking ensures data ___.", options: ["speed", "encryption", "integrity", "compression"], answer: "integrity" }
+                        ]
+                    },
+                    {
+                        text: 'Know Error Detection Methods: Parity Check, Checksum, Echo Check',
+                        quiz: [
+                            { question: "In an 'even parity' check, what should be true?", options: ["The total number of '1' bits (including the parity bit) is even", "The total number of '0' bits is even", "The data is sent twice", "The file size is an even number"], answer: "The total number of '1' bits (including the parity bit) is even" },
+                            { question: "What is a 'checksum'?", options: ["A bit added to the end of a byte", "A value calculated from the data, sent with the data, and recalculated by the receiver", "A copy of the data sent back to the sender", "A query to ask if the data was received"], answer: "A value calculated from the data, sent with the data, and recalculated by the receiver" },
+                            { question: "What is an 'echo check'?", options: ["The receiver sends the data back to the sender to compare", "The data is echoed to the screen", "The sender shouts 'hello' and waits for a reply", "A bit is added to make the total number of 1s even"], answer: "The receiver sends the data back to the sender to compare" },
+                            { question: "What is a major limitation of a simple parity check?", options: ["It can only detect errors, not correct them", "It cannot detect if an even number of bits have flipped", "It's very slow", "Both A and B"], answer: "Both A and B" },
+                            { question: "Which method involves adding a byte to the end of a block of data?", options: ["Parity block check", "Echo check", "Checksum", "Parity byte"], answer: "Parity byte" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Check Digits (e.g., ISBN, Barcodes)',
+                        quiz: [
+                            { question: "What is the purpose of a check digit?", options: ["To encrypt the data", "To detect errors in data entry (e.g., typing)", "To make the number longer", "To identify the country of origin"], answer: "To detect errors in data entry (e.g., typing)" },
+                            { question: "Where are check digits commonly used?", options: ["In MP3 files", "In image resolutions", "In ISBNs for books and barcodes", "In CPU registers"], answer: "In ISBNs for books and barcodes" },
+                            { question: "How is a check digit different from a parity bit?", options: ["A check digit is used for transmission, a parity bit for data entry", "A check digit is used for data entry, a parity bit for transmission", "They are the same thing", "A check digit is a form of encryption"], answer: "A check digit is used for data entry, a parity bit for transmission" },
+                            { question: "A check digit helps ensure data ___.", options: ["integrity", "security", "speed", "compression"], answer: "integrity" },
+                            { question: "A check digit is typically calculated from the...?", options: ["other digits in the number", "file size", "date and time", "computer's IP address"], answer: "other digits in the number" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Automatic Repeat Query (ARQ)',
+                        quiz: [
+                            { question: "What does ARQ stand for?", options: ["Automatic Repeat Query", "Automatic Request for Questions", "Automated Response Query", "Automatic Reorder Question"], answer: "Automatic Repeat Query" },
+                            { question: "How does ARQ work?", options: ["It corrects errors using a parity bit", "It uses acknowledgements (ACK) and timeouts to ensure data is received correctly", "It encrypts the data automatically", "It compresses the data before sending"], answer: "It uses acknowledgements (ACK) and timeouts to ensure data is received correctly" },
+                            { question: "What does the receiver send if the data is received correctly (e.g., checksum matches)?", options: ["An acknowledgement (ACK)", "A negative acknowledgement (NAK)", "A timeout", "A copy of the data"], answer: "An acknowledgement (ACK)" },
+                            { question: "What happens if the sender's 'timeout' expires before an ACK is received?", options: ["The sender assumes the data was lost and resends it", "The sender deletes the file", "The sender moves to the next packet", "The sender encrypts the data"], answer: "The sender assumes the data was lost and resends it" },
+                            { question: "ARQ is a system for ensuring data ___.", options: ["reliability", "speed", "compression", "privacy"], answer: "reliability" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the need for Encryption',
+                        quiz: [
+                            { question: "What is the main purpose of encryption?", options: ["To make data smaller", "To detect errors", "To make data unreadable to unauthorized people", "To speed up transmission"], answer: "To make data unreadable to unauthorized people" },
+                            { question: "What is 'plaintext'?", options: ["The encrypted data", "A text file with no formatting", "The original, readable data", "A password"], answer: "The original, readable data" },
+                            { question: "What is 'ciphertext'?", options: ["The original, readable data", "The encrypted, unreadable data", "The key used for encryption", "A type of password"], answer: "The encrypted, unreadable data" },
+                            { question: "Encryption is a method of ensuring data ___.", options: ["integrity", "security/confidentiality", "reliability", "compression"], answer: "security/confidentiality" },
+                            { question: "What is needed to decrypt ciphertext back into plaintext?", options: ["A checksum", "A parity bit", "An encryption key", "A firewall"], answer: "An encryption key" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Symmetric Encryption',
+                        quiz: [
+                            { question: "What is the key feature of symmetric encryption?", options: ["It uses two different keys", "It uses one, shared, private key for both encryption and decryption", "It is impossible to break", "It is only used for text"], answer: "It uses one, shared, private key for both encryption and decryption" },
+                            { question: "What is the main challenge of symmetric encryption?", options: ["It is very slow", "It makes the file size much larger", "Securely sharing the single key with the receiver", "It is easy to guess the key"], answer: "Securely sharing the single key with the receiver" },
+                            { question: "Which is an advantage of symmetric encryption?", options: ["It is very fast to perform", "The key is public", "It doesn't require a key", "It's a new, modern method"], answer: "It is very fast to perform" },
+                            { question: "If Alice encrypts a message with a symmetric key, what must Bob use to decrypt it?", options: ["His own public key", "Alice's public key", "The same symmetric key Alice used", "Bob's private key"], answer: "The same symmetric key Alice used" },
+                            { question: "Symmetric encryption is so-called because...", options: ["It's a very balanced algorithm", "The key is symmetrical", "The same key is used on both 'sides' (encrypting and decrypting)", "It only works on symmetrical data"], answer: "The same key is used on both 'sides' (encrypting and decrypting)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Asymmetric Encryption',
+                        quiz: [
+                            { question: "What is the key feature of asymmetric encryption?", options: ["It uses a single shared key", "It uses a pair of keys: one public, one private", "It is faster than symmetric encryption", "It does not require a key"], answer: "It uses a pair of keys: one public, one private" },
+                            { question: "If Alice wants to send Bob a secure message, which key does she use to encrypt it?", options: ["Alice's private key", "Alice's public key", "Bob's private key", "Bob's public key"], answer: "Bob's public key" },
+                            { question: "When Bob receives the message from Alice, which key does he use to decrypt it?", options: ["Alice's private key", "Alice's public key", "Bob's private key", "Bob's public key"], answer: "Bob's private key" },
+                            { question: "Which key in an asymmetric pair can be shared with anyone?", options: ["The public key", "The private key", "Neither", "Both"], answer: "The public key" },
+                            { question: "What is the main advantage of asymmetric encryption over symmetric?", options: ["It is much faster", "It solves the problem of sharing a key, as the public key can be sent openly", "It makes the file smaller", "It is easier to understand"], answer: "It solves the problem of sharing a key, as the public key can be sent openly" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Describe the process of packet switching',
+                    'Describe how error detection methods work'
+                ],
+                concepts: [
+                    'Reliability: Ensuring data arrives correctly (error detection, ARQ)',
+                    'Security: Protecting data from being understood if intercepted (encryption)',
+                    'Efficiency: Managing data flow for multiple users (packet switching)',
+                    'Integrity: Verifying data hasn\'t been corrupted or entered incorrectly (check digits, parity)'
+                ]
+            },
+            'unit3': {
+                title: 'Unit 3: Hardware',
+                knowledge: [
+                    {
+                        text: 'Understand the role of the CPU & Microprocessors',
+                        quiz: [
+                            { question: "What does CPU stand for?", options: ["Central Processing Unit", "Computer Power Unit", "Central Program Unit", "Control Power Unit"], answer: "Central Processing Unit" },
+                            { question: "What is the main role of the CPU?", options: ["To store all the computer's files", "To fetch, decode, and execute instructions", "To display images on the screen", "To connect to the internet"], answer: "To fetch, decode, and execute instructions" },
+                            { question: "What is a microprocessor?", options: ["A type of software", "A computer's power supply", "An integrated circuit that contains all the functions of a CPU", "A small microphone"], answer: "An integrated circuit that contains all the functions of a CPU" },
+                            { question: "The 'brain' of the computer is a common name for the...", options: ["RAM", "Hard Drive", "CPU", "Monitor"], answer: "CPU" },
+                            { question: "The CPU processes ___ and ___.", options: ["instructions, data", "images, video", "sound, text", "inputs, outputs"], answer: "instructions, data" }
+                        ]
+                    },
+                    {
+                        text: 'Know the components of Von Neumann Architecture',
+                        quiz: [
+                            { question: "What is the key concept of Von Neumann architecture?", options: ["Having a separate memory for instructions and data", "Storing both program instructions and data in the same memory", "Using multiple CPUs", "Connecting to the internet"], answer: "Storing both program instructions and data in the same memory" },
+                            { question: "Which component of the CPU performs calculations?", options: ["Control Unit (CU)", "Arithmetic Logic Unit (ALU)", "Program Counter (PC)", "Memory Address Register (MAR)"], answer: "Arithmetic Logic Unit (ALU)" },
+                            { question: "Which component manages the execution of instructions?", options: ["Control Unit (CU)", "Arithmetic Logic Unit (ALU)", "Accumulator (ACC)", "Memory Data Register (MDR)"], answer: "Control Unit (CU)" },
+                            { question: "Which of these is NOT a main component of Von Neumann architecture?", options: ["CPU (ALU, CU, Registers)", "Input/Output devices", "Memory (RAM)", "Firewall"], answer: "Firewall" },
+                            { question: "The Von Neumann architecture is the basis for most...", options: ["modern digital computers", "early mechanical calculators", "internet routers", "digital cameras"], answer: "modern digital computers" }
+                        ]
+                    },
+                    {
+                        text: 'Know CPU Units: Arithmetic Logic Unit (ALU), Control Unit (CU)',
+                        quiz: [
+                            { question: "What two types of operations does the ALU perform?", options: ["Arithmetic and Logical", "Fetch and Decode", "Input and Output", "Read and Write"], answer: "Arithmetic and Logical" },
+                            { question: "An example of an 'arithmetic' operation is:", options: ["ADD", "AND", "NOT", "OR"], answer: "ADD" },
+                            { question: "An example of a 'logical' operation is:", options: ["ADD", "SUBTRACT", "AND", "MULTIPLY"], answer: "AND" },
+                            { question: "What is the main role of the Control Unit (CU)?", options: ["To store data temporarily", "To coordinate all activities of the CPU, directing the flow of data", "To perform mathematical calculations", "To connect to the internet"], answer: "To coordinate all activities of the CPU, directing the flow of data" },
+                            { question: "The CU sends out ___ signals to other parts of the computer.", options: ["data", "address", "control", "power"], answer: "control" }
+                        ]
+                    },
+                    {
+                        text: 'Know CPU Registers: PC, MAR, MDR, CIR, ACC',
+                        quiz: [
+                            { question: "Which register holds the address of the *next* instruction to be fetched?", options: ["Program Counter (PC)", "Memory Address Register (MAR)", "Current Instruction Register (CIR)", "Accumulator (ACC)"], answer: "Program Counter (PC)" },
+                            { question: "Which register holds the address of the memory location currently being read from or written to?", options: ["Program Counter (PC)", "Memory Address Register (MAR)", "Current Instruction Register (CIR)", "Accumulator (ACC)"], answer: "Memory Address Register (MAR)" },
+                            { question: "Which register holds the instruction that has just been fetched and is being decoded?", options: ["Program Counter (PC)", "Memory Address Register (MAR)", "Current Instruction Register (CIR)", "Accumulator (ACC)"], answer: "Current Instruction Register (CIR)" },
+                            { question: "Which register temporarily holds data being transferred to or from memory?", options: ["Program Counter (PC)", "Memory Data Register (MDR)", "Current Instruction Register (CIR)", "Accumulator (ACC)"], answer: "Memory Data Register (MDR)" },
+                            { question: "Which register stores the results of calculations performed by the ALU?", options: ["Program Counter (PC)", "Memory Address Register (MAR)", "Current Instruction Register (CIR)", "Accumulator (ACC)"], answer: "Accumulator (ACC)" }
+                        ]
+                    },
+                    {
+                        text: 'Know CPU Buses: Address, Data, Control',
+                        quiz: [
+                            { question: "Which bus carries signals to coordinate and manage all computer activities?", options: ["Address Bus", "Data Bus", "Control Bus", "System Bus"], answer: "Control Bus" },
+                            { question: "Which bus carries the memory addresses that the CPU wants to read from or write to?", options: ["Address Bus", "Data Bus", "Control Bus", "USB Bus"], answer: "Address Bus" },
+                            { question: "Which bus carries the actual data between the CPU and memory?", options: ["Address Bus", "Data Bus", "Control Bus", "Register Bus"], answer: "Data Bus" },
+                            { question: "Is the Data Bus bi-directional or uni-directional?", options: ["Bi-directional (data flows both ways)", "Uni-directional (data flows one way)", "Neither", "Depends on the CPU"], answer: "Bi-directional (data flows both ways)" },
+                            { question: "Is the Address Bus bi-directional or uni-directional?", options: ["Bi-directional (CPU & Memory send addresses)", "Uni-directional (CPU sends addresses to memory)", "Neither", "Depends on the RAM"], answer: "Uni-directional (CPU sends addresses to memory)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Fetch-Decode-Execute (FDE) Cycle',
+                        quiz: [
+                            { question: "What is the first step of the FDE cycle?", options: ["Fetch", "Decode", "Execute", "Store"], answer: "Fetch" },
+                            { question: "In the 'Fetch' step, where is the instruction fetched from?", options: ["The Hard Drive", "The Internet", "RAM", "The ALU"], answer: "RAM" },
+                            { question: "What happens during the 'Decode' step?", options: ["The instruction is carried from memory to the CPU", "The instruction is performed by the ALU", "The Control Unit interprets the instruction", "The result is stored in the Accumulator"], answer: "The Control Unit interprets the instruction" },
+                            { question: "What happens during the 'Execute' step?", options: ["The Program Counter is incremented", "The instruction is carried out", "The instruction is fetched from RAM", "The instruction is interpreted by the CU"], answer: "The instruction is carried out" },
+                            { question: "Which register is incremented (points to the next instruction) during the fetch step?", options: ["Accumulator (ACC)", "Program Counter (PC)", "Current Instruction Register (CIR)", "Memory Address Register (MAR)"], answer: "Program Counter (PC)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand CPU Performance factors: Cores, Clock Speed, Cache Size',
+                        quiz: [
+                            { question: "What does 'Clock Speed' measure?", options: ["The number of calculations per second", "The number of FDE cycles per second", "The size of the cache", "The number of cores"], answer: "The number of FDE cycles per second" },
+                            { question: "What is a 'core' in a CPU?", options: ["The main power supply", "A complete processing unit within the CPU", "A type of register", "A type of RAM"], answer: "A complete processing unit within the CPU" },
+                            { question: "A quad-core CPU has how many cores?", options: ["1", "2", "4", "8"], answer: "4" },
+                            { question: "What is 'cache' memory?", options: ["A small, very fast memory inside/near the CPU", "The computer's main storage (HDD/SSD)", "A type of virtual memory", "Memory used by the graphics card"], answer: "A small, very fast memory inside/near the CPU" },
+                            { question: "Generally, increasing which of these will improve CPU performance?", options: ["Clock Speed, number of cores, and cache size", "Only clock speed", "Only number of cores", "Only cache size"], answer: "Clock Speed, number of cores, and cache size" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Instruction Sets',
+                        quiz: [
+                            { question: "What is a CPU's 'instruction set'?", options: ["A list of all the commands the CPU can process", "A list of all the registers", "The manual for the CPU", "A type of software"], answer: "A list of all the commands the CPU can process" },
+                            { question: "An instruction set is specific to a...", options: ["CPU architecture (e.g., ARM, x86)", "brand of computer (e.g., Dell, HP)", "operating system (e.g., Windows, macOS)", "programming language (e.g., Python, Java)"], answer: "CPU architecture (e.g., ARM, x86)" },
+                            { question: "The commands in an instruction set are in what language?", options: ["High-level language", "Assembly language", "Machine code (binary)", "Pseudocode"], answer: "Machine code (binary)" },
+                            { question: "What does RISC stand for?", options: ["Reduced Instruction Set Computer", "Reliable Instruction Set Computer", "Real-time Instruction Set Code", "Reduced Instruction Size Code"], answer: "Reduced Instruction Set Computer" },
+                            { question: "What does CISC stand for?", options: ["Complex Instruction Set Computer", "Common Instruction Set Computer", "Compiled Instruction Set Code", "Complex Instruction Size Code"], answer: "Complex Instruction Set Computer" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Embedded Systems (purpose & examples)',
+                        quiz: [
+                            { question: "What is an embedded system?", options: ["A general-purpose computer like a laptop", "A computer system built into a larger device to perform a dedicated function", "A type of operating system", "A programming language"], answer: "A computer system built into a larger device to perform a dedicated function" },
+                            { question: "Which of these is the best example of a device with an embedded system?", options: ["A smartphone", "A microwave oven", "A gaming PC", "A web server"], answer: "A microwave oven" },
+                            { question: "Embedded systems are typically...", options: ["large and very powerful", "small, low-cost, and designed for one task", "easy to upgrade by the user", "always connected to the internet"], answer: "small, low-cost, and designed for one task" },
+                            { question: "Which of these is NOT a common example of an embedded system?", options: ["Washing machine controller", "Car's engine management system", "A file server for an office", "A digital watch"], answer: "A file server for an office" },
+                            { question: "The software for an embedded system is usually stored in...", options: ["RAM", "ROM or flash memory", "The cloud", "An external hard drive"], answer: "ROM or flash memory" }
+                        ]
+                    },
+                    {
+                        text: 'Know types of Input Devices & Output Devices',
+                        quiz: [
+                            { question: "Which of these is an 'input' device?", options: ["Monitor", "Speaker", "Keyboard", "Inkjet Printer"], answer: "Keyboard" },
+                            { question: "Which of these is an 'output' device?", options: ["Microphone", "Scanner", "Mouse", "Projector"], answer: "Projector" },
+                            { question: "What is the purpose of an input device?", options: ["To get data *out* of the computer", "To get data *into* the computer", "To store data permanently", "To process data"], answer: "To get data *into* the computer" },
+                            { question: "A touch screen is an example of...", options: ["An input device only", "An output device only", "Both an input and an output device", "A storage device"], answer: "Both an input and an output device" },
+                            { question: "A 3D printer is a type of...", options: ["Input device", "Output device", "Storage device", "Processing device"], answer: "Output device" }
+                        ]
+                    },
+                    {
+                        text: 'Know types of Sensors (e.g., temp, light, pressure, humidity, flow, etc.)',
+                        quiz: [
+                            { question: "What is the purpose of a sensor?", options: ["To output data as light or sound", "To process data", "To measure a physical quantity and convert it to a digital signal", "To store data from the environment"], answer: "To measure a physical quantity and convert it to a digital signal" },
+                            { question: "Which sensor would be used in an automatic greenhouse to control watering?", options: ["Light sensor", "Temperature sensor", "Moisture/Humidity sensor", "Pressure sensor"], answer: "Moisture/Humidity sensor" },
+                            { question: "Which sensor would be used to turn on street lights when it gets dark?", options: ["Light sensor", "Temperature sensor", "Acoustic sensor", "Proximity sensor"], answer: "Light sensor" },
+                            { question: "A digital scale uses which type of sensor?", options: ["Flow sensor", "Pressure sensor", "pH sensor", "Gas sensor"], answer: "Pressure sensor" },
+                            { question: "Sensors are a form of ___ device.", options: ["input", "output", "storage", "processing"], answer: "input" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Primary Storage: RAM (Volatile) & ROM (Non-volatile)',
+                        quiz: [
+                            { question: "What does RAM stand for?", options: ["Read Access Memory", "Random Access Memory", "Run All Memory", "Random Application Memory"], answer: "Random Access Memory" },
+                            { question: "What does 'volatile' mean in the context of RAM?", options: ["It is very fast", "It is very slow", "It retains data when power is off", "It loses data when power is off"], answer: "It loses data when power is off" },
+                            { question: "What is stored in RAM?", options: ["The computer's boot-up instructions", "The current operating system, running programs, and data", "Permanently saved files", "The computer's MAC address"], answer: "The current operating system, running programs, and data" },
+                            { question: "What does ROM stand for?", options: ["Read Only Memory", "Random Only Memory", "Run Only Memory", "Register Only Memory"], answer: "Read Only Memory" },
+                            { question: "What is 'non-volatile' memory?", options: ["It loses data when power is off", "It retains data when power is off", "It can only be read", "It can only be written to"], answer: "It retains data when power is off" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Secondary Storage: Magnetic (HDD), Optical (CD/DVD), Solid-State (SSD)',
+                        quiz: [
+                            { question: "What is the purpose of secondary storage?", options: ["To run the FDE cycle", "To store data and programs long-term, even when power is off", "To hold the next instruction for the CPU", "To manage the operating system"], answer: "To store data and programs long-term, even when power is off" },
+                            { question: "Which of these uses spinning platters and a read/write head?", options: ["Magnetic Hard Disk Drive (HDD)", "Optical Blu-ray Disc", "Solid-State Drive (SSD)", "RAM"], answer: "Magnetic Hard Disk Drive (HDD)" },
+                            { question: "Which of these uses 'pits' and 'lands' read by a laser?", options: ["Magnetic Hard Disk Drive (HDD)", "Optical CD/DVD", "Solid-State Drive (SSD)", "ROM"], answer: "Optical CD/DVD" },
+                            { question: "Which of these uses flash memory (NAND technology) with no moving parts?", options: ["Magnetic Hard Disk Drive (HDD)", "Optical CD/DVD", "Solid-State Drive (SSD)", "Cache"], answer: "Solid-State Drive (SSD)" },
+                            { question: "Which secondary storage is generally the fastest, most durable, but most expensive per GB?", options: ["HDD", "DVD", "SSD", "CD"], answer: "SSD" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Virtual Memory',
+                        quiz: [
+                            { question: "What is virtual memory?", options: ["A type of very fast cache memory", "A section of secondary storage (e.g., HDD/SSD) used as if it were RAM", "A type of ROM", "Memory that doesn't actually exist"], answer: "A section of secondary storage (e.g., HDD/SSD) used as if it were RAM" },
+                            { question: "When is virtual memory used?", options: ["When the computer first boots up", "When the RAM is full", "To store the operating system", "To store viruses"], answer: "When the RAM is full" },
+                            { question: "What is 'paging' or 'swapping'?", options: ["The process of moving data between RAM and virtual memory", "The process of reading from a DVD", "The process of fetching instructions", "The process of saving a file"], answer: "The process of moving data between RAM and virtual memory" },
+                            { question: "What is a major disadvantage of using virtual memory compared to RAM?", options: ["It is volatile", "It is much slower", "It is more expensive", "It is smaller"], answer: "It is much slower" },
+                            { question: "Excessive use of virtual memory is called ___ and can make the computer very slow.", options: ["caching", "thrashing", "executing", "booting"], answer: "thrashing" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Cloud Storage vs. Local Storage (Pros & Cons)',
+                        quiz: [
+                            { question: "What is 'cloud storage'?", options: ["Storing data on your own computer", "Storing data on a USB stick", "Storing data on remote servers accessed via the internet", "A type of virtual memory"], answer: "Storing data on remote servers accessed via the internet" },
+                            { question: "What is a key advantage of cloud storage?", options: ["It is accessible from any device with an internet connection", "It is much faster than an SSD", "You don't need an internet connection", "It is completely free"], answer: "It is accessible from any device with an internet connection" },
+                            { question: "What is a key disadvantage of cloud storage?", options: ["You can only access it from one computer", "It can be easily lost if your computer breaks", "It requires a constant internet connection to access", "It is not possible to share files"], answer: "It requires a constant internet connection to access" },
+                            { question: "What is an advantage of 'local storage' (e.g., your computer's HDD)?", options: ["It is automatically backed up", "You can access it without an internet connection", "It can be accessed from anywhere", "It is impossible to damage"], answer: "You can access it without an internet connection" },
+                            { question: "Security of your data in the cloud is managed by ___, while security of local data is managed by ___.", options: ["you, the provider", "the provider, you", "your OS, your firewall", "your firewall, your OS"], answer: "the provider, you" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the purpose of a Network Interface Card (NIC)',
+                        quiz: [
+                            { question: "What does NIC stand for?", options: ["Network Internet Controller", "Network Interface Card", "New Internet Connection", "Network Integrated Circuit"], answer: "Network Interface Card" },
+                            { question: "What is the main purpose of a NIC?", options: ["To store files", "To provide a hardware connection between a computer and a network", "To run the operating system", "To perform calculations"], answer: "To provide a hardware connection between a computer and a network" },
+                            { question: "A NIC provides the ___ link to the network.", options: ["software", "virtual", "physical", "temporary"], answer: "physical" },
+                            { question: "A NIC can be used for connecting to...", options: ["a wired Ethernet network", "a Wi-Fi network", "Both wired and wireless networks", "Only the internet"], answer: "Both wired and wireless networks" },
+                            { question: "Which unique address is built into a NIC at the factory?", options: ["IP Address", "MAC Address", "Home Address", "Email Address"], answer: "MAC Address" }
+                        ]
+                    },
+                    {
+                        text: 'Understand MAC Address (structure & purpose) & IP Address (IPv4 vs. IPv6)',
+                        quiz: [
+                            { question: "What does MAC stand for?", options: ["Media Access Control", "Memory Address Controller", "Master Access Code", "Media Access Connection"], answer: "Media Access Control" },
+                            { question: "What is a MAC address?", options: ["A logical address that changes based on the network", "A unique, permanent hardware address for a NIC", "A type of encryption", "A temporary address for internet access"], answer: "A unique, permanent hardware address for a NIC" },
+                            { question: "What does IP stand for?", options: ["Internet Protocol", "Internet Provider", "Interface Protocol", "Internal Program"], answer: "Internet Protocol" },
+                            { question: "What is an IP address?", options: ["A permanent hardware address", "A logical address assigned to a device on a network", "A type of computer memory", "A CPU register"], answer: "A logical address assigned to a device on a network" },
+                            { question: "Why was IPv6 developed?", options: ["It is simpler than IPv4", "To provide many more unique IP addresses as IPv4 was running out", "It is faster than IPv4", "It is more secure than IPv4 (by default)"], answer: "To provide many more unique IP addresses as IPv4 was running out" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the role of a Router',
+                        quiz: [
+                            { question: "What is the primary role of a router?", options: ["To connect a computer to a wall socket", "To store web pages", "To forward data packets between computer networks", "To protect against viruses"], answer: "To forward data packets between computer networks" },
+                            { question: "A home router typically connects your ___ to the ___.", options: ["LAN, WAN (Internet)", "CPU, RAM", "HDD, SSD", "PC, Monitor"], answer: "LAN, WAN (Internet)" },
+                            { question: "How does a router 'route' packets?", options: ["It sends them to every device", "It uses a routing table and the packet's destination IP address", "It uses the packet's MAC address", "It compresses them first"], answer: "It uses a routing table and the packet's destination IP address" },
+                            { question: "What other function does a home router often perform?", options: ["Acting as a web server", "Assigning local IP addresses (DHCP)", "Scanning for malware", "Storing your documents"], answer: "Assigning local IP addresses (DHCP)" },
+                            { question: "A router operates at which layer of the networking model?", options: ["Physical Layer", "Data Link Layer (with MACs)", "Network Layer (with IPs)", "Application Layer"], answer: "Network Layer (with IPs)" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Describe the FDE Cycle step-by-step',
+                    'Explain how CPU components affect performance',
+                    'Identify suitable sensors for a given context'
+                ],
+                concepts: [
+                    'The Stored-Program Concept: Von Neumann architecture (instructions & data in same memory)',
+                    'System Model: The Input-Process-Output-Storage model of a computer system',
+                    'System Bottlenecks: How component speeds (e.g., CPU vs. HDD) affect performance'
+                ]
+            },
+            'unit4': {
+                title: 'Unit 4: Software',
+                knowledge: [
+                    {
+                        text: 'Understand System Software vs. Application Software',
+                        quiz: [
+                            { question: "Which type of software provides services that the *user* requires?", options: ["System Software", "Application Software", "Firmware", "Malware"], answer: "Application Software" },
+                            { question: "Which type of software provides services that the *computer* requires?", options: ["System Software", "Application Software", "Web Browser", "Game"], answer: "System Software" },
+                            { question: "A Web Browser (like Chrome) is an example of...", options: ["System Software", "Application Software", "An Operating System", "A Utility"], answer: "Application Software" },
+                            { question: "An Operating System (like Windows) is an example of...", options: ["System Software", "Application Software", "A Word Processor", "A Database"], answer: "System Software" },
+                            { question: "Utility software (like anti-virus) is a type of...", options: ["System Software", "Application Software", "Hardware", "Firmware"], answer: "System Software" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Role & Functions of an Operating System (OS)',
+                        quiz: [
+                            { question: "What is the primary role of the Operating System?", options: ["To provide entertainment", "To manage the computer's hardware and software resources", "To browse the internet", "To create documents"], answer: "To manage the computer's hardware and software resources" },
+                            { question: "The OS provides a ___ for the user to interact with the computer.", options: ["hard drive", "user interface (UI)", "firewall", "web server"], answer: "user interface (UI)" },
+                            { question: "Which of these is a key function of an OS?", options: ["Memory management", "Peripheral management", "File management", "All of the above"], answer: "All of the above" },
+                            { question: "The OS acts as an ___ between the user and the hardware.", options: ["intermediary", "application", "server", "firewall"], answer: "intermediary" },
+                            { question: "Which is NOT a function of an OS?", options: ["Providing a platform for running applications", "Managing user accounts", "Writing a high-level programming language", "Handling interrupts"], answer: "Writing a high-level programming language" }
+                        ]
+                    },
+                    {
+                        text: 'Know OS Functions: File Management, Interrupt Handling, UI, Peripheral Management',
+                        quiz: [
+                            { question: "Which OS function is responsible for handling files and folders (e.g., creating, deleting, finding)?", options: ["File Management", "Interrupt Handling", "Peripheral Management", "Memory Management"], answer: "File Management" },
+                            { question: "Which OS function is responsible for managing devices like printers, keyboards, and mice?", options: ["File Management", "Interrupt Handling", "Peripheral Management", "User Interface"], answer: "Peripheral Management" },
+                            { question: "What does the OS use to communicate with peripherals?", options: ["Device Drivers", "Registers", "Compilers", "Web Browsers"], answer: "Device Drivers" },
+                            { question: "What is an 'interrupt'?", options: ["A file that cannot be opened", "A signal that causes the CPU to stop its current task and attend to another", "A type of application software", "A slow internet connection"], answer: "A signal that causes the CPU to stop its current task and attend to another" },
+                            { question: "A Graphical User Interface (GUI) is an example of which OS function?", options: ["Memory Management", "File Management", "User Interface", "Interrupt Handling"], answer: "User Interface" }
+                        ]
+                    },
+                    {
+                        text: 'Know OS Functions: Memory Management, Multitasking, Security, User Accounts',
+                        quiz: [
+                            { question: "Which OS function allocates RAM to running programs?", options: ["Memory Management", "Multitasking", "Security", "File Management"], answer: "Memory Management" },
+                            { question: "Which OS function allows multiple programs to be in RAM and appear to run at the same time?", options: ["File Management", "Multitasking", "Security", "User Accounts"], answer: "Multitasking" },
+                            { question: "Which OS function prevents one program from accessing the memory space of another?", options: ["Memory Management", "Multitasking", "File Management", "User Interface"], answer: "Memory Management" },
+                            { question: "Which OS function handles logins, passwords, and access levels?", options: ["User Accounts", "Multitasking", "Memory Management", "File Management"], answer: "User Accounts" },
+                            { question: "Firewalls and automatic updates are part of which OS function?", options: ["System Security", "Multitasking", "File Management", "User Interface"], answer: "System Security" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Hardware, Firmware & OS relationship',
+                        quiz: [
+                            { question: "What is 'firmware'?", options: ["A type of application software", "A type of OS", "Permanent software programmed into ROM, often to boot the computer", "A type of hardware"], answer: "Permanent software programmed into ROM, often to boot the computer" },
+                            { question: "What is the 'bootloader' (often part of firmware)?", options: ["A program that loads the Operating System into RAM", "A program that manages files", "A program that browses the internet", "A program that manages peripherals"], answer: "A program that loads the Operating System into RAM" },
+                            { question: "Which is the correct hierarchy, from bottom to top?", options: ["Hardware -> OS -> Firmware -> Applications", "Firmware -> Hardware -> OS -> Applications", "Hardware -> Firmware -> OS -> Applications", "Applications -> OS -> Firmware -> Hardware"], answer: "Hardware -> Firmware -> OS -> Applications" },
+                            { question: "Applications run on the ___.", options: ["Hardware", "Firmware", "Operating System", "Bootloader"], answer: "Operating System" },
+                            { question: "The Operating System runs on the ___.", options: ["Applications", "Firmware", "Hardware (via the bootloader)", "Internet"], answer: "Firmware" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Interrupts: Role & Operation (Hardware & Software)',
+                        quiz: [
+                            { question: "What is the purpose of an interrupt?", options: ["To crash the computer", "To allow the CPU to handle urgent tasks or events efficiently", "To manage files", "To store data"], answer: "To allow the CPU to handle urgent tasks or events efficiently" },
+                            { question: "Which is an example of a 'hardware' interrupt?", options: ["Pressing a key on the keyboard", "Division by zero in a program", "A 'file not found' error", "A program trying to access invalid memory"], answer: "Pressing a key on the keyboard" },
+                            { question: "Which is an example of a 'software' interrupt (or exception)?", options: ["Moving the mouse", "A 'division by zero' error", "A printer running out of paper", "A network cable being unplugged"], answer: "A 'division by zero' error" },
+                            { question: "What does the CPU do *after* it has handled an interrupt?", options: ["It crashes", "It reboots", "It returns to the task it was doing before the interrupt", "It deletes the interrupt signal"], answer: "It returns to the task it was doing before the interrupt" },
+                            { question: "The program that runs to handle an interrupt is called an...", options: ["Interrupt Service Routine (ISR)", "Interrupt Handling File (IHF)", "Interrupt Control Program (ICP)", "Interrupt Management System (IMS)"], answer: "Interrupt Service Routine (ISR)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Interrupt Service Routine (ISR)',
+                        quiz: [
+                            { question: "What is an Interrupt Service Routine (ISR)?", options: ["A hardware component", "A small piece of code that handles a specific interrupt", "A type of CPU register", "A system-wide error"], answer: "A small piece of code that handles a specific interrupt" },
+                            { question: "When an interrupt occurs, the CPU finishes its current ___ before running the ISR.", options: ["program", "FDE cycle", "boot sequence", "file save"], answer: "FDE cycle" },
+                            { question: "Before jumping to the ISR, what does the CPU save to the stack?", options: ["The entire contents of RAM", "The contents of its registers (like the PC and ACC)", "The anti-virus program", "The user's documents"], answer: "The contents of its registers (like the PC and ACC)" },
+                            { question: "Why must the CPU save its state before running the ISR?", options: ["To free up memory", "So it can return to the original task exactly where it left off", "To check for viruses", "To make the interrupt run faster"], answer: "So it can return to the original task exactly where it left off" },
+                            { question: "What is the last thing the ISR does?", options: ["It reboots the computer", "It restores the CPU's saved state from the stack", "It deletes the user's files", "It loads a new program"], answer: "It restores the CPU's saved state from the stack" }
+                        ]
+                    },
+                    {
+                        text: 'Understand High-Level vs. Low-Level Languages (Pros & Cons)',
+                        quiz: [
+                            { question: "Which is an advantage of a 'high-level' language (like Python or Java)?", options: ["It is easier for humans to read and write", "It runs faster than low-level code", "It can directly manipulate hardware registers", "It doesn't need a translator"], answer: "It is easier for humans to read and write" },
+                            { question: "Which is an advantage of a 'low-level' language (like Assembly)?", options: ["It is machine-independent", "It is easy to debug", "It allows direct manipulation of hardware and is very efficient", "It uses English-like commands"], answer: "It allows direct manipulation of hardware and is very efficient" },
+                            { question: "What does 'machine-independent' mean?", options: ["The code can only run on one type of CPU", "The code can run on many different types of CPUs without change", "The code is written in binary", "The code is for embedded systems"], answer: "The code can run on many different types of CPUs without change" },
+                            { question: "Which type of language is 'closer' to the CPU's machine code?", options: ["High-level", "Low-level", "Pseudocode", "English"], answer: "Low-level" },
+                            { question: "Which of these is a low-level language?", options: ["Python", "Java", "Assembly Language", "Pseudocode"], answer: "Assembly Language" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Assembly Language & Mnemonics',
+                        quiz: [
+                            { question: "Assembly language is a type of ___ language.", options: ["high-level", "low-level", "machine", "internet"], answer: "low-level" },
+                            { question: "What are 'mnemonics' in assembly language?", options: ["The binary codes for instructions", "Short, easy-to-remember codes for instructions (e.g., 'ADD', 'LDA')", "The CPU registers", "Errors in the code"], answer: "Short, easy-to-remember codes for instructions (e.g., 'ADD', 'LDA')" },
+                            { question: "The mnemonic 'LDA' might stand for...", options: ["Load Address", "Load into Accumulator", "Less Data Area", "Loop Data Again"], answer: "Load into Accumulator" },
+                            { question: "What translator is needed to convert assembly language into machine code?", options: ["Compiler", "Interpreter", "Assembler", "Linker"], answer: "Assembler" },
+                            { question: "Is assembly language 'machine-independent'?", options: ["Yes, it runs on all CPUs", "No, it is specific to a particular CPU architecture", "Only if it's written on a Friday", "Yes, if you use a compiler"], answer: "No, it is specific to a particular CPU architecture" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Translators: Compiler, Interpreter, Assembler',
+                        quiz: [
+                            { question: "What is the purpose of a translator?", options: ["To translate one human language to another (e.g., English to French)", "To translate high-level or low-level code into machine code", "To translate machine code into assembly language", "To fix errors in pseudocode"], answer: "To translate high-level or low-level code into machine code" },
+                            { question: "Which translator converts assembly language into machine code?", options: ["Compiler", "Interpreter", "Assembler", "Debugger"], answer: "Assembler" },
+                            { question: "Which translator converts high-level code into an executable file *all at once*?", options: ["Compiler", "Interpreter", "Assembler", "Loader"], answer: "Compiler" },
+                            { question: "Which translator translates and executes high-level code *line-by-line*?", options: ["Compiler", "Interpreter", "Assembler", "Linker"], answer: "Interpreter" },
+                            { question: "Which translator stops as soon as it finds the first error?", options: ["Compiler", "Interpreter", "Assembler", "OS"], answer: "Interpreter" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the Integrated Development Environment (IDE)',
+                        quiz: [
+                            { question: "What does IDE stand for?", options: ["Integrated Development Environment", "Internal Debugging Engine", "Interface Design Engine", "Independent Development Executable"], answer: "Integrated Development Environment" },
+                            { question: "What is an IDE?", options: ["A type of hardware", "A programming language", "A software application that provides tools for programming", "A CPU component"], answer: "A software application that provides tools for programming" },
+                            { question: "Which is NOT a common function of an IDE?", options: ["Code editor with 'prettyprint'", "Error diagnostics / Debugger", "A translator (compiler/interpreter)", "A dedicated web server"], answer: "A dedicated web server" },
+                            { question: "What is the 'auto-completion' feature in an IDE?", options: ["It automatically finishes your whole program", "It suggests how to complete code as you type (e.g., function names)", "It automatically corrects spelling in comments", "It deletes your code automatically"], answer: "It suggests how to complete code as you type (e.g., function names)" },
+                            { question: "The 'runtime environment' in an IDE allows you to...", options: ["sell your code", "design a user interface", "run and test your code within the IDE", "connect to the internet"], answer: "run and test your code within the IDE" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Describe the role of the OS in managing resources',
+                    'Describe the operation of interrupts',
+                    'Explain the operation of compilers and interpreters (how they differ)'
+                ],
+                concepts: [
+                    'Abstraction Layers: How software (OS, Apps) builds upon hardware',
+                    'System Management: The Operating System as the computer\'s manager',
+                    'Translation: The need to translate human-readable code into machine-executable code'
+                ]
+            },
+            'unit5': {
+                title: 'Unit 5: The Internet & Its Uses',
+                knowledge: [
+                    {
+                        text: 'Understand the difference between the Internet & World Wide Web',
+                        quiz: [
+                            { question: "What is the 'Internet'?", options: ["A collection of web pages", "A single company (like Google)", "The global network of interconnected computer networks (the infrastructure)", "A piece of software on your computer"], answer: "The global network of interconnected computer networks (the infrastructure)" },
+                            { question: "What is the 'World Wide Web' (WWW)?", options: ["The physical hardware of the internet", "A collection of web pages and resources, linked by URLs and accessed via the internet", "A type of network router", "A global Wi-Fi network"], answer: "A collection of web pages and resources, linked by URLs and accessed via the internet" },
+                            { question: "Which statement is correct?", options: ["The Internet is a service that runs on the WWW", "The WWW is a service that runs on the Internet", "They are the same thing", "The Internet is the hardware, the WWW is the software"], answer: "The WWW is a service that runs on the Internet" },
+                            { question: "You can use the internet for things *other* than the WWW, such as...", options: ["Email and FTP", "Only web browsing", "Only streaming video", "Nothing, they are the same"], answer: "Email and FTP" },
+                            { question: "The 'Internet' is the ___, the 'WWW' is the ___.", options: ["pages, links", "software, hardware", "infrastructure (roads), service (shops)", "service (shops), infrastructure (roads)"], answer: "infrastructure (roads), service (shops)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Uniform Resource Locator (URL)',
+                        quiz: [
+                            { question: "What does URL stand for?", options: ["Uniform Resource Locator", "Universal Resource Link", "Uniform Record Link", "Universal Record Locator"], answer: "Uniform Resource Locator" },
+                            { question: "What is a URL?", options: ["A type of CPU", "The address of a web page", "A file on your computer", "A type of encryption"], answer: "The address of a web page" },
+                            { question: "In the URL 'https://www.example.com/page.html', what part is 'https'?", options: ["The domain name", "The protocol", "The file name", "The IP address"], answer: "The protocol" },
+                            { question: "In the URL 'https://www.example.com/page.html', what part is 'www.example.com'?", options: ["The protocol", "The domain name", "The file name", "The web server"], answer: "The domain name" },
+                            { question: "In the URL 'https://www.example.com/page.html', what part is 'page.html'?", options: ["The protocol", "The domain name", "The web page / file name", "The URL"], answer: "The web page / file name" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Protocols: HTTP & HTTPS',
+                        quiz: [
+                            { question: "What does HTTP stand for?", options: ["HyperText Transfer Protocol", "High-Text Transfer Protocol", "HyperText Transmission Pages", "High-Text Transmission Protocol"], answer: "HyperText Transfer Protocol" },
+                            { question: "What is the main purpose of HTTP?", options: ["To encrypt all data", "To define how web pages are requested and transferred between a browser and a server", "To store IP addresses", "To manage files on your computer"], answer: "To define how web pages are requested and transferred between a browser and a server" },
+                            { question: "What does the 'S' in HTTPS stand for?", options: ["Secure", "Server", "Standard", "System"], answer: "Secure" },
+                            { question: "What does HTTPS do that HTTP does not?", options: ["It loads pages faster", "It encrypts the data between the browser and the server", "It stores more cookies", "It only works with images"], answer: "It encrypts the data between the browser and the server" },
+                            { question: "Which protocol would be used for online banking or shopping?", options: ["HTTP", "HTTPS", "FTP", "SMTP"], answer: "HTTPS" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Web Browser Purpose & Functions',
+                        quiz: [
+                            { question: "What is the main purpose of a web browser?", options: ["To write HTML code", "To act as a web server", "To render HTML and display web pages", "To protect your computer from viruses"], answer: "To render HTML and display web pages" },
+                            { question: "Which of these is NOT a web browser?", options: ["Google Chrome", "Mozilla Firefox", "Microsoft Windows", "Apple Safari"], answer: "Microsoft Windows" },
+                            { question: "Which function of a browser allows you to save links to your favourite websites?", options: ["History", "Cookies", "Tabs", "Bookmarks / Favourites"], answer: "Bookmarks / Favourites" },
+                            { question: "Which browser function records a list of all the websites you have visited?", options: ["History", "Cookies", "Address Bar", "Bookmarks"], answer: "History" },
+                            { question: "What is 'HTML'?", options: ["A programming language", "A markup language used to create web pages", "A type of web browser", "A security protocol"], answer: "A markup language used to create web pages" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Domain Name Server (DNS) role',
+                        quiz: [
+                            { question: "What does DNS stand for?", options: ["Domain Name Server", "Digital Network System", "Data Name Standard", "Domain Network Service"], answer: "Domain Name Server" },
+                            { question: "What is the main role of a DNS?", options: ["To store web pages", "To translate human-readable domain names (e.g., example.com) into IP addresses", "To encrypt web traffic", "To manage your bookmarks"], answer: "To translate human-readable domain names (e.g., example.com) into IP addresses" },
+                            { question: "Why is DNS needed?", options: ["Humans remember IP addresses easily", "Humans find it easier to remember domain names than IP addresses", "It makes the internet faster", "It stops viruses"], answer: "Humans find it easier to remember domain names than IP addresses" },
+                            { question: "A DNS is like the internet's ___.", options: ["phone book", "post office", "highway", "police force"], answer: "phone book" },
+                            { question: "What happens if a DNS server doesn't know the IP for a domain?", options: ["It gives up and shows an error", "It asks another DNS server", "It blocks the website", "It guesses the IP address"], answer: "It asks another DNS server" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Web Server role',
+                        quiz: [
+                            { question: "What is a web server?", options: ["A piece of software that browses the web", "A computer that stores website files and serves them to browsers on request", "A type of router", "The same as a web browser"], answer: "A computer that stores website files and serves them to browsers on request" },
+                            { question: "What does a web server do when you type a URL into your browser?", options: ["It translates the URL to an IP address", "It receives the HTTP request and sends back the HTML file for that page", "It encrypts your data", "It saves your bookmarks"], answer: "It receives the HTTP request and sends back the HTML file for that page" },
+                            { question: "A web server ___ web pages, a web browser ___ web pages.", options: ["requests, serves", "serves, requests", "stores, deletes", "encrypts, decrypts"], answer: "serves, requests" },
+                            { question: "A web server's job is to respond to ___ requests.", options: ["DNS", "HTTP", "IP", "MAC"], answer: "HTTP" },
+                            { question: "Which is an example of web server software?", options: ["Apache", "Google Chrome", "Windows 10", "Photoshop"], answer: "Apache" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Cookies (session & persistent) and their uses',
+                        quiz: [
+                            { question: "What is an HTTP cookie?", options: ["A type of virus", "A small piece of data sent from a website and stored on the user's computer", "A pop-up advertisement", "A type of hardware"], answer: "A small piece of data sent from a website and stored on the user's computer" },
+                            { question: "What is a 'session' cookie?", options: ["A cookie that is stored permanently", "A cookie that is deleted when the browser is closed", "A cookie that tracks you across all websites", "A cookie that stores your password"], answer: "A cookie that is deleted when the browser is closed" },
+                            { question: "What is a 'persistent' cookie?", options: ["A cookie that is deleted when the browser is closed", "A cookie that remains on your computer for a set period", "A cookie that is always bad", "A cookie for a game"], answer: "A cookie that remains on your computer for a set period" },
+                            { question: "Which is a common use for a session cookie?", options: ["Keeping items in an online shopping cart", "Remembering your login for 30 days", "Tracking your preferences over time", "Storing your name"], answer: "Keeping items in an online shopping cart" },
+                            { question: "Which is a common use for a persistent cookie?", options: ["Tracking items in a shopping cart", "Remembering your login details or site preferences", "Storing a temporary game score", "Holding the current web page"], answer: "Remembering your login details or site preferences" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Digital Currency & Blockchain',
+                        quiz: [
+                            { question: "What is a 'digital currency'?", options: ["A currency that only exists in electronic form", "A physical coin with a digital code", "A type of video game money", "A standard bank account"], answer: "A currency that only exists in electronic form" },
+                            { question: "What is a 'blockchain' in its basic form?", options: ["A type of CPU", "A digital, distributed, and unchangeable ledger", "A security-checking program", "A new type of internet router"], answer: "A digital, distributed, and unchangeable ledger" },
+                            { question: "How is a blockchain used for digital currency?", options: ["It stores the currency in one central bank", "It tracks and records all transactions in a secure and transparent way", "It creates the new coins", "It encrypts the entire internet"], answer: "It tracks and records all transactions in a secure and transparent way" },
+                            { question: "What does 'decentralised' or 'distributed' mean for a blockchain?", options: ["It is controlled by one person", "It is controlled by one government", "The ledger is copied and held by many different computers", "It is not on the internet"], answer: "The ledger is copied and held by many different computers" },
+                            { question: "Why is a blockchain considered secure?", options: ["It is not on the internet", "Records are time-stamped and linked, making them very difficult to alter", "It is controlled by one company", "It uses an easy password"], answer: "Records are time-stamped and linked, making them very difficult to alter" }
+                        ]
+                    },
+                    {
+                        text: 'Know Cyber Security Threats (Malware, Phishing, Pharming, DDoS, etc.)',
+                        quiz: [
+                            { question: "What is 'malware'?", options: ["A type of hardware", "Malicious software designed to harm a computer", "A security-checking program", "A secure email"], answer: "Malicious software designed to harm a computer" },
+                            { question: "What is 'phishing'?", options: ["A type of virus", "An attempt to trick a user into giving up sensitive information via a fake email or website", "A hardware attack", "A secure login system"], answer: "An attempt to trick a user into giving up sensitive information via a fake email or website" },
+                            { question: "What is a 'DDoS' attack?", options: ["A type of virus", "Flooding a server with so much traffic that it cannot serve legitimate users", "Stealing a user's password", "An attack on a printer"], answer: "Flooding a server with so much traffic that it cannot serve legitimate users" },
+                            { question: "What is 'spyware'?", options: ["A type of firewall", "Malware that secretly records a user's actions", "A secure login", "An anti-virus program"], answer: "Malware that secretly records a user's actions" },
+                            { question: "What is 'pharming'?", options: ["A type of phishing", "Redirecting a user to a fake website, even if they typed the correct URL", "A secure DNS system", "Farming for data"], answer: "Redirecting a user to a fake website, even if they typed the correct URL" }
+                        ]
+                    },
+                    {
+                        text: 'Know Cyber Security Solutions (Authentication, Anti-Malware, Firewalls, SSL, etc.)',
+                        quiz: [
+                            { question: "What is the purpose of a 'firewall'?", options: ["To find and remove viruses", "To monitor and control incoming and outgoing network traffic", "To encrypt web pages", "To store passwords"], answer: "To monitor and control incoming and outgoing network traffic" },
+                            { question: "What is 'anti-malware' software?", options: ["A program that attacks a computer", "A program that designs malware", "A program that detects and removes malware like viruses and spyware", "A type of firewall"], answer: "A program that detects and removes malware like viruses and spyware" },
+                            { question: "What is 'authentication'?", options: ["The process of verifying who a user is (e.g., with a password or biometric)", "The process of encrypting data", "The process of blocking traffic", "The process of installing software"], answer: "The process of verifying who a user is (e.g., with a password or biometric)" },
+                            { question: "SSL/TLS (used in HTTPS) is a protocol that provides...", options: ["a firewall", "virus scanning", "file storage", "encrypted communication"], answer: "encrypted communication" },
+                            { question: "Two-step verification is a form of...", options: ["encryption", "firewall", "anti-virus", "authentication"], answer: "authentication" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Describe how web pages are located and retrieved (DNS, Web Server)',
+                    'Explain the processes of various cyber security threats',
+                    'Explain how different security solutions help protect data'
+                ],
+                concepts: [
+                    'Networked Systems: The internet as global infrastructure, the WWW as a service on top',
+                    'Protocols: The set of rules (HTTP, DNS, SSL) that govern communication',
+                    'Digital Security: The constant arms race between threats and countermeasures'
+                ]
+            },
+            'unit6': {
+                title: 'Unit 6: Automated & Emerging Tech',
+                knowledge: [
+                    {
+                        text: 'Understand Automated Systems (Sensor, Microprocessor, Actuator)',
+                        quiz: [
+                            { question: "What is the correct flow in an automated system?", options: ["Sensor -> Actuator -> Microprocessor", "Microprocessor -> Sensor -> Actuator", "Sensor -> Microprocessor -> Actuator", "Actuator -> Sensor -> Microprocessor"], answer: "Sensor -> Microprocessor -> Actuator" },
+                            { question: "What role does the 'sensor' play?", options: ["It performs an action", "It makes a decision", "It takes a measurement from the environment", "It stores the program"], answer: "It takes a measurement from the environment" },
+                            { question: "What role does the 'microprocessor' play?", options: ["It performs an action", "It receives sensor data and makes a decision", "It takes a measurement", "It displays the result"], answer: "It receives sensor data and makes a decision" },
+                            { question: "What role does the 'actuator' play?", options: ["It performs a physical action (e.g., open a valve, turn on a heater)", "It makes a decision", "It takes a measurement", "It stores data"], answer: "It performs a physical action (e.g., open a valve, turn on a heater)" },
+                            { question: "In an automated greenhouse, a temperature sensor is the ___, the computer is the ___, and a heater is the ___.", options: ["actuator, sensor, microprocessor", "sensor, microprocessor, actuator", "microprocessor, actuator, sensor", "sensor, actuator, microprocessor"], answer: "sensor, microprocessor, actuator" }
+                        ]
+                    },
+                    {
+                        text: 'Know Advantages & Disadvantages of Automated Systems',
+                        quiz: [
+                            { question: "What is an advantage of automated systems?", options: ["They are always cheap to set up", "They can operate 24/7 without getting tired", "They create more jobs for humans", "They are very flexible and creative"], answer: "They can operate 24/7 without getting tired" },
+                            { question: "What is another advantage of automated systems?", options: ["They make many mistakes", "They can work in dangerous environments", "They are easy to reprogram by anyone", "They require long breaks"], answer: "They can work in dangerous environments" },
+                            { question: "What is a disadvantage of automated systems?", options: ["They are very slow", "They have a high initial setup cost", "They are more creative than humans", "They cannot work 24/7"], answer: "They have a high initial setup cost" },
+                            { question: "What is another disadvantage of automated systems?", options: ["They can lead to job losses for human workers", "They are not very accurate", "They are less efficient than humans", "They cannot work in dangerous environments"], answer: "They can lead to job losses for human workers" },
+                            { question: "Automated systems are good at ___ tasks, but bad at ___ tasks.", options: ["repetitive, creative", "creative, repetitive", "slow, fast", "easy, hard"], answer: "repetitive, creative" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Robotics: Definition & Characteristics',
+                        quiz: [
+                            { question: "What is robotics?", options: ["The study of the internet", "The design, construction, and operation of robots", "The study of computer software", "The study of data transmission"], answer: "The design, construction, and operation of robots" },
+                            { question: "Which is a key characteristic of a robot?", options: ["It must look like a human", "It has a mechanical structure and electrical components", "It is not programmable", "It is purely software"], answer: "It has a mechanical structure and electrical components" },
+                            { question: "A robot must be ___ to allow it to perform different tasks.", options: ["biological", "programmable", "non-mechanical", "cheap"], answer: "programmable" },
+                            { question: "Robots use ___ to interact with their environment.", options: ["only wheels", "only arms", "sensors and actuators", "keyboards and mice"], answer: "sensors and actuators" },
+                            { question: "A simple ___ is a type of robot.", options: ["drone", "spreadsheet", "word processor", "website"], answer: "drone" }
+                        ]
+                    },
+                    {
+                        text: 'Know the Roles of Robots',
+                        quiz: [
+                            { question: "Where are robots commonly used?", options: ["Only in movies", "Only in homes", "In industry, medicine, transport, and domestic settings", "Only in space"], answer: "In industry, medicine, transport, and domestic settings" },
+                            { question: "What is a major role for robots in industry (e.g., car manufacturing)?", options: ["Repetitive tasks like welding and painting", "Making creative decisions", "Marketing the cars", "Managing the company"], answer: "Repetitive tasks like welding and painting" },
+                            { question: "What is a role for robots in medicine?", options: ["Greeting patients at the front desk", "Assisting in high-precision surgery", "Making diagnoses", "Writing prescriptions"], answer: "Assisting in high-precision surgery" },
+                            { question: "An advantage of using robots for 'bomb disposal' is that it...", options: ["is faster", "is cheaper", "keeps a human out of a dangerous situation", "is more creative"], answer: "keeps a human out of a dangerous situation" },
+                            { question: "A domestic robot example is a...", options:["robot vacuum cleaner", "microwave oven", "refrigerator", "television"], answer: "robot vacuum cleaner" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Artificial Intelligence (AI): Definition & Characteristics',
+                        quiz: [
+                            { question: "What is Artificial Intelligence (AI)?", options: ["A type of robot", "The simulation of intelligent behaviours by computers", "A type of CPU", "A secure network"], answer: "The simulation of intelligent behaviours by computers" },
+                            { question: "Which is a main characteristic of AI?", options: ["It is always 100% correct", "It has the ability to reason and learn from data", "It is purely hardware", "It does not use data"], answer: "It has the ability to reason and learn from data" },
+                            { question: "AI systems are built on...", options: ["gears and levers", "data and rules/algorithms", "emotions and feelings", "only hardware"], answer: "data and rules/algorithms" },
+                            { question: "The ability for an AI to 'learn' means it can...", options: ["change its own processes or data", "never make a mistake", "only do one task", "access the internet"], answer: "change its own processes or data" },
+                            { question: "AI is a branch of...", options: ["Biology", "Chemistry", "Computer Science", "Physics"], answer: "Computer Science" }
+                        ]
+                    },
+                    {
+                        text: 'Understand AI Systems: Expert Systems',
+                        quiz: [
+                            { question: "What is an 'expert system'?", options: ["An AI system that mimics the reasoning of a human expert in a specific field", "A human who is an expert in AI", "A type of robot", "A search engine like Google"], answer: "An AI system that mimics the reasoning of a human expert in a specific field" },
+                            { question: "What is the 'knowledge base' in an expert system?", options: ["The part that asks questions", "A database of facts and data about the expert field", "The part that makes decisions", "The user interface"], answer: "A database of facts and data about the expert field" },
+                            { question: "What is the 'rule base' in an expert system?", options: ["A set of 'IF...THEN...' rules that the system uses to reason", "A set of facts", "The user interface", "The hardware"], answer: "A set of 'IF...THEN...' rules that the system uses to reason" },
+                            { question: "What is the 'inference engine' in an expert system?", options: ["The user interface", "The database of facts", "The part that applies the rules to the facts to reach a conclusion", "The hardware"], answer: "The part that applies the rules to the facts to reach a conclusion" },
+                            { question: "An expert system for 'medical diagnosis' is a classic example.", options: ["True", "False"], answer: "True" }
+                        ]
+                    },
+                    {
+                        text: 'Understand AI Systems: Machine Learning',
+                        quiz: [
+                            { question: "What is 'machine learning'?", options: ["A system that follows a fixed set of rules", "The ability for a program to automatically adapt its own processes or data", "A type of hardware", "A type of expert system"], answer: "The ability for a program to automatically adapt its own processes or data" },
+                            { question: "Machine learning is typically 'trained' by using...", options: ["a small, fixed set of rules", "large amounts of data", "a single expert", "an inference engine"], answer: "large amounts of data" },
+                            { question: "Which of these is a common example of machine learning?", options: ["A calculator", "A spell-checker", "A spam filter that 'learns' what junk mail looks like", "A traffic light"], answer: "A spam filter that 'learns' what junk mail looks like" },
+                            { question: "How is Machine Learning different from a traditional Expert System?", options: ["It's the same thing", "Expert systems use fixed rules, while ML systems 'learn' patterns from data", "ML is older than expert systems", "ML does not use data"], answer: "Expert systems use fixed rules, while ML systems 'learn' patterns from data" },
+                            { question: "Facial recognition is an application of...", options: ["Expert Systems", "Machine Learning", "A simple calculator", "A word processor"], answer: "Machine Learning" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Describe how automated systems work in collaboration',
+                    'Describe the basic operation of AI systems (Expert Systems, ML)'
+                ],
+                concepts: [
+                    'Automation: The Sensor -> Microprocessor -> Actuator feedback loop',
+                    'Simulating Intelligence: Using data, rules, and learning to mimic human thought (AI)',
+                    'Impact of Technology: How automation and AI affect society (implied)'
+                ]
+            },
+            'unit7': {
+                title: 'Unit 7: Algorithm Design & Problem-Solving',
+                knowledge: [
+                    {
+                        text: 'Know the Program Development Life Cycle',
+                        quiz: [
+                            { question: "What is the correct order for the Program Development Life Cycle?", options: ["Design, Analysis, Coding, Testing", "Analysis, Design, Coding, Testing", "Coding, Testing, Analysis, Design", "Analysis, Coding, Design, Testing"], answer: "Analysis, Design, Coding, Testing" },
+                            { question: "What happens during the 'Analysis' stage?", options: ["Writing the program code", "Running the program with test data", "Understanding and defining the problem and its requirements", "Drawing a flowchart"], answer: "Understanding and defining the problem and its requirements" },
+                            { question: "What happens during the 'Design' stage?", options: ["Writing the program code", "Running the program", "Defining the problem", "Planning the solution (e.g., pseudocode, flowcharts, structure diagrams)"], answer: "Planning the solution (e.g., pseudocode, flowcharts, structure diagrams)" },
+                            { question: "What happens during the 'Coding' stage?", options: ["Translating the design (pseudocode) into a programming language", "Defining the problem", "Running the program", "Finding errors"], answer: "Translating the design (pseudocode) into a programming language" },
+                            { question: "What happens during the 'Testing' stage?", options: ["Writing the code", "Running the program with various test data to find errors", "Designing the flowchart", "Analysing the requirements"], answer: "Running the program with various test data to find errors" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Problem Decomposition',
+                        quiz: [
+                            { question: "What is 'problem decomposition'?", options: ["Writing the final code", "Breaking down a large, complex problem into smaller, manageable sub-problems", "Testing the program", "Choosing a programming language"], answer: "Breaking down a large, complex problem into smaller, manageable sub-problems" },
+                            { question: "What is a 'sub-system'?", options: ["The final program", "A smaller part of a larger system", "A type of test data", "An error in the code"], answer: "A smaller part of a larger system" },
+                            { question: "Why is decomposition useful?", options: ["It makes the problem harder to solve", "It makes the problem easier to understand, design, and manage", "It's the same as coding", "It's only used for testing"], answer: "It makes the problem easier to understand, design, and manage" },
+                            { question: "Decomposition is part of which stage of the life cycle?", options: ["Analysis / Design", "Coding", "Testing", "Maintenance"], answer: "Analysis / Design" },
+                            { question: "A 'structure diagram' is a good way to show...", options: ["test data", "the decomposition of a problem", "the final code", "errors in the program"], answer: "the decomposition of a problem" }
+                        ]
+                    },
+                    {
+                        text: 'Know Algorithm Design Methods: Structure Diagrams, Flowcharts, Pseudocode',
+                        quiz: [
+                            { question: "Which design method uses graphical symbols to show the flow of control?", options: ["Structure Diagram", "Flowchart", "Pseudocode", "Test Plan"], answer: "Flowchart" },
+                            { question: "Which design method shows the hierarchy and decomposition of a problem?", options: ["Structure Diagram", "Flowchart", "Pseudocode", "Test Plan"], answer: "Structure Diagram" },
+                            { question: "Which design method uses text-based, English-like statements to describe an algorithm?", options: ["Structure Diagram", "Flowchart", "Pseudocode", "Test Plan"], answer: "Pseudocode" },
+                            { question: "In a flowchart, what shape represents a 'decision' (e.g., IF statement)?", options: ["Rectangle", "Oval", "Parallelogram", "Diamond"], answer: "Diamond" },
+                            { question: "In a flowchart, what shape represents a 'process' (e.g., an assignment)?", options: ["Rectangle", "Oval", "Parallelogram", "Diamond"], answer: "Rectangle" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Standard Algorithms: Linear Search',
+                        quiz: [
+                            { question: "What is a 'linear search'?", options: ["A method for sorting data", "A method for finding an item in a list by checking each item one by one", "A method for testing data", "A type of compression"], answer: "A method for finding an item in a list by checking each item one by one" },
+                            { question: "Does a linear search require the list to be sorted?", options: ["Yes, always", "No, it works on unsorted lists", "Only if the list is large", "Only if the list is small"], answer: "No, it works on unsorted lists" },
+                            { question: "In the 'worst case', how many items would a linear search check in a list of 100 items?", options: ["1", "50", "100", "0"], answer: "100" },
+                            { question: "Where does a linear search start?", options: ["At the middle of the list", "At the end of the list", "At the beginning of the list", "At a random point"], answer: "At the beginning of the list" },
+                            { question: "A linear search stops when...", options: ["it reaches the end of the list", "it finds the item", "Either A or B", "It never stops"], answer: "Either A or B" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Standard Algorithms: Bubble Sort',
+                        quiz: [
+                            { question: "What is a 'bubble sort'?", options: ["A method for sorting data", "A method for finding data", "A method for testing data", "A method for compressing data"], answer: "A method for sorting data" },
+                            { question: "How does a bubble sort work?", options: ["It finds the smallest item and puts it at the front", "It repeatedly 'bubbles' the largest item to the end by comparing adjacent pairs", "It splits the list in half repeatedly", "It checks each item one by one"], answer: "It repeatedly 'bubbles' the largest item to the end by comparing adjacent pairs" },
+                            { question: "How many 'passes' might a bubble sort need to sort a list?", options: ["Only one", "Multiple passes", "It doesn't use passes", "It depends on the first item"], answer: "Multiple passes" },
+                            { question: "A bubble sort 'pass' is complete when...", options: ["the list is sorted", "it has gone through the list one full time, swapping pairs", "it finds the item", "it starts"], answer: "it has gone through the list one full time, swapping pairs" },
+                            { question: "Is a bubble sort generally considered to be very efficient for large lists?", options: ["Yes, it's the fastest", "No, it is relatively slow and inefficient", "It's the same as a linear search", "Efficiency doesn't matter"], answer: "No, it is relatively slow and inefficient" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Standard Algorithms: Totalling, Counting, Finding Max/Min/Average',
+                        quiz: [
+                            { question: "To 'total' a list of numbers, what value should the total variable be initialized to?", options: ["1", "0", "The first number in the list", "-1"], answer: "0" },
+                            { question: "To 'count' how many items meet a condition, what value should the count variable be initialized to?", options: ["1", "0", "The first item", "-1"], answer: "0" },
+                            { question: "How do you find the 'maximum' value in a list?", options: ["Set 'max' to 0, then loop and check 'IF item > max'", "Set 'max' to the *first item*, then loop and check 'IF item > max'", "Set 'max' to a very large number", "Sort the list first"], answer: "Set 'max' to the *first item*, then loop and check 'IF item > max'" },
+                            { question: "How do you calculate an 'average'?", options: ["(Count / Total) * 100", "Total / Count", "Max - Min", "Count * Total"], answer: "Total / Count" },
+                            { question: "To find an average, you need to calculate which two other values first?", options: ["Maximum and Minimum", "Total and Count", "First item and Last item", "Length and Width"], answer: "Total and Count" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Validation vs. Verification',
+                        quiz: [
+                            { question: "What is 'validation'?", options: ["A check to see if the data entered is sensible and reasonable", "A check to see if the data has been copied correctly", "A check for viruses", "A check to see if the program runs"], answer: "A check to see if the data entered is sensible and reasonable" },
+                            { question: "What is 'verification'?", options: ["A check to see if the data entered is reasonable", "A check to see if the data has been copied or transferred correctly", "A check for spelling errors", "A check to see if the data is a number"], answer: "A check to see if the data has been copied or transferred correctly" },
+                            { question: "Asking a user to 'enter your password twice' is a form of...", options: ["Validation", "Verification", "Encryption", "Compression"], answer: "Verification" },
+                            { question: "A check to see if a user's age is between 0 and 120 is a form of...", options: ["Validation", "Verification", "Authentication", "Debugging"], answer: "Validation" },
+                            { question: "'Did you mean this?' (visual check) is a form of ___.", options: ["Validation", "Verification", "Pseudocode", "Flowchart"], answer: "Verification" }
+                        ]
+                    },
+                    {
+                        text: 'Know Validation Checks (Range, Length, Type, Presence, Format, Check Digit)',
+                        quiz: [
+                            { question: "Which check ensures data is between two values (e.g., '1-10')?", options: ["Range check", "Length check", "Type check", "Presence check"], answer: "Range check" },
+                            { question: "Which check ensures data has the correct number of characters?", options: ["Range check", "Length check", "Type check", "Presence check"], answer: "Length check" },
+                            { question: "Which check ensures data is of the correct data type (e.g., 'integer')?", options: ["Range check", "Length check", "Type check", "Presence check"], answer: "Type check" },
+                            { question: "Which check ensures that data has actually been entered?", options: ["Range check", "Length check", "Type check", "Presence check"], answer: "Presence check" },
+                            { question: "Which check ensures data follows a pattern (e.g., 'LL00 0LL' for a postcode)?", options: ["Range check", "Length check", "Format check", "Presence check"], answer: "Format check" }
+                        ]
+                    },
+                    {
+                        text: 'Know Verification Checks (Visual, Double Entry)',
+                        quiz: [
+                            { question: "What is a 'visual check'?", options: ["Checking the data is the right colour", "Asking the user to 'look at what you typed, is it correct?'", "Entering the data twice", "Checking the data is a number"], answer: "Asking the user to 'look at what you typed, is it correct?'" },
+                            { question: "What is 'double entry' verification?", options: ["Entering the data once", "Having two people enter the same data", "Asking the user to enter the data twice and comparing the two entries", "Checking the data visually"], answer: "Asking the user to enter the data twice and comparing the two entries" },
+                            { question: "Double entry is commonly used for...", options: ["setting new passwords", "writing code", "testing data", "drawing flowcharts"], answer: "setting new passwords" },
+                            { question: "Verification aims to prevent errors during data ___.", options: ["processing", "storage", "entry / transcription", "design"], answer: "entry / transcription" },
+                            { question: "Which is a verification check?", options: ["Range Check", "Type Check", "Double Entry Check", "Presence Check"], answer: "Double Entry Check" }
+                        ]
+                    },
+                    {
+                        text: 'Know types of Test Data: Normal, Abnormal, Extreme, Boundary',
+                        quiz: [
+                            { question: "What is 'normal' test data?", options: ["Data that is invalid", "Data that is at the edges of the valid range", "Data that is sensible and should be accepted by the program", "Data that is of the wrong type"], answer: "Data that is sensible and should be accepted by the program" },
+                            { question: "What is 'abnormal' test data?", options: ["Data that is sensible and valid", "Data that is invalid and should be rejected by the program", "Data that is at the edges of the range", "The number 10"], answer: "Data that is invalid and should be rejected by the program" },
+                            { question: "For a valid range of '1-10', what is 'extreme' data?", options: ["5", "1 and 10", "0 and 11", "A"], answer: "1 and 10" },
+                            { question: "For a valid range of '1-10', what is 'boundary' data?", options: ["1, 10", "5, 6", "0, 1, 10, 11", "A, B"], answer: "0, 1, 10, 11" },
+                            { question: "For a range '1-10', what type of data is '15'?", options: ["Normal", "Abnormal", "Extreme", "Boundary"], answer: "Abnormal" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Apply decomposition to a problem',
+                    'Design algorithms using flowcharts and pseudocode',
+                    'Explain the purpose of a given algorithm',
+                    'Suggest and apply suitable test data for an algorithm',
+                    'Complete a trace table to dry-run an algorithm',
+                    'Identify & Correct errors in algorithms',
+                    'Write and amend algorithms for given problems'
+                ],
+                concepts: [
+                    'Algorithmic Thinking: Creating a logical, step-by-step solution to a problem',
+                    'Problem-Solving: The formal process of decomposition and design',
+                    'Quality Assurance: Ensuring a program is correct and robust (Validation, Verification, Testing)'
+                ]
+            },
+            'unit8': {
+                title: 'Unit 8: Programming',
+                knowledge: [
+                    {
+                        text: 'Understand Variables & Constants',
+                        quiz: [
+                            { question: "What is a 'variable'?", options: ["A value that never changes", "A named memory location that stores a value which can change", "A line of code", "An error"], answer: "A named memory location that stores a value which can change" },
+                            { question: "What is a 'constant'?", options: ["A value that can change", "A named memory location that stores a value which cannot be changed", "A type of loop", "A data type"], answer: "A named memory location that stores a value which cannot be changed" },
+                            { question: "Why use a 'constant' instead of just typing the value?", options: ["It's faster for the computer", "It makes the code easier to read and update", "It's the only way to use numbers", "It saves memory"], answer: "It makes the code easier to read and update" },
+                            { question: "In 'x = 10', 'x' is a...", options: ["constant", "data type", "variable", "string"], answer: "variable" },
+                            { question: "If you define 'PI = 3.142' as a constant, what happens if you try 'PI = 4' later?", options: ["It works fine", "The program will produce an error", "The value of PI becomes 4", "The program crashes"], answer: "The program will produce an error" }
+                        ]
+                    },
+                    {
+                        text: 'Know Basic Data Types (Integer, Real, Char, String, Boolean)',
+                        quiz: [
+                            { question: "Which data type is used for whole numbers (e.g., 10, -5)?", options: ["Integer", "Real", "String", "Boolean"], answer: "Integer" },
+                            { question: "Which data type is used for numbers with a decimal point (e.g., 9.99, -2.5)?", options: ["Integer", "Real", "String", "Boolean"], answer: "Real" },
+                            { question: "Which data type is used for a single character (e.g., 'A', '!')?", options: ["Integer", "Real", "Char", "String"], answer: "Char" },
+                            { question: "Which data type is used for a sequence of characters (e.g., 'Hello')?", options: ["Integer", "Real", "Char", "String"], answer: "String" },
+                            { question: "Which data type is used for 'TRUE' or 'FALSE'?", options: ["Integer", "Real", "String", "Boolean"], answer: "Boolean" }
+                        ]
+                    },
+                    {
+                        text: 'Know Control Structures: Sequence, Selection, Iteration',
+                        quiz: [
+                            { question: "Which control structure means 'running instructions one after another'?", options: ["Sequence", "Selection", "Iteration", "Recursion"], answer: "Sequence" },
+                            { question: "Which control structure means 'making a choice' (e.g., IF...THEN...ELSE)?", options: ["Sequence", "Selection", "Iteration", "Array"], answer: "Selection" },
+                            { question: "Which control structure means 'looping' or 'repeating' code?", options: ["Sequence", "Selection", "Iteration", "Variable"], answer: "Iteration" },
+                            { question: "A 'CASE' statement is a form of...", options: ["Sequence", "Selection", "Iteration", "Constant"], answer: "Selection" },
+                            { question: "A 'FOR' loop is a form of...", options: ["Sequence", "Selection", "Iteration", "Data Type"], answer: "Iteration" }
+                        ]
+                    },
+                    {
+                        text: 'Know String Handling Functions (Length, Substring, Upper, Lower)',
+                        quiz: [
+                            { question: "What would LENGTH('Hello') return?", options: ["4", "5", "6", "'Hello'"], answer: "5" },
+                            { question: "What would UPPER('Hello') return?", options: ["'hello'", "'HELLO'", "'H'", "5"], answer: "'HELLO'" },
+                            { question: "What would LOWER('Hello') return?", options: ["'hello'", "'HELLO'", "'h'", "5"], answer: "'hello'" },
+                            { question: "What would SUBSTRING('computer', 1, 3) return (assuming 1-based index)?", options: ["'com'", "'omp'", "'put'", "'comp'"], answer: "'com'" },
+                            { question: "These functions are used to manipulate which data type?", options: ["Integer", "Real", "String", "Boolean"], answer: "String" }
+                        ]
+                    },
+                    {
+                        text: 'Know Operators: Arithmetic, Logical, Boolean',
+                        quiz: [
+                            { question: "Which of these is an 'arithmetic' operator?", options: ["+", ">", "AND", "="], answer: "+" },
+                            { question: "Which of these is a 'logical' (comparison) operator?", options: ["*", "+", ">=", "OR"], answer: ">=" },
+                            { question: "Which of these is a 'Boolean' operator?", options: ["/", "<>", "NOT", "MOD"], answer: "NOT" },
+                            { question: "What does 'MOD' do? (e.g., 10 MOD 3)", options: ["Returns the result of division (3.33)", "Returns the whole number result (3)", "Returns the remainder (1)", "Rounds the number (10)"], answer: "Returns the remainder (1)" },
+                            { question: "What does '<>' mean?", options: ["Greater than", "Less than", "Approximately equal to", "Not equal to"], answer: "Not equal to" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Procedures & Functions (with and without parameters)',
+                        quiz: [
+                            { question: "What is a 'procedure'?", options: ["A variable", "A type of loop", "A named block of code that performs a task and does not return a value", "A named block of code that returns a value"], answer: "A named block of code that performs a task and does not return a value" },
+                            { question: "What is a 'function'?", options: ["A variable", "A constant", "A named block of code that performs a task and returns a value", "A named block of code that does not return a value"], answer: "A named block of code that performs a task and returns a value" },
+                            { question: "What is a 'parameter'?", options: ["A value that is returned", "A value that is passed *into* a procedure or function", "A global variable", "An error"], answer: "A value that is passed *into* a procedure or function" },
+                            { question: "What is the main difference between a procedure and a function?", options: ["A function returns a value, a procedure does not", "A procedure returns a value, a function does not", "A function uses parameters, a procedure does not", "A procedure uses parameters, a function does not"], answer: "A function returns a value, a procedure does not" },
+                            { question: "Why use procedures and functions?", options: ["To make the code longer", "To make the code harder to read", "To break the code into manageable, reusable pieces", "To replace all variables"], answer: "To break the code into manageable, reusable pieces" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Local vs. Global Variables',
+                        quiz: [
+                            { question: "What is a 'local' variable?", options: ["A variable that can be used anywhere in the program", "A variable that is only defined and usable within one procedure/function", "A constant", "A parameter"], answer: "A variable that is only defined and usable within one procedure/function" },
+                            { question: "What is a 'global' variable?", options: ["A variable that is defined at the start and can be used anywhere in the program", "A variable that can only be used in one procedure", "The name of the program", "A variable that stores 'TRUE' or 'FALSE'"], answer: "A variable that is defined at the start and can be used anywhere in the program" },
+                            { question: "Why is it generally better to use 'local' variables (and parameters) instead of 'global' variables?", options: ["Global variables are faster", "Local variables make it harder to track changes and can cause unexpected side-effects", "Global variables make it harder to track changes and can cause unexpected side-effects", "Local variables use more memory"], answer: "Global variables make it harder to track changes and can cause unexpected side-effects" },
+                            { question: "If you declare a variable 'x' *inside* a procedure, it is...", options: ["local", "global", "a constant", "an error"], answer: "local" },
+                            { question: "If you declare a variable 'x' *outside* all procedures, it is...", options: ["local", "global", "a parameter", "an error"], answer: "global" }
+                        ]
+                    },
+                    {
+                        text: 'Know Library Routines (MOD, DIV, ROUND, RANDOM)',
+                        quiz: [
+                            { question: "What is a 'library routine'?", options: ["A program you wrote", "A pre-written function or procedure that you can use", "A type of variable", "A flowchart symbol"], answer: "A pre-written function or procedure that you can use" },
+                            { question: "What does 'RANDOM()' typically do?", options: ["Returns a predictable number", "Returns a random number (e.g., between 0 and 1)", "Rounds a number", "Finds a remainder"], answer: "Returns a random number (e.g., between 0 and 1)" },
+                            { question: "What does 'ROUND(6.78, 1)' do?", options: ["6.7", "6.8", "7", "6"], answer: "6.8" },
+                            { question: "What does 'DIV' do? (e.g., 10 DIV 3)", options: ["Returns the remainder (1)", "Returns the decimal result (3.33)", "Returns the integer result (3)", "Rounds the number (10)"], answer: "Returns the integer result (3)" },
+                            { question: "What does 'MOD' do? (e.g., 10 MOD 3)", options: ["Returns the remainder (1)", "Returns the decimal result (3.33)", "Returns the integer result (3)", "Rounds the number (10)"], answer: "Returns the remainder (1)" }
+                        ]
+                    },
+                    {
+                        text: 'Understand how to create Maintainable Programs',
+                        quiz: [
+                            { question: "What is 'maintainable' code?", options: ["Code that runs fast", "Code that is short", "Code that is easy for a human to read, understand, and modify", "Code that has no comments"], answer: "Code that is easy for a human to read, understand, and modify" },
+                            { question: "Which of these helps make code more maintainable?", options: ["Using meaningful variable names (e.g., 'Score' instead of 's')", "Using comments to explain complex parts", "Using procedures and functions", "All of the above"], answer: "All of the above" },
+                            { question: "Which is a 'meaningful identifier'?", options: ["x", "temp", "a1", "PlayerName"], answer: "PlayerName" },
+                            { question: "What is the purpose of 'commenting' code?", options: ["To make the computer run it faster", "To explain the logic to another programmer (or your future self)", "To add new features", "To stop the code from running"], answer: "To explain the logic to another programmer (or your future self)" },
+                            { question: "Using ___ and ___ helps make code maintainable by breaking it into small pieces.", options: ["variables, constants", "loops, IF statements", "procedures, functions", "integers, strings"], answer: "procedures, functions" }
+                        ]
+                    },
+                    {
+                        text: 'Understand Arrays: One-Dimensional (1D) & Two-Dimensional (2D)',
+                        quiz: [
+                            { question: "What is a '1D array'?", options: ["A single variable", "A list of data items of the same type", "A table of data", "A procedure"], answer: "A list of data items of the same type" },
+                            { question: "What is a '2D array'?", options: ["A single variable", "A list of data", "A 'table' or 'grid' of data items of the same type", "A function"], answer: "A 'table' or 'grid' of data items of the same type" },
+                            { question: "In 'Scores[5]', what is '5' called?", options: ["The data", "The index", "The type", "The array"], answer: "The index" },
+                            { question: "A 2D array needs how many indexes to access an item?", options: ["0", "1", "2", "3"], answer: "2" },
+                            { question: "A good analogy for a 2D array is...", options: ["a shopping list", "a single number", "a spreadsheet or chessboard", "a single character"], answer: "a spreadsheet or chessboard" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the purpose of File Handling',
+                        quiz: [
+                            { question: "Why is 'file handling' necessary?", options: ["Variables in RAM are volatile (lost when program ends)", "To make the program run faster", "To replace all variables", "To comment code"], answer: "Variables in RAM are volatile (lost when program ends)" },
+                            { question: "What is the main benefit of saving data to a file?", options: ["The data is encrypted", "The data is 'persistent' (kept after the program closes)", "The data is easier to read", "The data uses less memory"], answer: "The data is 'persistent' (kept after the program closes)" },
+                            { question: "Which is an example of file handling?", options: ["A program saving a 'high score' to disk", "A variable storing a player's current score", "An IF statement", "A FOR loop"], answer: "A program saving a 'high score' to disk" },
+                            { question: "Before you can read from or write to a file, you must first...", options: ["close it", "delete it", "open it", "rename it"], answer: "open it" },
+                            { question: "What are the two main 'modes' for opening a file?", options: ["Read and Write", "Fast and Slow", "Local and Global", "Text and Number"], answer: "Read and Write" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Declare and use variables and constants',
+                    'Use basic data types appropriately',
+                    'Use Input & Output Operations',
+                    'Use control structures (Selection & Iteration) to solve problems',
+                    'Use string handling functions',
+                    'Use operators (Arithmetic, Logical, Boolean) in expressions',
+                    'Use nested statements (Selection & Iteration)',
+                    'Define and use procedures and functions',
+                    'Use library routines',
+                    'Write maintainable program code',
+                    'Declare and use 1D and 2D arrays',
+                    'Use iteration to process arrays (read, write, total)',
+                    'Open, Close, Read from, and Write to a text file'
+                ],
+                concepts: [
+                    'Programming Building Blocks: Using Sequence, Selection, and Iteration to build any program',
+                    'Modularity: Breaking code into smaller, reusable pieces (Procedures, Functions)',
+                    'Data Structures: Choosing the right way to store data (Variables, Arrays, Files)'
+                ]
+            },
+            'unit9': {
+                title: 'Unit 9: Databases',
+                knowledge: [
+                    {
+                        text: 'Understand Database Definitions: Table, Field, Record',
+                        quiz: [
+                            { question: "In a database table, what is a 'field'?", options: ["A row of data", "A column of data (a single attribute)", "The entire table", "A query"], answer: "A column of data (a single attribute)" },
+                            { question: "In a database table, what is a 'record'?", options: ["A row of data (a complete set of fields for one item)", "A column of data", "The name of the table", "An error"], answer: "A row of data (a complete set of fields for one item)" },
+                            { question: "A 'table' is a collection of...", options: ["fields and records", "queries", "primary keys", "SQL commands"], answer: "fields and records" },
+                            { question: "In a 'Students' table, 'FirstName' would be a...", options: ["Record", "Field", "Table", "Primary Key"], answer: "Field" },
+                            { question: "In a 'Students' table, all the information for *one* student would be a...", options: ["Record", "Field", "File", "Query"], answer: "Record" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the purpose of a Primary Key',
+                        quiz: [
+                            { question: "What is a 'primary key'?", options: ["The first field in a table", "A field that is used to sort the data", "A field that uniquely identifies each record in a table", "A field that stores text"], answer: "A field that uniquely identifies each record in a table" },
+                            { question: "Which of these would be a good primary key for a 'Students' table?", options: ["FirstName", "LastName", "DateOfBirth", "StudentID"], answer: "StudentID" },
+                            { question: "Why is 'FirstName' a *bad* primary key?", options: ["It's too long", "It's too short", "It is not unique (many students could be named 'John')", "It is not text"], answer: "It is not unique (many students could be named 'John')" },
+                            { question: "A primary key value must be...", options: ["unique", "a number", "a text", "the same for all records"], answer: "unique" },
+                            { question: "What is the main purpose of a primary key?", options: ["To make the table look good", "To quickly find and identify a specific record", "To store the user's password", "To sort the data alphabetically"], answer: "To quickly find and identify a specific record" }
+                        ]
+                    },
+                    {
+                        text: 'Know SQL Keywords: SELECT, FROM, WHERE, ORDER BY, SUM, COUNT, AND, OR',
+                        quiz: [
+                            { question: "Which SQL keyword is used to specify *which fields* to show?", options: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: "SELECT" },
+                            { question: "Which SQL keyword is used to specify *which table* to get data from?", options: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: "FROM" },
+                            { question: "Which SQL keyword is used to *filter* the records (e.g., 'Score > 10')?", options: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: "WHERE" },
+                            { question: "Which SQL keyword is used to *sort* the results?", options: ["SELECT", "FROM", "WHERE", "ORDER BY"], answer: "ORDER BY" },
+                            { question: "Which SQL keyword is used to get the total number of records?", options: ["SUM", "COUNT", "TOTAL", "NUMBER"], answer: "COUNT" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Define a single-table database from given requirements',
+                    'Suggest suitable data types for fields',
+                    'Identify a suitable primary key for a table',
+                    'Read, understand, and complete SQL scripts',
+                    'Identify the output of a given SQL query'
+                ],
+                concepts: [
+                    'Data Modelling: Representing real-world information in a structured way (Tables, Fields, Keys)',
+                    'Querying: Using a dedicated language (SQL) to retrieve specific information from data'
+                ]
+            },
+            'unit10': {
+                title: 'Unit 10: Boolean Logic',
+                knowledge: [
+                    {
+                        text: 'Know Standard Logic Gate Symbols (NOT, AND, OR, NAND, NOR, XOR)',
+                        quiz: [
+                            { question: "Which gate is an 'inverter' (output is opposite of input)?", options: ["AND", "OR", "NOT", "XOR"], answer: "NOT" },
+                            { question: "Which gate's output is '1' (TRUE) only if *both* inputs are '1'?", options: ["AND", "OR", "NOT", "NAND"], answer: "AND" },
+                            { question: "Which gate's output is '1' (TRUE) if *either* input (or both) is '1'?", options: ["AND", "OR", "NOT", "NOR"], answer: "OR" },
+                            { question: "Which gate is an 'AND' gate followed by a 'NOT' gate?", options: ["OR", "XOR", "NAND", "NOR"], answer: "NAND" },
+                            { question: "Which gate's output is '1' (TRUE) only if the two inputs are *different*?", options: ["AND", "OR", "XOR", "NAND"], answer: "XOR" }
+                        ]
+                    },
+                    {
+                        text: 'Understand the function and truth table for each of the 6 logic gates',
+                        quiz: [
+                            { question: "For a NOT gate, if the input is 1, the output is...", options: ["1", "0", "Both", "Neither"], answer: "0" },
+                            { question: "For an AND gate, if inputs are 1 and 0, the output is...", options: ["1", "0", "10", "Depends"], answer: "0" },
+                            { question: "For an OR gate, if inputs are 1 and 0, the output is...", options: ["1", "0", "10", "Depends"], answer: "1" },
+                            { question: "For a NAND gate, if inputs are 1 and 1, the output is...", options: ["1", "0", "11", "Depends"], answer: "0" },
+                            { question: "For an XOR gate, if inputs are 1 and 1, the output is...", options: ["1", "0", "11", "Depends"], answer: "0" }
+                        ]
+                    }
+                ],
+                skills: [
+                    'Identify and use standard logic gate symbols',
+                    'Create Logic Circuits from problem statements, expressions, or truth tables',
+                    'Complete Truth Tables from problem statements, expressions, or circuits',
+                    'Write Logic Expressions from problem statements, circuits, or truth tables'
+                ],
+                concepts: [
+                    'Foundations of Computation: How simple logic gates (AND, OR, NOT) are the building blocks for all complex processing',
+                    'Logical Equivalence: How a logic problem can be represented in multiple ways (circuits, expressions, truth tables)'
+                ]
+            }
+        };
+
+        // --- Get all DOM elements ---
+        const paperSelection = document.getElementById('paper-selection');
+        const selectPaper1 = document.getElementById('select-paper1');
+        const selectPaper2 = document.getElementById('select-paper2');
+        
+        const paper1Units = document.getElementById('paper1-units');
+        const paper2Units = document.getElementById('paper2-units');
+        const backButtons = document.querySelectorAll('.back-button');
+        
+        const unitCards = document.querySelectorAll('.unit-card');
+        
+        const modal = document.getElementById('modal');
+        const modalContentBox = document.getElementById('modal-content-box');
+        const modalTitle = document.getElementById('modal-title');
+        const modalListContainer = document.getElementById('modal-list-container');
+        const closeModalButton = document.getElementById('close-modal');
+        const closeModalFooterButton = document.getElementById('close-modal-footer');
+
+        // --- Quiz Modal Elements ---
+        const quizModal = document.getElementById('quiz-modal');
+        const quizModalContentBox = document.getElementById('quiz-modal-content-box');
+        const quizModalTitle = document.getElementById('quiz-modal-title');
+        const quizProgress = document.getElementById('quiz-progress');
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizOptions = document.getElementById('quiz-options');
+        const quizFeedback = document.getElementById('quiz-feedback');
+        const quizNextBtn = document.getElementById('quiz-next-btn');
+        const quizCloseBtn = document.getElementById('quiz-close-btn');
+
+        // --- Global Quiz State ---
+        let currentQuiz = null;
+        let currentQuestionIndex = 0;
+        let currentScore = 0;
+        let currentUnitId = null;
+        let currentKnowledgeIndex = -1;
+
+
+        // --- Navigation functions ---
+        
+        // Show the main paper selection screen
+        function showPaperSelection() {
+            paperSelection.classList.remove('hidden');
+            paper1Units.classList.add('hidden');
+            paper2Units.classList.add('hidden');
+            window.scrollTo(0, 0); // Scroll to top
+        }
+
+        // Show Paper 1 units
+        selectPaper1.addEventListener('click', () => {
+            paperSelection.classList.add('hidden');
+            paper1Units.classList.remove('hidden');
+            window.scrollTo(0, 0); // Scroll to top
+        });
+
+        // Show Paper 2 units
+        selectPaper2.addEventListener('click', () => {
+            paperSelection.classList.add('hidden');
+            paper2Units.classList.remove('hidden');
+            window.scrollTo(0, 0); // Scroll to top
+        });
+
+        // Add event listeners to all "Back" buttons
+        backButtons.forEach(button => {
+            button.addEventListener('click', showPaperSelection);
+        });
+
+        // --- Modal functions ---
+        
+        // Open the modal with specific unit data
+        function showModal(unitId) {
+            const data = syllabusData[unitId];
+            if (!data) return;
+
+            // Set title
+            modalTitle.textContent = data.title;
+            
+            // Clear previous list
+            modalListContainer.innerHTML = '';
+
+            // --- SVG Icons ---
+            const knowledgeIcon = `
+                <svg class="h-6 w-6 text-blue-600 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18c-2.305 0-4.408.867-6 2.292m0-14.25v14.25" />
+                </svg>
+            `;
+            const skillIcon = `
+                <svg class="h-6 w-6 text-amber-600 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-1.007 1.11-.962a24.115 24.115 0 01.118 4.962c.069.198.15.39.248.572.142.266.366.49.64.653.272.162.582.278.91.356.329.077.668.12 1.007.12h.008c.373 0 .747-.047 1.116-.142.37-.094.724-.218 1.06-.377.337-.159.65-.368.93-.619.28-.25.52-.55.706-.879.186-.328.322-.685.41-1.06.09-.374.137-.75.137-1.125 0-.62-.153-1.226-.44-1.782-.289-.556-.664-1.06-1.11-1.48A8.967 8.967 0 0018 3.75c-1.052 0-2.062.18-3 .512v1.642c.316.077.621.182.906.318.287.136.556.314.796.53s.44.485.6.776c.16.29.28.61.356.938.077.329.12.668.12 1.007 0 .373-.047.747-.142 1.116-.094.37-.218.724-.377 1.06-.159.337-.368.65-.619.93-.25.28-.55.52-.879.706-.328.186-.685.322-1.06.41-.374.09-.75.137-1.125.137h-.008c-.373 0-.747-.047-1.116-.142-.37-.094-.724-.218-1.06-.377a4.49 4.49 0 01-1.954-1.556c-.318-.54-.5-.119-.5-.119l-.316.317c-.198.198-.445.355-.71.464a4.5 4.5 0 01-2.486 0c-.265-.109-.512-.266-.71-.464l-.316-.317s-.182-.42.054-.96c.234-.538.48-1.09.68-1.654.2-.565.337-1.148.4-1.74a8.96 8.96 0 00-.008-2.98c-.063-.59-.19-1.17-.38-1.712-.19-.542-.43-1.056-.72-1.53z" />
+                </svg>
+            `;
+            const conceptIcon = `
+                <svg class="h-6 w-6 text-purple-600 mr-2 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-3.5c0-1.38-1.12-2.5-2.5-2.5S8.5 7.87 8.5 9.25c0 1.38 1.12 2.5 2.5 2.5.36 0 .7.07 1 .2v3.05M12 18h.01M12 21a2.25 2.25 0 002.25-2.25H9.75A2.25 2.25 0 0012 21z" />
+                </svg>
+            `;
+
+            const checkIcon = (color) => `
+                <svg class="h-5 w-5 text-${color}-500 mr-2 mt-1 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            `;
+
+            // --- Concepts Section ---
+            if (data.concepts && data.concepts.length > 0) {
+                let conceptsHtml = `
+                    <h4 class="text-lg font-semibold text-purple-700 mb-3 flex items-center">
+                        ${conceptIcon}
+                        Big Ideas (Concepts)
+                    </h4>
+                    <ul class="space-y-2.5 list-inside mb-6">
+                `;
+                data.concepts.forEach(item => {
+                    conceptsHtml += `
+                        <li class="flex items-start">
+                            ${checkIcon('purple')}
+                            <span class="text-slate-700">${item}</span>
+                        </li>
+                    `;
+                });
+                conceptsHtml += '</ul>';
+                modalListContainer.innerHTML += conceptsHtml;
+            }
+
+            // --- Knowledge Section ---
+            if (data.knowledge && data.knowledge.length > 0) {
+                let knowledgeHtml = `
+                    <h4 class="text-lg font-semibold text-blue-700 mb-3 flex items-center">
+                        ${knowledgeIcon}
+                        Knowledge (AO1: Understand)
+                    </h4>
+                    <ul class="space-y-2.5 list-inside mb-6">
+                `;
+                data.knowledge.forEach((item, index) => {
+                    knowledgeHtml += `
+                        <li class="flex items-center justify-between"> <!-- Changed to items-center for better alignment -->
+                            <div class="flex items-start">
+                                ${checkIcon('blue')}
+                                <span class="text-slate-700">${item.text}</span>
+                            </div>
+                            <button class="quiz-start-btn" data-unit-id="${unitId}" data-knowledge-index="${index}">
+                                Quiz
+                            </button>
+                        </li>
+                    `;
+                });
+                knowledgeHtml += '</ul>';
+                modalListContainer.innerHTML += knowledgeHtml;
+            }
+
+            // --- Skills Section ---
+            if (data.skills && data.skills.length > 0) {
+                let skillsHtml = `
+                    <h4 class="text-lg font-semibold text-amber-700 mb-3 flex items-center">
+                        ${skillIcon}
+                        Skills (AO2 & AO3: Apply)
+                    </h4>
+                    <ul class="space-y-2.5 list-inside">
+                `;
+                data.skills.forEach(item => {
+                    skillsHtml += `
+                        <li class="flex items-start">
+                            ${checkIcon('amber')}
+                            <span class="text-slate-700">${item}</span>
+                        </li>
+                    `;
+                });
+                skillsHtml += '</ul>';
+                modalListContainer.innerHTML += skillsHtml;
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            // Animate entry
+            modalContentBox.classList.remove('scale-95', 'opacity-0');
+            modalContentBox.classList.add('scale-100', 'opacity-100');
+        }
+
+
+        // Close the info modal
+        function closeModal() {
+            // Animate exit
+            modalContentBox.classList.add('scale-95', 'opacity-0');
+            modalContentBox.classList.remove('scale-100', 'opacity-100');
+            // Hide after animation
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 150); // Match animation duration
+        }
+
+        // Add click listener to all unit cards
+        unitCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const unitId = card.dataset.unit;
+                showModal(unitId);
+            });
+        });
+
+        // Add close event listeners for info modal
+        closeModalButton.addEventListener('click', closeModal);
+        closeModalFooterButton.addEventListener('click', closeModal);
+        
+        // Close info modal if overlay is clicked
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Add keyboard support to close info modal
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                closeModal();
+            }
+        });
+        
+        // Initial setup for info modal animation
+        modalContentBox.classList.add('scale-95', 'opacity-0', 'transition-all', 'duration-150', 'ease-in-out');
+
+        // --- QUIZ LOGIC ---
+
+        // Event delegation for starting a quiz
+        // This listener is now on modalListContainer, which is correct.
+        modalListContainer.addEventListener('click', function(e) {
+            if (e.target.classList.contains('quiz-start-btn')) {
+                const unitId = e.target.dataset.unitId;
+                const knowledgeIndex = parseInt(e.target.dataset.knowledgeIndex, 10);
+                startQuiz(unitId, knowledgeIndex);
+            }
+        });
+
+        // Helper function to shuffle an array (Fisher-Yates)
+        function shuffleArray(array) {
+            let newArray = [...array]; // Create a copy
+            for (let i = newArray.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [newArray[i], newArray[j]] = [newArray[j], newArray[i]]; // Swap
+            }
+            return newArray;
+        }
+
+        function startQuiz(unitId, knowledgeIndex) {
+            currentUnitId = unitId;
+            currentKnowledgeIndex = knowledgeIndex;
+            const quizData = syllabusData[unitId].knowledge[knowledgeIndex];
+            
+            const fullQuestionBank = quizData.quiz; // Get the full bank
+            const shuffledBank = shuffleArray(fullQuestionBank); // Shuffle it
+            
+            // Select 5 questions, or fewer if the bank doesn't have 5
+            const quizLength = Math.min(5, shuffledBank.length);
+            currentQuiz = shuffledBank.slice(0, quizLength); // Take the first 5 (or fewer)
+            
+            currentQuestionIndex = 0;
+            currentScore = 0;
+
+            quizModalTitle.textContent = `Quiz: ${quizData.text.substring(0, 40)}...`;
+            
+            displayQuestion();
+            
+            closeModal(); // Close info modal
+            
+            // Show quiz modal
+            quizModal.classList.remove('hidden');
+            quizModalContentBox.classList.remove('scale-95', 'opacity-0');
+            quizModalContentBox.classList.add('scale-100', 'opacity-100');
+        }
+
+        function displayQuestion() {
+            const question = currentQuiz[currentQuestionIndex];
+
+            quizProgress.textContent = `Question ${currentQuestionIndex + 1} / ${currentQuiz.length}`;
+            quizQuestion.textContent = question.question;
+            
+            quizOptions.innerHTML = '';
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.classList.add('quiz-option-btn');
+                button.addEventListener('click', () => checkAnswer(option, question.answer));
+                quizOptions.appendChild(button);
+            });
+
+            quizFeedback.classList.add('hidden');
+            quizNextBtn.classList.add('hidden');
+        }
+
+        function checkAnswer(selectedOption, correctAnswer) {
+            const optionButtons = quizOptions.querySelectorAll('.quiz-option-btn');
+            optionButtons.forEach(button => {
+                button.disabled = true;
+                if (button.textContent === correctAnswer) {
+                    button.classList.add('correct');
+                } else if (button.textContent === selectedOption) {
+                    button.classList.add('incorrect');
+                }
+            });
+
+            if (selectedOption === correctAnswer) {
+                currentScore++;
+                quizFeedback.textContent = "Correct!";
+                quizFeedback.className = 'text-sm font-medium p-3 rounded-lg bg-green-100 text-green-700';
+            } else {
+                quizFeedback.textContent = `Incorrect. The correct answer was: ${correctAnswer}`;
+                quizFeedback.className = 'text-sm font-medium p-3 rounded-lg bg-red-100 text-red-700';
+            }
+
+            quizFeedback.classList.remove('hidden');
+            
+            if (currentQuestionIndex < currentQuiz.length - 1) {
+                quizNextBtn.textContent = 'Next Question';
+            } else {
+                quizNextBtn.textContent = 'Finish Quiz';
+            }
+            quizNextBtn.classList.remove('hidden');
+        }
+
+        quizNextBtn.addEventListener('click', () => {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < currentQuiz.length) {
+                displayQuestion();
+            } else {
+                showQuizResults();
+            }
+        });
+
+        function showQuizResults() {
+            quizQuestion.textContent = `Quiz Complete!`;
+            quizOptions.innerHTML = `<div class="text-center text-xl">You scored ${currentScore} out of ${currentQuiz.length}</div>`;
+            
+            quizFeedback.classList.add('hidden');
+            quizNextBtn.classList.add('hidden');
+            quizProgress.textContent = 'Results';
+        }
+
+        quizCloseBtn.addEventListener('click', () => {
+            // Animate exit
+            quizModalContentBox.classList.add('scale-95', 'opacity-0');
+            quizModalContentBox.classList.remove('scale-100', 'opacity-100');
+            
+            setTimeout(() => {
+                quizModal.classList.add('hidden'); // Hide quiz modal
+            
+                // Re-open the info modal to the specific unit
+                if(currentUnitId) {
+                    showModal(currentUnitId);
+                } else {
+                    showPaperSelection(); // Fallback if unit ID was lost
+                }
+
+                // Reset quiz state
+                currentQuiz = null;
+                currentUnitId = null;
+                currentKnowledgeIndex = -1;
+            }, 150); // Match animation
+        });
+
+        // Initial setup for quiz modal animation
+        quizModalContentBox.classList.add('scale-95', 'opacity-0', 'transition-all', 'duration-150', 'ease-in-out');
+
+
+    </script>
+</body>
+</html>

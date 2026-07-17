@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biting Monkeys Decision Tree</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-light: #f9fafb;
+            --bg-dark: #f3f4f6;
+            --border-color: #d1d5db;
+            --bite-yes: #ef4444; /* red-500 */
+            --bite-no: #22c55e;  /* green-500 */
+            --node-bg: #ffffff;
+            --node-leaf-yes: #fee2e2; /* red-100 */
+            --node-leaf-no: #dcfce7;  /* green-100 */
+            font-family: 'Inter', sans-serif;
+        }
+        body { background-color: var(--bg-dark); }
+        .monkey-card {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .monkey-card.highlight {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 10px #3b82f6;
+        }
+        .monkey-card.dimmed {
+            opacity: 0.25;
+            pointer-events: none;
+        }
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border-bottom: 3px solid transparent;
+            font-weight: 500;
+            color: #6b7280;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .tab-btn.active {
+            color: #3b82f6; /* blue-500 */
+            border-bottom-color: #3b82f6;
+        }
+        .tree-container-wrapper {
+            position: relative;
+            width: 100%;
+            min-height: 80vh;
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: auto;
+            padding: 1rem;
+        }
+        /* New Hierarchical Styles */
+        .tree-node {
+            background-color: var(--node-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            min-width: 180px;
+            text-align: center;
+            z-index: 10;
+            transition: border-color 0.2s;
+            flex-shrink: 0;
+            margin: 4px;
+        }
+        .tree-node.leaf.yes { background-color: var(--node-leaf-yes); }
+        .tree-node.leaf.no { background-color: var(--node-leaf-no); }
+
+        .tree-node-content {
+            cursor: pointer;
+        }
+        .tree-node.selected {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 10px #3b82f6;
+        }
+        .children-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px dashed var(--border-color);
+        }
+        .branch-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1; /* Each branch takes 50% */
+            padding: 0 0.5rem;
+            min-width: 200px;
+        }
+        .branch-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 99px;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+        .branch-label.yes { background-color: var(--bite-yes); }
+        .branch-label.no { background-color: var(--bite-no); }
+
+        .gini-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .gini-yes {
+            height: 100%;
+            background-color: var(--bite-yes);
+            float: left;
+        }
+        .gini-no { background-color: var(--bite-no); }
+
+        /* Drag and Drop */
+        .question-drag {
+            cursor: move;
+            border: 1px solid var(--border-color);
+            background-color: #f9fafb;
+            transition: background-color 0.2s;
+        }
+        .question-drag:hover {
+            background-color: #f0f0f0;
+        }
+        .tree-node.drop-target {
+            border: 2px dashed #3b82f6;
+            transform: scale(1.03);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-screen-xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Biting Monkeys Decision Tree</h1>
+        <p class="text-lg text-gray-600 mb-6">Build a decision tree by splitting the monkeys based on their features.</p>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-200 bg-white shadow-sm rounded-t-lg">
+            <nav class="flex -mb-px" aria-label="Tabs">
+                <button id="tab-btn-monkeys" class="tab-btn active" role="tab" aria-controls="tab-content-monkeys" aria-selected="true">Monkey Dataset</button>
+                <button id="tab-btn-tree" class="tab-btn" role="tab" aria-controls="tab-content-tree" aria-selected="false">Decision Tree & Controls</button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div>
+            <!-- Monkey Dataset Tab -->
+            <div id="tab-content-monkeys" role="tabpanel">
+                <div class="bg-white p-6 rounded-b-lg shadow-sm">
+                    <div class="flex flex-wrap justify-between items-center gap-4 mb-4">
+                        <div class="flex gap-4">
+                            <div class="p-3 bg-gray-100 rounded-lg text-center">
+                                <div class="text-xs font-medium text-gray-500">Total</div>
+                                <div id="total-count" class="text-2xl font-bold text-gray-800">0</div>
+                            </div>
+                            <div class="p-3 bg-red-100 rounded-lg text-center">
+                                <div class="text-xs font-medium text-red-600">Biting</div>
+                                <div id="biting-count" class="text-2xl font-bold text-red-600">0</div>
+                            </div>
+                            <div class="p-3 bg-green-100 rounded-lg text-center">
+                                <div class="text-xs font-medium text-green-600">Non-Biting</div>
+                                <div id="non-biting-count" class="text-2xl font-bold text-green-600">0</div>
+                            </div>
+                        </div>
+                        <button id="reset-highlight-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">
+                            Show All Monkeys
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-xl font-semibold mb-3 text-red-600">Biting Monkeys</h2>
+                            <div id="biting-monkey-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                <!-- Biting monkeys populated by JS -->
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="text-xl font-semibold mb-3 text-green-600">Non-Biting Monkeys</h2>
+                            <div id="non-biting-monkey-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+                                <!-- Non-biting monkeys populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Tree Tab -->
+            <div id="tab-content-tree" role="tabpanel" class="hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Left Panel: Questions Panel -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-4 rounded-lg shadow">
+                            <h2 class="text-xl font-semibold mb-3">Available Questions</h2>
+                            <p id="questions-helper" class="text-sm text-gray-500 mb-2">Click a node in the tree to see available splits.</p>
+                            <div id="questions-list" class="space-y-2 max-h-96 overflow-y-auto">
+                                <!-- Draggable questions will be populated here by JS -->
+                            </div>
+                            <button id="reset-tree-btn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded transition-colors mt-4">
+                                Reset Tree
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Panel: Tree -->
+                    <div class="lg:col-span-2">
+                        <div class="tree-container-wrapper">
+                            <div id="tree-container" class="relative min-h-full">
+                                <!-- Tree nodes populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATASET ---
+        const monkeyData = [
+            // Biting (12)
+            { id: '01', eyes: 'open', mouth: 'teeth', hair: 'none', accessory: 'none', bites: true },
+            { id: '02', eyes: 'open', mouth: 'teeth', hair: 'none', accessory: 'none', bites: true },
+            { id: '05', eyes: 'closed', mouth: 'closed', hair: 'none', accessory: 'none', bites: true },
+            { id: '09', eyes: 'closed', mouth: 'closed', hair: 'none', accessory: 'none', bites: true },
+            { id: '10', eyes: 'closed', mouth: 'closed', hair: 'none', accessory: 'none', bites: true },
+            { id: '14', eyes: 'closed', mouth: 'open', hair: 'none', accessory: 'none', bites: true },
+            { id: '15', eyes: 'x', mouth: 'closed', hair: 'none', accessory: 'none', bites: true },
+            { id: '16', eyes: 'closed', mouth: 'open', hair: 'none', accessory: 'none', bites: true },
+            { id: '17', eyes: 'open', mouth: 'tongue', hair: 'none', accessory: 'none', bites: true },
+            { id: '28', eyes: 'open', mouth: 'open', hair: 'tuft', accessory: 'none', bites: true },
+            { id: '33', eyes: 'open', mouth: 'open', hair: 'tuft', accessory: 'none', bites: true },
+            { id: '35', eyes: 'x', mouth: 'open', hair: 'tuft', accessory: 'none', bites: true },
+
+            // Non-Biting (15)
+            { id: '04', eyes: 'open', mouth: 'teeth', hair: 'none', accessory: 'none', bites: false },
+            { id: '07', eyes: 'x', mouth: 'teeth', hair: 'none', accessory: 'none', bites: false },
+            { id: '12', eyes: 'closed', mouth: 'closed', hair: 'none', accessory: 'none', bites: false },
+            { id: '19', eyes: 'x', mouth: 'tongue', hair: 'none', accessory: 'none', bites: false },
+            { id: '22', eyes: 'wink', mouth: 'teeth', hair: 'tuft', accessory: 'none', bites: false },
+            { id: '23', eyes: 'x', mouth: 'teeth', hair: 'tuft', accessory: 'none', bites: false },
+            { id: '24', eyes: 'closed', mouth: 'teeth', hair: 'tuft', accessory: 'none', bites: false },
+            { id: '25', eyes: 'open', mouth: 'closed', hair: 'tuft', accessory: 'none', bites: false },
+            { id: '30', eyes: 'closed', mouth: 'closed', hair: 'none', accessory: 'bow', bites: false },
+            { id: '32', eyes: 'closed', mouth: 'closed', hair: 'tuft', accessory: 'glasses', bites: false },
+            { id: '36', eyes: 'closed', mouth: 'open', hair: 'none', accessory: 'bow', bites: false },
+            { id: '37', eyes: 'open', mouth: 'tongue', hair: 'none', accessory: 'mask', bites: false },
+            { id: '38', eyes: 'open', mouth: 'closed', hair: 'tuft', accessory: 'glasses', bites: false },
+            { id: '39', eyes: 'x', mouth: 'tongue', hair: 'none', accessory: 'flower', bites: false },
+            { id: '40', eyes: 'closed', mouth: 'tongue', hair: 'tuft', accessory: 'none', bites: false }
+        ];
+
+        // --- GLOBAL VARIABLES ---
+        let tree = {};
+        let nodeCounter = 0;
+        let selectedNodeId = null;
+        const allMonkeyIds = monkeyData.map(m => m.id);
+
+        // --- DOM ELEMENTS ---
+        const bitingMonkeyGrid = document.getElementById('biting-monkey-grid');
+        const nonBitingMonkeyGrid = document.getElementById('non-biting-monkey-grid');
+        const totalCountEl = document.getElementById('total-count');
+        const bitingCountEl = document.getElementById('biting-count');
+        const nonBitingCountEl = document.getElementById('non-biting-count');
+        const treeContainer = document.getElementById('tree-container');
+        const resetTreeBtn = document.getElementById('reset-tree-btn');
+        const resetHighlightBtn = document.getElementById('reset-highlight-btn');
+        const questionsList = document.getElementById('questions-list');
+        const questionsHelper = document.getElementById('questions-helper');
+
+        // Tab Elements
+        const tabMonkeysBtn = document.getElementById('tab-btn-monkeys');
+        const tabTreeBtn = document.getElementById('tab-btn-tree');
+        const tabContentMonkeys = document.getElementById('tab-content-monkeys');
+        const tabContentTree = document.getElementById('tab-content-tree');
+
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            populateMonkeyGrid();
+            initializeTree();
+
+            // Tab event listeners
+            tabMonkeysBtn.addEventListener('click', () => setTab('monkeys'));
+            tabTreeBtn.addEventListener('click', () => setTab('tree'));
+
+            // Button event listeners
+            resetTreeBtn.addEventListener('click', () => {
+                initializeTree();
+                questionsList.innerHTML = '';
+                questionsHelper.textContent = 'Click a node in the tree to see available splits.';
+            });
+
+            resetHighlightBtn.addEventListener('click', () => {
+                highlightMonkeys(allMonkeyIds, true); // Reset to show all
+            });
+        });
+
+        // --- TAB HANDLING ---
+        function setTab(tabName) {
+            if (tabName === 'monkeys') {
+                tabMonkeysBtn.classList.add('active');
+                tabTreeBtn.classList.remove('active');
+                tabContentMonkeys.classList.remove('hidden');
+                tabContentTree.classList.add('hidden');
+            } else {
+                tabMonkeysBtn.classList.remove('active');
+                tabTreeBtn.classList.add('active');
+                tabContentMonkeys.classList.add('hidden');
+                tabContentTree.classList.remove('hidden');
+            }
+        }
+
+        // --- MONKEY GRID & SVG ---
+        function populateMonkeyGrid() {
+            let bitingCount = 0;
+            let nonBitingCount = 0;
+            
+            monkeyData.forEach(monkey => {
+                const monkeyCard = document.createElement('div');
+                monkeyCard.className = 'monkey-card aspect-square relative';
+                monkeyCard.id = `monkey-${monkey.id}`;
+                monkeyCard.innerHTML = createMonkeySVG(monkey);
+                
+                monkeyCard.addEventListener('click', () => {
+                    monkeyCard.classList.toggle('highlight');
+                });
+
+                if (monkey.bites) {
+                    bitingMonkeyGrid.appendChild(monkeyCard);
+                    bitingCount++;
+                } else {
+                    nonBitingMonkeyGrid.appendChild(monkeyCard);
+                    nonBitingCount++;
+                }
+            });
+
+            totalCountEl.textContent = monkeyData.length;
+            bitingCountEl.textContent = bitingCount;
+            nonBitingCountEl.textContent = nonBitingCount;
+        }
+
+        function createMonkeySVG(monkey) {
+            const faceColor = "#e0a070";
+            const darkColor = "#4a2a1a";
+            const white = "#FFFFFF";
+            const red = "#d93025";
+            const tongueColor = "#f4a2c4";
+
+            // Features
+            let eyes = '';
+            switch (monkey.eyes) {
+                case 'open':
+                    eyes = `<circle cx="30" cy="40" r="7" fill="${darkColor}" /><circle cx="70" cy="40" r="7" fill="${darkColor}" />`;
+                    break;
+                case 'closed':
+                    eyes = `<path d="M 20 40 Q 30 50 40 40" stroke="${darkColor}" stroke-width="3" fill="none" />
+                            <path d="M 60 40 Q 70 50 80 40" stroke="${darkColor}" stroke-width="3" fill="none" />`;
+                    break;
+                case 'wink':
+                    eyes = `<circle cx="30" cy="40" r="7" fill="${darkColor}" />
+                            <path d="M 60 40 Q 70 50 80 40" stroke="${darkColor}" stroke-width="3" fill="none" />`;
+                    break;
+                case 'x':
+                    eyes = `<path d="M 25 35 L 35 45 M 35 35 L 25 45" stroke="${darkColor}" stroke-width="3" />
+                            <path d="M 65 35 L 75 45 M 75 35 L 65 45" stroke="${darkColor}" stroke-width="3" />`;
+                    break;
+            }
+
+            let mouth = '';
+            switch (monkey.mouth) {
+                case 'teeth':
+                    mouth = `<path d="M 25 70 Q 50 85 75 70" stroke="${darkColor}" stroke-width="3" fill="none" />
+                             <rect x="28" y="70" width="44" height="7" fill="${white}" stroke="${darkColor}" stroke-width="1" />
+                             <line x1="39" y1="70" x2="39" y2="77" stroke="${darkColor}" stroke-width="1" />
+                             <line x1="50" y1="70" x2="50" y2="77" stroke="${darkColor}" stroke-width="1" />
+                             <line x1="61" y1="70" x2="61" y2="77" stroke="${darkColor}" stroke-width="1" />`;
+                    break;
+                case 'closed':
+                    mouth = `<path d="M 25 75 Q 50 70 75 75" stroke="${darkColor}" stroke-width="3" fill="none" />`;
+                    break;
+                case 'open':
+                    mouth = `<ellipse cx="50" cy="75" rx="20" ry="10" fill="${darkColor}" />`;
+                    break;
+                case 'tongue':
+                    mouth = `<path d="M 25 70 Q 50 85 75 70" stroke="${darkColor}" stroke-width="3" fill="none" />
+                             <path d="M 40 78 Q 50 90 60 78" fill="${tongueColor}" />`;
+                    break;
+            }
+            
+            let hair = '';
+            if (monkey.hair === 'tuft') {
+                hair = `<path d="M 40 15 Q 45 5 50 15 Q 55 5 60 15" stroke="${darkColor}" stroke-width="3" fill="none" />`;
+            }
+
+            let accessory = '';
+            if (monkey.accessory === 'bow') {
+                accessory = `<g transform="translate(10, 10)">
+                                <circle cx="0" cy="0" r="5" fill="${red}" />
+                                <path d="M -5 -5 L -15 -10 L -10 0 L -15 10 L -5 5 Z" fill="${red}" />
+                                <path d="M 5 -5 L 15 -10 L 10 0 L 15 10 L 5 5 Z" fill="${red}" />
+                             </g>`;
+            } else if (monkey.accessory === 'glasses') {
+                accessory = `<g>
+                                <circle cx="30" cy="40" r="10" stroke="${darkColor}" stroke-width="2" fill="none" />
+                                <circle cx="70" cy="40" r="10" stroke="${darkColor}" stroke-width="2" fill="none" />
+                                <line x1="40" y1="40" x2="60" y2="40" stroke="${darkColor}" stroke-width="2" />
+                             </g>`;
+            } else if (monkey.accessory === 'mask') {
+                accessory = `<path d="M 10 30 Q 50 25 90 30 L 90 50 Q 50 45 10 50 Z" fill="${darkColor}" />`;
+            } else if (monkey.accessory === 'flower') {
+                 accessory = `<g transform="translate(85, 15)">
+                                <circle cx="0" cy="0" r="4" fill="#fde047" /> <!-- yellow-400 -->
+                                <circle cx="5" cy="0" r="3" fill="${white}" stroke="${darkColor}" stroke-width="1" />
+                                <circle cx="-5" cy="0" r="3" fill="${white}" stroke="${darkColor}" stroke-width="1" />
+                                <circle cx="0" cy="5" r="3" fill="${white}" stroke="${darkColor}" stroke-width="1" />
+                                <circle cx="0" cy="-5" r="3" fill="${white}" stroke="${darkColor}" stroke-width="1" />
+                            </g>`;
+            }
+
+            // ID text
+            const idText = `<text x="5" y="95" font-family="monospace" font-size="12" fill="#6b7280">${monkey.id}</text>`;
+            const cardBg = monkey.bites ? 'fill-red-50' : 'fill-green-50';
+
+            return `
+                <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="0" y="0" width="100" height="100" rx="8" class="${cardBg}" />
+                    <!-- Face -->
+                    <circle cx="50" cy="50" r="40" fill="${faceColor}" />
+                    <!-- Ears -->
+                    <circle cx="10" cy="50" r="15" fill="${faceColor}" />
+                    <circle cx="90" cy="50" r="15" fill="${faceColor}" />
+                    <circle cx="15" cy="50" r="10" fill="#c08060" />
+                    <circle cx="85" cy="50" r="10" fill="#c08060" />
+                    <!-- Features -->
+                    ${eyes}
+                    ${mouth}
+                    ${hair}
+                    ${accessory}
+                    ${idText}
+                </svg>
+            `;
+        }
+
+        // --- TREE LOGIC ---
+        function initializeTree() {
+            treeContainer.innerHTML = '';
+            nodeCounter = 0;
+            const rootStats = calculateGini(allMonkeyIds);
+            tree = {
+                id: 'node-0',
+                monkeyIds: allMonkeyIds,
+                stats: rootStats,
+                isLeaf: false,
+                children: [],
+                splitFeature: null,
+                splitOnValue: null,
+                question: 'Root (All Monkeys)'
+            };
+            drawNode(tree, treeContainer); // Draw root node in main container
+            setSelectedNode(tree.id); // Select root by default
+        }
+        
+        function drawNode(node, parentElement) {
+            const nodeEl = document.createElement('div');
+            nodeEl.id = node.id;
+            nodeEl.className = 'tree-node';
+            
+            const isPure = node.stats.biting === 0 || node.stats.nonBiting === 0;
+            if (node.isLeaf || isPure) {
+                node.isLeaf = true; // Ensure it's marked
+                nodeEl.classList.add('leaf');
+                if (node.stats.biting > node.stats.nonBiting) nodeEl.classList.add('yes');
+                else if (node.stats.nonBiting > node.stats.biting) nodeEl.classList.add('no');
+            }
+            if (node.id === selectedNodeId) {
+                nodeEl.classList.add('selected');
+            }
+
+            // Node main content
+            const contentEl = document.createElement('div');
+            contentEl.className = 'tree-node-content';
+            contentEl.innerHTML = `
+                <div class="font-semibold text-base">${node.question}</div>
+                <div class="text-xs text-gray-600">Gini: ${node.stats.gini}</div>
+                <div class="text-xs">Biting: <span class="font-bold text-red-600">${node.stats.biting}</span></div>
+                <div class="text-xs">Non-Biting: <span class="font-bold text-green-600">${node.stats.nonBiting}</span></div>
+                <div class="text-xs">Total: <span class="font-bold">${node.stats.total}</span></div>
+                <div class="gini-bar">
+                    <div class="gini-yes" style="width: ${node.stats.total === 0 ? 0 : (node.stats.biting / node.stats.total) * 100}%"></div>
+                </div>
+            `;
+            
+            contentEl.addEventListener('click', (e) => {
+                e.stopPropagation();
+                setSelectedNode(node.id);
+            });
+
+            nodeEl.appendChild(contentEl);
+            
+            // Add Drag and Drop listeners
+            if (!node.isLeaf) { // Only non-leaf nodes can be drop targets
+                nodeEl.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.types.includes('text/plain')) {
+                        nodeEl.classList.add('drop-target');
+                        e.dataTransfer.dropEffect = 'move';
+                    }
+                });
+                nodeEl.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    nodeEl.classList.remove('drop-target');
+                });
+                nodeEl.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    nodeEl.classList.remove('drop-target');
+                    handleDrop(e, node.id);
+                });
+            }
+
+            parentElement.appendChild(nodeEl);
+            
+            // Add container for children if they exist
+            if (node.children.length > 0) {
+                const childrenContainer = document.createElement('div');
+                childrenContainer.className = 'children-container';
+                
+                // Yes Branch
+                const yesBranch = document.createElement('div');
+                yesBranch.className = 'branch-container';
+                yesBranch.innerHTML = `<div class="branch-label yes">YES</div>`;
+                drawNode(node.children[0], yesBranch);
+                childrenContainer.appendChild(yesBranch);
+
+                // No Branch
+                const noBranch = document.createElement('div');
+                noBranch.className = 'branch-container';
+                noBranch.innerHTML = `<div class="branch-label no">NO</div>`;
+                drawNode(node.children[1], noBranch);
+                childrenContainer.appendChild(noBranch);
+
+                nodeEl.appendChild(childrenContainer);
+            }
+        }
+
+        function findNodeById(startNode, id) {
+            if (startNode.id === id) return startNode;
+            for (const child of startNode.children) {
+                const found = findNodeById(child, id);
+                if (found) return found;
+            }
+            return null;
+        }
+
+        function setSelectedNode(nodeId) {
+            // Remove old selection
+            if (selectedNodeId) {
+                const oldEl = document.getElementById(selectedNodeId);
+                if (oldEl) oldEl.classList.remove('selected');
+            }
+            
+            // Add new selection
+            const newEl = document.getElementById(nodeId);
+            if (newEl) newEl.classList.add('selected');
+            
+            selectedNodeId = nodeId;
+            
+            // Update UI based on new selection
+            const node = findNodeById(tree, nodeId);
+            if (node) {
+                highlightMonkeys(node.monkeyIds);
+                populateAvailableQuestions(node);
+            }
+        }
+
+        // --- GINI CALCULATION ---
+        function calculateGini(monkeyIds) {
+            const total = monkeyIds.length;
+            if (total === 0) return { gini: 0, biting: 0, nonBiting: 0, total: 0 };
+
+            let biting = 0;
+            monkeyIds.forEach(id => {
+                const monkey = monkeyData.find(m => m.id === id);
+                if (monkey.bites) biting++;
+            });
+            const nonBiting = total - biting;
+
+            const pBiting = biting / total;
+            const pNonBiting = nonBiting / total;
+
+            const gini = 1 - (pBiting ** 2 + pNonBiting ** 2);
+
+            return {
+                gini: parseFloat(gini.toFixed(3)),
+                biting: biting,
+                nonBiting: nonBiting,
+                total: total
+            };
+        }
+
+        // --- SIMPLIFIED FEATURE LOGIC ---
+        function getSimpleFeatures(monkey) {
+            let simpleEyes = 'Other';
+            if (monkey.eyes === 'open') simpleEyes = 'Both Open';
+            if (monkey.eyes === 'x' || monkey.eyes === 'closed') simpleEyes = 'Both Closed';
+            if (monkey.eyes === 'wink') simpleEyes = 'One Open';
+            
+            let simpleMouth = 'Closed';
+            if (monkey.mouth === 'teeth' || monkey.mouth === 'open' || monkey.mouth === 'tongue') simpleMouth = 'Open';
+
+            let hasAccessory = 'No';
+            if (monkey.accessory !== 'none') hasAccessory = 'Yes';
+            
+            let hasHair = 'No';
+            if (monkey.hair !== 'none') hasHair = 'Yes';
+
+            return { simpleEyes, simpleMouth, hasAccessory, hasHair };
+        }
+
+        function doSplit(nodeId, feature, value) {
+            if (!nodeId || !feature || !value) return;
+
+            const parentNode = findNodeById(tree, nodeId);
+            if (!parentNode || parentNode.isLeaf) return;
+            if (parentNode.children.length > 0) return; // Already split
+
+            parentNode.splitFeature = feature;
+            parentNode.splitOnValue = value;
+            
+            const parentMonkeys = monkeyData.filter(m => parentNode.monkeyIds.includes(m.id));
+            
+            // 1. "Yes" branch (monkeys where feature === value)
+            const yesMonkeyIds = parentMonkeys.filter(m => getSimpleFeatures(m)[feature] === value).map(m => m.id);
+            nodeCounter++;
+            const yesStats = calculateGini(yesMonkeyIds);
+            const yesNode = {
+                id: `node-${nodeCounter}`,
+                monkeyIds: yesMonkeyIds,
+                stats: yesStats,
+                isLeaf: (yesStats.biting === 0 || yesStats.nonBiting === 0 || yesMonkeyIds.length === 0),
+                children: [],
+                question: `${feature} = ${value}`
+            };
+
+            // 2. "No" branch (monkeys where feature !== value)
+            const noMonkeyIds = parentMonkeys.filter(m => getSimpleFeatures(m)[feature] !== value).map(m => m.id);
+            nodeCounter++;
+            const noStats = calculateGini(noMonkeyIds);
+            const noNode = {
+                id: `node-${nodeCounter}`,
+                monkeyIds: noMonkeyIds,
+                stats: noStats,
+                isLeaf: (noStats.biting === 0 || noStats.nonBiting === 0 || noMonkeyIds.length === 0),
+                children: [],
+                question: `${feature} != ${value}`
+            };
+            
+            parentNode.children = [yesNode, noNode];
+            
+            // --- Redraw the entire tree from root ---
+            // This is simpler for a nested model
+            treeContainer.innerHTML = '';
+            drawNode(tree, treeContainer);
+            
+            // Reselect the node that was just split
+            setSelectedNode(parentNode.id);
+            // And clear questions for it
+            populateAvailableQuestions(parentNode);
+        }
+        
+        // --- DRAG & DROP & QUESTIONS PANEL ---
+        function handleDrop(event, nodeId) {
+            const dataString = event.dataTransfer.getData('text/plain');
+            if (!dataString) return;
+
+            try {
+                const data = JSON.parse(dataString);
+                const { feature, value } = data;
+                
+                const node = findNodeById(tree, nodeId);
+                if (node && !node.isLeaf) {
+                    doSplit(nodeId, feature, value); // Call the split logic
+                }
+            } catch (e) {
+                console.error("Failed to parse drop data:", e);
+            }
+        }
+
+        function populateAvailableQuestions(node) {
+            questionsList.innerHTML = ''; // Clear
+
+            if (node.isLeaf) {
+                questionsHelper.textContent = 'This is a leaf node and cannot be split.';
+                return;
+            }
+            if (node.children.length > 0) {
+                 questionsHelper.textContent = 'This node has already been split.';
+                 return;
+            }
+            
+            questionsHelper.textContent = `Drag a question onto Node ${node.id.split('-')[1]} to split it.`;
+            
+            const nodeMonkeys = monkeyData.filter(m => node.monkeyIds.includes(m.id));
+            const simpleFeaturesList = nodeMonkeys.map(m => getSimpleFeatures(m));
+            
+            const features = ['simpleEyes', 'simpleMouth', 'hasAccessory', 'hasHair'];
+            let questionCount = 0;
+            const addedQuestions = new Set();
+
+            features.forEach(feature => {
+                const uniqueValues = [...new Set(simpleFeaturesList.map(sf => sf[feature]))];
+                
+                if (uniqueValues.length > 1) {
+                    uniqueValues.forEach(value => {
+                        const questionKey = `${feature}=${value}`;
+                        if (addedQuestions.has(questionKey)) return;
+                        
+                        questionCount++;
+                        addedQuestions.add(questionKey);
+                        
+                        const el = document.createElement('div');
+                        el.className = 'question-drag p-2 rounded text-sm';
+                        el.textContent = `${feature} = ${value}`;
+                        el.draggable = true;
+                        
+                        el.addEventListener('dragstart', (e) => {
+                            const data = JSON.stringify({ feature, value });
+                            e.dataTransfer.setData('text/plain', data);
+                            e.dataTransfer.effectAllowed = 'move';
+                            setTimeout(() => { el.style.opacity = '0.5'; }, 0);
+                        });
+
+                        el.addEventListener('dragend', () => {
+                            el.style.opacity = '1';
+                        });
+                        questionsList.appendChild(el);
+                    });
+                }
+            });
+
+            if (questionCount === 0 && nodeMonkeys.length > 0) {
+                questionsHelper.textContent = 'This node is pure or has no unique features left to split on.';
+                // Mark node as leaf visually
+                node.isLeaf = true;
+                const nodeEl = document.getElementById(node.id);
+                if (nodeEl) {
+                    nodeEl.classList.add('leaf');
+                    if (node.stats.biting > node.stats.nonBiting) nodeEl.classList.add('yes');
+                    else nodeEl.classList.add('no');
+                }
+            } else if (nodeMonkeys.length === 0) {
+                questionsHelper.textContent = 'This is an empty leaf node.';
+            }
+        }
+        
+        // --- UI HELPERS ---
+        function highlightMonkeys(monkeyIds, showAll = false) {
+            const allCards = document.querySelectorAll('.monkey-card');
+            allCards.forEach(card => {
+                const cardId = card.id.replace('monkey-', '');
+                if (showAll) {
+                    card.classList.remove('dimmed');
+                    card.classList.remove('highlight');
+                } else {
+                    if (monkeyIds.includes(cardId)) {
+                        card.classList.remove('dimmed');
+                    } else {
+                        card.classList.add('dimmed');
+                    }
+                    card.classList.remove('highlight');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

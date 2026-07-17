@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Simulation: Creating Maintainable Programs</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .step {
+            display: none;
+        }
+        .step.active {
+            display: block;
+        }
+        .code-block {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+            white-space: pre;
+            position: relative;
+        }
+        .code-block.bad {
+            border-left: 4px solid #ef4444;
+        }
+        .code-block.good {
+            border-left: 4px solid #22c55e;
+        }
+        .explanation {
+            background-color: #f3f4f6;
+            border-left: 4px solid #6366f1;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+        .btn {
+            display: inline-block;
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn:hover {
+            background-color: #4338ca;
+        }
+        .btn-secondary {
+            background-color: #6b7280;
+        }
+        .btn-secondary:hover {
+            background-color: #4b5563;
+        }
+        .highlight {
+            background-color: rgba(250, 204, 21, 0.3);
+            border-radius: 3px;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
+    <div id="simulation-container" class="w-full max-w-3xl bg-white rounded-xl shadow-lg p-6 md:p-8">
+        
+        <!-- Step 0: Introduction -->
+        <div id="step-0" class="step active">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Creating Maintainable Programs</h1>
+            <p class="text-lg text-gray-600 mb-6">An Interactive Simulation</p>
+            <div class="explanation">
+                <p class="font-semibold mb-2">Your Mission:</p>
+                <p>You've inherited some code to calculate a triangle's area. It works, but it's hard to understand. Your task is to refactor it step-by-step to make it clean, readable, and easy to maintain.</p>
+            </div>
+            <div class="mt-8 text-center">
+                <button class="btn" onclick="nextStep()">Start the Mission</button>
+            </div>
+        </div>
+
+        <!-- Step 1: The Bad Code -->
+        <div id="step-1" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Step 1: The Original Code</h2>
+            <p class="text-gray-600 mb-4">Here's the code your colleague left you. What makes this code hard to read, edit, and understand?</p>
+            <div class="code-block bad">
+FUNCTION triA(a, b)
+c &lt;- 0.5 * a * b
+RETURN c
+ENDFUNCTION
+
+OUTPUT triA(5, 3)
+            </div>
+            <p class="mt-6 text-gray-700">Think about the function name, variables, comments, and structure. Let's fix it together.</p>
+            <div class="mt-8 flex justify-between">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn" onclick="nextStep()">Let's Fix It!</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Meaningful Identifiers -->
+        <div id="step-2" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Improvement 1: Use Meaningful Identifiers</h2>
+            <p class="text-gray-600 mb-4">Code should be self-documenting. Using clear names for variables and functions is the most important step towards maintainability.</p>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold text-red-600 mb-2">Before</h3>
+                    <div class="code-block bad text-sm">
+FUNCTION <span class="highlight">triA</span>(<span class="highlight">a</span>, <span class="highlight">b</span>)
+<span class="highlight">c</span> &lt;- 0.5 * a * b
+RETURN c
+ENDFUNCTION
+                    </div>
+                    <ul class="list-disc list-inside mt-2 text-sm text-red-700">
+                        <li>What is `triA`?</li>
+                        <li>What do `a` and `b` represent?</li>
+                        <li>What is `c`?</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-green-600 mb-2">After</h3>
+                    <div class="code-block good text-sm">
+FUNCTION <span class="highlight">triangleArea</span>(<span class="highlight">base</span>, <span class="highlight">height</span>)
+<span class="highlight">area</span> &lt;- 0.5 * base * height
+RETURN area
+ENDFUNCTION
+                    </div>
+                    <p class="mt-2 text-sm text-green-700">Much better! The purpose is now clear just from reading the code.</p>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-between">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn" onclick="nextStep()">Next Improvement</button>
+            </div>
+        </div>
+        
+        <!-- Step 3: Add Comments -->
+        <div id="step-3" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Improvement 2: Add Relevant Comments</h2>
+            <p class="text-gray-600 mb-4">Good comments explain the "why," not the "what." They clarify the purpose of a block of code or a complex line.</p>
+            <div class="explanation">
+                <p>Avoid commenting on obvious things. For example, `RETURN area` doesn't need a comment saying "This returns the area." Instead, comment on the function's overall goal or the formula being used.</p>
+            </div>
+            <div class="code-block good mt-4">
+<span class="text-green-400">// This function calculates the area of a triangle given its base and height.</span>
+FUNCTION triangleArea(base, height)
+    area &lt;- 0.5 * base * height <span class="text-green-400">// Formula: 1/2 * base * height</span>
+    RETURN area
+ENDFUNCTION
+            </div>
+             <div class="mt-8 flex justify-between">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn" onclick="nextStep()">Next Improvement</button>
+            </div>
+        </div>
+        
+        <!-- Step 4: Indentation -->
+        <div id="step-4" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Improvement 3: Use Proper Indentation</h2>
+            <p class="text-gray-600 mb-4">Indentation makes code structure immediately visible. It shows which lines of code belong inside a function, loop, or condition.</p>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold text-red-600 mb-2">Without Indentation</h3>
+                    <div class="code-block bad text-sm">
+FUNCTION triangleArea(base, height)
+<span class="text-red-400">area &lt;- 0.5 * base * height</span>
+<span class="text-red-400">RETURN area</span>
+ENDFUNCTION
+                    </div>
+                    <p class="mt-2 text-sm text-red-700">Hard to see the function's body at a glance.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-green-600 mb-2">With Indentation</h3>
+                    <div class="code-block good text-sm">
+FUNCTION triangleArea(base, height)
+    <span class="text-green-400">area &lt;- 0.5 * base * height</span>
+    <span class="text-green-400">RETURN area</span>
+ENDFUNCTION
+                    </div>
+                     <p class="mt-2 text-sm text-green-700">The structure is clear. Some languages, like Python, require it!</p>
+                </div>
+            </div>
+            <div class="mt-8 flex justify-between">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn" onclick="nextStep()">Final Improvement</button>
+            </div>
+        </div>
+
+        <!-- Step 5: Functions -->
+        <div id="step-5" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Improvement 4: Use Functions Effectively</h2>
+            <p class="text-gray-600 mb-4">Functions make code modular and reusable. Our original code already used a function, which is great! The key is to make them flexible by using parameters.</p>
+            
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-semibold text-red-600 mb-2">Poor: Non-Reusable</h3>
+                    <div class="code-block bad text-sm">
+FUNCTION triangleAreaFiveByThree()
+    area &lt;- 0.5 * 5 * 3
+    RETURN area
+ENDFUNCTION
+                    </div>
+                    <p class="mt-2 text-sm text-red-700">This only works for one specific triangle. It's not maintainable.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-green-600 mb-2">Good: Reusable</h3>
+                    <div class="code-block good text-sm">
+FUNCTION triangleArea(base, height)
+    area &lt;- 0.5 * base * height
+    RETURN area
+ENDFUNCTION
+                    </div>
+                    <p class="mt-2 text-sm text-green-700">This works for any triangle by passing in arguments. It's flexible and reusable.</p>
+                </div>
+            </div>
+             <div class="mt-8 flex justify-between">
+                <button class="btn btn-secondary" onclick="prevStep()">Back</button>
+                <button class="btn" onclick="nextStep()">See Final Code</button>
+            </div>
+        </div>
+        
+        <!-- Step 6: Final Code & Conclusion -->
+        <div id="step-6" class="step">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Mission Complete! ✅</h2>
+            <p class="text-gray-600 mb-4">By applying these principles, you've transformed the original code into a program that is easy to read, understand, and modify.</p>
+            <h3 class="font-semibold text-gray-800 mb-2 mt-6">Final Maintainable Code:</h3>
+            <div class="code-block good">
+<span class="text-green-400">// This function calculates the area of a triangle given its base and height.</span>
+FUNCTION triangleArea(base, height)
+    area &lt;- 0.5 * base * height <span class="text-green-400">// Formula: 1/2 * base * height</span>
+    RETURN area
+ENDFUNCTION
+
+<span class="text-gray-500">-- Example Usage --</span>
+OUTPUT triangleArea(5, 3)
+            </div>
+            <div class="explanation mt-6">
+                <p class="font-semibold mb-2">Key Takeaways:</p>
+                <ul class="list-disc list-inside">
+                    <li>Use <span class="font-semibold">meaningful identifiers</span>.</li>
+                    <li>Write <span class="font-semibold">relevant comments</span> to explain the 'why'.</li>
+                    <li>Use <span class="font-semibold">indentation</span> to show code structure.</li>
+                    <li>Create <span class="font-semibold">reusable functions</span> with parameters.</li>
+                </ul>
+            </div>
+            <div class="mt-8 flex justify-center">
+                 <button class="btn" onclick="restart()">Restart Simulation</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let currentStep = 0;
+        const steps = document.querySelectorAll('.step');
+
+        function showStep(stepIndex) {
+            steps.forEach((step, index) => {
+                if (index === stepIndex) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        }
+
+        function nextStep() {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                showStep(currentStep);
+            }
+        }
+
+        function prevStep() {
+            if (currentStep > 0) {
+                currentStep--;
+                showStep(currentStep);
+            }
+        }
+        
+        function restart() {
+            currentStep = 0;
+            showStep(currentStep);
+        }
+
+        showStep(currentStep);
+    </script>
+</body>
+</html>

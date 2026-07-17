@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error Detection Lab - Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+        
+        body { font-family: 'Plus+Jakarta+Sans', sans-serif; }
+        .font-mono { font-family: 'JetBrains+Mono', monospace; }
+
+        @keyframes packet-forward {
+            0% { left: 0%; opacity: 0; transform: translateY(-50%) scale(0.8); }
+            20% { opacity: 1; transform: translateY(-50%) scale(1); }
+            80% { opacity: 1; transform: translateY(-50%) scale(1); }
+            100% { left: 100%; opacity: 0; transform: translateY(-50%) scale(0.8); }
+        }
+
+        @keyframes packet-backward {
+            0% { left: 100%; opacity: 0; transform: translateY(-50%) scale(0.8); }
+            20% { opacity: 1; transform: translateY(-50%) scale(1); }
+            80% { opacity: 1; transform: translateY(-50%) scale(1); }
+            100% { left: 0%; opacity: 0; transform: translateY(-50%) scale(0.8); }
+        }
+
+        .animate-packet-forward { animation: packet-forward 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        .animate-packet-backward { animation: packet-backward 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .parity-error {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+            color: #b91c1c !important;
+            animation: pulse-red 1s infinite;
+        }
+
+        @keyframes pulse-red {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); border-width: 3px; }
+        }
+
+        .bit-btn { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .bit-btn:active { transform: scale(0.9); }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .step-entry { border-left: 2px solid #6366f1; padding-left: 12px; margin-bottom: 8px; }
+        
+        /* Checklist Styles */
+        .topic-checkbox:checked + span { text-decoration: line-through; opacity: 0.5; }
+    </style>
+</head>
+<body class="bg-[#f8fafc] text-slate-900 min-h-screen">
+
+    <div id="notification-container" class="fixed top-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <header class="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="p-2 bg-indigo-600 rounded-xl shadow-lg shadow-indigo-200">
+                        <i data-lucide="shield-check" class="text-white w-6 h-6"></i>
+                    </div>
+                    <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">Error Detection Lab</h1>
+                </div>
+                <p class="text-slate-500 font-medium">Interactive visualization of data integrity protocols.</p>
+            </div>
+
+            <div class="flex items-center gap-4 bg-white p-2 pr-4 rounded-2xl shadow-sm border border-slate-200">
+                <div class="bg-slate-100 p-1.5 rounded-xl flex gap-1">
+                    <button onclick="setParityMode('even')" id="mode-even" class="px-5 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600">Even Parity</button>
+                    <button onclick="setParityMode('odd')" id="mode-odd" class="px-5 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-white/50">Odd Parity</button>
+                </div>
+                <div class="h-8 w-px bg-slate-200 mx-2"></div>
+                <div class="flex flex-col">
+                    <span class="text-[10px] uppercase font-black text-slate-400 tracking-widest">Global Setting</span>
+                    <span id="parity-status-label" class="text-xs font-bold text-indigo-600">Checking for 0s/1s</span>
+                </div>
+            </div>
+        </header>
+
+        <nav class="flex flex-wrap gap-2 mb-8 p-1.5 bg-slate-200/50 rounded-2xl w-fit">
+            <button onclick="switchTab('parity')" id="btn-parity" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all bg-indigo-600 text-white shadow-md">
+                <i data-lucide="binary" class="w-4 h-4"></i> Parity
+            </button>
+            <button onclick="switchTab('block')" id="btn-block" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white">
+                <i data-lucide="grid" class="w-4 h-4"></i> 2D Blocks
+            </button>
+            <button onclick="switchTab('digits')" id="btn-digits" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white">
+                <i data-lucide="hash" class="w-4 h-4"></i> Check Digits
+            </button>
+            <button onclick="switchTab('arq')" id="btn-arq" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white">
+                <i data-lucide="zap" class="w-4 h-4"></i> Protocols
+            </button>
+            <button onclick="switchTab('quiz')" id="btn-quiz" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white">
+                <i data-lucide="help-circle" class="w-4 h-4"></i> Quiz
+            </button>
+            <button onclick="switchTab('challenges')" id="btn-challenges" class="tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white">
+                <i data-lucide="microscope" class="w-4 h-4"></i> Challenges
+            </button>
+        </nav>
+
+        <main>
+            <!-- PARITY -->
+            <section id="parity" class="tab-content active animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="grid lg:grid-cols-3 gap-8">
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <div class="flex items-center justify-between mb-8">
+                                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="binary" class="text-indigo-600"></i> Single Parity Check</h2>
+                                <span class="text-[10px] font-mono bg-slate-100 px-3 py-1 rounded-full text-slate-500 uppercase tracking-widest">7-Bit Binary Entry</span>
+                            </div>
+                            <div class="bg-slate-900 p-10 rounded-[2rem] shadow-inner mb-8 overflow-x-auto">
+                                <div id="bit-container" class="flex justify-center items-end gap-4 min-w-max"></div>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span class="block text-[10px] font-black text-slate-400 uppercase mb-1">Total 1s</span>
+                                    <span id="ones-count" class="text-2xl font-bold text-slate-800">0</span>
+                                </div>
+                                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span class="block text-[10px] font-black text-slate-400 uppercase mb-1">State</span>
+                                    <span id="parity-state" class="text-2xl font-bold text-indigo-600 uppercase">Even</span>
+                                </div>
+                                <button onclick="randomizeBits()" class="p-4 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 font-bold hover:bg-indigo-100 transition-colors md:col-span-2">Randomize Bits</button>
+                            </div>
+                        </div>
+
+                        <!-- NEW TOPIC CHECKLIST -->
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <h3 class="text-lg font-bold mb-6 flex items-center gap-2">
+                                <i data-lucide="list-checks" class="text-indigo-600"></i> Mastery Checklist
+                            </h3>
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">Transmission Errors</span>
+                                        <span class="text-xs text-slate-500">Why we need to check for errors after data transfer.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">Parity Checks</span>
+                                        <span class="text-xs text-slate-500">Understanding Odd and Even parity bit logic.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">Checksums</span>
+                                        <span class="text-xs text-slate-500">Verifying entire files or blocks using algorithms.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">Echo Checks</span>
+                                        <span class="text-xs text-slate-500">Sending data back to the source for comparison.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">Check Digits (ISBN)</span>
+                                        <span class="text-xs text-slate-500">Using barcodes and ISBN weights to detect input errors.</span>
+                                    </div>
+                                </label>
+                                <label class="flex items-start gap-3 p-4 bg-slate-50 rounded-2xl border border-slate-100 cursor-pointer hover:bg-white transition-all group">
+                                    <input type="checkbox" class="topic-checkbox mt-1 w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-bold text-slate-800">ARQ Protocols</span>
+                                        <span class="text-xs text-slate-500">Automatic Repeat Queries using ACK/NACK and timeouts.</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-600 text-white p-8 rounded-3xl shadow-xl h-full flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5"></i> Today's Objectives</h3>
+                        <div class="space-y-4 text-sm opacity-90 leading-relaxed">
+                            <p>By the end of this session, you should be able to:</p>
+                            <ul class="list-disc pl-5 space-y-3">
+                                <li><strong>Understand</strong> the need for error checking due to electrical interference or surges.</li>
+                                <li><strong>Describe</strong> Parity, Checksums, and Echo checks.</li>
+                                <li><strong>Calculate</strong> check digits for barcodes and ISBN numbers.</li>
+                                <li><strong>Explain</strong> how ARQ (Automatic Repeat Request) ensures data is correctly received.</li>
+                            </ul>
+                        </div>
+                        <div class="mt-auto pt-6 border-t border-white/20">
+                            <div class="p-4 bg-white/10 rounded-2xl border border-white/20 text-xs italic">
+                                "Fastest way to be accurate? Use groups of 4 digits and repeat them back!" - Starter Activity
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- BLOCK -->
+            <section id="block" class="tab-content animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="grid" class="text-indigo-600"></i> 2D Block Parity</h2>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div id="block-score-container" class="hidden flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100">
+                                <span class="text-xs font-black text-indigo-400 uppercase tracking-widest">Score</span>
+                                <span id="block-score" class="text-xl font-bold text-indigo-700">0</span>
+                            </div>
+                            <div class="bg-slate-100 p-1 rounded-xl flex">
+                                <button onclick="setBlockMode('explore')" id="btn-block-explore" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600">Explore</button>
+                                <button onclick="setBlockMode('game')" id="btn-block-game" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700">Play Game</button>
+                            </div>
+                            <button onclick="resetBlockGrid()" class="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span id="block-reset-label">Reset Grid</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex justify-center overflow-x-auto pb-4">
+                        <div id="grid-container" class="inline-grid grid-cols-[repeat(8,3rem)_5rem] gap-2 p-6 bg-slate-50 rounded-[2.5rem] border border-slate-100 min-w-max shadow-inner"></div>
+                    </div>
+                    <div id="block-instructions" class="mt-8 mx-auto max-w-2xl p-6 bg-indigo-900 text-white rounded-3xl text-center shadow-xl">
+                        <div id="block-instr-icon" class="mb-2"></div>
+                        <h4 id="block-instr-title" class="font-bold text-lg mb-1"></h4>
+                        <p id="block-instr-desc" class="text-sm opacity-80"></p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- DIGITS -->
+            <section id="digits" class="tab-content animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="grid lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-8 space-y-8">
+                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                                <h2 class="text-xl font-bold flex items-center gap-2"><i data-lucide="calculator" class="text-indigo-600"></i> Check Digit Algorithms</h2>
+                                <div class="bg-slate-100 p-1 rounded-xl flex flex-wrap gap-1">
+                                    <button onclick="setDigitAlgo('isbn13')" id="algo-isbn13" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600">ISBN-13</button>
+                                    <button onclick="setDigitAlgo('luhn')" id="algo-luhn" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-800">Luhn (Cards)</button>
+                                    <button onclick="setDigitAlgo('checksum')" id="algo-checksum" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-800">8-bit Sum</button>
+                                </div>
+                            </div>
+                            <div id="digit-input-grid" class="flex flex-wrap justify-center gap-3 p-8 bg-slate-50 rounded-3xl border border-slate-100 mb-8 shadow-inner overflow-x-auto"></div>
+                            
+                            <div class="bg-slate-900 rounded-[2rem] p-8 text-slate-400 font-mono shadow-2xl relative overflow-hidden">
+                                <div class="relative z-10">
+                                    <h4 class="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-6 flex items-center gap-2">
+                                        <i data-lucide="cpu" class="w-3 h-3"></i> Detailed Calculation Breakdown
+                                    </h4>
+                                    <div id="calculation-steps" class="space-y-2 text-xs h-[240px] overflow-y-auto pr-2"></div>
+                                    <div class="mt-6 pt-6 border-t border-slate-800 flex justify-between items-center">
+                                        <span class="text-indigo-400 font-black tracking-widest uppercase text-[10px]">Computed Digit:</span>
+                                        <span id="final-check-val" class="text-indigo-400 font-black text-4xl">0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-4 bg-indigo-50 p-8 rounded-3xl border border-indigo-100 flex flex-col h-full">
+                        <h3 id="algo-guide-title" class="text-xl font-bold text-indigo-900 mb-4">Guide</h3>
+                        <div id="algo-guide-content" class="text-sm text-indigo-800/80 leading-relaxed"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ARQ -->
+            <section id="arq" class="tab-content animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
+                        <h2 class="text-2xl font-bold flex items-center gap-2"><i data-lucide="zap" class="text-indigo-600"></i> Transmission Protocols</h2>
+                        <div class="flex flex-wrap items-center gap-4">
+                            <div id="proto-container" class="bg-slate-100 p-1 rounded-xl flex">
+                                <button onclick="setProtocol('ARQ')" id="proto-arq" class="px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600 border border-indigo-100">ARQ (Stop-Wait)</button>
+                                <button onclick="setProtocol('Echo')" id="proto-echo" class="px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700">Echo Check</button>
+                            </div>
+                            <label class="flex items-center gap-2 cursor-pointer bg-slate-100 px-4 py-2 rounded-xl border border-slate-200">
+                                <input type="checkbox" id="force-error" class="w-4 h-4 text-indigo-600 rounded">
+                                <span class="text-sm font-bold text-slate-600">Simulate Error</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="grid lg:grid-cols-4 gap-8">
+                        <div class="lg:col-span-3">
+                            <div class="relative h-64 bg-slate-900 rounded-[3rem] border-8 border-slate-800 shadow-2xl overflow-hidden flex items-center justify-between px-12 md:px-24">
+                                <div class="relative z-10 flex flex-col items-center gap-4">
+                                    <div id="sender-node" class="w-24 h-24 bg-indigo-600 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg border-4 border-indigo-400/50">
+                                        <i data-lucide="server" class="w-10 h-10 mb-1"></i>
+                                        <span class="text-[10px] font-black uppercase opacity-70">Sender</span>
+                                    </div>
+                                    <div id="sender-status" class="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-400 uppercase">Idle</div>
+                                </div>
+                                <div class="flex-1 h-2 mx-4 relative">
+                                    <div class="absolute inset-0 bg-slate-800 rounded-full"></div>
+                                    <div id="packet" class="hidden absolute top-1/2 -translate-y-1/2 w-20 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center z-20">
+                                        <span id="packet-text" class="text-[10px] font-black text-slate-900 uppercase">Data</span>
+                                    </div>
+                                </div>
+                                <div class="relative z-10 flex flex-col items-center gap-4">
+                                    <div id="receiver-node" class="w-24 h-24 bg-slate-800 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg border-4 border-slate-700">
+                                        <i data-lucide="laptop" class="w-10 h-10 mb-1"></i>
+                                        <span class="text-[10px] font-black uppercase opacity-70">Receiver</span>
+                                    </div>
+                                    <div id="receiver-status" class="text-[10px] font-mono font-bold px-3 py-1 rounded-full bg-slate-800 text-slate-400 uppercase">Listening</div>
+                                </div>
+                            </div>
+                            <div class="mt-8 flex justify-center"><button id="start-sim" onclick="runSimulation()" class="px-12 py-5 bg-indigo-600 rounded-3xl font-black text-white shadow-xl hover:bg-indigo-700 active:scale-95 transition-all">START TRANSMISSION</button></div>
+                        </div>
+                        <div class="bg-slate-50 p-6 rounded-[2rem] border border-slate-200 flex flex-col h-[400px] lg:h-auto overflow-hidden">
+                            <div class="flex items-center justify-between mb-4"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Network Log</span><button onclick="clearLog()" class="text-[10px] text-indigo-500 font-bold hover:underline">Clear</button></div>
+                            <div id="sim-log" class="flex-1 overflow-y-auto space-y-3 font-mono text-[11px] pr-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUIZ -->
+            <section id="quiz" class="tab-content animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="md:col-span-2 bg-white p-10 rounded-[2.5rem] shadow-sm border border-slate-200 relative overflow-hidden">
+                        <h2 class="text-3xl font-black tracking-tight mb-2">Scenario Quiz</h2>
+                        <p class="text-slate-500 mb-8">Progress: <span id="quiz-progress" class="font-bold">1 / 6</span></p>
+                        <div id="quiz-container" class="mt-4 p-8 bg-slate-50 rounded-3xl border border-slate-100 min-h-[350px]"></div>
+                    </div>
+                    <div class="bg-indigo-600 text-white p-10 rounded-[2.5rem] shadow-2xl flex flex-col h-full">
+                        <h3 class="text-2xl font-black mb-6">Study Guide</h3>
+                        <div class="space-y-6">
+                            <p class="text-sm opacity-90 leading-relaxed"><strong>ARQ:</strong> Fast for clean lines. The receiver only sends a tiny confirmation bit.</p>
+                            <p class="text-sm opacity-90 leading-relaxed"><strong>Echo Check:</strong> Reliable but slow. Bandwidth usage is doubled as every bit is sent back.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CHALLENGES -->
+            <section id="challenges" class="tab-content animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div class="mb-10"><h2 class="text-3xl font-black tracking-tight mb-2">Research Challenges</h2><p class="text-slate-500">Solve these 4 practical missions using the lab tools.</p></div>
+                <div id="challenge-grid" class="grid md:grid-cols-2 gap-8"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        // --- Shared State ---
+        let globalParityMode = 'even';
+        let currentBits = [1, 0, 1, 1, 0, 0, 1];
+        let blockGrid = [[1,0,0,1,1,0,1],[0,1,1,0,1,1,0],[1,1,0,1,0,1,0],[0,0,1,1,0,0,1]];
+        let blockMode = 'explore';
+        let blockChallengeTarget = null;
+        let blockScore = 0;
+        let currentAlgo = 'isbn13';
+        let digitData = [9,7,8,0,3,0,6,4,0,6,1,5];
+        let currentProtocol = 'ARQ';
+        let isSimulating = false;
+        let currentQuizIndex = 0;
+        let isQuizLocked = false;
+
+        const quizList = [
+            { t: "Scenario 1: Protocol Choice", d: "In ARQ, why does the sender keep a copy of the packet after sending it?", o: [{ t: "To boost data transfer speed.", c: false }, { t: "To retransmit if it receives a NACK.", c: true }, { t: "To verify the bits with an Echo Check.", c: false }] },
+            { t: "Scenario 2: Bandwidth Efficiency", d: "Which protocol is generally LESS efficient for high-traffic networks?", o: [{ t: "Echo Check (Whole message sent back).", c: true }, { t: "ARQ Stop-and-Wait (Small ACK signal).", c: false }] },
+            { t: "Scenario 3: Parity Limits", d: "Using Even Parity on '1100'. During transmission, 3 bits flip. Will the error be detected?", o: [{ t: "Yes, the parity sum becomes odd.", c: true }, { t: "No, the parity sum stays even.", c: false }] },
+            { t: "Scenario 4: 2D Correction", d: "In 2D Block Parity, how many bits can usually be fixed automatically per block?", o: [{ t: "Up to 4 bits.", c: false }, { t: "Exactly 1 bit error.", c: true }, { t: "Any even number of bits.", c: false }] },
+            { t: "Scenario 5: Checksum Logic", d: "What is a 'Checksum Collision'?", o: [{ t: "When a packet is lost in the cable.", c: false }, { t: "When different data results in the same checksum.", c: true }, { t: "When the checksum bit flips to a zero.", c: false }] },
+            { t: "Scenario 6: Luhn Algorithm", d: "Why does the Luhn algorithm double every second digit?", o: [{ t: "To encrypt the card number.", c: false }, { t: "To detect adjacent digit swaps (e.g. 45 to 54).", c: true }, { t: "To make the number longer.", c: false }] }
+        ];
+
+        // --- Core Utils ---
+        function notify(msg, type = 'info') {
+            const container = document.getElementById('notification-container');
+            if (!container) return;
+            const toast = document.createElement('div');
+            const colors = { success: 'bg-white border-green-200 text-green-700 shadow-green-100', error: 'bg-white border-red-200 text-red-700 shadow-red-100', info: 'bg-white border-indigo-200 text-indigo-700 shadow-indigo-100' };
+            toast.className = `p-4 pr-12 rounded-2xl shadow-xl flex items-center gap-3 border transition-all duration-300 transform translate-x-full animate-in slide-in-from-right-full pointer-events-auto ${colors[type] || colors.info}`;
+            toast.innerHTML = `<i data-lucide="info" class="w-5 h-5"></i> <span class="font-bold text-sm">${msg}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+            setTimeout(() => { toast.classList.add('opacity-0', 'scale-95'); setTimeout(() => toast.remove(), 300); }, 3000);
+        }
+
+        function switchTab(id) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.className = "tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all text-slate-600 hover:bg-white");
+            const activeSection = document.getElementById(id);
+            if (activeSection) activeSection.classList.add('active');
+            const activeBtn = document.getElementById('btn-' + id);
+            if (activeBtn) activeBtn.className = "tab-btn flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold transition-all bg-indigo-600 text-white shadow-md";
+            
+            if (id === 'parity') renderParity();
+            if (id === 'block') renderBlockGrid();
+            if (id === 'digits') renderDigits();
+            if (id === 'quiz') renderQuiz();
+            if (id === 'challenges') renderChallenges();
+            lucide.createIcons();
+        }
+
+        // --- Logic: Parity ---
+        function setParityMode(m) {
+            globalParityMode = m;
+            document.getElementById('mode-even').className = m === 'even' ? "px-5 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600" : "px-5 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-white/50";
+            document.getElementById('mode-odd').className = m === 'odd' ? "px-5 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600" : "px-5 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:bg-white/50";
+            const statusLabel = document.getElementById('parity-status-label');
+            if(statusLabel) statusLabel.textContent = m === 'even' ? 'Target: Even Sum' : 'Target: Odd Sum';
+            renderParity();
+            renderBlockGrid();
+        }
+        function calculateParityBit(bits, mode) {
+            const count = bits.filter(b => b === 1).length;
+            return mode === 'even' ? (count % 2 === 0 ? 0 : 1) : (count % 2 === 0 ? 1 : 0);
+        }
+        function renderParity() {
+            const container = document.getElementById('bit-container');
+            if(!container) return;
+            const parityBit = calculateParityBit(currentBits, globalParityMode);
+            container.innerHTML = currentBits.map((b, i) => `
+                <div class="flex flex-col items-center gap-3">
+                    <span class="text-[10px] font-black text-slate-600">D${i+1}</span>
+                    <button onclick="toggleParityBit(${i})" class="bit-btn w-12 h-16 rounded-2xl text-2xl font-black flex items-center justify-center ${b === 1 ? 'bg-indigo-500 text-white shadow-lg' : 'bg-slate-700 text-slate-500'}">${b}</button>
+                </div>
+            `).join('') + `<div class="h-16 w-1 bg-slate-800 rounded-full mx-2 self-center opacity-30"></div><div class="flex flex-col items-center gap-3"><span class="text-[10px] font-black text-indigo-400">PARITY</span><div class="w-12 h-16 rounded-2xl border-2 border-dashed border-indigo-500/50 text-indigo-400 text-2xl font-black flex items-center justify-center">${parityBit}</div></div>`;
+            document.getElementById('ones-count').textContent = currentBits.filter(b => b === 1).length;
+            document.getElementById('parity-state').textContent = currentBits.filter(b => b === 1).length % 2 === 0 ? 'Even' : 'Odd';
+        }
+        function toggleParityBit(i) { currentBits[i] = currentBits[i] === 1 ? 0 : 1; renderParity(); }
+        function randomizeBits() { currentBits = currentBits.map(() => Math.round(Math.random())); renderParity(); }
+
+        // --- Logic: 2D Block ---
+        function renderBlockGrid() {
+            const container = document.getElementById('grid-container');
+            if (!container) return;
+            let html = '';
+            for(let i=1; i<=7; i++) html += `<div class="text-center text-[10px] font-black text-slate-400">BIT ${i}</div>`;
+            html += `<div class="text-center text-[10px] font-black text-indigo-500 uppercase tracking-widest">ROW P</div><div></div>`;
+            blockGrid.forEach((row, ri) => {
+                row.forEach((bit, ci) => html += `<button onclick="handleGridClick(${ri}, ${ci})" class="bit-btn w-full aspect-square rounded-xl flex items-center justify-center text-lg font-black ${bit === 1 ? 'bg-slate-800 text-white' : 'bg-white text-slate-400 border border-slate-200 shadow-sm'}">${bit}</button>`);
+                const curRP = calculateParityBit(row, globalParityMode);
+                const hasTarget = blockMode === 'game' && blockChallengeTarget !== null;
+                let isErr = hasTarget && curRP !== blockChallengeTarget.origRowP[ri];
+                let displayRP = hasTarget ? blockChallengeTarget.origRowP[ri] : curRP;
+                html += `<div class="w-full aspect-square rounded-xl flex items-center justify-center font-black border-2 transition-colors duration-300 ${isErr ? 'parity-error' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}">${displayRP}</div><div class="flex items-center text-[10px] font-black text-slate-300 uppercase pl-3">BYTE ${ri+1}</div>`;
+            });
+            html += `<div class="col-span-8 border-t-2 border-slate-200 my-2"></div><div></div>`;
+            for(let ci=0; ci<7; ci++) {
+                const col = blockGrid.map(r => r[ci]);
+                const curCP = calculateParityBit(col, globalParityMode);
+                const hasTarget = blockMode === 'game' && blockChallengeTarget !== null;
+                let isErr = hasTarget && curCP !== blockChallengeTarget.origColP[ci];
+                let displayCP = hasTarget ? blockChallengeTarget.origColP[ci] : curCP;
+                html += `<div class="w-full aspect-square rounded-xl flex items-center justify-center font-black border-2 transition-colors duration-300 ${isErr ? 'parity-error' : 'bg-indigo-50 border-indigo-100 text-indigo-600'}">${displayCP}</div>`;
+            }
+            html += `<div class="flex items-center justify-center text-[10px] font-black text-indigo-500 leading-tight text-center uppercase">COL<br/>P</div><div></div>`;
+            container.innerHTML = html;
+        }
+        function setBlockMode(m) { blockMode = m; if (m === 'game') startBlockGame(); else resetBlockGrid(); }
+        function startBlockGame() {
+            blockGrid = Array(4).fill().map(() => Array(7).fill().map(() => Math.round(Math.random())));
+            const origRowP = blockGrid.map(row => calculateParityBit(row, globalParityMode));
+            const origColP = Array(7).fill(0).map((_, ci) => calculateParityBit(blockGrid.map(r => r[ci]), globalParityMode));
+            const ri = Math.floor(Math.random() * 4), ci = Math.floor(Math.random() * 7);
+            blockGrid[ri][ci] = blockGrid[ri][ci] === 1 ? 0 : 1;
+            blockChallengeTarget = { ri, ci, origRowP, origColP };
+            updateBlockInstr("Error Found!", "Pinpoint the bit that broke the row AND column parity.", "alert-triangle");
+            renderBlockGrid();
+        }
+        function handleGridClick(ri, ci) {
+            if (blockMode === 'game' && blockChallengeTarget !== null) {
+                if (ri === blockChallengeTarget.ri && ci === blockChallengeTarget.ci) {
+                    blockGrid[ri][ci] = blockGrid[ri][ci] === 1 ? 0 : 1;
+                    blockScore += 100;
+                    document.getElementById('block-score').textContent = blockScore;
+                    notify("Fixed!", "success"); blockChallengeTarget = null;
+                    updateBlockInstr("Success!", "Parity logic restored. Click 'Next' for another.", "check-circle");
+                } else notify("That bit is fine!", "error");
+            } else blockGrid[ri][ci] = blockGrid[ri][ci] === 1 ? 0 : 1;
+            renderBlockGrid();
+        }
+        function resetBlockGrid() {
+            blockGrid = [[1,0,0,1,1,0,1],[0,1,1,0,1,1,0],[1,1,0,1,0,1,0],[0,0,1,1,0,0,1]];
+            blockChallengeTarget = null;
+            updateBlockInstr("Learning Mode", "Toggle bits manually to see row/column reactions.", "mouse-pointer-2");
+            renderBlockGrid();
+        }
+        function updateBlockInstr(t, d, i) {
+            const te = document.getElementById('block-instr-title'), de = document.getElementById('block-instr-desc'), ie = document.getElementById('block-instr-icon');
+            if(te) te.textContent = t; if(de) de.textContent = d; if(ie) ie.innerHTML = `<i data-lucide="${i}" class="mx-auto w-6 h-6 text-indigo-300"></i>`;
+            lucide.createIcons();
+        }
+
+        // --- Digits ---
+        function renderDigits() {
+            const container = document.getElementById('digit-input-grid');
+            if (!container) return;
+            container.innerHTML = digitData.map((d, i) => `<div class="flex flex-col items-center gap-1"><span class="text-[9px] font-black text-slate-400 uppercase tracking-tighter">${currentAlgo==='isbn13'?(i%2===0?'1x':'3x'):'D'+(i+1)}</span><input type="number" value="${d}" oninput="digitData[${i}]=parseInt(this.value)||0; updateDigitBreakdown();" class="w-14 h-12 border border-slate-200 rounded-xl text-center font-black text-indigo-600 outline-none transition-all focus:ring-2 focus:ring-indigo-100 appearance-none"></div>`).join('') + `<div class="flex flex-col items-center gap-1 ml-4"><span class="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">CHECK</span><div id="check-digit-box" class="w-14 h-12 bg-indigo-600 rounded-xl flex items-center justify-center font-black text-white shadow-lg shadow-indigo-200 transition-all">0</div></div>`;
+            updateDigitBreakdown();
+        }
+        function updateDigitBreakdown() {
+            const res = calculateDigitSteps();
+            const consoleEl = document.getElementById('calculation-steps');
+            if(consoleEl) {
+                consoleEl.innerHTML = res.steps.map(s => `<div class="step-entry animate-in slide-in-from-left duration-300"><span class="text-indigo-200 opacity-60 mr-2">></span>${s}</div>`).join('');
+                consoleEl.scrollTop = consoleEl.scrollHeight;
+            }
+            const fv = document.getElementById('final-check-val'), box = document.getElementById('check-digit-box');
+            if(fv) fv.textContent = res.check; if(box) box.textContent = res.check;
+        }
+        function calculateDigitSteps() {
+            let steps = [], check = 0;
+            if (currentAlgo === 'isbn13') {
+                let sum = 0; steps.push("Algorithm: ISBN-13 (Weights 1 and 3)");
+                digitData.forEach((d, i) => { let w = (i % 2 === 0 ? 1 : 3); let weighted = d * w; sum += weighted; steps.push(`D${i+1}: ${d} x ${w} = ${weighted}`); });
+                let rem = sum % 10; check = (10 - rem) % 10;
+                steps.push(`Total Weighted Sum: ${sum}`, `Remainder (Sum % 10): ${rem}`, `Final Check Digit: (10 - ${rem}) % 10 = ${check}`);
+            } else if (currentAlgo === 'luhn') {
+                let sum = 0; steps.push("Algorithm: Luhn (Double every 2nd from right)");
+                digitData.forEach((d, i) => {
+                    let pos = digitData.length - i, v = d;
+                    if (pos % 2 === 0) { v *= 2; if (v > 9) v -= 9; steps.push(`Pos ${pos}: ${d} x 2 -> ${v}`); }
+                    else { steps.push(`Pos ${pos}: ${d} stays ${v}`); }
+                    sum += v;
+                });
+                let rem = sum % 10; check = (10 - rem) % 10;
+                steps.push(`Final Adjusted Sum: ${sum}`, `Mod 10 Check: (10 - ${rem}) % 10 = ${check}`);
+            } else {
+                let sum = digitData.reduce((acc, d) => acc + d, 0); check = sum % 256;
+                steps.push("Algorithm: 8-bit Sum Checksum", `Calculation: ${digitData.join(' + ')} = ${sum}`, `Roll-over Truncation: ${sum} % 256 = ${check}`);
+            }
+            return { steps, check };
+        }
+        function setDigitAlgo(a) { 
+            currentAlgo = a; 
+            const sets = { isbn13: [9,7,8,0,3,0,6,4,0,6,1,5], luhn: [4,5,3,9,1,2,8,3,4,1,5,0,8,1,2], checksum: [120,42,201,85,12,190] };
+            digitData = [...sets[a]];
+            const guide = { isbn13: "Weights 1 and 3 alternately. Mod 10 sum. Used for book barcodes.", luhn: "Standard CC check. Doubling catches digit swaps.", checksum: "Simple 1-byte wrap sum. All bytes added mod 256." };
+            const gt = document.getElementById('algo-guide-title'), gc = document.getElementById('algo-guide-content');
+            if(gt) gt.textContent = a.toUpperCase(); if(gc) gc.textContent = guide[a];
+            renderDigits(); 
+        }
+
+        // --- Protocols ---
+        function setProtocol(p) {
+            currentProtocol = p;
+            const arqBtn = document.getElementById('proto-arq'), echoBtn = document.getElementById('proto-echo');
+            if (arqBtn && echoBtn) {
+                if (p === 'ARQ') {
+                    arqBtn.className = "px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600 border border-indigo-100";
+                    echoBtn.className = "px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+                } else {
+                    echoBtn.className = "px-4 py-2 rounded-lg text-sm font-bold transition-all bg-white shadow-sm text-indigo-600 border border-indigo-100";
+                    arqBtn.className = "px-4 py-2 rounded-lg text-sm font-bold transition-all text-slate-500 hover:text-slate-700";
+                }
+            }
+            notify(`Protocol switched to ${p}`, "info");
+        }
+
+        async function runSimulation() {
+            if (isSimulating) return; isSimulating = true;
+            const err = document.getElementById('force-error')?.checked;
+            logAction(`Sender: Initiating ${currentProtocol} transfer...`, "sender");
+            updateNode('sender', 'SENDING', 'indigo');
+            const pkt = document.getElementById('packet'), txt = document.getElementById('packet-text');
+            if(txt) txt.textContent = "DATA";
+            if(pkt) { pkt.className = "absolute top-1/2 -translate-y-1/2 w-20 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center z-20 animate-packet-forward"; pkt.classList.remove('hidden'); }
+            await sleep(1500); if(pkt) pkt.classList.add('hidden');
+            updateNode('receiver', 'PROCESSING', 'indigo'); await sleep(1000);
+
+            if (currentProtocol === 'ARQ') {
+                if (err || Math.random() < 0.3) {
+                    updateNode('receiver', 'CORRUPT', 'pink'); logAction("Receiver: Error! NACK sent.", "error");
+                    if(txt) txt.textContent = "NACK";
+                    if(pkt) { pkt.className = "absolute top-1/2 -translate-y-1/2 w-20 h-12 bg-pink-500 text-white rounded-xl shadow-lg animate-packet-backward"; pkt.classList.remove('hidden'); }
+                    await sleep(1200); if(pkt) pkt.classList.add('hidden');
+                    updateNode('sender', 'RETRYING', 'pink');
+                } else {
+                    updateNode('receiver', 'VERIFIED', 'green'); logAction("Receiver: OK! ACK sent.", "success");
+                    if(txt) txt.textContent = "ACK";
+                    if(pkt) { pkt.className = "absolute top-1/2 -translate-y-1/2 w-20 h-12 bg-green-500 text-white rounded-xl shadow-lg animate-packet-backward"; pkt.classList.remove('hidden'); }
+                    await sleep(1200); if(pkt) pkt.classList.add('hidden');
+                    updateNode('sender', 'SUCCESS', 'green');
+                }
+            } else {
+                logAction("Receiver: Echoing bits back to Sender...", "receiver");
+                if(txt) txt.textContent = err ? "ECHO: ERR" : "ECHO: OK";
+                if(pkt) { pkt.className = "absolute top-1/2 -translate-y-1/2 w-20 h-12 bg-amber-400 text-white rounded-xl animate-packet-backward"; pkt.classList.remove('hidden'); }
+                await sleep(1500); if(pkt) pkt.classList.add('hidden');
+                updateNode('sender', 'COMPARING', 'indigo'); await sleep(1000);
+                if (err) { updateNode('sender', 'MISMATCH', 'pink'); logAction("Sender: Echo Mismatch! Retransmitting...", "error"); }
+                else { updateNode('sender', 'MATCH', 'green'); logAction("Sender: Echo Match Confirmed.", "success"); }
+            }
+            isSimulating = false;
+        }
+        function updateNode(id, s, c) {
+            const n = document.getElementById(id + '-node'), st = document.getElementById(id + '-status');
+            if(st) st.textContent = s;
+            const clrs = { indigo: 'bg-indigo-600 border-indigo-400', green: 'bg-green-600 border-green-400', pink: 'bg-pink-600 border-pink-400' };
+            if(n) n.className = `w-24 h-24 rounded-3xl flex flex-col items-center justify-center text-white shadow-lg border-4 transition-all duration-500 ${clrs[c]}`;
+        }
+        function logAction(m, t) {
+            const l = document.getElementById('sim-log'), e = document.createElement('div');
+            const cls = { sender: 'text-indigo-600 font-bold', receiver: 'text-slate-800 font-bold', error: 'text-pink-600 italic', success: 'text-green-600 font-bold' };
+            e.className = "p-2 rounded bg-white border border-slate-100 text-[10px]";
+            e.innerHTML = `<span class="${cls[t] || ''}">${m}</span>`;
+            if(l) l.prepend(e);
+        }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        function clearLog() { const l = document.getElementById('sim-log'); if(l) l.innerHTML = ''; }
+
+        // --- Quiz Engine ---
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container'), progLabel = document.getElementById('quiz-progress');
+            if(!container) return;
+            if(currentQuizIndex >= quizList.length) {
+                container.innerHTML = `<div class="text-center py-10"><div class="inline-flex p-4 bg-green-100 text-green-600 rounded-full mb-4"><i data-lucide="award" class="w-8 h-8"></i></div><h3 class="text-2xl font-black mb-2">Quiz Complete!</h3><button onclick="currentQuizIndex=0;renderQuiz()" class="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold">Restart Quiz</button></div>`;
+                if(progLabel) progLabel.textContent = "Complete!";
+                lucide.createIcons(); return;
+            }
+            const q = quizList[currentQuizIndex];
+            if(progLabel) progLabel.textContent = `${currentQuizIndex + 1} / ${quizList.length}`;
+            container.innerHTML = `<span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question ${currentQuizIndex + 1}</span><h3 class="text-xl font-bold text-slate-800 mb-4">${q.t}</h3><p class="text-slate-600 mb-8 leading-relaxed">${q.d}</p><div class="grid grid-cols-1 gap-3">${q.o.map((opt, idx) => `<button onclick="handleQuizAnswer(${idx})" class="w-full text-left p-5 bg-white border border-slate-200 rounded-2xl font-bold hover:border-indigo-500 hover:bg-indigo-50 transition-all text-sm">${opt.t}</button>`).join('')}</div>`;
+        }
+        function handleQuizAnswer(idx) {
+            if (isQuizLocked || !quizList[currentQuizIndex]) return;
+            if(quizList[currentQuizIndex].o[idx].c) {
+                isQuizLocked = true; notify("Correct!", "success");
+                currentQuizIndex++; setTimeout(() => { isQuizLocked = false; renderQuiz(); }, 600);
+            } else notify("Incorrect. Try again!", "error");
+        }
+
+        // --- Challenges ---
+        function renderChallenges() {
+            const grid = document.getElementById('challenge-grid');
+            if(!grid) return;
+            grid.innerHTML = `
+                <div class="bg-indigo-50 p-10 rounded-[2.5rem] border border-indigo-100 flex flex-col justify-between group hover:shadow-xl transition-all">
+                    <div><div class="flex items-center gap-3 mb-6"><div class="p-3 bg-indigo-200 text-indigo-700 rounded-2xl"><i data-lucide="grid" class="w-6 h-6"></i></div><span class="font-black text-sm uppercase tracking-widest">Challenge 1</span></div>
+                    <h3 class="text-2xl font-bold text-indigo-900 mb-4">The Rectangular Failure</h3>
+                    <p class="text-indigo-800/70 mb-8 leading-relaxed">Can you find a pattern where 4 bits flip but row/column parity stays correct? (Hint: Form a rectangle).</p></div>
+                    <button onclick="setBlockMode('game')" class="w-fit flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold">Launch 2D Sim</button>
+                </div>
+                <div class="bg-emerald-50 p-10 rounded-[2.5rem] border border-emerald-100 flex flex-col justify-between group hover:shadow-xl transition-all">
+                    <div><div class="flex items-center gap-3 mb-6"><div class="p-3 bg-emerald-200 text-emerald-700 rounded-2xl"><i data-lucide="binary" class="w-6 h-6"></i></div><span class="font-black text-sm uppercase tracking-widest">Challenge 2</span></div>
+                    <h3 class="text-2xl font-bold text-emerald-900 mb-4">Checksum Forge</h3>
+                    <p class="text-emerald-800/70 mb-8 leading-relaxed">In the 8-bit Sum simulator, can you change two values so the checksum stays identical?</p></div>
+                    <button onclick="setDigitAlgo('checksum'); switchTab('digits');" class="w-fit flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold">Launch Checksum Sim</button>
+                </div>
+                <div class="bg-amber-50 p-10 rounded-[2.5rem] border border-amber-100 flex flex-col justify-between group hover:shadow-xl transition-all">
+                    <div><div class="flex items-center gap-3 mb-6"><div class="p-3 bg-amber-200 text-amber-700 rounded-2xl"><i data-lucide="satellite" class="w-6 h-6"></i></div><span class="font-black text-sm uppercase tracking-widest">Challenge 3</span></div>
+                    <h3 class="text-2xl font-bold text-amber-900 mb-4">The Latency Trap</h3>
+                    <p class="text-amber-800/70 mb-8 leading-relaxed">Calculate idle time in the ARQ simulator if the ACK takes 2 seconds to return (data from deep space).</p></div>
+                    <button onclick="switchTab('arq')" class="w-fit flex items-center gap-2 px-6 py-3 bg-amber-600 text-white rounded-2xl font-bold">Launch Protocol Sim</button>
+                </div>
+                <div class="bg-slate-900 p-10 rounded-[2.5rem] border border-slate-800 flex flex-col justify-between group hover:shadow-xl transition-all">
+                    <div><div class="flex items-center gap-3 mb-6"><div class="p-3 bg-slate-800 text-slate-400 rounded-2xl"><i data-lucide="key" class="w-6 h-6"></i></div><span class="font-black text-sm uppercase tracking-widest">Challenge 4</span></div>
+                    <h3 class="text-2xl font-bold text-white mb-4">The Swapped Digit</h3>
+                    <p class="text-slate-400 mb-8 leading-relaxed">In the Luhn simulator, swap two adjacent numbers. Does the check digit change? Why is this better than a simple sum?</p></div>
+                    <button onclick="setDigitAlgo('luhn'); switchTab('digits');" class="w-fit flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold">Launch Luhn Sim</button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        window.onload = () => { 
+            lucide.createIcons(); 
+            randomizeBits(); 
+            setDigitAlgo('isbn13'); 
+            resetBlockGrid(); 
+            renderQuiz(); 
+            renderChallenges();
+        };
+    </script>
+</body>
+</html>
