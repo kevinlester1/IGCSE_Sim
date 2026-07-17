@@ -3,120 +3,394 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My GitHub Projects</title>
+    <title>IGCSE Computer Science Navigator</title>
     <style>
-        /* Base styles for a clean, modern look */
+        :root {
+            --bg: #f3efe5;
+            --panel: #fffaf2;
+            --ink: #1f2937;
+            --accent: #0f766e;
+            --accent-2: #115e59;
+            --muted: #4b5563;
+            --border: #d6d3c8;
+            --shadow: 0 10px 30px rgba(18, 44, 52, 0.12);
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Trebuchet MS", "Segoe UI", Tahoma, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background-color: #f4f7f6;
+            color: var(--ink);
+            background:
+                radial-gradient(circle at 12% 10%, rgba(15, 118, 110, 0.16) 0%, transparent 35%),
+                radial-gradient(circle at 80% 22%, rgba(202, 138, 4, 0.12) 0%, transparent 30%),
+                var(--bg);
             margin: 0;
             padding: 0;
         }
 
-        /* Header styling */
         header {
-            background-color: #24292e; /* GitHub dark color */
-            color: white;
+            color: #f8fafc;
             text-align: center;
-            padding: 2rem 1rem;
-            margin-bottom: 2rem;
+            padding: 2.2rem 1rem;
+            margin-bottom: 1.6rem;
+            background: linear-gradient(120deg, #134e4a 0%, #0f766e 65%, #0d9488 100%);
+            box-shadow: var(--shadow);
         }
 
         header h1 {
             margin: 0;
-            font-size: 2.5rem;
+            font-size: 2rem;
+            letter-spacing: 0.02em;
         }
 
         header p {
             margin: 0.5rem 0 0;
-            opacity: 0.8;
+            opacity: 0.92;
         }
 
-        /* Grid layout for the links */
         .container {
-            max-width: 1000px;
+            max-width: 980px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 16px 2rem;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+            padding: 1.2rem;
+        }
+
+        .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: 1fr;
+            gap: 1rem;
         }
 
-        /* Individual project cards */
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            border: 1px solid #e1e4e8;
+        .field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-            border-color: #0366d6;
+        label {
+            font-weight: 700;
+            color: #0b4943;
         }
 
-        .card h2 {
-            margin: 0 0 10px 0;
-            color: #0366d6; /* GitHub link blue */
-            font-size: 1.25rem;
+        select, button {
+            font: inherit;
+            padding: 0.65rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid #b7b7a3;
+            background: #ffffff;
         }
 
-        .card p {
+        select:focus, button:focus {
+            outline: 2px solid #f59e0b;
+            outline-offset: 1px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-2);
+        }
+
+        .btn-secondary {
+            background: #f8f7ef;
+            color: #27303a;
+            cursor: pointer;
+        }
+
+        .list-panel {
+            margin-top: 1rem;
+            border-top: 1px dashed #bbb7a8;
+            padding-top: 0.8rem;
+        }
+
+        .list-panel h2 {
+            margin: 0 0 0.5rem;
+            font-size: 1.1rem;
+            color: #134e4a;
+        }
+
+        #fileList {
+            list-style: none;
             margin: 0;
-            color: #586069;
+            padding: 0;
+            display: grid;
+            gap: 0.45rem;
+        }
+
+        #fileList a {
+            display: block;
+            text-decoration: none;
+            padding: 0.55rem 0.65rem;
+            border-radius: 9px;
+            border: 1px solid #d7d3c5;
+            background: #fff;
+            color: #124640;
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+
+        #fileList a:hover {
+            transform: translateX(2px);
+            border-color: #0f766e;
+        }
+
+        .hint {
+            margin: 0;
+            color: var(--muted);
             font-size: 0.95rem;
         }
 
-        /* Footer styling */
         footer {
             text-align: center;
-            margin-top: 3rem;
+            margin-top: 1.8rem;
             padding: 1rem;
-            color: #6a737d;
+            color: #4b5563;
             font-size: 0.9rem;
+        }
+
+        @media (min-width: 760px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .actions,
+            .hint,
+            .list-panel {
+                grid-column: 1 / -1;
+            }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>My Projects Directory</h1>
-        <p>A collection of HTML pages hosted on GitHub</p>
+        <h1>Cambridge IGCSE Computer Science</h1>
+        <p>Menu-Driven Unit and Lesson Navigator</p>
     </header>
 
     <div class="container">
-        <!-- Project Link 1 -->
-        <a href="Unit 1/1.1 Binary conversions.html" class="card">
-            <h2>Binary Conversions</h2>
-            <p>Description of what this first HTML page is about. Click to view.</p>
-        </a>
+        <section class="panel menu-grid" aria-label="Unit and file menu">
+            <div class="field">
+                <label for="unitSelect">Choose Unit</label>
+                <select id="unitSelect"></select>
+            </div>
 
-        <!-- Project Link 2 -->
-        <a href="folder2/project2.html" class="card">
-            <h2>Project Two</h2>
-            <p>This links to an HTML file inside a subfolder.</p>
-        </a>
+            <div class="field">
+                <label for="fileSelect">Choose HTML File</label>
+                <select id="fileSelect"></select>
+            </div>
 
-        <!-- Project Link 3 -->
-        <a href="about.html" class="card">
-            <h2>About Me</h2>
-            <p>A simple about page explaining who I am.</p>
-        </a>
-        
-        <!-- Add more cards by copying the <a> block above -->
+            <div class="actions">
+                <button id="openFileBtn" class="btn-primary" type="button">Open Selected File</button>
+                <button id="openUnitFirstBtn" class="btn-secondary" type="button">Open First File In Unit</button>
+            </div>
+
+            <p class="hint" id="unitDescription"></p>
+
+            <div class="list-panel">
+                <h2>Files In This Unit</h2>
+                <ul id="fileList"></ul>
+            </div>
+        </section>
     </div>
 
     <footer>
-        <p>Hosted with ♥ on GitHub Pages</p>
+        <p>Built for Cambridge IGCSE Computer Science revision and class activities.</p>
     </footer>
+
+    <script>
+        const units = [
+            {
+                id: "unit1",
+                label: "Unit 1: Data Representation",
+                folder: "Unit 1",
+                description: "Binary, data storage, image and sound representation.",
+                files: [
+                    "1.1 Binary Shifts.html",
+                    "1.1 Binary conversions.html",
+                    "1.2 Image_size.html",
+                    "1.2 RLE and Compression.html",
+                    "1.2 Sounds.html",
+                    "2s Compliment.html"
+                ]
+            },
+            {
+                id: "unit2",
+                label: "Unit 2: Data Transmission",
+                folder: "Unit 2",
+                description: "Packets, transmission methods, and error handling.",
+                files: [
+                    "2.1 Data packets.html",
+                    "2.2 Data Transmission.html",
+                    "2.2 Error Detection.html",
+                    "2.3 Encription.html"
+                ]
+            },
+            {
+                id: "unit3",
+                label: "Unit 3: Hardware",
+                folder: "Unit 3",
+                description: "CPU architecture, fetch-execute cycle, and low-level programming.",
+                files: [
+                    "3.1 CPU architecture.html",
+                    "Fetch Execute Cycle .html",
+                    "GDD.html",
+                    "Unit task.html",
+                    "assembler.html"
+                ]
+            },
+            {
+                id: "unit5",
+                label: "Unit 5: The Internet and Its Uses",
+                folder: "Unit 5",
+                description: "Internet concepts, structure, and communication models.",
+                files: [
+                    "Parts , Purposes and complexity Computer archecture .html",
+                    "gap analysis how the internet works.html",
+                    "how the internet works.html"
+                ]
+            },
+            {
+                id: "unit6",
+                label: "Unit 6: Automated and Emerging Technologies",
+                folder: "Unit 6",
+                description: "Automation ideas and practical low-level coding examples.",
+                files: [
+                    "Assembly Language.html",
+                    "unit 6.html"
+                ]
+            },
+            {
+                id: "unit8",
+                label: "Unit 8: Programming",
+                folder: "Unit 8",
+                description: "Core algorithms and programming practice tasks.",
+                files: [
+                    "bubblesort.html",
+                    "common algos Array.html",
+                    "common algos.html",
+                    "unit 8.html"
+                ]
+            },
+            {
+                id: "unit9",
+                label: "Unit 9: Databases",
+                folder: "Unit 9",
+                description: "Program structure, data handling, testing, and validation resources.",
+                files: [
+                    "2d Arrays iteration.html",
+                    "Subroutines.html",
+                    "file handling.html",
+                    "functions.html",
+                    "maintainable.html",
+                    "test data.html",
+                    "trace tables.html",
+                    "validation.html"
+                ]
+            },
+            {
+                id: "unit10",
+                label: "Unit 10: Boolean Logic",
+                folder: "Unit 10",
+                description: "Logic gates and SQL/knowledge map extension activities.",
+                files: [
+                    "SQL queriers GCSE .html",
+                    "logic Gates.html",
+                    "u10 Concept Map.html",
+                    "u10 Knowledge Map.html"
+                ]
+            }
+        ];
+
+        const unitSelect = document.getElementById("unitSelect");
+        const fileSelect = document.getElementById("fileSelect");
+        const fileList = document.getElementById("fileList");
+        const unitDescription = document.getElementById("unitDescription");
+        const openFileBtn = document.getElementById("openFileBtn");
+        const openUnitFirstBtn = document.getElementById("openUnitFirstBtn");
+
+        function buildPath(unit, file) {
+            return `${unit.folder}/${file}`;
+        }
+
+        function populateUnits() {
+            unitSelect.innerHTML = "";
+            units.forEach((unit) => {
+                const option = document.createElement("option");
+                option.value = unit.id;
+                option.textContent = unit.label;
+                unitSelect.appendChild(option);
+            });
+        }
+
+        function renderFilesForUnit(unitId) {
+            const selectedUnit = units.find((unit) => unit.id === unitId);
+            if (!selectedUnit) {
+                return;
+            }
+
+            unitDescription.textContent = selectedUnit.description;
+            fileSelect.innerHTML = "";
+            fileList.innerHTML = "";
+
+            selectedUnit.files.forEach((fileName) => {
+                const option = document.createElement("option");
+                option.value = fileName;
+                option.textContent = fileName;
+                fileSelect.appendChild(option);
+
+                const item = document.createElement("li");
+                const link = document.createElement("a");
+                link.href = buildPath(selectedUnit, fileName);
+                link.textContent = fileName;
+                item.appendChild(link);
+                fileList.appendChild(item);
+            });
+        }
+
+        function openSelectedFile() {
+            const selectedUnit = units.find((unit) => unit.id === unitSelect.value);
+            if (!selectedUnit || !fileSelect.value) {
+                return;
+            }
+            window.location.href = buildPath(selectedUnit, fileSelect.value);
+        }
+
+        function openFirstFileInUnit() {
+            const selectedUnit = units.find((unit) => unit.id === unitSelect.value);
+            if (!selectedUnit || selectedUnit.files.length === 0) {
+                return;
+            }
+            window.location.href = buildPath(selectedUnit, selectedUnit.files[0]);
+        }
+
+        unitSelect.addEventListener("change", () => {
+            renderFilesForUnit(unitSelect.value);
+        });
+
+        openFileBtn.addEventListener("click", openSelectedFile);
+        openUnitFirstBtn.addEventListener("click", openFirstFileInUnit);
+
+        populateUnits();
+        renderFilesForUnit(units[0].id);
+    </script>
 
 </body>
 </html>
