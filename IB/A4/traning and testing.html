@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fruit Classifier Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
+        }
+        .tab-button.active {
+            border-bottom-color: #4f46e5; /* indigo-600 */
+            color: #3730a3; /* indigo-800 */
+        }
+        .tab-panel {
+            display: none;
+        }
+        .tab-panel.active {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .btn {
+            padding: 0.75rem 1.5rem; /* Larger padding */
+            font-size: 1rem; /* Larger font size */
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background-color: #4338ca;
+        }
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #475569;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #cbd5e1;
+        }
+        .btn-apple { background-color: #ef4444; color: white; }
+        .btn-apple:hover { background-color: #dc2626; }
+        .btn-banana { background-color: #facc15; color: #422006;}
+        .btn-banana:hover { background-color: #eab308; }
+        .btn-not-fruit { background-color: #64748b; color: white; }
+        .btn-not-fruit:hover { background-color: #475569; }
+        .btn-new-category { background-color: #10b981; color: white; }
+        .btn-new-category:hover { background-color: #059669; }
+
+        .image-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background-color: white;
+            position: relative;
+        }
+        .image-card:hover {
+            border-color: #4f46e5;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .image-card.selected {
+            border-color: #4f46e5;
+            background-color: #e0e7ff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.5);
+        }
+        .image-card.tested::after {
+            content: attr(data-result);
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 2rem;
+        }
+        .image-card.correct {
+            border-color: #22c55e;
+        }
+        .image-card.incorrect {
+             border-color: #ef4444;
+        }
+        .feature-tag {
+            display: inline-block;
+            background-color: #e5e7eb;
+            color: #4b5563;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        code {
+            background-color: #e5e7eb;
+            color: #4b5563;
+            font-family: monospace;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4 sm:p-6 lg:p-8">
+    <div class="w-full max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6 sm:p-8 lg:p-12">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-800">The AI Fruit Classifier</h1>
+            <p class="text-lg sm:text-xl text-gray-600 mt-2">An interactive simulation to learn about Machine Learning</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="border-b border-gray-300 mb-8">
+            <nav class="flex justify-center -mb-px space-x-6 sm:space-x-8">
+                <button id="tab-btn-train" class="tab-button text-lg sm:text-xl font-semibold p-4 active">1. Train</button>
+                <button id="tab-btn-learn" class="tab-button text-lg sm:text-xl font-semibold p-4" disabled>2. Learn</button>
+                <button id="tab-btn-test" class="tab-button text-lg sm:text-xl font-semibold p-4" disabled>3. Test</button>
+                <button id="tab-btn-retrain" class="tab-button text-lg sm:text-xl font-semibold p-4" disabled>4. Retrain</button>
+                <button id="tab-btn-summary" class="tab-button text-lg sm:text-xl font-semibold p-4" disabled>Summary</button>
+            </nav>
+        </div>
+
+        <main>
+            <!-- Step 1: Training -->
+            <div id="tab-panel-train" class="tab-panel active">
+                <div class="text-center">
+                    <div class="inline-block bg-indigo-100 text-indigo-600 font-bold rounded-full h-16 w-16 flex items-center justify-center text-3xl mx-auto mb-4">1</div>
+                    <h2 class="text-3xl font-bold mb-2">Training The AI</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">Our first goal is to train the AI to tell the difference between Apples and Bananas. We do this by showing it examples. This is called <strong>training</strong>. The AI studies the features of the examples to find patterns. <br><strong>How to train:</strong> Click an image below, then click the button that correctly labels it.</p>
+                </div>
+                
+                <div id="retrainMessage" class="hidden mt-6 p-4 bg-yellow-100 border-l-4 border-yellow-400 text-yellow-700 text-lg">
+                    <p><strong>Let's make the AI smarter!</strong> We've learned something new. Let's add the new information and train the AI again to improve it.</p>
+                </div>
+
+                <div id="training-images" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-8">
+                    <!-- Images will be injected here -->
+                </div>
+                <div id="labeling-controls" class="text-center mt-8 hidden">
+                    <p class="text-xl font-medium mb-4">What is this <span id="selected-image-emoji" class="text-3xl"></span>?</p>
+                    <div class="flex justify-center flex-wrap gap-4">
+                        <button id="label-apple" class="btn btn-apple">Apple</button>
+                        <button id="label-banana" class="btn btn-banana">Banana</button>
+                        <button id="label-not-fruit" class="btn btn-not-fruit">Not a Fruit</button>
+                    </div>
+                </div>
+                 <div class="text-center mt-10">
+                    <button id="train-button" class="btn btn-primary text-xl" disabled>Train the Model!</button>
+                    <p id="train-requirement-message" class="text-gray-500 mt-3 text-lg">Please label at least 4 Apples and 4 Bananas.</p>
+                </div>
+            </div>
+
+            <!-- Step 2: Learning -->
+            <div id="tab-panel-learn" class="tab-panel">
+                <div class="text-center">
+                    <div class="inline-block bg-indigo-100 text-indigo-600 font-bold rounded-full h-16 w-16 flex items-center justify-center text-3xl mx-auto mb-4">2</div>
+                    <h2 class="text-3xl font-bold mb-2">The AI's Brain</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">The AI has analyzed the training data. Here are the rules it has learned about each category based on their features.</p>
+                </div>
+                
+                <div id="thinking-indicator" class="hidden text-center mt-12 py-8">
+                    <div class="inline-block animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-indigo-600"></div>
+                    <p class="text-2xl font-semibold mt-6 text-gray-700">The AI is thinking...</p>
+                </div>
+
+                <div id="learn-content" class="hidden">
+                    <div id="learned-rules" class="mt-8 bg-gray-50 p-8 rounded-lg shadow-inner max-w-3xl mx-auto">
+                        <!-- Learned rules will be shown here -->
+                    </div>
+                     <div class="text-center mt-10">
+                        <button id="test-nav-button" class="btn btn-primary text-xl">Now, Let's Test It!</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Testing -->
+            <div id="tab-panel-test" class="tab-panel">
+                <div class="text-center">
+                    <div class="inline-block bg-indigo-100 text-indigo-600 font-bold rounded-full h-16 w-16 flex items-center justify-center text-3xl mx-auto mb-4">3</div>
+                    <h2 class="text-3xl font-bold mb-2">Testing the AI</h2>
+                    <p class="text-lg text-gray-600 max-w-3xl mx-auto">Now we test the AI with new images it has never seen before. This tells us how well it has learned. Click an image to see the AI's prediction.</p>
+                </div>
+                <div id="scoreboard" class="text-center my-8 text-2xl font-semibold flex justify-center gap-8">
+                    <!-- Score will be injected here -->
+                </div>
+                <div id="test-images" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 mt-8">
+                    <!-- Test images will be injected here -->
+                </div>
+                <div id="test-results" class="mt-8 text-center">
+                     <!-- Results will be shown here -->
+                </div>
+            </div>
+
+            <!-- Step 4: Retrain -->
+             <div id="tab-panel-retrain" class="tab-panel">
+                <div class="text-center">
+                     <div class="inline-block bg-yellow-100 text-yellow-600 font-bold rounded-full h-16 w-16 flex items-center justify-center text-3xl mx-auto mb-4">!</div>
+                    <h2 class="text-3xl font-bold mb-2">Improving the AI</h2>
+                    <p id="iteration-message" class="text-lg text-gray-600 max-w-3xl mx-auto mb-6">The AI made some mistakes. Let's teach it the right answers, one by one.</p>
+                </div>
+                <div id="feedback-container" class="mt-6 text-center bg-gray-50 p-8 rounded-lg shadow-inner max-w-3xl mx-auto">
+                    <!-- Feedback options go here -->
+                </div>
+                 <div id="new-data-info" class="mt-6 text-center hidden">
+                     <h3 class="text-2xl font-semibold">New Lesson for the AI:</h3>
+                     <div id="new-data-display" class="mt-4 bg-green-100 p-6 rounded-lg text-green-800 text-xl inline-block">
+                         <!-- New learned rule will be displayed here -->
+                     </div>
+                     <div class="mt-8">
+                        <button id="confirm-retrain-btn" class="btn btn-primary text-xl">Add This and Re-Train!</button>
+                     </div>
+                 </div>
+            </div>
+            
+            <!-- Summary Tab -->
+            <div id="tab-panel-summary" class="tab-panel">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center">
+                        <div class="inline-block bg-green-100 text-green-600 font-bold rounded-full h-16 w-16 flex items-center justify-center text-3xl mx-auto mb-4">💡</div>
+                        <h2 class="text-3xl font-bold mb-2">Why AI Needs Practice: The Cycle of Training and Testing</h2>
+                    </div>
+
+                    <div class="mt-8 text-lg text-gray-700 space-y-4">
+                        <p>Think about how you learn something new, like identifying different types of animals. At first, you might only know "dog" and "cat". If you see a horse, you might get confused. But after someone tells you, "That's a horse," you learn and get better.</p>
+                        <p>Training an AI is very similar. It's not a one-time event; it's a cycle of learning, checking, and improving. This is called an <strong>iterative process</strong>.</p>
+                        
+                        <h3 class="text-2xl font-semibold pt-4 mb-2">Step 1: The First Training (The First Lesson)</h3>
+                        <p>In our simulation, the first thing we did was train the AI. We showed it pictures of red apples and yellow bananas. From this first lesson, the AI created a very simple set of rules in its "brain":</p>
+                        <ul class="list-disc list-inside space-y-2 pl-4 bg-gray-50 p-4 rounded-lg">
+                            <li>If it's <code>Red</code> and <code>Round</code>, it's an <strong>Apple</strong>.</li>
+                            <li>If it's <code>Yellow</code> and <code>Long</code>, it's a <strong>Banana</strong>.</li>
+                        </ul>
+                        <p>At this point, this is <strong>all the AI knows about the world</strong>. Its knowledge is very limited, based only on what we've shown it.</p>
+
+                        <h3 class="text-2xl font-semibold pt-4 mb-2">Step 2: The First Test (Checking its Homework)</h3>
+                        <p>Next, we tested the AI with images it had never seen before. This is the most important step because it reveals the weaknesses in the AI's training. In our simulation, the AI failed on several images:</p>
+                        <ul class="list-none space-y-4 pl-4">
+                            <li><strong>The Green Apple (🍏):</strong> The AI was "Undecided".
+                                <p class="text-base text-gray-600 pl-6"><strong>Why it Failed:</strong> The AI's rule for "Apple" only included the color <code>Red</code>. It had never been taught that apples could be green, so it didn't know how to classify it.</p>
+                            </li>
+                             <li><strong>The Red Chili (🌶️):</strong> The AI guessed "Apple".
+                                <p class="text-base text-gray-600 pl-6"><strong>Why it Failed:</strong> The AI saw the color <code>Red</code> and immediately thought "Apple". It got confused because the <code>Long</code> shape didn't match its "Apple" rule. It made a guess based on the strongest pattern it knew (Red = Apple).</p>
+                            </li>
+                             <li><strong>The Robot (🤖):</strong> The AI made a wild guess.
+                                <p class="text-base text-gray-600 pl-6"><strong>Why it Failed:</strong> The robot didn't match <em>any</em> of its rules. The AI had no category for things that are "Not a Fruit".</p>
+                            </li>
+                        </ul>
+
+                        <h3 class="text-2xl font-semibold pt-4 mb-2">Step 3: The Iteration (Learning from Mistakes)</h3>
+                        <p>The failures in the test are not a problem—they are the most valuable part of the process! Each mistake gives us a chance to make the AI smarter. This is <strong>iteration</strong>: using feedback to improve.</p>
+                        <p>When we went to the "Retrain" tab, we did two things:</p>
+                        <ol class="list-decimal list-inside space-y-2 pl-4">
+                            <li><strong>We Fix Mistakes:</strong> We tell the AI, "That green, round thing was an Apple." This adds a new rule to its brain. Now it knows apples can be <code>Red</code> OR <code>Green</code>.</li>
+                            <li><strong>We Add New Knowledge:</strong> We tell the AI, "That robot is something different." This creates a whole new category called "Not a Fruit", making the AI much more precise.</li>
+                        </ol>
+                        <p>After retraining, the AI has a bigger, better brain. If we test it again on the same images, it will now get them right.</p>
+
+                        <h3 class="text-2xl font-semibold pt-4 mb-2">The Cycle Continues</h3>
+                        <p>This is the iterative cycle of machine learning:</p>
+                        <div class="flex items-center justify-center space-x-2 sm:space-x-4 text-center font-semibold text-sm sm:text-base my-6 p-4 bg-indigo-50 rounded-lg">
+                            <div class="bg-indigo-200 p-3 rounded-lg">Train</div>
+                            <div class="text-indigo-500 text-2xl">→</div>
+                            <div class="bg-indigo-200 p-3 rounded-lg">Test</div>
+                            <div class="text-indigo-500 text-2xl">→</div>
+                            <div class="bg-yellow-200 p-3 rounded-lg">Find Mistakes</div>
+                             <div class="text-yellow-500 text-2xl">→</div>
+                             <div class="bg-green-200 p-3 rounded-lg">Retrain & Improve</div>
+                        </div>
+                        <p>You repeat this cycle over and over. Each time, the AI's knowledge gets a little bigger and more accurate. It's why machine learning is so powerful. The AI isn't programmed with every rule at the start; it <em>learns</em> the rules over time through this cycle of practice and feedback.</p>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+    // --- DATA ---
+    const initialTrainingImageData = [
+        { id: 1, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 2, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 3, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 4, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 5, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 6, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 7, emoji: '🤖', features: { color: 'Grey', shape: 'Square' }, label: null },
+        { id: 8, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 9, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 10, emoji: '⚙️', features: { color: 'Grey', shape: 'Round' }, label: null }, // Tricky
+        { id: 11, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 12, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 13, emoji: '🧱', features: { color: 'Red', shape: 'Square' }, label: null }, // Tricky
+        { id: 14, emoji: '🍏', features: { color: 'Green', shape: 'Round' }, label: null },
+        { id: 15, emoji: '🥕', features: { color: 'Orange', shape: 'Long' }, label: null },
+        { id: 16, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: null },
+        { id: 17, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: null },
+        { id: 18, emoji: '🍅', features: { color: 'Red', shape: 'Round' }, label: null }, // Tricky
+        { id: 19, emoji: '🍆', features: { color: 'Purple', shape: 'Long' }, label: null },
+        { id: 20, emoji: '🍊', features: { color: 'Orange', shape: 'Round' }, label: null }
+    ].sort(() => Math.random() - 0.5);
+
+    const testImageData = [
+        { id: 101, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: 'Apple' },
+        { id: 102, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: 'Banana' },
+        { id: 103, emoji: '🌶️', features: { color: 'Red', shape: 'Long' }, label: 'Banana' }, // Tricky "Red Banana"
+        { id: 105, emoji: '🍏', features: { color: 'Green', shape: 'Round' }, label: 'Apple' }, // Green Apple for testing
+        { id: 106, emoji: '🤖', features: { color: 'Grey', shape: 'Square' }, label: 'Not a Fruit' },
+        { id: 107, emoji: '🧱', features: { color: 'Red', shape: 'Square' }, label: 'Not a Fruit' }, // Tricky: Red but not an apple
+        { id: 108, emoji: '⚙️', features: { color: 'Grey', shape: 'Round' }, label: 'Not a Fruit' }, // Tricky: Round but not an apple
+        { id: 109, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: 'Apple' },
+        { id: 110, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: 'Banana' },
+        { id: 111, emoji: '🍎', features: { color: 'Red', shape: 'Round' }, label: 'Apple' },
+        { id: 112, emoji: '🍌', features: { color: 'Yellow', shape: 'Long' }, label: 'Banana' }
+    ].sort(() => Math.random() - 0.5);
+    
+    // --- STATE ---
+    let trainingData = [];
+    let learnedModel = {};
+    let selectedImageId = null;
+    let availableCategories = ['Apple', 'Banana'];
+    let correctCount = 0;
+    let incorrectCount = 0;
+    let testedImageIds = new Set();
+    let incorrectItems = [];
+    let currentCorrectionItem = null;
+
+    // --- DOM ELEMENTS ---
+    const tabButtons = {
+        train: document.getElementById('tab-btn-train'),
+        learn: document.getElementById('tab-btn-learn'),
+        test: document.getElementById('tab-btn-test'),
+        retrain: document.getElementById('tab-btn-retrain'),
+        summary: document.getElementById('tab-btn-summary'),
+    };
+    const tabPanels = {
+        train: document.getElementById('tab-panel-train'),
+        learn: document.getElementById('tab-panel-learn'),
+        test: document.getElementById('tab-panel-test'),
+        retrain: document.getElementById('tab-panel-retrain'),
+        summary: document.getElementById('tab-panel-summary'),
+    };
+    const trainingImagesContainer = document.getElementById('training-images');
+    const testImagesContainer = document.getElementById('test-images');
+    const labelingControls = document.getElementById('labeling-controls');
+    const selectedImageEmoji = document.getElementById('selected-image-emoji');
+    const trainButton = document.getElementById('train-button');
+    const testNavButton = document.getElementById('test-nav-button');
+    const learnedRulesContainer = document.getElementById('learned-rules');
+    const testResultsContainer = document.getElementById('test-results');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const iterationMessage = document.getElementById('iteration-message');
+    const newDataInfo = document.getElementById('new-data-info');
+    const newDataDisplay = document.getElementById('new-data-display');
+    const confirmRetrainBtn = document.getElementById('confirm-retrain-btn');
+    const retrainMessage = document.getElementById('retrainMessage');
+    const trainRequirementMessage = document.getElementById('train-requirement-message');
+    const scoreboard = document.getElementById('scoreboard');
+    const thinkingIndicator = document.getElementById('thinking-indicator');
+    const learnContent = document.getElementById('learn-content');
+
+    // --- FUNCTIONS ---
+    function switchTab(tabName) {
+        Object.values(tabButtons).forEach(btn => btn.classList.remove('active'));
+        Object.values(tabPanels).forEach(panel => panel.classList.remove('active'));
+        tabButtons[tabName].classList.add('active');
+        tabPanels[tabName].classList.add('active');
+    }
+    
+    function createImageCard(imageItem, isTrain = true) {
+        const card = document.createElement('div');
+        card.className = 'image-card p-4 flex flex-col justify-between'; 
+        card.dataset.id = imageItem.id;
+        card.innerHTML = `
+            <div> <!-- Group top content -->
+                <div class="mb-2">
+                    <span class="feature-tag">${imageItem.features.color}</span>
+                    <span class="feature-tag">${imageItem.features.shape}</span>
+                </div>
+                <div class="text-6xl">${imageItem.emoji}</div>
+                ${isTrain && imageItem.label ? `<div class="font-bold text-lg mt-2 text-${imageItem.label === 'Apple' ? 'red' : imageItem.label === 'Banana' ? 'yellow' : 'gray'}-600">${imageItem.label}</div>` : ''}
+            </div>
+            <div class="prediction-area mt-2 min-h-[4rem] flex flex-col items-center justify-center"></div> <!-- Placeholder for prediction -->
+        `;
+        
+        if (isTrain) {
+            card.addEventListener('click', () => handleImageSelect(imageItem.id));
+        } else {
+            card.addEventListener('click', () => handleTestImage(imageItem));
+        }
+        return card;
+    }
+
+    function renderTrainingImages() {
+        trainingImagesContainer.innerHTML = '';
+        initialTrainingImageData.forEach(img => {
+            const card = createImageCard(img);
+            if (img.label) {
+                card.classList.add('opacity-50', 'cursor-default');
+                card.classList.remove('image-card');
+                 card.onclick = null;
+            }
+            trainingImagesContainer.appendChild(card);
+        });
+        updateTrainButtonState();
+    }
+    
+    function handleImageSelect(id) {
+        const imageItem = initialTrainingImageData.find(img => img.id === id);
+        if (imageItem.label) return; // Already labeled
+
+        selectedImageId = id;
+        
+        document.querySelectorAll('#training-images .image-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        document.querySelector(`#training-images [data-id='${id}']`).classList.add('selected');
+        
+        selectedImageEmoji.textContent = imageItem.emoji;
+        labelingControls.classList.remove('hidden');
+    }
+
+    function handleLabel(label) {
+        if (selectedImageId === null) return;
+        const imageIndex = initialTrainingImageData.findIndex(img => img.id === selectedImageId);
+        initialTrainingImageData[imageIndex].label = label;
+        
+        trainingData.push(initialTrainingImageData[imageIndex]);
+
+        labelingControls.classList.add('hidden');
+        selectedImageId = null;
+        renderTrainingImages();
+    }
+
+    function updateTrainButtonState() {
+        const appleCount = trainingData.filter(item => item.label === 'Apple').length;
+        const bananaCount = trainingData.filter(item => item.label === 'Banana').length;
+        
+        const meetsRequirement = appleCount >= 4 && bananaCount >= 4;
+        
+        trainButton.disabled = !meetsRequirement;
+
+        if (meetsRequirement) {
+            trainRequirementMessage.textContent = 'All set! You can train the model now.';
+            trainRequirementMessage.classList.remove('text-gray-500');
+            trainRequirementMessage.classList.add('text-green-600', 'font-semibold');
+        } else {
+            trainRequirementMessage.textContent = `Requirement: 4 Apples (${appleCount}/4) and 4 Bananas (${bananaCount}/4).`;
+            trainRequirementMessage.classList.add('text-gray-500');
+            trainRequirementMessage.classList.remove('text-green-600', 'font-semibold');
+        }
+    }
+    
+    function trainModel() {
+        // Reset state for the new test session
+        correctCount = 0;
+        incorrectCount = 0;
+        testedImageIds.clear();
+        incorrectItems = [];
+        updateScoreboard();
+        renderTestImages();
+        testResultsContainer.innerHTML = '';
+
+        // Show thinking animation
+        tabButtons.learn.disabled = false;
+        switchTab('learn');
+        thinkingIndicator.classList.remove('hidden');
+        learnContent.classList.add('hidden');
+
+        // Simulate calculation delay
+        setTimeout(() => {
+            learnedModel = {};
+
+            trainingData.forEach(item => {
+                if (!learnedModel[item.label]) {
+                    learnedModel[item.label] = {
+                        color: new Set(),
+                        shape: new Set()
+                    };
+                }
+                learnedModel[item.label].color.add(item.features.color);
+                learnedModel[item.label].shape.add(item.features.shape);
+            });
+            
+            // Hide thinking and show results
+            thinkingIndicator.classList.add('hidden');
+            learnContent.classList.remove('hidden');
+            displayLearnedRules();
+
+        }, 2000); // 2-second delay
+    }
+
+    function displayLearnedRules() {
+        learnedRulesContainer.innerHTML = '';
+        for (const category in learnedModel) {
+            const ruleDiv = document.createElement('div');
+            ruleDiv.className = 'mb-6';
+            ruleDiv.innerHTML = `
+                <h3 class="text-2xl font-semibold mb-3">${category}s are:</h3>
+                <ul class="list-disc list-inside text-lg text-gray-700 space-y-1">
+                    <li><strong>Colors:</strong> ${[...learnedModel[category].color].join(', ')}</li>
+                    <li><strong>Shapes:</strong> ${[...learnedModel[category].shape].join(', ')}</li>
+                </ul>
+            `;
+            learnedRulesContainer.appendChild(ruleDiv);
+        }
+    }
+
+    function renderTestImages() {
+        testImagesContainer.innerHTML = '';
+        testImageData.forEach(img => {
+            const card = createImageCard(img, false);
+            testImagesContainer.appendChild(card);
+        });
+    }
+
+    function classifyImage(imageFeatures) {
+        let bestMatch = 'Undecided';
+        let highestScore = 0;
+
+        for (const category in learnedModel) {
+            let score = 0;
+            const modelFeatures = learnedModel[category];
+            
+            if (modelFeatures.color.has(imageFeatures.color)) score++;
+            if (modelFeatures.shape.has(imageFeatures.shape)) score++;
+
+            if (score > highestScore) {
+                highestScore = score;
+                bestMatch = category;
+            }
+        }
+        
+        if(imageFeatures.color === 'Green' && imageFeatures.shape === 'Round'){
+             if(!learnedModel['Apple'] || !learnedModel['Apple'].color.has('Green')){
+                 return 'Undecided';
+             }
+        }
+        
+        return bestMatch;
+    }
+
+    function generateExplanation(imageItem, prediction) {
+        if (prediction === 'Undecided' || !learnedModel[prediction]) {
+            return "The AI didn't recognize any familiar features.";
+        }
+
+        const itemFeatures = imageItem.features;
+        const modelFeatures = learnedModel[prediction];
+        
+        const matchingFeatures = [];
+        const conflictingFeatures = [];
+
+        if (modelFeatures.color.has(itemFeatures.color)) {
+            matchingFeatures.push(`the color '${itemFeatures.color}'`);
+        } else {
+            conflictingFeatures.push(`the color '${itemFeatures.color}'`);
+        }
+
+        if (modelFeatures.shape.has(itemFeatures.shape)) {
+            matchingFeatures.push(`the shape '${itemFeatures.shape}'`);
+        } else {
+            conflictingFeatures.push(`the shape '${itemFeatures.shape}'`);
+        }
+
+        if (matchingFeatures.length > 0) {
+            let reason = `It guessed ${prediction} because it saw ${matchingFeatures.join(' and ')}.`;
+            if (conflictingFeatures.length > 0) {
+                reason += ` It ignored ${conflictingFeatures.join(' and ')}.`;
+            }
+            return reason;
+        }
+        
+        return `It got confused and made a wild guess.`;
+    }
+    
+    function handleTestImage(imageItem) {
+        if (testedImageIds.has(imageItem.id)) return;
+
+        const prediction = classifyImage(imageItem.features);
+        const isCorrect = prediction === imageItem.label;
+        
+        const card = document.querySelector(`#test-images [data-id='${imageItem.id}']`);
+        const predictionArea = card.querySelector('.prediction-area');
+        
+        let predictionColor = isCorrect ? 'text-green-600' : 'text-red-600';
+        if (prediction === 'Undecided') {
+            predictionColor = 'text-gray-500';
+        }
+
+        let explanationHTML = '';
+        if (!isCorrect) {
+            const explanation = generateExplanation(imageItem, prediction);
+            explanationHTML = `<p class="text-sm text-gray-600 mt-1 px-2">${explanation}</p>`;
+        }
+        
+        predictionArea.innerHTML = `
+            <p class="font-bold text-lg">AI guessed: <span class="${predictionColor}">${prediction}</span></p>
+            ${explanationHTML}
+        `;
+
+        if (isCorrect) {
+            correctCount++;
+        } else {
+            incorrectCount++;
+            incorrectItems.push({ ...imageItem, prediction });
+        }
+
+        testedImageIds.add(imageItem.id);
+        updateScoreboard();
+        
+        card.classList.add('tested', isCorrect ? 'correct' : 'incorrect');
+        card.dataset.result = isCorrect ? '✅' : '❌';
+
+        if (testedImageIds.size === testImageData.length) {
+            tabButtons.summary.disabled = false; // Enable summary tab
+            let resultHTML = '';
+            if (incorrectCount === 0) {
+                resultHTML = `<div class="bg-green-100 p-6 rounded-lg text-green-800 text-2xl font-semibold">
+                    <p>Perfect Score! The AI got everything right!</p>
+                    <button id="view-summary-btn-1" class="btn btn-secondary mt-4">View Summary</button>
+                </div>`;
+            } else {
+                 resultHTML = `
+                    <div class="bg-yellow-100 p-6 rounded-lg text-yellow-800 text-xl font-semibold">
+                        <p>All tests are complete! The AI made ${incorrectCount} mistake(s).</p>
+                        <p class="mt-4 font-bold text-yellow-900">Why do you think the AI made these mistakes?</p>
+                        <p class="text-base mt-2 text-yellow-700">(Hint: Look at the AI's Brain in Tab 2 and compare it to the test images it got wrong.)</p>
+                        <button id="start-retrain-btn" class="btn btn-primary mt-6">Improve the AI</button>
+                    </div>
+                `;
+            }
+            testResultsContainer.innerHTML = resultHTML;
+            
+            if(incorrectCount > 0){
+                 document.getElementById('start-retrain-btn').addEventListener('click', startRetraining);
+            } else {
+                 document.getElementById('view-summary-btn-1').addEventListener('click', () => switchTab('summary'));
+            }
+        }
+    }
+
+    function startRetraining() {
+        tabButtons.retrain.disabled = false;
+        switchTab('retrain');
+        presentNextCorrection();
+    }
+    
+    function presentNextCorrection() {
+        if (incorrectItems.length === 0) {
+            iterationMessage.textContent = "All mistakes have been corrected!";
+            feedbackContainer.innerHTML = '';
+            return;
+        }
+
+        currentCorrectionItem = incorrectItems.shift();
+        iterationMessage.innerHTML = `The AI guessed the ${currentCorrectionItem.emoji} was a "<strong>${currentCorrectionItem.prediction}</strong>", but it was wrong. Let's teach it the right answer.`;
+
+        let feedbackHTML = `<p class="font-medium text-xl">What was the correct answer for the ${currentCorrectionItem.emoji}?</p><div class="flex justify-center flex-wrap gap-4 mt-4">`;
+        feedbackHTML += `<button data-label="Apple" class="btn btn-apple">It was an Apple</button>`;
+        feedbackHTML += `<button data-label="Banana" class="btn btn-banana">It was a Banana</button>`;
+        feedbackHTML += `</div>
+        <div class="mt-8 border-t pt-6">
+            <p class="text-gray-600 max-w-2xl mx-auto mb-4 text-lg">Or, if the item isn't a fruit at all, we can teach the AI a new rule. Creating a <strong>"Not a Fruit"</strong> category helps the AI learn what to ignore, so it doesn't try to force every image into a fruit category.</p>
+            <button data-label="new" class="btn btn-new-category">This is a New Category!</button>
+        </div>`;
+        feedbackContainer.innerHTML = feedbackHTML;
+
+        feedbackContainer.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', (e) => handleCorrection(e.target.dataset.label));
+        });
+    }
+
+    function handleCorrection(correctLabel) {
+        let newLabel = correctLabel;
+        if(correctLabel === 'new'){
+            newLabel = 'Not a Fruit';
+            if(!availableCategories.includes(newLabel)){
+                availableCategories.push(newLabel);
+            }
+        }
+        
+        currentCorrectionItem.label = newLabel;
+        const correctedData = { ...currentCorrectionItem, id: Date.now() }; 
+        trainingData.push(correctedData);
+
+        newDataDisplay.innerHTML = `The ${currentCorrectionItem.emoji} (${currentCorrectionItem.features.color}, ${currentCorrectionItem.features.shape}) is a <strong>${newLabel}</strong>.`;
+        feedbackContainer.innerHTML = '';
+        newDataInfo.classList.remove('hidden');
+
+         if (incorrectItems.length > 0) {
+            confirmRetrainBtn.textContent = "Add This and Correct Next Mistake";
+        } else {
+            confirmRetrainBtn.textContent = "Re-Train & View Summary";
+        }
+    }
+    
+    function confirmRetrain() {
+        newDataInfo.classList.add('hidden'); 
+        
+        if (incorrectItems.length > 0) {
+            presentNextCorrection();
+        } else {
+            retrainMessage.classList.remove('hidden');
+            tabButtons.learn.disabled = true;
+            tabButtons.test.disabled = true;
+            tabButtons.retrain.disabled = true;
+            switchTab('train');
+            // After this retraining, they will eventually land on the summary
+        }
+    }
+
+    function updateScoreboard() {
+        scoreboard.innerHTML = `
+            <span class="text-green-600">Correct: ${correctCount}</span>
+            <span class="text-red-600">Incorrect: ${incorrectCount}</span>
+        `;
+    }
+
+    // --- EVENT LISTENERS ---
+    Object.keys(tabButtons).forEach(key => {
+        tabButtons[key].addEventListener('click', () => {
+            if (!tabButtons[key].disabled) {
+                switchTab(key);
+            }
+        });
+    });
+
+    document.getElementById('label-apple').addEventListener('click', () => handleLabel('Apple'));
+    document.getElementById('label-banana').addEventListener('click', () => handleLabel('Banana'));
+    document.getElementById('label-not-fruit').addEventListener('click', () => handleLabel('Not a Fruit'));
+
+    trainButton.addEventListener('click', trainModel);
+    
+    testNavButton.addEventListener('click', () => {
+        tabButtons.test.disabled = false;
+        switchTab('test');
+    });
+
+    confirmRetrainBtn.addEventListener('click', () => {
+         if (incorrectItems.length > 0) {
+            confirmRetrain();
+        } else {
+            // Last correction, so retrain and then offer summary
+            retrainMessage.classList.remove('hidden');
+            tabButtons.learn.disabled = true;
+            tabButtons.test.disabled = true;
+            tabButtons.retrain.disabled = true;
+            switchTab('train');
+            // A bit of a UX trick: after they click "Train the model" again,
+            // and then "Test it", and it works, the "View Summary" button will be there.
+        }
+    });
+
+    // --- INITIALIZATION ---
+    renderTrainingImages();
+    renderTestImages();
+    updateScoreboard();
+    </script>
+</body>
+</html>
+

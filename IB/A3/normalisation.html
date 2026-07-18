@@ -1,0 +1,1711 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Normalization Lab</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- ICONS (Replaced lucide-react imports with SVG components) ---
+        const IconBase = ({ children, className = "", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>{children}</svg>
+        );
+
+        const ArrowRight = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></IconBase>;
+        const Database = (props) => <IconBase {...props}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></IconBase>;
+        const Split = (props) => <IconBase {...props}><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M12 22v-8.3a4 4 0 0 0-1.172-2.872L3 3"/><path d="m15 9 6-6"/></IconBase>;
+        const ShieldCheck = (props) => <IconBase {...props}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></IconBase>;
+        const AlertCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></IconBase>;
+        const Layers = (props) => <IconBase {...props}><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></IconBase>;
+        const TableIcon = (props) => <IconBase {...props}><path d="M12 3v18"/><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/></IconBase>;
+        const CheckCircle2 = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></IconBase>;
+        const XCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></IconBase>;
+        const Info = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+        const BookOpen = (props) => <IconBase {...props}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const CheckSquare = (props) => <IconBase {...props}><path d="m9 11 3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></IconBase>;
+        const MousePointer2 = (props) => <IconBase {...props}><path d="m12 2 5.5 16-4.5-1-4.5 1 3.5-16Z"/></IconBase>;
+        const PlayCircle = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></IconBase>;
+        const GraduationCap = (props) => <IconBase {...props}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></IconBase>;
+        const FileText = (props) => <IconBase {...props}><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/></IconBase>;
+        const Plus = (props) => <IconBase {...props}><path d="M5 12h14"/><path d="M12 5v14"/></IconBase>;
+        const Trash2 = (props) => <IconBase {...props}><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></IconBase>;
+        const Key = (props) => <IconBase {...props}><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></IconBase>;
+        const Save = (props) => <IconBase {...props}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></IconBase>;
+        const Edit3 = (props) => <IconBase {...props}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></IconBase>;
+        const RefreshCw = (props) => <IconBase {...props}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></IconBase>;
+
+
+        // --- SHARED COMPONENTS ---
+
+        const Card = ({ children, className = "" }) => (
+        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden ${className}`}>
+            {children}
+        </div>
+        );
+
+        const Badge = ({ children, color = "blue", className = "" }) => {
+        const colors = {
+            blue: "bg-blue-100 text-blue-800",
+            green: "bg-green-100 text-green-800",
+            amber: "bg-amber-100 text-amber-800",
+            rose: "bg-rose-100 text-rose-800",
+            purple: "bg-purple-100 text-purple-800",
+            slate: "bg-slate-100 text-slate-800",
+            white: "bg-white text-indigo-600"
+        };
+        const colorClass = colors[color] || colors.blue;
+        return (
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colorClass} ${className}`}>
+            {children}
+            </span>
+        );
+        };
+
+        const TableHeader = ({ cols }) => (
+        <thead className="bg-slate-50 border-b border-slate-200">
+            <tr>
+            {cols.map((col, idx) => (
+                <th key={idx} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                {col}
+                </th>
+            ))}
+            </tr>
+        </thead>
+        );
+
+        const StageInfo = ({ title, description, anomaly, rule, formalDefinition, onNext, nextLabel, isCompleted }) => (
+        <div className="mb-8">
+            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-1">
+                <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                {title}
+                {isCompleted && <CheckCircle2 className="w-6 h-6 text-green-500" />}
+                </h2>
+                <p className="text-slate-600 mb-4">{description}</p>
+                
+                {formalDefinition && (
+                <div className="mb-4 bg-slate-100 border-l-4 border-slate-400 p-3 rounded-r-lg">
+                    <h3 className="text-slate-700 font-bold text-xs uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <BookOpen className="w-3 h-3" /> Formal Definition
+                    </h3>
+                    <p className="text-slate-700 text-sm italic">"{formalDefinition}"</p>
+                </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-rose-50 border border-rose-100 p-4 rounded-lg">
+                    <h3 className="text-rose-800 font-semibold text-sm mb-1 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" /> Current Anomalies
+                    </h3>
+                    <p className="text-rose-700 text-sm">{anomaly}</p>
+                </div>
+                <div className="bg-indigo-50 border border-indigo-100 p-4 rounded-lg">
+                    <h3 className="text-indigo-800 font-semibold text-sm mb-1 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" /> Practical Rule
+                    </h3>
+                    <p className="text-indigo-700 text-sm">{rule}</p>
+                </div>
+                </div>
+            </div>
+            
+            <div className="flex items-center justify-center md:justify-end">
+                <button
+                onClick={onNext}
+                disabled={isCompleted}
+                className={`group flex items-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all shadow-md ${
+                    isCompleted 
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                    : "bg-indigo-600 hover:bg-indigo-700 text-white hover:scale-105"
+                }`}
+                >
+                {isCompleted ? "Stage Complete" : nextLabel}
+                {!isCompleted && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                </button>
+            </div>
+            </div>
+        </div>
+        );
+
+        // --- KEY VOCABULARY COMPONENT ---
+
+        const VocabularyMode = () => {
+            const vocabTerms = [
+                {
+                    term: "Normalization",
+                    definition: "The process of organizing data in a database. This involves creating tables and establishing relationships between those tables according to rules designed both to protect the data and to make the database more flexible by eliminating redundancy and inconsistent dependency."
+                },
+                {
+                    term: "Entity",
+                    definition: "A person, place, thing, or event about which data is stored. In a relational database, an entity corresponds to a table."
+                },
+                {
+                    term: "Attribute",
+                    definition: "A characteristic or property of an entity. In a relational database, an attribute corresponds to a column in a table."
+                },
+                {
+                    term: "Primary Key",
+                    definition: "A unique identifier for each record (row) in a table. It cannot contain null values."
+                },
+                {
+                    term: "Foreign Key",
+                    definition: "A field (or collection of fields) in one table that refers to the primary key in another table. It establishes a link between data in the two tables."
+                },
+                {
+                    term: "Composite Key",
+                    definition: "A primary key that consists of two or more attributes (columns) that uniquely identify a record."
+                },
+                {
+                    term: "Redundancy",
+                    definition: "The unnecessary repetition of data within a database. Normalization aims to minimize redundancy."
+                },
+                {
+                    term: "Atomic Value",
+                    definition: "A value that cannot be divided further. In 1NF, every cell in a table must contain a single, atomic value."
+                },
+                {
+                    term: "Partial Dependency",
+                    definition: "A situation where a non-key attribute depends on only a part of a composite primary key. 2NF removes partial dependencies."
+                },
+                {
+                    term: "Transitive Dependency",
+                    definition: "A situation where a non-key attribute depends on another non-key attribute. 3NF removes transitive dependencies."
+                },
+                {
+                    term: "Schema",
+                    definition: "The structure or design of a database, which defines the tables, fields, relationships, views, indexes, etc."
+                },
+                {
+                    term: "Referential Integrity",
+                    definition: "A property of data which, when satisfied, requires every value of one attribute (column) of a relation (table) to exist as a value of another attribute in a different (or the same) relation."
+                },
+                 {
+                    term: "ACID Properties",
+                    definition: "A set of properties (Atomicity, Consistency, Isolation, Durability) that guarantee that database transactions are processed reliably."
+                },
+                {
+                    term: "Database Transaction",
+                    definition: "A logical unit of work that must be either entirely completed or entirely aborted; no intermediate states are acceptable."
+                },
+                {
+                    term: "Durability",
+                    definition: "A property of database transactions ensuring that once a transaction has been committed, it will remain so, even in the event of power loss, crashes, or errors."
+                },
+                {
+                    term: "Data Dictionary",
+                    definition: "A centralized repository of information about data such as meaning, relationships to other data, origin, usage, and format."
+                },
+                {
+                    term: "Database Administrator (DBA)",
+                    definition: "A person responsible for the installation, configuration, upgrade, administration, monitoring, and maintenance of databases."
+                },
+                {
+                    term: "Data Validation",
+                    definition: "The process of ensuring that data entered into a system meets specific criteria or rules to ensure its accuracy and quality."
+                },
+                {
+                    term: "Data Verification",
+                    definition: "The process of checking data for accuracy and inconsistencies after data migration or entry."
+                },
+                {
+                    term: "Atomicity",
+                    definition: "A property of database transactions where a transaction is treated as a single unit, which either succeeds completely or fails completely."
+                },
+                {
+                    term: "Consistency",
+                    definition: "Ensures that a transaction can only bring the database from one valid state to another, maintaining database invariants."
+                },
+                {
+                    term: "Isolation",
+                    definition: "Ensures that concurrent execution of transactions leaves the database in the same state that would have been obtained if the transactions were executed sequentially."
+                }
+            ];
+
+            const [searchTerm, setSearchTerm] = useState("");
+
+            const filteredVocab = vocabTerms.filter(item =>
+                item.term.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.definition.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            return (
+                <div className="max-w-4xl mx-auto space-y-8">
+                    <div className="mb-6">
+                        <h2 className="text-3xl font-bold text-slate-800 mb-2">Key Vocabulary</h2>
+                        <p className="text-slate-600">
+                            Essential terms and definitions for understanding database normalization.
+                        </p>
+                    </div>
+
+                    <div className="mb-6">
+                        <input
+                            type="text"
+                            placeholder="Search vocabulary..."
+                            className="w-full p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {filteredVocab.map((item, index) => (
+                            <Card key={index} className="hover:shadow-md transition-shadow">
+                                <div className="p-5">
+                                    <h4 className="text-lg font-bold text-indigo-700 mb-2 flex items-center gap-2">
+                                        <BookOpen className="w-4 h-4" /> {item.term}
+                                    </h4>
+                                    <p className="text-slate-600 text-sm leading-relaxed">
+                                        {item.definition}
+                                    </p>
+                                </div>
+                            </Card>
+                        ))}
+                        {filteredVocab.length === 0 && (
+                            <div className="col-span-full text-center text-slate-500 py-8">
+                                No terms found matching "{searchTerm}".
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- PAST PAPER QUESTIONS COMPONENT ---
+
+        const PastPaperMode = () => {
+            const questions = [
+                {
+                    year: "May 2019",
+                    paper: "Paper 2 (Option A)",
+                    scenario: "Armour Hardware Company has the following data about salespersons and the quantities of items sold. Each salesperson can sell many different products.",
+                    tableHeaders: ["Product_Number", "Unit_Price", "Product_Name", "Date_Time", "Sales_Person_ID", "Sales_Person_Name", "Manager_ID", "Manager_Name"],
+                    tableData: [
+                        ["19440", "12.50", "Saw", "03/07/2018 12:23", "102", "Owen", "16", "Benson"],
+                        ["32456", "14.50", "Hammer", "03/07/2018 12:56", "102", "Owen", "16", "Benson"],
+                        ["35647", "35.00", "Drill", "03/07/2018 12:35", "199", "Dahl", "45", "Rogers"],
+                        ["67896", "9.25", "Wrench", "03/07/2018 12:46", "154", "Fraser", "16", "Benson"]
+                    ],
+                    questions: [
+                        "(a) Outline two reasons why databases are normalized. [4 marks]",
+                        "(b) Outline why the table shown above is not in 1st Normal Form (1NF). [2 marks]",
+                        "(c) Construct the 3rd Normal Form (3NF) of the unnormalized relation shown above. [8 marks]"
+                    ]
+                },
+                {
+                    year: "Nov 2018",
+                    paper: "Paper 2 (Option A)",
+                    scenario: "A shop sells only fruits and vegetables. Data about the products sold is held in the relation GREENGROCER. Prod_ID is the primary key.",
+                    tableHeaders: ["Prod_ID", "Prod_Name", "Prod_Price", "Supp_Name", "Supp_Contact", "Supp_Phone"],
+                    tableData: [
+                        ["P211", "Apples", "5.00", "Fruit and Veggie", "Ines Bond", "542 9800"],
+                        ["P118", "Celery", "11.00", "Veggy Co.", "Mia Abiss", "234 7654"],
+                        ["P121", "Onions", "3.00", "Fruit and Veggie", "Ines Bond", "542 9800"],
+                        ["P122", "Onions", "2.45", "Veggy Co.", "Mike Oberst", "235 7656"]
+                    ],
+                    questions: [
+                        "(a) Outline the redundant data in this relation. [2 marks]",
+                        "(b) Explain the problems that may arise when inserting a new tuple with an item that is supplied by an existing supplier. [2 marks]",
+                        "(c) Construct the database in the 3rd normal form (3NF). You must show all your workings. [8 marks]"
+                    ]
+                },
+                {
+                    year: "May 2016",
+                    paper: "Paper 2 (Option A)",
+                    scenario: "Employees in a science research firm have their details stored in the database. The employees are categorized based on the departments in which they work.",
+                    tableHeaders: ["EmpName", "SSN", "DOB", "Salary", "Address", "DeptNo", "DeptName", "DM_SSN"],
+                    tableData: [
+                        ["James", "9955", "1940-11-10", "35000", "731 Stone Rd", "1", "Admin", "455"],
+                        ["Joy", "6611", "1969-03-29", "20000", "890 Fire Dr", "4", "Research", "210"],
+                        ["Jennifer", "7632", "1940-06-20", "43000", "291 Cherry Hill", "5", "Design", "728"],
+                        ["Harry", "6641", "1974-06-01", "36000", "292 Orchard Dr", "1", "Admin", "455"]
+                    ],
+                    questions: [
+                        "(a) State two advantages of normalizing the database to 3rd Normal Form (3NF). [2 marks]",
+                        "(b) Construct the relation EMP_DEPT to 3NF, limited to the information explicitly visible in the table above. [3 marks]"
+                    ]
+                },
+                {
+                    year: "Nov 2017",
+                    paper: "Paper 2 (Option A)",
+                    scenario: "Consider the following example relation SCHOOL_VOLUNTEERS_TABLE. It holds data about a number of teachers and students from different schools who volunteer. The key attributes are (School_Name, Date).",
+                    tableHeaders: ["School_Name", "Code", "Address", "Date", "Num_Volunteers"],
+                    tableData: [
+                        ["Riverbank HS", "AB1234", "Goldmar Dr 15", "10/07/2017", "32"],
+                        ["East High", "EE1324", "East Street 20", "10/07/2017", "15"],
+                        ["East High", "EE1324", "East Street 20", "20/10/2017", "19"],
+                        ["Oceanview HS", "BG3445", "Long Road 123", "10/07/2017", "14"]
+                    ],
+                    questions: [
+                        "(a) Identify three characteristics of the 1st Normal Form (1NF) which are evident in this relation. [3 marks]",
+                        "(b) The table is normalized into SCHOOLS (Code, Name, Address) and VOLUNTEERS (Code, Date, Num). Discuss whether these relations are in 3NF. [5 marks]"
+                    ]
+                }
+            ];
+
+            return (
+                <div className="max-w-5xl mx-auto space-y-8">
+                    <div className="mb-6">
+                        <h2 className="text-3xl font-bold text-slate-800 mb-2">Past Paper Questions</h2>
+                        <p className="text-slate-600">
+                            Practice with real IB Computer Science exam questions related to database normalization.
+                        </p>
+                    </div>
+
+                    <div className="grid gap-8">
+                        {questions.map((q, idx) => (
+                            <Card key={idx} className="overflow-hidden">
+                                <div className="bg-indigo-600 p-4 text-white flex justify-between items-center">
+                                    <h3 className="font-bold text-lg">{q.year} - {q.paper}</h3>
+                                    <Badge color="white" className="text-indigo-600 bg-white">Exam Practice</Badge>
+                                </div>
+                                <div className="p-6">
+                                    <div className="mb-6">
+                                        <h4 className="font-bold text-slate-800 mb-2">Scenario:</h4>
+                                        <p className="text-slate-600 mb-4">{q.scenario}</p>
+                                        
+                                        <div className="overflow-x-auto border rounded-lg">
+                                            <table className="w-full text-sm text-left">
+                                                <thead className="bg-slate-50 border-b">
+                                                    <tr>
+                                                        {q.tableHeaders.map((h, i) => (
+                                                            <th key={i} className="px-4 py-2 font-semibold text-slate-700 whitespace-nowrap">{h}</th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y">
+                                                    {q.tableData.map((row, r) => (
+                                                        <tr key={r} className="hover:bg-slate-50">
+                                                            {row.map((cell, c) => (
+                                                                <td key={c} className="px-4 py-2 text-slate-600 whitespace-nowrap">{cell}</td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 bg-slate-50 p-5 rounded-lg border border-slate-200">
+                                        <h4 className="font-bold text-indigo-900 flex items-center gap-2">
+                                            <CheckSquare className="w-5 h-5"/> Questions:
+                                        </h4>
+                                        <ul className="space-y-3">
+                                            {q.questions.map((question, i) => (
+                                                <li key={i} className="text-slate-800 font-medium border-b border-slate-200 pb-2 last:border-0 last:pb-0">
+                                                    {question}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- MODELLING MODE COMPONENT ---
+
+        const ModellingMode = () => {
+        const [step, setStep] = useState(0); // 0: Brainstorm, 1: Build Tables, 2: Review
+        const [fieldInput, setFieldInput] = useState("");
+        const [discoveredFields, setDiscoveredFields] = useState([]);
+        
+        // Table Building State
+        const [tables, setTables] = useState([]);
+        const [tableNameInput, setTableNameInput] = useState("");
+        const [selectedFieldsForTable, setSelectedFieldsForTable] = useState([]);
+        const [selectedPK, setSelectedPK] = useState("");
+
+        const addField = () => {
+            if (fieldInput.trim() && !discoveredFields.includes(fieldInput.trim())) {
+            setDiscoveredFields([...discoveredFields, fieldInput.trim()]);
+            setFieldInput("");
+            }
+        };
+
+        const toggleFieldSelection = (field) => {
+            if (selectedFieldsForTable.includes(field)) {
+            setSelectedFieldsForTable(selectedFieldsForTable.filter(f => f !== field));
+            if (selectedPK === field) setSelectedPK("");
+            } else {
+            setSelectedFieldsForTable([...selectedFieldsForTable, field]);
+            }
+        };
+
+        const saveTable = () => {
+            if (tableNameInput.trim() && selectedFieldsForTable.length > 0 && selectedPK) {
+            setTables([
+                ...tables, 
+                { 
+                id: Date.now(), 
+                name: tableNameInput.trim(), 
+                fields: selectedFieldsForTable, 
+                pk: selectedPK 
+                }
+            ]);
+            // Reset form but keep discovered fields available
+            setTableNameInput("");
+            setSelectedFieldsForTable([]);
+            setSelectedPK("");
+            }
+        };
+
+        const deleteTable = (id) => {
+            setTables(tables.filter(t => t.id !== id));
+        };
+
+        // Pre-load helpful fields if they get stuck
+        const loadHintFields = () => {
+            const hints = ["ISBN", "Book_Title", "Author", "Publisher", "Member_ID", "Member_Name", "Member_Email", "Loan_Date", "Return_Date"];
+            const newFields = hints.filter(h => !discoveredFields.includes(h));
+            setDiscoveredFields([...discoveredFields, ...newFields]);
+        };
+
+        return (
+            <div className="max-w-5xl mx-auto space-y-8">
+            
+            {/* Step Indicator */}
+            <div className="flex gap-2 mb-8">
+                {["1. Identify Fields", "2. Build Normalized Tables", "3. Compare & Review"].map((label, idx) => (
+                <div key={idx} className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold border ${step === idx ? "bg-indigo-600 text-white border-indigo-600" : step > idx ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}>
+                    {label}
+                </div>
+                ))}
+            </div>
+
+            {/* STEP 1: BRAINSTORM */}
+            {step === 0 && (
+                <Card className="p-6">
+                <div className="mb-6">
+                    <h3 className="text-xl font-bold text-slate-800 mb-2">Scenario: Community Library</h3>
+                    <p className="text-slate-600">
+                    You are designing a database for a library. You need to track <strong>Books</strong>, <strong>Members</strong>, and <strong>Loans</strong> (who borrowed what).
+                    <br/>
+                    Brainstorm the fields (attributes) you would need to store. Type them below.
+                    </p>
+                </div>
+
+                <div className="flex gap-2 mb-6">
+                    <input 
+                    type="text" 
+                    value={fieldInput}
+                    onChange={(e) => setFieldInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addField()}
+                    placeholder="e.g., Book Title, ISBN, Member Name..." 
+                    className="flex-1 p-3 border border-slate-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <button onClick={addField} className="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-700 flex items-center gap-2">
+                    <Plus className="w-4 h-4" /> Add Field
+                    </button>
+                </div>
+
+                {discoveredFields.length === 0 && (
+                    <div className="text-center p-8 border-2 border-dashed border-slate-200 rounded-lg text-slate-400">
+                    No fields added yet. Think about what describes a book or a member.
+                    <br/>
+                    <button onClick={loadHintFields} className="mt-2 text-indigo-600 underline text-sm hover:text-indigo-800">Need a hint?</button>
+                    </div>
+                )}
+
+                {discoveredFields.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-8">
+                    {discoveredFields.map((f, i) => (
+                        <span key={i} className="bg-slate-100 text-slate-700 px-3 py-1 rounded-full text-sm font-medium border border-slate-200">
+                        {f}
+                        </span>
+                    ))}
+                    </div>
+                )}
+
+                <div className="flex justify-end">
+                    <button 
+                    onClick={() => setStep(1)} 
+                    disabled={discoveredFields.length < 3}
+                    className={`px-6 py-3 rounded-lg font-bold flex items-center gap-2 ${discoveredFields.length < 3 ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-green-600 text-white hover:bg-green-700"}`}
+                    >
+                    Proceed to Normalization <ArrowRight className="w-4 h-4" />
+                    </button>
+                </div>
+                </Card>
+            )}
+
+            {/* STEP 2: BUILD TABLES */}
+            {step === 1 && (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Col: Builder Form */}
+                <div className="lg:col-span-1 space-y-6">
+                    <Card className="p-5 border-indigo-200 border-2">
+                    <h4 className="font-bold text-indigo-900 mb-4 flex items-center gap-2"><Edit3 className="w-4 h-4"/> Create Entity (Table)</h4>
+                    
+                    <div className="space-y-4">
+                        <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Table Name</label>
+                        <input 
+                            type="text" 
+                            value={tableNameInput}
+                            onChange={(e) => setTableNameInput(e.target.value)}
+                            placeholder="e.g., Books"
+                            className="w-full p-2 border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 outline-none"
+                        />
+                        </div>
+
+                        <div>
+                        <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Select Fields</label>
+                        <div className="max-h-48 overflow-y-auto space-y-1 border rounded p-2 bg-slate-50">
+                            {discoveredFields.map(field => (
+                            <label key={field} className="flex items-center gap-2 p-1 hover:bg-slate-200 rounded cursor-pointer">
+                                <input 
+                                type="checkbox" 
+                                checked={selectedFieldsForTable.includes(field)}
+                                onChange={() => toggleFieldSelection(field)}
+                                className="rounded text-indigo-600"
+                                />
+                                <span className="text-sm text-slate-700">{field}</span>
+                            </label>
+                            ))}
+                        </div>
+                        </div>
+
+                        {selectedFieldsForTable.length > 0 && (
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 uppercase mb-2">Select Primary Key</label>
+                            <select 
+                            value={selectedPK}
+                            onChange={(e) => setSelectedPK(e.target.value)}
+                            className="w-full p-2 border border-slate-300 rounded text-sm"
+                            >
+                            <option value="">-- Choose PK --</option>
+                            {selectedFieldsForTable.map(f => (
+                                <option key={f} value={f}>{f}</option>
+                            ))}
+                            </select>
+                        </div>
+                        )}
+
+                        <button 
+                        onClick={saveTable}
+                        disabled={!tableNameInput || !selectedPK || selectedFieldsForTable.length === 0}
+                        className={`w-full py-2 rounded font-semibold text-sm ${!tableNameInput || !selectedPK ? "bg-slate-200 text-slate-400" : "bg-indigo-600 text-white hover:bg-indigo-700"}`}
+                        >
+                        Save Table
+                        </button>
+                    </div>
+                    </Card>
+
+                    <button onClick={() => setStep(2)} className="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 shadow-md">
+                    Finish & Review Model
+                    </button>
+                </div>
+
+                {/* Right Col: Workspace */}
+                <div className="lg:col-span-2 space-y-4">
+                    <h4 className="font-bold text-slate-700 flex items-center gap-2"><Layers className="w-5 h-5"/> Your Schema</h4>
+                    
+                    {tables.length === 0 && (
+                    <div className="h-64 border-2 border-dashed border-slate-300 rounded-lg flex items-center justify-center text-slate-400">
+                        Use the form on the left to create your first normalized table.
+                    </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {tables.map(table => (
+                        <Card key={table.id} className="relative">
+                        <button onClick={() => deleteTable(table.id)} className="absolute top-2 right-2 text-slate-400 hover:text-rose-500"><Trash2 className="w-4 h-4"/></button>
+                        <div className="p-3 border-b bg-slate-50 font-bold text-slate-700">{table.name}</div>
+                        <div className="p-3 space-y-1">
+                            {table.fields.map(f => (
+                            <div key={f} className="flex items-center gap-2 text-sm text-slate-600">
+                                {f === table.pk ? <Key className="w-3 h-3 text-amber-500" /> : <div className="w-3 h-3" />}
+                                <span className={f === table.pk ? "font-bold text-slate-800" : ""}>{f}</span>
+                            </div>
+                            ))}
+                        </div>
+                        </Card>
+                    ))}
+                    </div>
+                </div>
+                </div>
+            )}
+
+            {/* STEP 3: COMPARE */}
+            {step === 2 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2"><MousePointer2 className="w-6 h-6 text-indigo-600"/> Your Schema</h3>
+                    {tables.length === 0 ? <p className="text-slate-500 italic">No tables created.</p> : (
+                    tables.map(table => (
+                        <Card key={table.id} className="border-l-4 border-l-indigo-500">
+                        <div className="p-2 bg-slate-50 border-b font-bold text-sm">{table.name}</div>
+                        <div className="p-3 text-sm space-y-1">
+                            {table.fields.map(f => (
+                            <div key={f} className={`flex items-center gap-2 ${f === table.pk ? "font-bold text-indigo-900" : "text-slate-600"}`}>
+                                {f === table.pk && <Key className="w-3 h-3 text-amber-500"/>} {f}
+                            </div>
+                            ))}
+                        </div>
+                        </Card>
+                    ))
+                    )}
+                </div>
+
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold text-green-700 flex items-center gap-2"><CheckCircle2 className="w-6 h-6"/> Ideal 3NF Schema</h3>
+                    
+                    <Card className="border-l-4 border-l-green-500 opacity-90">
+                    <div className="p-2 bg-green-50 border-b border-green-100 font-bold text-sm text-green-900">Books</div>
+                    <div className="p-3 text-sm space-y-1 text-slate-700">
+                        <div className="flex gap-2 font-bold"><Key className="w-3 h-3 text-amber-500 mt-1"/> ISBN (PK)</div>
+                        <div className="pl-5">Title</div>
+                        <div className="pl-5">Author</div>
+                        <div className="pl-5">Publisher</div>
+                    </div>
+                    </Card>
+
+                    <Card className="border-l-4 border-l-green-500 opacity-90">
+                    <div className="p-2 bg-green-50 border-b border-green-100 font-bold text-sm text-green-900">Members</div>
+                    <div className="p-3 text-sm space-y-1 text-slate-700">
+                        <div className="flex gap-2 font-bold"><Key className="w-3 h-3 text-amber-500 mt-1"/> Member_ID (PK)</div>
+                        <div className="pl-5">Name</div>
+                        <div className="pl-5">Email</div>
+                        <div className="pl-5">Phone</div>
+                    </div>
+                    </Card>
+
+                    <Card className="border-l-4 border-l-green-500 opacity-90">
+                    <div className="p-2 bg-green-50 border-b border-green-100 font-bold text-sm text-green-900">Loans</div>
+                    <div className="p-3 text-sm space-y-1 text-slate-700">
+                        <div className="flex gap-2 font-bold"><Key className="w-3 h-3 text-amber-500 mt-1"/> Loan_ID (PK)</div>
+                        <div className="pl-5 flex items-center gap-1">Member_ID <span className="text-xs text-indigo-500">(FK)</span></div>
+                        <div className="pl-5 flex items-center gap-1">ISBN <span className="text-xs text-indigo-500">(FK)</span></div>
+                        <div className="pl-5">Loan_Date</div>
+                        <div className="pl-5">Due_Date</div>
+                    </div>
+                    </Card>
+
+                    <div className="mt-6 bg-slate-100 p-4 rounded-lg text-sm text-slate-600">
+                    <strong>Comparison Tips:</strong>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                        <li>Did you separate <strong>Books</strong> and <strong>Members</strong>? (2NF)</li>
+                        <li>Did you use IDs (PKs) to link them in a <strong>Loans</strong> table? (3NF)</li>
+                        <li>Did you avoid repeating book details inside the Member table?</li>
+                    </ul>
+                    </div>
+                    <button onClick={() => setStep(0)} className="flex items-center gap-2 text-indigo-600 font-bold text-sm hover:underline mt-4">
+                    <RefreshCw className="w-4 h-4" /> Restart Exercise
+                    </button>
+                </div>
+                </div>
+            )}
+
+            </div>
+        );
+        };
+
+        // --- LEARN MODE DATA & COMPONENTS (EMPLOYEE PROJECTS) ---
+
+        const EMPLOYEE_DATA_UNF = [
+        {
+            id: 501,
+            emp_name: "Sarah Jenkins",
+            dept_code: "IT",
+            dept_head: "Robert Chen",
+            location: "Bldg A",
+            projects: [
+            { code: "P-100", name: "Cloud Migration", hours: 15 },
+            { code: "P-102", name: "Security Audit", hours: 5 }
+            ]
+        },
+        {
+            id: 502,
+            emp_name: "Mike Ross",
+            dept_code: "HR",
+            dept_head: "Lisa Ray",
+            location: "Bldg B",
+            projects: [
+            { code: "P-200", name: "Recruitment", hours: 20 }
+            ]
+        },
+        {
+            id: 503,
+            emp_name: "David Kim",
+            dept_code: "IT",
+            dept_head: "Robert Chen",
+            location: "Bldg A",
+            projects: [
+            { code: "P-100", name: "Cloud Migration", hours: 10 },
+            { code: "P-105", name: "API Update", hours: 12 }
+            ]
+        }
+        ];
+
+        const UNFStage = () => (
+        <Card>
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+            <span className="font-semibold text-slate-700">Raw Data Report (Unnormalized)</span>
+            <Badge color="rose">Repeating Groups</Badge>
+            </div>
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+                <TableHeader cols={["Emp ID", "Employee", "Dept Info", "Current Projects"]} />
+                <tbody className="divide-y divide-slate-100">
+                {EMPLOYEE_DATA_UNF.map((row) => (
+                    <tr key={row.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-900 align-top">{row.id}</td>
+                    <td className="px-4 py-3 text-slate-600 align-top">{row.emp_name}</td>
+                    <td className="px-4 py-3 text-slate-600 align-top">
+                        <div className="font-medium">{row.dept_code}</div>
+                        <div className="text-xs text-slate-400">Head: {row.dept_head}</div>
+                        <div className="text-xs text-slate-400">{row.location}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
+                        <div className="space-y-1">
+                        {row.projects.map((p, i) => (
+                            <div key={i} className="bg-slate-100 px-2 py-1 rounded text-xs flex justify-between border border-slate-200">
+                            <span className="font-mono text-slate-700">{p.code}</span>
+                            <span className="text-slate-500">{p.name}</span>
+                            <span className="font-bold text-indigo-600">{p.hours}h</span>
+                            </div>
+                        ))}
+                        </div>
+                    </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+            </div>
+        </Card>
+        );
+
+        const FirstNFStage = () => {
+        const flatData = [];
+        EMPLOYEE_DATA_UNF.forEach(e => {
+            e.projects.forEach(p => {
+            flatData.push({ ...e, projCode: p.code, projName: p.name, hours: p.hours });
+            });
+        });
+
+        return (
+            <Card>
+            <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <span className="font-semibold text-slate-700">1NF Table (Atomic Values)</span>
+                <Badge color="amber">Redundancy High</Badge>
+            </div>
+            <div className="overflow-x-auto max-h-[400px]">
+                <table className="w-full text-sm">
+                <TableHeader cols={["Emp_ID", "Name", "Dept", "Dept_Head", "Loc", "Proj_Code", "Proj_Name", "Hours"]} />
+                <tbody className="divide-y divide-slate-100">
+                    {flatData.map((row, idx) => (
+                    <tr key={idx} className="hover:bg-indigo-50 group transition-colors">
+                        <td className="px-4 py-2 font-mono text-slate-500 group-hover:text-indigo-700">{row.id}</td>
+                        <td className="px-4 py-2 text-slate-600 bg-amber-50/50 group-hover:bg-indigo-50">{row.emp_name}</td>
+                        <td className="px-4 py-2 text-slate-500 bg-amber-50/50 group-hover:bg-indigo-50">{row.dept_code}</td>
+                        <td className="px-4 py-2 text-slate-600 bg-amber-50/50 group-hover:bg-indigo-50">{row.dept_head}</td>
+                        <td className="px-4 py-2 text-slate-500 bg-amber-50/50 group-hover:bg-indigo-50">{row.location}</td>
+                        <td className="px-4 py-2 font-mono text-indigo-600 font-medium">{row.projCode}</td>
+                        <td className="px-4 py-2 text-slate-600">{row.projName}</td>
+                        <td className="px-4 py-2 font-bold text-slate-800 bg-green-50/50">{row.hours}</td>
+                    </tr>
+                    ))}
+                </tbody>
+                </table>
+            </div>
+            <div className="p-3 bg-slate-50 text-xs text-slate-500 border-t border-slate-200">
+                * Amber shaded cells indicate data repeated for every project the employee is assigned to.
+            </div>
+            </Card>
+        );
+        };
+
+        const SecondNFStage = () => {
+        const employees = [
+            { id: 501, name: "Sarah Jenkins", dept: "IT", head: "Robert Chen", loc: "Bldg A" },
+            { id: 502, name: "Mike Ross", dept: "HR", head: "Lisa Ray", loc: "Bldg B" },
+            { id: 503, name: "David Kim", dept: "IT", head: "Robert Chen", loc: "Bldg A" },
+        ];
+        const projects = [
+            { code: "P-100", name: "Cloud Migration" },
+            { code: "P-102", name: "Security Audit" },
+            { code: "P-200", name: "Recruitment" },
+            { code: "P-105", name: "API Update" },
+        ];
+        const assignments = [
+            { eid: 501, pid: "P-100", h: 15 },
+            { eid: 501, pid: "P-102", h: 5 },
+            { eid: 502, pid: "P-200", h: 20 },
+            { eid: 503, pid: "P-100", h: 10 },
+            { eid: 503, pid: "P-105", h: 12 },
+        ];
+
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="lg:col-span-2 border-l-4 border-l-indigo-500">
+                <div className="p-3 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                <span className="font-semibold text-indigo-900">Table 1: Employees</span>
+                <Badge color="amber">Transitive Dependency Exists</Badge>
+                </div>
+                <table className="w-full text-sm">
+                <TableHeader cols={["Emp_ID (PK)", "Name", "Dept_Code", "Dept_Head", "Location"]} />
+                <tbody className="divide-y divide-slate-100">
+                    {employees.map(e => (
+                    <tr key={e.id}>
+                        <td className="px-4 py-2 font-mono">{e.id}</td>
+                        <td className="px-4 py-2">{e.name}</td>
+                        <td className="px-4 py-2 bg-amber-50">{e.dept}</td>
+                        <td className="px-4 py-2 bg-amber-50">{e.head}</td>
+                        <td className="px-4 py-2 bg-amber-50">{e.loc}</td>
+                    </tr>
+                    ))}
+                </tbody>
+                </table>
+            </Card>
+            <Card>
+                <div className="p-3 bg-slate-50 border-b border-slate-200"><span className="font-semibold text-slate-700">Table 2: Projects</span></div>
+                <table className="w-full text-sm">
+                <TableHeader cols={["Proj_Code (PK)", "Project Name"]} />
+                <tbody className="divide-y divide-slate-100">
+                    {projects.map(p => (<tr key={p.code}><td className="px-4 py-2 font-mono">{p.code}</td><td className="px-4 py-2">{p.name}</td></tr>))}
+                </tbody>
+                </table>
+            </Card>
+            <Card>
+                <div className="p-3 bg-slate-50 border-b border-slate-200"><span className="font-semibold text-slate-700">Table 3: Assignments</span></div>
+                <table className="w-full text-sm">
+                <TableHeader cols={["Emp_ID (FK)", "Proj_Code (FK)", "Hours"]} />
+                <tbody className="divide-y divide-slate-100">
+                    {assignments.map((a, i) => (<tr key={i}><td className="px-4 py-2 font-mono text-slate-500">{a.eid}</td><td className="px-4 py-2 font-mono text-slate-500">{a.pid}</td><td className="px-4 py-2 font-bold text-green-700">{a.h}</td></tr>))}
+                </tbody>
+                </table>
+            </Card>
+            </div>
+        );
+        };
+
+        const ThirdNFStage = () => {
+        const employees = [{ id: 501, name: "Sarah Jenkins", dept: "IT" }, { id: 502, name: "Mike Ross", dept: "HR" }, { id: 503, name: "David Kim", dept: "IT" }];
+        const departments = [{ code: "IT", head: "Robert Chen", loc: "Bldg A" }, { code: "HR", head: "Lisa Ray", loc: "Bldg B" }];
+
+        return (
+            <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border-l-4 border-l-green-500">
+                <div className="p-3 bg-green-50 border-b border-green-100 flex justify-between"><span className="font-semibold text-green-900">Table 1: Employees</span><Badge color="green">Normalized</Badge></div>
+                <table className="w-full text-sm"><TableHeader cols={["Emp_ID (PK)", "Name", "Dept_Code (FK)"]} /><tbody className="divide-y divide-slate-100">{employees.map(e => (<tr key={e.id}><td className="px-4 py-2 font-mono">{e.id}</td><td className="px-4 py-2">{e.name}</td><td className="px-4 py-2 font-mono text-indigo-600">{e.dept}</td></tr>))}</tbody></table>
+                </Card>
+                <Card className="border-l-4 border-l-green-500">
+                <div className="p-3 bg-green-50 border-b border-green-100 flex justify-between"><span className="font-semibold text-green-900">Table 4: Departments</span><Badge color="green">New Table</Badge></div>
+                <table className="w-full text-sm"><TableHeader cols={["Dept_Code (PK)", "Dept_Head", "Location"]} /><tbody className="divide-y divide-slate-100">{departments.map(d => (<tr key={d.code}><td className="px-4 py-2 font-mono text-indigo-600">{d.code}</td><td className="px-4 py-2">{d.head}</td><td className="px-4 py-2">{d.loc}</td></tr>))}</tbody></table>
+                </Card>
+            </div>
+
+            {/* Unchanged tables - Improved visibility */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="bg-slate-50 border-2 border-dashed border-slate-300">
+                <div className="p-2 border-b border-slate-200 text-xs font-semibold text-slate-600">Table 2: Projects (Unchanged)</div>
+                <div className="p-4 text-sm text-slate-600 italic text-center">Contains Project Code & Name</div>
+                </Card>
+                <Card className="bg-slate-50 border-2 border-dashed border-slate-300">
+                <div className="p-2 border-b border-slate-200 text-xs font-semibold text-slate-600">Table 3: Assignments (Unchanged)</div>
+                <div className="p-4 text-sm text-slate-600 italic text-center">Contains Emp_ID, Proj_Code & Hours</div>
+                </Card>
+            </div>
+            </div>
+        );
+        };
+
+        // --- PRACTICE MODE COMPONENTS ---
+
+        const PracticeMode = () => {
+        const [step, setStep] = useState(0);
+        const [selectedCols, setSelectedCols] = useState([]);
+        const [feedback, setFeedback] = useState(null);
+        const [showSuccess, setShowSuccess] = useState(false);
+
+        // Raw Data for School Scenario
+        const schoolData = [
+            { sid: "S101", name: "Alice", year: "Junior", schedule: [{ code: "BIO101", title: "Biology", teacher: "Dr. Hart", room: "Lab 3" }, { code: "ART202", title: "Painting", teacher: "Prof. Li", room: "Studio B" }] },
+            { sid: "S102", name: "Bob", year: "Senior", schedule: [{ code: "BIO101", title: "Biology", teacher: "Dr. Hart", room: "Lab 3" }] }
+        ];
+
+        // Final Data for Success State
+        const finalStudents = [
+            { sid: "S101", name: "Alice", year: "Junior" },
+            { sid: "S102", name: "Bob", year: "Senior" }
+        ];
+        const finalClasses = [
+            { code: "BIO101", title: "Biology", teacher: "Dr. Hart" },
+            { code: "ART202", title: "Painting", teacher: "Prof. Li" }
+        ];
+        const finalTeachers = [
+            { teacher: "Dr. Hart", room: "Lab 3" },
+            { teacher: "Prof. Li", room: "Studio B" }
+        ];
+        const finalEnrollments = [
+            { sid: "S101", code: "BIO101" },
+            { sid: "S101", code: "ART202" },
+            { sid: "S102", code: "BIO101" }
+        ];
+
+
+        const columnsUNF = ["StudentID", "StudentName", "Year", "Schedule (Group)"];
+        
+        const columns1NF = [
+            { id: "StudentID", label: "StudentID (PK)" },
+            { id: "StudentName", label: "StudentName" },
+            { id: "Year", label: "Year" },
+            { id: "ClassCode", label: "ClassCode (PK)" },
+            { id: "ClassTitle", label: "ClassTitle" },
+            { id: "Teacher", label: "Teacher" },
+            { id: "Room", label: "Room" }
+        ];
+
+        // Logic for Step 0: Identify Repeating Group
+        const handleColumnClick = (colName) => {
+            if (step !== 0) return;
+            if (colName === "Schedule (Group)") {
+            setFeedback("Correct! The 'Schedule' column contains multiple classes per student, violating 1NF.");
+            setShowSuccess(true);
+            } else {
+            setFeedback("Incorrect. Look for the column that holds a list or collection of items.");
+            setShowSuccess(false);
+            }
+        };
+
+        // Logic for Step 1: Create 2NF (Split Tables)
+        // Task: Select columns dependent on ClassCode
+        const handleCheckbox = (colId) => {
+            if (step === 1 || step === 2) {
+            if (selectedCols.includes(colId)) {
+                setSelectedCols(prev => prev.filter(c => c !== colId));
+            } else {
+                setSelectedCols(prev => [...prev, colId]);
+            }
+            }
+        };
+
+        const check2NF = () => {
+            const correctDependencies = ["ClassTitle", "Teacher", "Room"];
+            const selectedSet = new Set(selectedCols);
+            
+            // Check for Student columns (common mistake)
+            if (selectedSet.has("StudentName") || selectedSet.has("Year")) {
+            setFeedback("Incorrect. 'StudentName' and 'Year' depend on StudentID, not ClassCode. While they do form a separate table (Students), this specific task asks you to build the 'Classes' table.");
+            setShowSuccess(false);
+            return;
+            }
+
+            // Check for missing Teacher/Room (thinking ahead to 3NF)
+            if (selectedSet.has("ClassTitle") && (!selectedSet.has("Teacher") || !selectedSet.has("Room"))) {
+            setFeedback("In 2NF, we focus only on Partial Dependencies (dependencies on part of the Primary Key). 'Teacher' and 'Room' both depend on 'ClassCode'. Don't worry about 3NF issues yet—move them all to the Class table for now.");
+            setShowSuccess(false);
+            return;
+            }
+
+            // Validate: Must have all dependencies. Can optionally include the Key (ClassCode).
+            const hasAllDependencies = correctDependencies.every(c => selectedSet.has(c));
+            const onlyValidColumns = selectedCols.every(c => correctDependencies.includes(c) || c === "ClassCode");
+            
+            if (hasAllDependencies && onlyValidColumns) {
+            setFeedback("Correct! 'Title', 'Teacher', and 'Room' depend on the ClassCode. They form the new Classes table structure.");
+            setShowSuccess(true);
+            } else {
+            setFeedback("Not quite. Identify all attributes that describe the CLASS, regardless of the student.");
+            setShowSuccess(false);
+            }
+        };
+
+        const check3NF = () => {
+            const correct = ["Teacher", "Room"]; 
+            const isMatch = correct.every(c => selectedCols.includes(c)) && selectedCols.length === correct.length;
+
+            if (isMatch) {
+            setFeedback("Perfect! The 'Room' is determined by the 'Teacher' (transitive dependency). We move both to a new 'Teachers' table, where 'Teacher' becomes the Primary Key.");
+            setShowSuccess(true);
+            } else {
+            if (selectedCols.includes("ClassTitle")) {
+                setFeedback("Incorrect. 'ClassTitle' depends directly on the Key (ClassCode). It is not transitively dependent.");
+            } else if (selectedCols.length < 2) {
+                setFeedback("Select both the determinant (Teacher) and the dependent attribute (Room) to move them to the new table.");
+            } else {
+                setFeedback("Incorrect. Look for the chain: Key -> Attribute A -> Attribute B.");
+            }
+            setShowSuccess(false);
+            }
+        };
+
+        const nextStep = () => {
+            setStep(step + 1);
+            setFeedback(null);
+            setShowSuccess(false);
+            setSelectedCols([]);
+        };
+
+        return (
+            <div className="max-w-4xl mx-auto">
+            <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-800 mb-2">Practice Scenario: Class Schedule</h2>
+                <p className="text-slate-600">
+                You are the database architect. Normalize this raw data representing student class schedules.
+                </p>
+            </div>
+
+            {/* PROGRESS BAR */}
+            <div className="flex gap-2 mb-8">
+                {["Identify Repeating Groups (UNF)", "Create 2NF (Split Tables)", "Create 3NF (Refine)", "Completion"].map((label, idx) => (
+                <div key={idx} className={`flex-1 py-2 px-4 rounded-lg text-sm font-semibold border ${step === idx ? "bg-indigo-600 text-white border-indigo-600" : step > idx ? "bg-green-100 text-green-700 border-green-200" : "bg-slate-50 text-slate-400 border-slate-200"}`}>
+                    {idx + 1}. {label}
+                </div>
+                ))}
+            </div>
+
+            <Card className="p-6">
+                {/* STEP 0: UNF -> 1NF */}
+                {step === 0 && (
+                <div>
+                    <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800 flex gap-2 items-center"><MousePointer2 className="w-5 h-5 text-indigo-500" /> Task 1: Identify the Violation</h3>
+                        <p className="text-slate-600 text-sm mt-1">Click the column header that prevents this table from being in <b>1st Normal Form</b>.</p>
+                    </div>
+                    </div>
+                    <div className="border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                        <thead className="bg-slate-50">
+                        <tr>
+                            {columnsUNF.map(col => (
+                            <th 
+                                key={col} 
+                                onClick={() => handleColumnClick(col)}
+                                className="px-4 py-3 text-left font-semibold text-slate-600 cursor-pointer hover:bg-indigo-100 hover:text-indigo-700 transition-colors"
+                            >
+                                {col}
+                            </th>
+                            ))}
+                        </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                        {schoolData.map((row, i) => (
+                            <tr key={i}>
+                            <td className="px-4 py-3 align-top">{row.sid}</td>
+                            <td className="px-4 py-3 align-top">{row.name}</td>
+                            <td className="px-4 py-3 align-top">{row.year}</td>
+                            <td className="px-4 py-3 bg-rose-50 border-l-2 border-rose-200">
+                                {row.schedule.map((l, j) => (
+                                <div key={j} className="mb-1 text-xs font-mono text-rose-800">
+                                    [{l.code}] {l.title} ({l.teacher})
+                                </div>
+                                ))}
+                            </td>
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+                )}
+
+                {/* STEP 1: 1NF -> 2NF */}
+                {step === 1 && (
+                <div>
+                    <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800 flex gap-2 items-center"><CheckSquare className="w-5 h-5 text-indigo-500" /> Task 2: Eliminate Partial Dependencies</h3>
+                        <p className="text-slate-600 text-sm mt-1">
+                        The Composite Key is <b>StudentID + ClassCode</b>. 
+                        Select the columns that depend ONLY on <b>ClassCode</b> to move them to a new 'Classes' table.
+                        </p>
+                    </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-6">
+                    {columns1NF.map((col) => (
+                        <button
+                        key={col.id}
+                        onClick={() => handleCheckbox(col.id)}
+                        className={`p-3 rounded-lg border text-left flex items-center gap-3 transition-all ${
+                            selectedCols.includes(col.id) 
+                            ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                            : "bg-white border-slate-200 text-slate-600 hover:border-indigo-300"
+                        }`}
+                        >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedCols.includes(col.id) ? "bg-indigo-500 border-indigo-500" : "border-slate-300"}`}>
+                            {selectedCols.includes(col.id) && <CheckSquare className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className="text-sm font-medium">{col.label}</span>
+                        </button>
+                    ))}
+                    </div>
+                    <button onClick={check2NF} className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700">Check Selection</button>
+                </div>
+                )}
+
+                {/* STEP 2: 2NF -> 3NF */}
+                {step === 2 && (
+                <div>
+                    <div className="flex justify-between items-start mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-slate-800 flex gap-2 items-center"><Split className="w-5 h-5 text-indigo-500" /> Task 3: Eliminate Transitive Dependencies</h3>
+                        <p className="text-slate-600 text-sm mt-1">
+                        In the new 'Classes' table, we have columns: <b>ClassCode, ClassTitle, Teacher, Room</b>.
+                        Select the TWO columns where one attribute depends on the other (not the Key), to move them to a 'Teachers' table.
+                        </p>
+                    </div>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                    {["ClassCode", "ClassTitle", "Teacher", "Room"].map((col) => (
+                        <button
+                        key={col}
+                        onClick={() => handleCheckbox(col)}
+                        className={`p-3 rounded-lg border text-left flex items-center gap-3 transition-all ${
+                            selectedCols.includes(col) 
+                            ? "bg-indigo-50 border-indigo-500 text-indigo-700 shadow-sm" 
+                            : "bg-white border-slate-200 text-slate-700 hover:border-indigo-300"
+                        }`}
+                        >
+                        <div className={`w-4 h-4 rounded border flex items-center justify-center ${selectedCols.includes(col) ? "bg-indigo-500 border-indigo-500" : "border-slate-300"}`}>
+                            {selectedCols.includes(col) && <CheckSquare className="w-3 h-3 text-white" />}
+                        </div>
+                        <span className="text-sm font-medium">{col}</span>
+                        </button>
+                    ))}
+                    </div>
+                    <button onClick={check3NF} className="px-4 py-2 bg-indigo-600 text-white rounded-md text-sm font-semibold hover:bg-indigo-700">Check Selection</button>
+                </div>
+                )}
+
+                {/* STEP 3: SUCCESS / COMPLETION */}
+                {step === 3 && (
+                <div>
+                    <div className="flex justify-between items-start mb-8">
+                    <div>
+                        <h3 className="text-2xl font-bold text-green-700 flex gap-2 items-center"><CheckCircle2 className="w-8 h-8" /> Normalization Complete!</h3>
+                        <p className="text-slate-600 mt-2">
+                        Excellent work. You have successfully normalized the raw schedule report into 3rd Normal Form.
+                        Here is the final database schema:
+                        </p>
+                    </div>
+                    <button onClick={() => setStep(0)} className="text-sm text-indigo-600 font-semibold hover:underline">Start Over</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* TABLE 1: Students */}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-50 p-2 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">Students Table (Result of 2NF Split)</div>
+                        <table className="w-full text-sm">
+                        <thead className="bg-slate-50/50"><tr><th className="px-3 py-1 text-left">ID (PK)</th><th className="px-3 py-1 text-left">Name</th><th className="px-3 py-1 text-left">Year</th></tr></thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {finalStudents.map(s => <tr key={s.sid}><td className="px-3 py-2 font-mono text-indigo-600">{s.sid}</td><td className="px-3 py-2">{s.name}</td><td className="px-3 py-2 text-slate-500">{s.year}</td></tr>)}
+                        </tbody>
+                        </table>
+                    </div>
+
+                    {/* TABLE 2: Classes */}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-50 p-2 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">Classes Table (Result of 3NF Split)</div>
+                        <table className="w-full text-sm">
+                        <thead className="bg-slate-50/50"><tr><th className="px-3 py-1 text-left">Code (PK)</th><th className="px-3 py-1 text-left">Title</th><th className="px-3 py-1 text-left">Teacher (FK)</th></tr></thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {finalClasses.map(c => <tr key={c.code}><td className="px-3 py-2 font-mono text-indigo-600">{c.code}</td><td className="px-3 py-2">{c.title}</td><td className="px-3 py-2 text-slate-500 italic">{c.teacher}</td></tr>)}
+                        </tbody>
+                        </table>
+                    </div>
+
+                    {/* TABLE 3: Teachers */}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-50 p-2 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">Teachers Table (New Entity)</div>
+                        <table className="w-full text-sm">
+                        <thead className="bg-slate-50/50"><tr><th className="px-3 py-1 text-left">Teacher (PK)</th><th className="px-3 py-1 text-left">Room</th></tr></thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {finalTeachers.map(t => <tr key={t.teacher}><td className="px-3 py-2 font-mono text-indigo-600">{t.teacher}</td><td className="px-3 py-2">{t.room}</td></tr>)}
+                        </tbody>
+                        </table>
+                    </div>
+
+                    {/* TABLE 4: Enrollment */}
+                    <div className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+                        <div className="bg-slate-50 p-2 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">Enrollment (Junction Table)</div>
+                        <table className="w-full text-sm">
+                        <thead className="bg-slate-50/50"><tr><th className="px-3 py-1 text-left">Student (FK)</th><th className="px-3 py-1 text-left">Class (FK)</th></tr></thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {finalEnrollments.map((e, i) => <tr key={i}><td className="px-3 py-2 font-mono text-slate-500">{e.sid}</td><td className="px-3 py-2 font-mono text-slate-500">{e.code}</td></tr>)}
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+                )}
+
+                {/* FEEDBACK AREA */}
+                {feedback && (
+                <div className={`mt-6 p-4 rounded-lg border flex items-start gap-3 ${showSuccess ? "bg-green-50 border-green-200 text-green-800" : "bg-rose-50 border-rose-200 text-rose-800"}`}>
+                    {showSuccess ? <CheckCircle2 className="w-5 h-5 mt-0.5" /> : <XCircle className="w-5 h-5 mt-0.5" />}
+                    <div className="flex-1">
+                    <p className="font-medium">{showSuccess ? "Success!" : "Try Again"}</p>
+                    <p className="text-sm mt-1">{feedback}</p>
+                    </div>
+                    {showSuccess && step < 3 && (
+                    <button 
+                        onClick={step === 2 ? () => setStep(3) : nextStep} 
+                        className="px-4 py-2 bg-green-600 text-white rounded-md text-sm font-bold shadow hover:bg-green-700 flex items-center gap-2"
+                    >
+                        {step === 2 ? "View Final Schema" : "Next Stage"} <ArrowRight className="w-4 h-4" />
+                    </button>
+                    )}
+                </div>
+                )}
+            </Card>
+            </div>
+        );
+        };
+
+        // --- THEORY MODE COMPONENT ---
+
+        const NormalizationExample = () => {
+            const unfData = [
+                { id: 101, customer: "John Doe", address: "123 Main St", items: "Widget A (2), Widget B (1)" },
+                { id: 102, customer: "Jane Smith", address: "456 Oak Ave", items: "Widget A (1)" }
+            ];
+
+            const firstnfData = [
+                { id: 101, customer: "John Doe", address: "123 Main St", item: "Widget A", qty: 2 },
+                { id: 101, customer: "John Doe", address: "123 Main St", item: "Widget B", qty: 1 },
+                { id: 102, customer: "Jane Smith", address: "456 Oak Ave", item: "Widget A", qty: 1 }
+            ];
+
+            const secondnfOrders = [
+                { oid: 101, customer: "John Doe", address: "123 Main St" },
+                { oid: 102, customer: "Jane Smith", address: "456 Oak Ave" }
+            ];
+            const secondnfItems = [
+                { oid: 101, item: "Widget A", qty: 2 },
+                { oid: 101, item: "Widget B", qty: 1 },
+                { oid: 102, item: "Widget A", qty: 1 }
+            ];
+
+            const thirdnfCustomers = [
+                { cid: "C1", name: "John Doe", address: "123 Main St" },
+                { cid: "C2", name: "Jane Smith", address: "456 Oak Ave" }
+            ];
+            const thirdnfOrders = [
+                { oid: 101, cid: "C1", date: "2023-01-01" },
+                { oid: 102, cid: "C2", date: "2023-01-02" }
+            ];
+
+            return (
+                <div className="mt-8 space-y-8 border-t pt-8">
+                    <h3 className="text-2xl font-bold text-slate-800">Visual Example: Customer Orders</h3>
+                    
+                    {/* UNF */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div className="mb-2 font-bold text-rose-700 flex items-center gap-2"><XCircle className="w-4 h-4"/> Unnormalized Form (UNF)</div>
+                        <p className="text-sm text-slate-600 mb-3">Notice the repeating group in the "Items" column.</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-rose-50 font-semibold text-rose-900"><tr><th className="p-2">Order ID</th><th className="p-2">Customer</th><th className="p-2">Address</th><th className="p-2">Items (Repeating)</th></tr></thead>
+                                <tbody className="divide-y">
+                                    {unfData.map(r => <tr key={r.id}><td className="p-2">{r.id}</td><td className="p-2">{r.customer}</td><td className="p-2">{r.address}</td><td className="p-2 font-mono bg-rose-50">{r.items}</td></tr>)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* 1NF */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div className="mb-2 font-bold text-amber-600 flex items-center gap-2"><AlertCircle className="w-4 h-4"/> First Normal Form (1NF)</div>
+                        <p className="text-sm text-slate-600 mb-3">Flattened. Every cell is atomic. However, Customer info is repeated for every item (Redundancy).</p>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-xs text-left">
+                                <thead className="bg-amber-50 font-semibold text-amber-900"><tr><th className="p-2">Order ID</th><th className="p-2">Customer</th><th className="p-2">Address</th><th className="p-2">Item</th><th className="p-2">Qty</th></tr></thead>
+                                <tbody className="divide-y">
+                                    {firstnfData.map((r, i) => <tr key={i}><td className="p-2">{r.id}</td><td className="p-2 bg-amber-50/50">{r.customer}</td><td className="p-2 bg-amber-50/50">{r.address}</td><td className="p-2 font-mono">{r.item}</td><td className="p-2">{r.qty}</td></tr>)}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* 2NF */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200">
+                        <div className="mb-2 font-bold text-indigo-600 flex items-center gap-2"><Split className="w-4 h-4"/> Second Normal Form (2NF)</div>
+                        <p className="text-sm text-slate-600 mb-3">Split based on Primary Key. Orders table separates order details from the items. Partial dependency removed.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Orders Table</div>
+                                <table className="w-full text-xs text-left border">
+                                    <thead className="bg-slate-50"><tr><th className="p-2">OID (PK)</th><th className="p-2">Customer</th><th className="p-2">Address</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {secondnfOrders.map(r => <tr key={r.oid}><td className="p-2 font-mono">{r.oid}</td><td className="p-2">{r.customer}</td><td className="p-2 bg-indigo-50">{r.address}</td></tr>)}
+                                    </tbody>
+                                </table>
+                                <p className="text-[10px] text-indigo-600 mt-1">* Address still depends on Customer, not Order ID (Transitive Dependency).</p>
+                            </div>
+                            <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Order Items Table</div>
+                                <table className="w-full text-xs text-left border">
+                                    <thead className="bg-slate-50"><tr><th className="p-2">OID (FK)</th><th className="p-2">Item</th><th className="p-2">Qty</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {secondnfItems.map((r, i) => <tr key={i}><td className="p-2 font-mono">{r.oid}</td><td className="p-2">{r.item}</td><td className="p-2">{r.qty}</td></tr>)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* 3NF */}
+                    <div className="bg-white p-4 rounded-lg shadow-sm border-l-4 border-l-green-500 border border-slate-200">
+                        <div className="mb-2 font-bold text-green-700 flex items-center gap-2"><CheckCircle2 className="w-4 h-4"/> Third Normal Form (3NF)</div>
+                        <p className="text-sm text-slate-600 mb-3">Transitive dependency removed. Customer details moved to their own table.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Customers</div>
+                                <table className="w-full text-xs text-left border bg-green-50/30">
+                                    <thead className="bg-green-100 text-green-800"><tr><th className="p-2">CID (PK)</th><th className="p-2">Name</th><th className="p-2">Address</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {thirdnfCustomers.map(r => <tr key={r.cid}><td className="p-2 font-mono">{r.cid}</td><td className="p-2">{r.name}</td><td className="p-2">{r.address}</td></tr>)}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Orders</div>
+                                <table className="w-full text-xs text-left border">
+                                    <thead className="bg-slate-50"><tr><th className="p-2">OID (PK)</th><th className="p-2">CID (FK)</th><th className="p-2">Date</th></tr></thead>
+                                    <tbody className="divide-y">
+                                        {thirdnfOrders.map(r => <tr key={r.oid}><td className="p-2 font-mono">{r.oid}</td><td className="p-2 font-mono text-indigo-600">{r.cid}</td><td className="p-2">{r.date}</td></tr>)}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div>
+                                <div className="text-xs font-bold text-slate-500 mb-1">Order Items</div>
+                                <div className="p-4 border rounded bg-slate-50 text-xs text-slate-400 text-center italic">
+                                    (Same as 2NF) <br/> OID, Item, Qty
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            );
+        };
+
+        const TheoryMode = () => {
+        return (
+            <div className="max-w-4xl mx-auto space-y-8">
+            
+            {/* Intro Section */}
+            <section>
+                <h2 className="text-3xl font-bold text-slate-800 mb-4">Database Normalization Guide</h2>
+                <Card className="p-6 bg-gradient-to-r from-indigo-50 to-white border-l-4 border-l-indigo-600">
+                <h3 className="text-xl font-bold text-indigo-900 mb-2">What is Normalization?</h3>
+                <p className="text-slate-700 leading-relaxed">
+                    Normalization is the process of organizing data in a database. This includes creating tables and establishing relationships between those tables according to rules designed both to protect the data and to make the database more flexible by eliminating redundancy and inconsistent dependency.
+                </p>
+                </Card>
+            </section>
+
+            {/* Why We Need It - Anomalies */}
+            <section>
+                <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-rose-500" />
+                Why Normalization? (The Anomalies)
+                </h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                <Card className="p-4 bg-rose-50 border-rose-100">
+                    <h4 className="font-bold text-rose-800 mb-2">Insertion Anomaly</h4>
+                    <p className="text-sm text-rose-700">
+                    Occurs when certain data cannot be inserted into the database without the presence of other data.
+                    <br/><br/>
+                    <em>Example: You can't add a new "Course" unless you also enroll a "Student" in it.</em>
+                    </p>
+                </Card>
+                <Card className="p-4 bg-rose-50 border-rose-100">
+                    <h4 className="font-bold text-rose-800 mb-2">Deletion Anomaly</h4>
+                    <p className="text-sm text-rose-700">
+                    Occurs when deleting some data results in the unintended loss of other critical data.
+                    <br/><br/>
+                    <em>Example: Deleting the last student in a "Physics" class also deletes the class details entirely.</em>
+                    </p>
+                </Card>
+                <Card className="p-4 bg-rose-50 border-rose-100">
+                    <h4 className="font-bold text-rose-800 mb-2">Update Anomaly</h4>
+                    <p className="text-sm text-rose-700">
+                    Occurs when data is redundant (repeated). Updating one instance requires updating all others to prevent inconsistency.
+                    <br/><br/>
+                    <em>Example: Updating a teacher's office requires finding every single row where that teacher appears.</em>
+                    </p>
+                </Card>
+                </div>
+            </section>
+
+            {/* The Steps */}
+            <section className="space-y-6">
+                <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Layers className="w-6 h-6 text-indigo-600" />
+                The Normal Forms
+                </h3>
+
+                {/* 1NF */}
+                <div className="flex gap-4">
+                <div className="flex-none w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl">1</div>
+                <Card className="flex-1 p-5">
+                    <h4 className="text-lg font-bold text-slate-800 mb-2">First Normal Form (1NF)</h4>
+                    <div className="bg-slate-50 p-3 border-l-4 border-indigo-400 mb-3 text-sm italic text-slate-600">
+                    "A relation is in first normal form if every attribute in that relation is a single-valued attribute."
+                    </div>
+                    <ul className="list-disc list-inside text-slate-700 space-y-1 text-sm">
+                    <li>Eliminate repeating groups in individual tables.</li>
+                    <li>Create a separate table for each set of related data.</li>
+                    <li>Identify each set of related data with a primary key.</li>
+                    </ul>
+                </Card>
+                </div>
+
+                {/* 2NF */}
+                <div className="flex gap-4">
+                <div className="flex-none w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl">2</div>
+                <Card className="flex-1 p-5">
+                    <h4 className="text-lg font-bold text-slate-800 mb-2">Second Normal Form (2NF)</h4>
+                    <div className="bg-slate-50 p-3 border-l-4 border-indigo-400 mb-3 text-sm italic text-slate-600">
+                    "A relation is in 2NF if it is in 1NF and every non-primary-key attribute is fully functionally dependent on the primary key."
+                    </div>
+                    <ul className="list-disc list-inside text-slate-700 space-y-1 text-sm">
+                    <li>Create separate tables for sets of values that apply to multiple records.</li>
+                    <li>Relate these tables with a foreign key.</li>
+                    <li><strong>Goal:</strong> Remove Partial Dependencies (where a column depends on only <em>part</em> of a composite primary key).</li>
+                    </ul>
+                </Card>
+                </div>
+
+                {/* 3NF */}
+                <div className="flex gap-4">
+                <div className="flex-none w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xl">3</div>
+                <Card className="flex-1 p-5">
+                    <h4 className="text-lg font-bold text-slate-800 mb-2">Third Normal Form (3NF)</h4>
+                    <div className="bg-slate-50 p-3 border-l-4 border-indigo-400 mb-3 text-sm italic text-slate-600">
+                    "A relation is in 3NF if it is in 2NF and has no transitive dependency for non-prime attributes."
+                    </div>
+                    <ul className="list-disc list-inside text-slate-700 space-y-1 text-sm">
+                    <li>Eliminate fields that do not depend on the key.</li>
+                    <li><strong>Goal:</strong> Remove Transitive Dependencies (where Column A depends on Column B, and Column B depends on the Key).</li>
+                    <li><em>"Every non-key attribute must provide a fact about the key, the whole key, and nothing but the key."</em></li>
+                    </ul>
+                </Card>
+                </div>
+
+            </section>
+
+            <NormalizationExample />
+            </div>
+        );
+        };
+
+        // --- LEARN MODE COMPONENT ---
+
+        const LearnMode = ({ stage, setStage }) => {
+        const stages = [
+            {
+            title: "Unnormalized Form (UNF)",
+            description: "Data is collected in a raw format (Project Assignment Report). Notice how a single employee has multiple projects listed in one 'cell'.",
+            anomaly: "Attributes contain multiple values (Repeating Groups). Difficult to query how many hours are spent on a specific project across all employees.",
+            rule: "Identify and remove repeating groups.",
+            nextLabel: "Normalize to 1NF",
+            component: <UNFStage />
+            },
+            {
+            title: "First Normal Form (1NF)",
+            formalDefinition: "A relation is in first normal form if every attribute in that relation is single-valued attribute.",
+            description: "We flattened the table. Every cell now holds a single (atomic) value. However, we have created massive redundancy.",
+            anomaly: "Redundancy! Employee and Department details are repeated for every single project assignment. Updating a Department Head requires updating multiple rows.",
+            rule: "Eliminate Partial Dependencies (attributes depending on only part of a composite Primary Key).",
+            nextLabel: "Normalize to 2NF",
+            component: <FirstNFStage />
+            },
+            {
+            title: "Second Normal Form (2NF)",
+            formalDefinition: "A relation that is in First Normal Form and every non-primary-key attribute is fully functionally dependent on the primary key, then the relation is in Second Normal Form (2NF).",
+            description: "We split the data based on the Primary Key (Emp_ID + Proj_Code). We moved Employee info to its own table and Project info to its own table.",
+            anomaly: "Transitive Dependency! 'Dept_Head' and 'Location' depend on 'Dept_Code', which depends on 'Emp_ID'. If the IT Department moves, we have to update every IT employee.",
+            rule: "Eliminate Transitive Dependencies (non-key attributes depending on other non-key attributes).",
+            nextLabel: "Normalize to 3NF",
+            component: <SecondNFStage />
+            },
+            {
+            title: "Third Normal Form (3NF)",
+            formalDefinition: "A relation is in the third normal form, if there is no transitive dependency for non-prime attributes as well as it is in the second normal form.",
+            description: "Final Polish. We pulled Department information into its own table. Now, the Employee table only references a Dept_Code.",
+            anomaly: "None. Data is logically separated. Updating a Department Head happens in one place only.",
+            rule: "Ensure every non-key attribute provides a fact about the key, the whole key, and nothing but the key.",
+            nextLabel: "Restart Simulation",
+            component: <ThirdNFStage />
+            }
+        ];
+
+        const currentStage = stages[stage];
+
+        return (
+            <>
+            <div className="flex items-center gap-2 bg-white p-2 rounded-lg shadow-sm border border-slate-200 mb-8 w-fit ml-auto">
+                {[0, 1, 2, 3].map((s) => (
+                <button
+                    key={s}
+                    onClick={() => setStage(s)}
+                    className={`w-10 h-10 rounded-md flex items-center justify-center font-bold text-sm transition-all ${
+                    stage === s 
+                        ? "bg-indigo-600 text-white shadow-md scale-105" 
+                        : stage > s 
+                        ? "bg-green-100 text-green-700 hover:bg-green-200"
+                        : "bg-slate-100 text-slate-400 hover:bg-slate-200"
+                    }`}
+                >
+                    {s === 0 ? "U" : s}
+                </button>
+                ))}
+            </div>
+
+            <StageInfo 
+                title={currentStage.title}
+                description={currentStage.description}
+                anomaly={currentStage.anomaly}
+                rule={currentStage.rule}
+                formalDefinition={currentStage.formalDefinition}
+                nextLabel={currentStage.nextLabel}
+                onNext={() => setStage((prev) => (prev + 1) % 4)}
+                isCompleted={false}
+            />
+
+            <div className="transition-all duration-500 ease-in-out">
+                {currentStage.component}
+            </div>
+
+            {/* Key/Legend */}
+            <div className="mt-12 border-t border-slate-200 pt-8 grid grid-cols-1 md:grid-cols-3 gap-6 text-sm text-slate-500">
+                <div className="flex items-start gap-3">
+                    <div className="bg-indigo-100 p-2 rounded text-indigo-600">
+                    <TableIcon className="w-5 h-5" />
+                    </div>
+                    <div>
+                    <h4 className="font-semibold text-slate-700">Entities</h4>
+                    <p>Tables represent distinct objects (Employees, Projects).</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <div className="bg-rose-100 p-2 rounded text-rose-600">
+                    <XCircle className="w-5 h-5" />
+                    </div>
+                    <div>
+                    <h4 className="font-semibold text-slate-700">Anomalies</h4>
+                    <p>Redundancy causes update, insertion, and deletion errors.</p>
+                    </div>
+                </div>
+                <div className="flex items-start gap-3">
+                    <div className="bg-green-100 p-2 rounded text-green-600">
+                    <CheckCircle2 className="w-5 h-5" />
+                    </div>
+                    <div>
+                    <h4 className="font-semibold text-slate-700">Normalization</h4>
+                    <p>Splitting tables reduces redundancy and ensures data integrity.</p>
+                    </div>
+                </div>
+                </div>
+            </>
+        );
+        };
+
+        // --- APP SHELL ---
+
+        const App = () => {
+        const [activeTab, setActiveTab] = useState('learn');
+        const [learnStage, setLearnStage] = useState(0);
+
+        return (
+            <div className="min-h-screen bg-slate-100 font-sans text-slate-900 p-4 md:p-8">
+            <div className="max-w-5xl mx-auto">
+                
+                {/* Header */}
+                <header className="mb-6">
+                <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+                    <Database className="w-8 h-8 text-indigo-600" />
+                    Normalization Lab
+                </h1>
+                <p className="text-slate-500 mt-1">Interactive visualization & Practice Challenge</p>
+                </header>
+
+                {/* Tabs */}
+                <div className="flex flex-wrap gap-4 mb-6 border-b border-slate-200">
+                <button 
+                    onClick={() => setActiveTab('learn')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'learn' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <PlayCircle className="w-4 h-4" /> Learn Mode
+                </button>
+                <button 
+                    onClick={() => setActiveTab('practice')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'practice' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <GraduationCap className="w-4 h-4" /> Practice Challenge
+                </button>
+                <button 
+                    onClick={() => setActiveTab('theory')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'theory' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <FileText className="w-4 h-4" /> Process & Theory
+                </button>
+                <button 
+                    onClick={() => setActiveTab('modelling')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'modelling' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <Edit3 className="w-4 h-4" /> Data Modelling
+                </button>
+                <button 
+                    onClick={() => setActiveTab('papers')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'papers' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <BookOpen className="w-4 h-4" /> Past Papers
+                </button>
+                <button 
+                    onClick={() => setActiveTab('vocab')}
+                    className={`pb-3 px-4 font-semibold text-sm flex items-center gap-2 transition-colors border-b-2 ${activeTab === 'vocab' ? "border-indigo-600 text-indigo-600" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+                >
+                    <Info className="w-4 h-4" /> Vocabulary
+                </button>
+                </div>
+
+                {/* Content */}
+                {activeTab === 'learn' ? (
+                <LearnMode stage={learnStage} setStage={setLearnStage} />
+                ) : activeTab === 'practice' ? (
+                <PracticeMode />
+                ) : activeTab === 'theory' ? (
+                <TheoryMode />
+                ) : activeTab === 'modelling' ? (
+                <ModellingMode />
+                ) : activeTab === 'papers' ? (
+                <PastPaperMode />
+                ) : (
+                <VocabularyMode />
+                )}
+
+            </div>
+            </div>
+        );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>

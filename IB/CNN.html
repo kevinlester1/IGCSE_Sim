@@ -1,0 +1,1777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Real-Image Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400&display=swap');
+
+        .image-render-pixel {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        input[type="range"] {
+            accent-color: #2563eb;
+        }
+        .stage-btn.active {
+            background-color: #2563eb;
+            border-color: #60a5fa;
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        .tab-btn.active {
+            color: #2563eb;
+            border-bottom: 2px solid #2563eb;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .math-cell {
+            transition: all 0.2s ease;
+        }
+        .math-cell:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        .pixel-grid {
+            background-image: 
+                linear-gradient(to right, rgba(0,0,0,0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
+        }
+        /* Viewport centering logic */
+        .zoom-viewport {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transition: transform 0.1s ease-out;
+            will-change: transform;
+        }
+
+        /* --- NOTES APP SPECIFIC STYLES --- */
+        .page-container {
+            width: 210mm; /* Standard A4 width for better display */
+            min-height: 297mm;
+            background: #ffffff;
+            margin: 0 auto; 
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            page-break-after: always;
+            color: #1e293b;
+        }
+
+        .editable {
+            outline: none;
+            min-height: 1.5em;
+        }
+        
+        .editable:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .editable img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 8px 0;
+            display: block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .editable img:hover {
+            opacity: 0.9;
+            outline: 3px solid #ef4444;
+        }
+
+        .cornell-grid {
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 0;
+            border: 2px solid #cbd5e1;
+            flex-grow: 1;
+        }
+
+        .header-section {
+            grid-column: 1 / -1;
+            border-bottom: 2px solid #cbd5e1;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .cues-column {
+            border-right: 2px solid #cbd5e1;
+            padding: 1rem;
+            background-color: #fdfdfd;
+        }
+
+        .notes-column {
+            padding: 1rem;
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #e2e8f0 31px, #e2e8f0 32px);
+            line-height: 32px;
+            background-attachment: local;
+        }
+
+        .summary-section {
+            grid-column: 1 / -1;
+            border-top: 2px solid #cbd5e1;
+            padding: 1rem;
+            background: #f8fafc;
+            min-height: 150px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+
+        .status-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+        }
+        .status-btn:hover { background: #f1f5f9; }
+        
+        .status-1 { border-color: #10b981; background: #ecfdf5; }
+        .status-2 { border-color: #f59e0b; background: #fffbeb; }
+        .status-3 { border-color: #ef4444; background: #fef2f2; }
+
+        .handwritten {
+            font-family: 'Kalam', cursive;
+            font-size: 1.15rem;
+        }
+        
+        .page-wrapper:hover .delete-btn {
+            opacity: 1;
+        }
+
+        /* Essential Utility: Standard Hide */
+        .hidden { display: none !important; }
+
+        /* Print Styling */
+        @media print {
+            body { background: none; margin: 0; }
+            .no-print { display: none !important; }
+            
+            /* Hide inactive tabs in print */
+            body.print-mode-notes #view-sim, body.print-mode-notes #view-theory, body.print-mode-notes #view-quiz { display: none !important; }
+            
+            .page-container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                height: 100vh;
+                border: none;
+                padding: 0;
+            }
+            #notebook { gap: 0 !important; padding-bottom: 0 !important; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen p-4 md:p-8">
+
+    <!-- Hidden File Inputs for Notes -->
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="handleImport(this)">
+
+    <header class="max-w-7xl mx-auto mb-6 text-center no-print">
+        <h1 class="text-3xl font-black bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+            Real-Image CNN Processor
+        </h1>
+        <p class="text-slate-500 text-sm">Visualizing the mechanics of Deep Learning</p>
+    </header>
+
+    <nav class="max-w-7xl mx-auto mb-8 flex flex-wrap justify-center border-b border-slate-200 no-print">
+        <button id="nav-sim" class="tab-btn px-4 md:px-6 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 transition-all active">Simulation</button>
+        <button id="nav-theory" class="tab-btn px-4 md:px-6 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 transition-all">Guide</button>
+        <button id="nav-quiz" class="tab-btn px-4 md:px-6 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 transition-all">Quiz</button>
+        <button id="nav-notes" class="tab-btn px-4 md:px-6 py-2 text-xs md:text-sm font-bold uppercase tracking-wider text-slate-500 transition-all text-blue-600 border-b-2 border-transparent">My Notes</button>
+    </nav>
+
+    <!-- Simulation View -->
+    <div id="view-sim">
+        <div class="max-w-7xl mx-auto mb-6 flex flex-wrap justify-center items-center gap-6">
+            <div id="stage-container" class="flex flex-wrap justify-center gap-2"></div>
+            <div class="h-8 w-px bg-slate-200 hidden md:block"></div>
+            <div class="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="zoom-in" class="w-4 h-4 text-slate-400"></i>
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Centered Zoom</span>
+                </div>
+                <input type="range" id="zoom-slider" min="1" max="6" step="0.5" value="1" class="w-24">
+                <span id="zoom-label" class="text-xs font-mono font-bold text-blue-600 min-w-[20px]">1x</span>
+            </div>
+        </div>
+
+        <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="lg:col-span-3 xl:col-span-3 space-y-4">
+                <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <h3 class="text-xs font-bold text-blue-600 uppercase mb-4 flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4"></i> Sample Patterns
+                    </h3>
+                    <div id="image-presets" class="grid grid-cols-2 lg:grid-cols-1 gap-2"></div>
+                </div>
+
+                <div class="bg-white border border-slate-200 p-5 rounded-2xl shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-xs font-bold text-emerald-600 uppercase flex items-center gap-2">
+                            <i data-lucide="scan" class="w-4 h-4"></i> Active Kernel
+                        </h3>
+                    </div>
+                    <div id="kernel-presets" class="grid grid-cols-2 lg:grid-cols-1 gap-1.5 mb-3"></div>
+                    <div id="kernel-logic-box" class="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 mb-4">
+                        <h4 class="text-[10px] font-bold text-emerald-700 uppercase mb-1">Pattern Logic</h4>
+                        <p id="kernel-description" class="text-[11px] text-emerald-800 leading-tight">Select a filter.</p>
+                    </div>
+                </div>
+                
+                <!-- Step-by-Step Controls -->
+                <div class="bg-white border border-slate-200 p-4 rounded-2xl shadow-sm">
+                    <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5"></i> Step-by-Step Control
+                    </h3>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="stepScan(-1, 0)" class="py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg flex justify-center items-center transition text-slate-600" title="Step Left"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                        <button id="toggle-play" class="py-2 bg-blue-600 hover:bg-blue-700 text-white shadow shadow-blue-200 rounded-lg flex justify-center items-center transition" title="Play/Pause"><i data-lucide="pause" class="w-4 h-4"></i></button>
+                        <button onclick="stepScan(1, 0)" class="py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg flex justify-center items-center transition text-slate-600" title="Step Right"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        <button onclick="stepScan(0, 1)" class="py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg flex justify-center items-center transition text-slate-600" title="Next Row"><i data-lucide="chevron-down" class="w-4 h-4"></i></button>
+                    </div>
+                    <div class="text-[9px] text-slate-400 text-center mt-2 font-medium">Pause to analyze pixel-by-pixel</div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-9 xl:col-span-9 bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm overflow-hidden flex flex-col justify-between">
+                
+                <div class="flex flex-col lg:flex-row items-center lg:items-start gap-8 lg:gap-16 justify-center w-full flex-grow">
+                    
+                    <!-- Images Column (Source on top, Output below) -->
+                    <div class="flex flex-col items-center gap-6">
+                        
+                        <!-- Source View -->
+                        <div id="input-wrapper" class="relative cursor-crosshair w-56 h-56 lg:w-64 lg:h-64 rounded-xl overflow-hidden border-4 border-slate-100 shadow-xl bg-slate-200">
+                            <div id="input-viewport" class="zoom-viewport">
+                                <canvas id="source-canvas" class="hidden"></canvas>
+                                <div id="pixel-grid-source" class="absolute inset-0 pixel-grid pointer-events-none opacity-0"></div>
+                                <img id="display-img" class="w-full h-full object-cover select-none pointer-events-none image-render-pixel" crossorigin="anonymous">
+                            </div>
+                            <!-- Static Center Overlay for Zoom -->
+                            <div id="scanner-box" class="absolute border-2 border-amber-400 bg-amber-400/20 shadow-[0_0_15px_rgba(251,191,36,0.5)] z-20 pointer-events-none" style="width: 15px; height: 15px; top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;"></div>
+                            <div class="absolute -top-3 -left-3 bg-white px-3 py-1 rounded-full text-[10px] font-bold border border-slate-200 z-30 uppercase tracking-tighter shadow-md">Source</div>
+                        </div>
+
+                        <!-- Downward Arrow -->
+                        <div class="text-slate-300 flex-shrink-0">
+                            <i data-lucide="arrow-down" class="w-8 h-8"></i>
+                        </div>
+
+                        <!-- Output View -->
+                        <div class="relative w-56 h-56 lg:w-64 lg:h-64 rounded-xl overflow-hidden border-4 border-blue-500/10 shadow-xl bg-slate-50">
+                            <div id="output-viewport" class="zoom-viewport">
+                                <canvas id="output-canvas" class="w-full h-full object-contain image-render-pixel"></canvas>
+                                <div id="pixel-grid-output" class="absolute inset-0 pixel-grid pointer-events-none opacity-0"></div>
+                            </div>
+                            <!-- Static Center Highlight -->
+                            <div id="output-highlight" class="absolute border border-blue-500 bg-blue-500/10 z-20 pointer-events-none" style="top: 50%; left: 50%; transform: translate(-50%, -50%); display: none;"></div>
+                            <div id="stage-badge" class="absolute -top-3 -right-3 bg-blue-600 px-3 py-1 rounded-full text-[10px] font-bold border border-blue-400 z-10 shadow-lg uppercase tracking-tighter text-white">Features</div>
+                        </div>
+                        
+                    </div>
+
+                    <!-- Live Math Breakdown (Right Side) -->
+                    <div class="flex flex-col items-center gap-4 w-full max-w-[20rem] bg-slate-50 p-5 lg:p-7 rounded-3xl border border-slate-200 shadow-inner flex-shrink-0 lg:sticky lg:top-4">
+                        <div class="text-[11px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-100/50 px-4 py-1.5 rounded-full border border-emerald-200 shadow-sm mb-1 text-center w-full">
+                            Live Patch Math
+                        </div>
+                        <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm relative w-full flex justify-center">
+                            <div id="patch-grid" class="grid grid-cols-3 gap-1.5"></div>
+                        </div>
+                        
+                        <!-- Detailed Summation Equation -->
+                        <div class="w-full bg-white border border-slate-200 rounded-xl p-3 shadow-sm flex flex-col items-center justify-center mt-1">
+                            <div class="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-2 border-b border-slate-100 pb-1 w-full text-center">Calculated Summation</div>
+                            <div id="math-equation" class="flex flex-wrap items-center justify-center gap-y-1">
+                                <!-- Equation dynamically injected here -->
+                            </div>
+                        </div>
+
+                        <div class="text-[10px] text-slate-500 font-mono flex flex-wrap justify-center gap-5 mt-1">
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Pixel Value</span>
+                            <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span> Kernel Weight</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Info Layer (Underneath) -->
+                <div class="mt-10 grid grid-cols-1 gap-6 bg-slate-50 p-6 rounded-2xl border border-slate-200 w-full">
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-2 text-blue-600">
+                            <i data-lucide="activity" class="w-4 h-4"></i>
+                            <h4 id="info-stage-title" class="text-xs font-black uppercase tracking-tight">Operation</h4>
+                        </div>
+                        <p id="info-stage-desc" class="text-xs text-slate-600 leading-relaxed min-h-[40px]"></p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Theory View -->
+    <div id="view-theory" class="hidden max-w-7xl mx-auto space-y-8 pb-12">
+        <!-- Video Introduction Section -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-red-600">
+                <i data-lucide="play-circle"></i>
+                Video Overview: How CNNs Work
+            </h3>
+            <a href="https://www.youtube.com/watch?v=YRhxdVk_sIs" target="_blank" rel="noopener noreferrer" class="group relative block w-full max-w-3xl mx-auto aspect-video rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-900">
+                <img src="https://img.youtube.com/vi/YRhxdVk_sIs/maxresdefault.jpg" alt="Watch How CNNs Work on YouTube" class="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-300">
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <div class="w-16 h-16 bg-red-600/90 text-white rounded-full flex items-center justify-center group-hover:bg-red-600 group-hover:scale-110 transition-all duration-300 shadow-lg border-2 border-white/20">
+                        <i data-lucide="play" class="w-8 h-8 ml-1"></i>
+                    </div>
+                </div>
+            </a>
+            <p class="text-sm text-slate-600 mt-6 leading-relaxed text-center">
+                Click the thumbnail above to watch this excellent video breakdown on YouTube. It explains the intuition behind Convolutional Neural Networks and acts as a great companion to the interactive visualization tools in the Live Simulation.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="image"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-2">1. The Input Layer</h3>
+                <p class="text-sm text-slate-600 mb-4">Computers don't see colors or shapes; they see numbers. Every image is converted into a matrix of numerical values representing pixel intensities. This is the starting point for the CNN.</p>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Applications</h4>
+                    <ul class="text-xs text-slate-500 space-y-1">
+                        <li>• Digitizing medical X-rays for analysis.</li>
+                        <li>• Pre-processing satellite imagery for weather prediction.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="settings"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-2">2. Convolution (The Filters)</h3>
+                <p class="text-sm text-slate-600 mb-4">This is the heart of the CNN. Small matrices called <strong>Kernels</strong> slide across the image using a specific step size called a <strong>Stride</strong>. At each step, it mathematically detects geometric features, producing a new grid called a <strong>Feature Map</strong>.</p>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Applications</h4>
+                    <ul class="text-xs text-slate-500 space-y-1">
+                        <li>• Facial Recognition: Identifying eyes, nose, and jawlines.</li>
+                        <li>• Self-Driving Cars: Detecting road lanes and obstacles.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visual Demonstration Section -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-3 text-emerald-600">
+                <i data-lucide="microscope"></i>
+                Visual Demonstration: How Convolution Works
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">Let's look at exactly how a 3x3 kernel calculates a single pixel in the feature map. It extracts a small patch of the image, matches it with the kernel, multiplies the overlapping values, and adds them all together.</p>
+            
+            <div class="flex flex-col xl:flex-row items-center justify-center gap-6 xl:gap-8 bg-slate-50 p-6 rounded-2xl border border-slate-100 overflow-x-auto">
+                
+                <!-- Image Patch -->
+                <div class="flex flex-col items-center min-w-max">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-3">1. Image Patch</span>
+                    <div class="grid grid-cols-3 gap-1 p-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700 rounded border border-slate-200">100</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700 rounded border border-slate-200">100</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-700 rounded border border-slate-200">100</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-slate-800 flex items-center justify-center text-xs font-bold text-white rounded">10</div>
+                    </div>
+                </div>
+
+                <!-- Multiply Symbol -->
+                <div class="text-slate-300 font-black text-3xl hidden xl:block">×</div>
+                <div class="text-slate-300 xl:hidden"><i data-lucide="arrow-down" class="w-6 h-6"></i></div>
+
+                <!-- Kernel -->
+                <div class="flex flex-col items-center min-w-max">
+                    <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-3">2. Kernel (Horizontal Edge)</span>
+                    <div class="grid grid-cols-3 gap-1 p-2 bg-emerald-50 rounded-xl border border-emerald-200 shadow-sm">
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">-1</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">-2</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">-1</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-bold text-slate-400 rounded border border-emerald-50">0</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-bold text-slate-400 rounded border border-emerald-50">0</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-bold text-slate-400 rounded border border-emerald-50">0</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">1</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">2</div>
+                        <div class="w-10 h-10 md:w-12 md:h-12 bg-white flex items-center justify-center text-xs font-black text-emerald-700 rounded border border-emerald-100 shadow-sm">1</div>
+                    </div>
+                </div>
+
+                <!-- Equals Symbol -->
+                <div class="text-slate-300 font-black text-3xl hidden xl:block">=</div>
+                <div class="text-slate-300 xl:hidden"><i data-lucide="arrow-down" class="w-6 h-6"></i></div>
+
+                <!-- Math & Result -->
+                <div class="flex flex-col items-center min-w-max">
+                    <span class="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-3">3. Sum = New Pixel</span>
+                    <div class="p-4 bg-white rounded-xl border border-blue-200 shadow-sm flex flex-col items-center w-full min-w-[220px]">
+                        <div class="text-[10px] md:text-xs font-mono text-slate-500 mb-3 border-b border-slate-100 pb-3 text-center w-full leading-relaxed">
+                            (100×-1) + (100×-2) + (100×-1) <br>
+                            + (10×0) + (10×0) + (10×0) <br>
+                            + (10×1) + (10×2) + (10×1)
+                        </div>
+                        <div class="flex items-center justify-center gap-3 w-full">
+                            <span class="text-xs font-bold text-slate-400">-400 + 0 + 40</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 text-slate-300"></i>
+                            <span class="text-xl font-black text-blue-600 bg-blue-50 px-4 py-1 rounded shadow-inner border border-blue-100">-360</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            <p class="text-xs text-slate-500 mt-5 italic text-center bg-slate-50 p-3 rounded-lg border border-slate-100">
+                <i data-lucide="info" class="w-4 h-4 inline-block mr-1 text-slate-400 align-text-bottom"></i>
+                In this visual example, the large negative result (-360) tells the neural network that it successfully detected a sharp transition from a light area (100) to a dark area (10), proving there is a clear horizontal edge.
+            </p>
+        </div>
+
+        <!-- Kernel Dictionary Section -->
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-indigo-600">
+                <i data-lucide="grid"></i>
+                Common Kernel Matrix Examples
+            </h3>
+            <p class="text-sm text-slate-600 mb-6">These are the actual 3x3 weight matrices used in image processing and computer vision. Notice how their positive and negative distributions mirror the feature they are trying to detect.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Vertical Edge -->
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="font-bold text-slate-800">Vertical Edge</span>
+                        <span class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded">Sobel</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 w-max mx-auto mb-4 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-2</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">2</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">1</div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center mt-auto">Subtracts the left column from the right column, calculating horizontal gradients to find vertical lines.</p>
+                </div>
+
+                <!-- Horizontal Edge -->
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="font-bold text-slate-800">Horizontal Edge</span>
+                        <span class="text-[10px] uppercase font-bold text-indigo-500 bg-indigo-100 px-2 py-0.5 rounded">Sobel</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 w-max mx-auto mb-4 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-2</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">2</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded">1</div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center mt-auto">Subtracts the top row from the bottom row, calculating vertical gradients to find horizontal lines.</p>
+                </div>
+
+                <!-- Omni Edge -->
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="font-bold text-slate-800">Omni Edge</span>
+                        <span class="text-[10px] uppercase font-bold text-orange-500 bg-orange-100 px-2 py-0.5 rounded">Outline</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 w-max mx-auto mb-4 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded border-2 border-emerald-300">8</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center mt-auto">Compares the center pixel heavily against all surrounding pixels simultaneously. Highlights borders regardless of direction.</p>
+                </div>
+
+                <!-- Sharpen -->
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm flex flex-col">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="font-bold text-slate-800">Sharpen</span>
+                        <span class="text-[10px] uppercase font-bold text-cyan-600 bg-cyan-100 px-2 py-0.5 rounded">Enhance</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 w-max mx-auto mb-4 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded border-2 border-emerald-300">5</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-rose-500 bg-rose-50 rounded">-1</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-slate-300 rounded">0</div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center mt-auto">Amplifies the central pixel while slightly subtracting neighbors, increasing the local contrast to make edges "pop".</p>
+                </div>
+
+                <!-- Blur -->
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm flex flex-col md:col-span-2 lg:col-span-1">
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="font-bold text-slate-800">Box Blur</span>
+                        <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">Average</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-1 w-max mx-auto mb-4 bg-white p-2 rounded-xl border border-slate-200">
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                        <div class="w-10 h-10 flex items-center justify-center font-bold text-emerald-600 bg-emerald-50 rounded text-[10px]">1/9</div>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed text-center mt-auto">Replaces the center pixel with the exact mathematical average of itself and all 8 of its neighbors, smoothing out noise.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="activity"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-2">3. Activation Functions (ReLU)</h3>
+                <p class="text-sm text-slate-600 mb-4">Real-world data is complex and "non-linear." The <strong>ReLU</strong> (Rectified Linear Unit) activation function introduces non-linearity by replacing all negative pixel values with zero, clamping useless signals and keeping only the strong positive features.</p>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Applications</h4>
+                    <ul class="text-xs text-slate-500 space-y-1">
+                        <li>• Noise Filtering: Removing irrelevant background data.</li>
+                        <li>• Deepening Networks: Preventing mathematical degradation.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center mb-4">
+                    <i data-lucide="maximize"></i>
+                </div>
+                <h3 class="text-lg font-bold mb-2">4. Pooling (Downsampling)</h3>
+                <p class="text-sm text-slate-600 mb-4"><strong>Max Pooling</strong> reduces the resolution of the feature map while keeping the most important information. It looks at a small window and keeps only the highest value, making the network faster and less sensitive to small shifts.</p>
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <h4 class="text-[10px] font-bold uppercase text-slate-400 mb-1">Applications</h4>
+                    <ul class="text-xs text-slate-500 space-y-1">
+                        <li>• Mobile AI: Compressing models to run on phones.</li>
+                        <li>• Translation Invariance: Recognizing a cat even if it moves.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Network Operations Section -->
+        <div class="bg-blue-50/60 p-8 rounded-3xl border border-blue-100 shadow-sm mt-8">
+            <h3 class="text-xl font-bold mb-6 flex items-center gap-3 text-blue-900">
+                <i data-lucide="network" class="text-blue-600"></i>
+                Beyond Features: Network Depth & Architecture
+            </h3>
+            
+            <!-- Network Depth Diagram -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl mb-6">
+                <h4 class="text-lg font-bold mb-2 flex items-center gap-3 text-purple-400">
+                    <i data-lucide="layers"></i> Spatial Hierarchies: The Power of Network Depth
+                </h4>
+                <p class="text-sm text-slate-400 mb-8 max-w-4xl">
+                    A single kernel only sees simple local patterns. By stacking multiple convolutional layers (increasing <strong>Network Depth</strong>), a CNN adaptively combines low-level features into increasingly complex, high-level representations before classification.
+                </p>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 w-full">
+                    <!-- Input -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-16 h-16 rounded-xl overflow-hidden border-2 border-slate-700 shadow-lg">
+                            <img src="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=200&h=200&fit=crop" class="w-full h-full object-cover" alt="Input">
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-500 uppercase">Input Image</span>
+                    </div>
+
+                    <i data-lucide="arrow-right" class="text-slate-700 hidden md:block w-6 h-6"></i>
+                    <i data-lucide="arrow-down" class="text-slate-700 md:hidden w-6 h-6"></i>
+
+                    <!-- Layer 1 -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 grid grid-cols-3 gap-1 p-2 shadow-lg shadow-cyan-900/20">
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">/</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">-</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">\</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">|</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">+</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">/</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">-</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">|</div>
+                            <div class="bg-slate-900 flex items-center justify-center text-cyan-400 text-xs font-mono rounded border border-slate-800">\</div>
+                        </div>
+                        <span class="text-[10px] font-bold text-cyan-400 uppercase text-center leading-tight">Layer 1<br><span class="text-slate-500">Edges & Lines</span></span>
+                    </div>
+
+                    <i data-lucide="arrow-right" class="text-slate-700 hidden md:block w-6 h-6"></i>
+                    <i data-lucide="arrow-down" class="text-slate-700 md:hidden w-6 h-6"></i>
+
+                    <!-- Layer 2 -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 grid grid-cols-2 gap-1 p-2 shadow-lg shadow-blue-900/20">
+                            <div class="bg-slate-900 flex items-center justify-center rounded border border-slate-800"><div class="w-4 h-4 border-[1.5px] border-blue-400 rounded-full"></div></div>
+                            <div class="bg-slate-900 flex items-center justify-center rounded border border-slate-800"><div class="w-0 h-0 border-l-[6px] border-r-[6px] border-b-[10px] border-transparent border-b-blue-400"></div></div>
+                            <div class="bg-slate-900 flex items-center justify-center rounded border border-slate-800"><div class="w-4 h-4 bg-blue-400/20 border border-blue-400 rotate-45"></div></div>
+                            <div class="bg-slate-900 flex items-center justify-center rounded border border-slate-800"><div class="w-5 h-2 border-t-[1.5px] border-blue-400 rounded-t-full"></div></div>
+                        </div>
+                        <span class="text-[10px] font-bold text-blue-400 uppercase text-center leading-tight">Layer 2<br><span class="text-slate-500">Shapes & Textures</span></span>
+                    </div>
+
+                    <i data-lucide="arrow-right" class="text-slate-700 hidden md:block w-6 h-6"></i>
+                    <i data-lucide="arrow-down" class="text-slate-700 md:hidden w-6 h-6"></i>
+
+                    <!-- Layer 3 -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-20 h-20 bg-slate-800 rounded-xl border border-slate-700 flex items-center justify-center relative overflow-hidden shadow-lg shadow-purple-900/20 p-2">
+                            <div class="absolute inset-0 bg-purple-500/10"></div>
+                            <i data-lucide="target" class="text-purple-400 relative z-10 w-8 h-8 drop-shadow-md"></i>
+                        </div>
+                        <span class="text-[10px] font-bold text-purple-400 uppercase text-center leading-tight">Layer 3+<br><span class="text-slate-500">Complex Objects</span></span>
+                    </div>
+
+                    <i data-lucide="arrow-right" class="text-slate-700 hidden md:block w-6 h-6"></i>
+                    <i data-lucide="arrow-down" class="text-slate-700 md:hidden w-6 h-6"></i>
+
+                    <!-- Output -->
+                    <div class="flex flex-col items-center gap-3">
+                        <div class="w-24 h-20 bg-slate-800 rounded-xl border border-slate-700 flex flex-col justify-center gap-2 p-3 shadow-lg shadow-emerald-900/20">
+                            <div class="w-full flex items-center justify-between text-[9px] font-bold">
+                                <span class="text-emerald-400">Match</span>
+                                <span class="text-white">98%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                                <div class="h-full bg-emerald-400 w-[98%]"></div>
+                            </div>
+                            <div class="w-full flex items-center justify-between text-[9px] font-bold mt-1">
+                                <span class="text-slate-500">Other</span>
+                                <span class="text-slate-500">2%</span>
+                            </div>
+                            <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                                <div class="h-full bg-slate-600 w-[2%]"></div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-emerald-400 uppercase text-center leading-tight">Dense Layer<br><span class="text-slate-500">Classification</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
+                    <div class="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-3">
+                        <i data-lucide="split-square-horizontal" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="text-md font-bold text-slate-800 mb-2">Integration & Classification</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-3">Once 2D spatial feature maps are extracted, they undergo <strong>Flattening</strong>—unrolling the 2D grid into a single 1D vector. This vector is fed into a <strong>Dense Layer</strong> (Fully Connected Network).</p>
+                    <p class="text-xs text-slate-600 leading-relaxed">The final layer uses a <strong>Softmax</strong> function, which squashes raw output scores into a probability distribution (e.g., 85% House, 15% Skyline) that sums to exactly 1.0, giving us our final classification.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm">
+                    <div class="w-8 h-8 bg-indigo-100 text-indigo-600 rounded-lg flex items-center justify-center mb-3">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="text-md font-bold text-slate-800 mb-2">Activation Selection</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-3">Why do we use <strong>ReLU</strong> in hidden layers instead of older functions like Sigmoid?</p>
+                    <p class="text-xs text-slate-600 leading-relaxed">Sigmoid compresses values between 0 and 1. In deep networks, this causes the <em>Vanishing Gradient Problem</em>—where mathematical learning signals shrink so small that the network stops learning. ReLU avoids this by keeping strong gradients for positive values, allowing faster training.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-blue-100 shadow-sm md:col-span-2">
+                    <div class="w-8 h-8 bg-rose-100 text-rose-600 rounded-lg flex items-center justify-center mb-3">
+                        <i data-lucide="trending-down" class="w-4 h-4"></i>
+                    </div>
+                    <h4 class="text-md font-bold text-slate-800 mb-2">Loss Functions & Deep Learning</h4>
+                    <p class="text-xs text-slate-600 leading-relaxed mb-4">A CNN starts out completely "blind" with random kernel weights. How does it learn to find edges or faces automatically? By calculating its mistakes using a <strong>Loss Function</strong>.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="font-bold text-rose-600 text-[10px] uppercase tracking-widest block mb-2">Cross-Entropy Loss</span>
+                            <p class="text-xs text-slate-500 leading-relaxed">The standard for classification tasks. It heavily penalizes the network when it makes a confident mistake (e.g., predicting 99% Skyline when the image is a Forest), mathematically pushing the probability outputs toward the correct label.</p>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <span class="font-bold text-emerald-600 text-[10px] uppercase tracking-widest block mb-2">Backpropagation</span>
+                            <p class="text-xs text-slate-500 leading-relaxed">Once the Loss is calculated, the network works backwards using Calculus. It determines how much every single kernel weight contributed to the error, and slightly adjusts those weights to minimize the loss score on the next pass.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vocab & Quiz View -->
+    <div id="view-quiz" class="hidden max-w-7xl mx-auto space-y-8 pb-12">
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-blue-600">
+                <i data-lucide="book-open"></i>
+                CNN Core Vocabulary
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">CNN</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A specialized neural network designed to process structured grid data, like image pixels.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Input Layer</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">The raw data fed into the network, representing image pixels as numerical matrices.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Kernel / Filter</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A small moving matrix (e.g., 3x3) of weights that detects specific features like edges or textures.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Feature Map</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">The output grid created after a kernel scans an image, highlighting where patterns were detected.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Spatial Hierarchies</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">The concept where deeper layers in a CNN combine simple features (edges) from earlier layers into complex objects (faces).</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Stride</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">The number of pixels a kernel shifts as it slides across the image during convolution.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">ReLU Activation</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A mathematical gate that replaces all negative pixel values with zero to introduce non-linearity.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Max Pooling</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A downsampling layer that shrinks the feature map by keeping only the highest value in local patches.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Flattening</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">Unrolling a 2D feature map into a single 1D list of numbers for the fully connected network.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Dense Layer</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A fully connected layer that takes extracted features and learns to make a final classification.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Softmax</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A final mathematical function that converts raw scores into probability percentages that sum to 1.0.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Loss Function</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">A mathematical tool (like Cross-Entropy) that calculates the error or penalty of the network's prediction.</p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="font-bold text-blue-700 text-sm block mb-1">Backpropagation</span>
+                    <p class="text-xs text-slate-600 leading-relaxed">The algorithmic process of working backward through the network to update weights based on the loss score.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white p-8 rounded-3xl border border-slate-200 shadow-sm">
+            <h2 class="text-2xl font-black mb-6 flex items-center gap-3 text-emerald-600">
+                <i data-lucide="check-circle"></i>
+                Knowledge Check
+            </h2>
+            <div id="quiz-container" class="space-y-6 max-w-4xl mx-auto">
+                <!-- Quiz dynamically injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes View -->
+    <div id="view-notes" class="hidden max-w-7xl mx-auto space-y-8 pb-12">
+        <!-- Notes Toolbar -->
+        <div class="bg-white px-6 py-3 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-3 justify-center sm:justify-between items-center no-print sticky top-4 z-40">
+             <div class="flex bg-slate-100 rounded-lg p-1 gap-1 border border-slate-200">
+                <button onclick="exportData()" class="px-3 py-1.5 rounded hover:bg-white hover:shadow-sm text-xs font-bold text-slate-600 flex items-center gap-1.5 transition">
+                    <i data-lucide="download" class="w-3.5 h-3.5 text-green-500"></i> Save
+                </button>
+                <button onclick="importTrigger()" class="px-3 py-1.5 rounded hover:bg-white hover:shadow-sm text-xs font-bold text-slate-600 flex items-center gap-1.5 transition">
+                    <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-500"></i> Open
+                </button>
+             </div>
+             <div class="flex flex-wrap gap-2">
+                <button onclick="triggerImageUpload()" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600 flex items-center gap-1.5 transition"><i data-lucide="image" class="w-3.5 h-3.5 text-purple-500"></i> Add Image</button>
+                <button onclick="addPage()" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600 flex items-center gap-1.5 transition"><i data-lucide="file-plus" class="w-3.5 h-3.5 text-emerald-500"></i> Add Page</button>
+                <button onclick="toggleFont()" class="px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-600 flex items-center gap-1.5 transition"><i data-lucide="type" class="w-3.5 h-3.5 text-pink-500"></i> Font</button>
+                <button onclick="printPDF()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow transition flex items-center gap-1.5"><i data-lucide="printer" class="w-3.5 h-3.5"></i> PDF</button>
+                <button onclick="resetToDefault()" class="px-3 py-1.5 rounded-lg border border-red-200 bg-red-50 hover:bg-red-100 text-xs font-bold text-red-600 flex items-center gap-1.5 transition"><i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i> Reset</button>
+             </div>
+        </div>
+
+        <div class="overflow-x-auto w-full pb-8">
+            <div id="notebook" class="flex flex-col gap-8 items-center w-full min-w-[220mm]">
+                <!-- Pages injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-3 rounded-lg shadow-xl transform translate-y-40 transition-transform duration-300 flex items-center gap-3 z-50">
+        <i data-lucide="check-circle" class="text-green-400 w-5 h-5"></i>
+        <span id="toastMsg" class="font-bold text-sm">Saved</span>
+    </div>
+
+    <script>
+        // --- Core Visualizer Configurations ---
+        const IMAGE_PRESETS = [
+            { name: 'Simple House', url: 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400&h=400&fit=crop&q=80' },
+            { name: 'City Skyline', url: 'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop&q=80' },
+            { name: 'Forest Path', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop&q=80' },
+            { name: 'Modern Art', url: 'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=400&h=400&fit=crop&q=80' }
+        ];
+
+        const KERNELS = {
+            VERTICAL: [[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]],
+            HORIZONTAL: [[-1, -2, -1], [0, 0, 0], [1, 2, 1]],
+            SHARPEN: [[0, -1, 0], [-1, 5, -1], [0, -1, 0]],
+            EDGE: [[-1, -1, -1], [-1, 8, -1], [-1, -1, -1]],
+            BLUR: [[1/9, 1/9, 1/9], [1/9, 1/9, 1/9], [1/9, 1/9, 1/9]]
+        };
+
+        const KERNEL_DESCRIPTIONS = {
+            VERTICAL: "Detects vertical borders by finding the difference between pixels on the left vs. right.",
+            HORIZONTAL: "Detects horizontal borders by finding the difference between top vs. bottom pixels.",
+            SHARPEN: "Amplifies the center pixel while subtracting the surrounding values to increase contrast.",
+            EDGE: "Highlights all changes in intensity by comparing the center to every immediate neighbor.",
+            BLUR: "Averages all 9 pixels together, smoothing out sharp edges and noise into a soft gradient."
+        };
+
+        const STAGES = [
+            { id: 'INPUT', label: 'Input', icon: 'image', desc: 'Raw pixel values represented as a numerical matrix. The starting point for the CNN.' },
+            { id: 'CONV', label: 'Convolution', icon: 'settings', desc: 'Kernels slide across the image with a set Stride, performing dot products to create a Feature Map.' },
+            { id: 'ACT', label: 'Activation', icon: 'activity', desc: 'ReLU function (max(0, x)) replaces all negative pixel values with zero to introduce non-linearity.' },
+            { id: 'POOL', label: 'Pooling', icon: 'maximize', desc: 'Max Pooling downsamples the feature map by keeping only the highest value in local patches.' },
+            { id: 'OUTPUT', label: 'Output', icon: 'target', desc: 'The distilled feature representation ready for Flattening and Classification.' }
+        ];
+
+        let state = {
+            imgUrl: IMAGE_PRESETS[0].url,
+            kernel: KERNELS.EDGE,
+            kernelKey: 'EDGE',
+            activeStage: 'INPUT',
+            isPlaying: true,
+            isDragging: false,
+            scanPos: { x: 100, y: 100 },
+            localPixels: new Array(9).fill(0),
+            view: 'sim',
+            zoom: 1
+        };
+
+        const sourceCanvas = document.getElementById('source-canvas');
+        const displayImg = document.getElementById('display-img');
+        const scannerBox = document.getElementById('scanner-box');
+        const inputViewport = document.getElementById('input-viewport');
+        const outputCanvas = document.getElementById('output-canvas');
+        const outputHighlight = document.getElementById('output-highlight');
+        const outputViewport = document.getElementById('output-viewport');
+        const zoomSlider = document.getElementById('zoom-slider');
+        const zoomLabel = document.getElementById('zoom-label');
+
+        // --- Quiz Data ---
+        const QUIZ_QUESTIONS = [
+            {
+                question: "What is the primary function of a kernel (or filter) in a CNN?",
+                options: [
+                    { text: "To compress the physical file size of the image to save memory.", correct: false, rationale: "Pooling reduces spatial dimensions, but kernels are strictly for feature extraction." },
+                    { text: "To make the final classification decision between different categories.", correct: false, rationale: "Classification is handled by the Fully Connected layers, not kernels." },
+                    { text: "To slide over the image and mathematically detect specific geometric features.", correct: true, rationale: "Kernels perform dot products to highlight areas matching their specific weight distributions (edges, textures)." },
+                    { text: "To introduce non-linearity into the network's calculations.", correct: false, rationale: "Non-linearity is introduced by Activation Functions like ReLU." }
+                ]
+            },
+            {
+                question: "How does the ReLU activation function process data in a feature map?",
+                options: [
+                    { text: "It converts all numerical values into probabilities between 0 and 1.", correct: false, rationale: "This describes Softmax, not ReLU." },
+                    { text: "It replaces all negative numerical values with zero.", correct: true, rationale: "ReLU uses f(x) = max(0, x), clamping negative convolution results to zero to suppress irrelevant signals." },
+                    { text: "It calculates the average of neighboring pixels to smooth the image.", correct: false, rationale: "Averaging is done by a blur kernel, not an activation function." },
+                    { text: "It finds the single highest value in a 2x2 grid.", correct: false, rationale: "This defines Max Pooling, not ReLU." }
+                ]
+            },
+            {
+                question: "Which of the following best describes the purpose of a Max Pooling layer?",
+                options: [
+                    { text: "To downsample the feature map by keeping only the strongest signals in local regions.", correct: true, rationale: "Max Pooling reduces dimensions (simplifying data) while retaining the highest activation values." },
+                    { text: "To add multiple color channels to a grayscale image.", correct: false, rationale: "Pooling deals with spatial dimensions, not color mapping." },
+                    { text: "To increase the resolution of the feature maps to see finer details.", correct: false, rationale: "Pooling decreases resolution; it does not increase it." },
+                    { text: "To multiply the input pixels by a matrix of learnable weights.", correct: false, rationale: "This describes the Convolution operation." }
+                ]
+            },
+            {
+                question: "Mathematically, what operation occurs when a 3x3 kernel sits on a 3x3 patch of pixels?",
+                options: [
+                    { text: "A cross-product resulting in a brand new 3x3 matrix.", correct: false, rationale: "The operation collapses 9 numbers to 1 number." },
+                    { text: "A logarithmic scaling to normalize the brightness.", correct: false, rationale: "Normalization is handled by distinct layers like Batch Norm." },
+                    { text: "A dot product where corresponding values are multiplied and then summed to form a single output number.", correct: true, rationale: "Each pixel is multiplied by the kernel weight, and all 9 products are added together." },
+                    { text: "A matrix inversion to find the opposite colors.", correct: false, rationale: "Matrix inversion is not used in basic convolution." }
+                ]
+            },
+            {
+                question: "Before 2D spatial feature maps can be evaluated by a Dense (Fully Connected) network, what must occur?",
+                options: [
+                    { text: "Flattening", correct: true, rationale: "Dense layers require a 1D vector, so the 2D grid must be 'unrolled' or flattened first." },
+                    { text: "Backpropagation", correct: false, rationale: "Backpropagation is a learning algorithm, not a structural transformation." },
+                    { text: "Softmax", correct: false, rationale: "Softmax is applied at the very end of the network." },
+                    { text: "Striding", correct: false, rationale: "Striding defines how far a kernel moves during convolution." }
+                ]
+            },
+            {
+                question: "What is the role of the Softmax function?",
+                options: [
+                    { text: "To convert final network outputs into a probability distribution that sums to 1.0.", correct: true, rationale: "Softmax squashes the raw output scores so they represent percentages (e.g., 90% Cat, 10% Dog)." },
+                    { text: "To zero out negative numbers in the hidden layers.", correct: false, rationale: "This is the role of ReLU." },
+                    { text: "To calculate the error between the prediction and the ground truth.", correct: false, rationale: "This is the role of the Loss Function." },
+                    { text: "To slide across the image and detect borders.", correct: false, rationale: "This is the role of a Kernel." }
+                ]
+            },
+            {
+                question: "In the context of Convolution, what does 'Stride' refer to?",
+                options: [
+                    { text: "The maximum value found in a pooling patch.", correct: false, rationale: "That is simply the pooling result." },
+                    { text: "The number of pixels the kernel shifts as it moves across the image.", correct: true, rationale: "A stride of 1 moves pixel-by-pixel, while a stride of 2 skips pixels." },
+                    { text: "The learning rate used during backpropagation.", correct: false, rationale: "Learning rate is an optimization hyperparameter, completely unrelated to stride." },
+                    { text: "The size of the kernel matrix (e.g., 3x3 vs 5x5).", correct: false, rationale: "Stride is about movement, not the kernel's physical dimensions." }
+                ]
+            },
+            {
+                question: "How do Convolutional Neural Networks 'adaptively learn spatial hierarchies of features'?",
+                options: [
+                    { text: "By using larger and larger images as they progress.", correct: false, rationale: "The image size actually shrinks as it passes through pooling layers, it doesn't get larger." },
+                    { text: "By using deeper layers to combine simple features (like edges) from early layers into complex shapes and objects.", correct: true, rationale: "This is the core of spatial hierarchies: Layer 1 finds lines, Layer 2 combines lines into shapes, Layer 3 combines shapes into objects." },
+                    { text: "By converting 2D images into 1D arrays immediately at the input layer.", correct: false, rationale: "Converting to 1D early would destroy the spatial information the CNN needs to find hierarchies." },
+                    { text: "By using the Softmax function to decide which features are the most important.", correct: false, rationale: "Softmax is for final probability output, not for learning the hierarchical features themselves." }
+                ]
+            },
+            {
+                question: "Why do modern deep learning networks prefer ReLU over Sigmoid for hidden layers?",
+                options: [
+                    { text: "ReLU creates sharper, more detailed output images.", correct: false, rationale: "Activation functions don't inherently 'sharpen' raw visual detail." },
+                    { text: "ReLU prevents the Vanishing Gradient Problem, allowing deep networks to learn faster.", correct: true, rationale: "Unlike Sigmoid, ReLU provides a constant gradient for positive values, stopping mathematical signals from shrinking to zero during training." },
+                    { text: "ReLU automatically classifies the image.", correct: false, rationale: "Classification is done by Dense layers + Softmax." },
+                    { text: "ReLU requires less memory to store on the hard drive.", correct: false, rationale: "Both functions just alter numerical state; neither impacts physical storage of the model size." }
+                ]
+            },
+            {
+                question: "How does a CNN actually 'learn' to find better features over time?",
+                options: [
+                    { text: "By increasing the resolution of the input image.", correct: false, rationale: "Resolution is fixed during inference and training." },
+                    { text: "By using Backpropagation to slightly adjust kernel weights to minimize the Loss score.", correct: true, rationale: "Backpropagation uses calculus to find which weights caused the error, tweaking them so the network performs better on the next image." },
+                    { text: "By automatically adding more layers to the architecture.", correct: false, rationale: "CNNs typically have a fixed architecture; they learn by changing weights, not by growing new layers." },
+                    { text: "By switching from Max Pooling to Average Pooling.", correct: false, rationale: "Pooling type is fixed by the network designer." }
+                ]
+            }
+        ];
+
+        // --- Note App Data & Configuration ---
+        const fieldClasses = ['field-topic', 'field-subject', 'field-date', 'field-cues', 'field-notes', 'field-summary', 'field-keywords'];
+        let autoSaveTimer;
+        let lastFocusedEditable = null;
+        const STORAGE_KEY = 'cnn_notes_v1';
+        
+        const prefilledNotes = [
+            {
+                "field-topic": "Convolutional Neural Networks",
+                "field-subject": "Deep Learning Visualizer",
+                "field-date": new Date().toLocaleDateString(),
+                "field-keywords": "Kernel, Stride, Feature Map, ReLU, Pooling, Spatial Hierarchies",
+                "field-cues": "Why do computers use grids of numbers to represent images?<br><br><br><br>What is the mathematical operation that happens inside a kernel patch?<br><br><br><br>Why do we need Non-Linearity (ReLU)?<br><br><br><br>How does the number of layers affect what the CNN learns?",
+                "field-notes": "<strong>1. Image Data:</strong> Computers do not see colors, they see numerical matrices representing pixel intensity.<br><br><strong>2. Feature Extraction:</strong> A CNN slides small windows called <strong>Kernels</strong> across the image. It uses a <strong>Dot Product</strong> to multiply the image pixels by the kernel weights and sum them together.<br><br><strong>3. Spatial Hierarchies:</strong> Early layers find basic edges. Deeper layers combine those edges into complex shapes and whole objects.<br><br><strong>4. Relu Activation:</strong> Without this, the network is just a giant linear equation. ReLU <em>max(0, x)</em> replaces negative numbers with zero, keeping only strong positive signal detections.<br><br><strong>5. Downsampling:</strong> Max Pooling shrinks the resolution. It keeps the highest value in a small patch, making the network computationally faster.",
+                "field-summary": "CNNs are specialized networks for image processing. They use kernels to extract features (like edges), ReLU to remove noise, and Pooling to shrink data size. As data moves through more layers, it adaptively learns complex spatial hierarchies before sending everything to a Dense layer for classification.",
+                "checklist-data": [
+                    { status: 1, text: "Understand Input matrices" },
+                    { status: 0, text: "Grasp Dot Product math in Kernels" },
+                    { status: 0, text: "Understand Spatial Hierarchies" },
+                    { status: 0, text: "Know the difference between Flattening and Pooling" }
+                ]
+            }
+        ];
+
+        function init() {
+            // Tab Event Listeners
+            document.getElementById('nav-sim').onclick = () => switchView('sim');
+            document.getElementById('nav-theory').onclick = () => switchView('theory');
+            document.getElementById('nav-quiz').onclick = () => switchView('quiz');
+            document.getElementById('nav-notes').onclick = () => switchView('notes');
+
+            // Zoom Control
+            zoomSlider.oninput = (e) => {
+                state.zoom = parseFloat(e.target.value);
+                zoomLabel.innerText = `${state.zoom}x`;
+                updateScannerUI();
+            };
+
+            // Stage Buttons
+            STAGES.forEach(stage => {
+                const btn = document.createElement('button');
+                btn.className = `stage-btn px-4 py-2 rounded-xl text-[11px] font-bold uppercase transition-all flex items-center gap-2 border border-slate-200 text-slate-500 bg-white hover:bg-slate-50 ${state.activeStage === stage.id ? 'active' : ''}`;
+                btn.innerHTML = `<i data-lucide="${stage.icon}" class="w-4 h-4"></i> ${stage.label}`;
+                btn.onclick = () => { state.activeStage = stage.id; updateUI(); processImage(); };
+                document.getElementById('stage-container').appendChild(btn);
+            });
+
+            // Image Presets
+            IMAGE_PRESETS.forEach(img => {
+                const btn = document.createElement('button');
+                btn.className = `preset-btn flex items-center gap-2 p-1 rounded-lg border transition border-slate-100 bg-white w-full`;
+                btn.innerHTML = `<img src="${img.url}" class="w-6 h-6 rounded object-cover"><span class="text-[10px] font-bold text-slate-600">${img.name}</span>`;
+                btn.onclick = () => { state.imgUrl = img.url; displayImg.src = img.url; updateUI(); };
+                document.getElementById('image-presets').appendChild(btn);
+            });
+
+            // Kernel Presets
+            Object.keys(KERNELS).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = `kernel-btn px-2 py-1.5 rounded-lg text-left text-[10px] font-bold transition border border-slate-100 bg-slate-50 text-slate-500 hover:text-blue-600 w-full`;
+                btn.innerText = key;
+                btn.onclick = () => { state.kernel = KERNELS[key]; state.kernelKey = key; updateUI(); processImage(); };
+                document.getElementById('kernel-presets').appendChild(btn);
+            });
+
+            lucide.createIcons();
+            displayImg.src = state.imgUrl;
+            updateUI();
+            renderQuiz();
+            
+            // Notes App Initialization
+            loadNotes();
+            document.addEventListener('dblclick', function(e) {
+                if (e.target.tagName === 'IMG' && e.target.closest('.editable')) {
+                    if (confirm('Delete this image?')) {
+                        e.target.remove();
+                        saveNotes();
+                        showToast('Image Removed');
+                    }
+                }
+            });
+            document.addEventListener('keydown', e => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 's') { e.preventDefault(); saveNotes(); }
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // --- Visualizer Logic ---
+        function updateScannerUI() {
+            const size = 256;
+            const logicalSize = 200;
+            const ratio = size / logicalSize;
+            
+            const centerX = state.scanPos.x / logicalSize;
+            const centerY = state.scanPos.y / logicalSize;
+
+            const updateBox = (el, isPooled = false) => {
+                if (!el) return;
+                const scaleFactor = isPooled ? 2 : 1;
+                const boxLogicalSize = 6 * scaleFactor;
+                const boxDisplaySize = boxLogicalSize * ratio * state.zoom;
+                
+                el.style.display = 'block';
+                el.style.width = `${boxDisplaySize}px`;
+                el.style.height = `${boxDisplaySize}px`;
+
+                if (state.zoom === 1) {
+                    el.style.top = `${(centerY * 100)}%`;
+                    el.style.left = `${(centerX * 100)}%`;
+                    el.style.transform = 'translate(0, 0)';
+                } else {
+                    el.style.top = '50%';
+                    el.style.left = '50%';
+                    el.style.transform = 'translate(-50%, -50%)';
+                }
+            };
+
+            updateBox(scannerBox, false);
+            updateBox(outputHighlight, ['POOL', 'OUTPUT'].includes(state.activeStage));
+
+            const updateViewport = (vp, grid) => {
+                if (!vp || !grid) return;
+                if (state.zoom > 1) {
+                    const tx = (0.5 - centerX) * 100 * state.zoom;
+                    const ty = (0.5 - centerY) * 100 * state.zoom;
+                    vp.style.transform = `scale(${state.zoom}) translate(${tx / state.zoom}%, ${ty / state.zoom}%)`;
+                    grid.style.opacity = "1";
+                    grid.style.backgroundSize = `${(size/logicalSize)/state.zoom}% ${(size/logicalSize)/state.zoom}%`;
+                } else {
+                    vp.style.transform = `scale(1) translate(0,0)`;
+                    grid.style.opacity = "0";
+                }
+            };
+
+            updateViewport(inputViewport, document.getElementById('pixel-grid-source'));
+            updateViewport(outputViewport, document.getElementById('pixel-grid-output'));
+
+            const ctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+            if (sourceCanvas.width > 0) {
+                const patchData = ctx.getImageData(state.scanPos.x, state.scanPos.y, 3, 3).data;
+                const grayPatch = [];
+                for (let i = 0; i < patchData.length; i += 4) grayPatch.push(Math.round(patchData[i] * 0.299 + patchData[i + 1] * 0.587 + patchData[i + 2] * 0.114));
+                state.localPixels = grayPatch;
+                renderPatchGrid();
+            }
+        }
+
+        function renderPatchGrid() {
+            const grid = document.getElementById('patch-grid');
+            grid.innerHTML = '';
+            const kernelFlat = state.kernel.flat();
+            
+            let equationHTML = '';
+            let sum = 0;
+
+            state.localPixels.forEach((p, i) => {
+                const w = kernelFlat[i];
+                const res = p * w;
+                sum += res;
+                
+                const cell = document.createElement('div');
+                const dark = p < 128;
+                // Sizing for side layout display
+                cell.className = `math-cell w-14 h-14 xl:w-16 xl:h-16 flex flex-col items-center justify-center rounded-lg border border-slate-200 shadow-sm text-[9px] xl:text-[11px] leading-tight font-mono bg-white transition-transform`;
+                cell.style.backgroundColor = `rgb(${p},${p},${p})`;
+                cell.style.color = dark ? 'white' : 'black';
+                cell.innerHTML = `
+                    <div class="flex items-center gap-0.5 xl:gap-1">
+                        <span class="font-black ${dark ? 'text-blue-300' : 'text-blue-600'}">${p}</span>
+                        <span class="opacity-50 text-[8px]">×</span>
+                        <span class="font-black ${dark ? 'text-emerald-300' : 'text-emerald-600'}">${w.toFixed(w % 1 === 0 ? 0 : 1)}</span>
+                    </div>
+                    <hr class="w-[80%] border-current opacity-30 my-1">
+                    <b>${res.toFixed(0)}</b>
+                `;
+                grid.appendChild(cell);
+
+                // Build the Equation
+                const weightStr = w % 1 === 0 ? w.toFixed(0) : w.toFixed(1);
+                if (i > 0) {
+                    equationHTML += `<span class="mx-1 text-slate-400 text-[10px]">+</span>`;
+                }
+                equationHTML += `
+                    <span class="inline-flex flex-col items-center leading-none mx-0.5">
+                        <span class="text-[8px] text-slate-400 border-b border-slate-100 pb-0.5 mb-0.5">${p}×${weightStr}</span>
+                        <span class="font-bold text-slate-700 text-[10px]">${res.toFixed(0)}</span>
+                    </span>`;
+            });
+
+            // Update Equation Display
+            const eqContainer = document.getElementById('math-equation');
+            if (eqContainer) {
+                let finalStr = equationHTML + `<span class="mx-2 text-slate-400 text-[10px]">=</span><span class="font-black text-blue-600 text-sm bg-blue-50 px-2 py-0.5 rounded border border-blue-100">${sum.toFixed(0)}</span>`;
+                
+                if (['ACT', 'POOL', 'OUTPUT'].includes(state.activeStage)) {
+                     const relu = Math.max(0, sum);
+                     finalStr += `
+                        <div class="w-full flex items-center justify-center mt-2 pt-2 border-t border-slate-100">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">ReLU(x) &rarr;</span>
+                            <span class="font-black text-emerald-600 text-sm bg-emerald-50 px-3 py-0.5 rounded border border-emerald-200 shadow-sm">${relu.toFixed(0)}</span>
+                        </div>`;
+                }
+                eqContainer.innerHTML = finalStr;
+            }
+        }
+
+        function animate() {
+            if (state.isPlaying && !state.isDragging && state.view === 'sim') {
+                state.scanPos.x += 1.0;
+                if (state.scanPos.x > 197) { state.scanPos.x = 0; state.scanPos.y = (state.scanPos.y + 8) % 197; }
+                updateScannerUI();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        function processImage() {
+            if (!displayImg.complete) return;
+            const ctx = sourceCanvas.getContext('2d', { willReadFrequently: true });
+            const outCtx = outputCanvas.getContext('2d');
+            sourceCanvas.width = 200; 
+            sourceCanvas.height = 200;
+            ctx.drawImage(displayImg, 0, 0, 200, 200);
+
+            const data = ctx.getImageData(0, 0, 200, 200).data;
+            const gray = new Float32Array(40000);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+            }
+            
+            if (state.activeStage === 'INPUT') { 
+                outputCanvas.width = 200; 
+                outputCanvas.height = 200; 
+                outCtx.drawImage(sourceCanvas, 0, 0); 
+                return; 
+            }
+
+            let processed = new Float32Array(40000);
+            for (let y = 0; y < 200; y++) {
+                for (let x = 0; x < 200; x++) {
+                    let s = 0;
+                    for (let ky = 0; ky < 3; ky++) {
+                        for (let kx = 0; kx < 3; kx++) {
+                            const sc = Math.min(199, Math.max(0, x + kx - 1));
+                            const sr = Math.min(199, Math.max(0, y + ky - 1));
+                            s += gray[sr * 200 + sc] * state.kernel[ky][kx];
+                        }
+                    }
+                    processed[y * 200 + x] = s;
+                }
+            }
+
+            if (['ACT', 'POOL', 'OUTPUT'].includes(state.activeStage)) {
+                for (let i = 0; i < 40000; i++) {
+                    processed[i] = Math.max(0, processed[i]);
+                }
+            }
+
+            if (['POOL', 'OUTPUT'].includes(state.activeStage)) {
+                const pooled = new Float32Array(10000);
+                for (let y = 0; y < 100; y++) {
+                    for (let x = 0; x < 100; x++) {
+                        pooled[y * 100 + x] = Math.max(
+                            processed[(y * 2) * 200 + (x * 2)], 
+                            processed[(y * 2) * 200 + (x * 2 + 1)], 
+                            processed[(y * 2 + 1) * 200 + (x * 2)], 
+                            processed[(y * 2 + 1) * 200 + (x * 2 + 1)]
+                        );
+                    }
+                }
+                processed = pooled; 
+                outputCanvas.width = 100; 
+                outputCanvas.height = 100;
+            } else { 
+                outputCanvas.width = 200; 
+                outputCanvas.height = 200; 
+            }
+
+            const outData = outCtx.createImageData(outputCanvas.width, outputCanvas.height);
+            for (let i = 0; i < processed.length; i++) {
+                const val = Math.min(255, Math.max(0, processed[i]));
+                const idx = i * 4; 
+                outData.data[idx] = outData.data[idx+1] = outData.data[idx+2] = val; 
+                outData.data[idx+3] = 255;
+            }
+            outCtx.putImageData(outData, 0, 0);
+        }
+
+        // --- Step By Step Scan Logic ---
+        function stepScan(dx, dy) {
+            state.isPlaying = false;
+            // Snap to integer to avoid blurry coordinate math when stepping manually
+            state.scanPos.x = Math.floor(state.scanPos.x) + dx;
+            state.scanPos.y = Math.floor(state.scanPos.y) + dy;
+            
+            // Bounds logic for sliding window
+            if (state.scanPos.x > 197) { state.scanPos.x = 0; state.scanPos.y += 3; }
+            if (state.scanPos.x < 0) { state.scanPos.x = 197; state.scanPos.y -= 3; }
+            if (state.scanPos.y > 197) { state.scanPos.y = 0; }
+            if (state.scanPos.y < 0) { state.scanPos.y = 197; }
+            
+            updateUI();
+            updateScannerUI();
+        }
+
+        function switchView(v) {
+            state.view = v;
+            document.getElementById('view-sim').classList.toggle('hidden', v !== 'sim');
+            document.getElementById('view-theory').classList.toggle('hidden', v !== 'theory');
+            document.getElementById('view-quiz').classList.toggle('hidden', v !== 'quiz');
+            document.getElementById('view-notes').classList.toggle('hidden', v !== 'notes');
+            
+            document.getElementById('nav-sim').classList.toggle('active', v === 'sim');
+            document.getElementById('nav-sim').classList.toggle('text-blue-600', v === 'sim');
+            document.getElementById('nav-sim').classList.toggle('border-blue-600', v === 'sim');
+
+            document.getElementById('nav-theory').classList.toggle('active', v === 'theory');
+            document.getElementById('nav-theory').classList.toggle('text-blue-600', v === 'theory');
+            document.getElementById('nav-theory').classList.toggle('border-blue-600', v === 'theory');
+
+            document.getElementById('nav-quiz').classList.toggle('active', v === 'quiz');
+            document.getElementById('nav-quiz').classList.toggle('text-blue-600', v === 'quiz');
+            document.getElementById('nav-quiz').classList.toggle('border-blue-600', v === 'quiz');
+
+            document.getElementById('nav-notes').classList.toggle('active', v === 'notes');
+            document.getElementById('nav-notes').classList.toggle('text-blue-600', v === 'notes');
+            document.getElementById('nav-notes').classList.toggle('border-blue-600', v === 'notes');
+            
+            // Toggling print modes
+            document.body.classList.remove('print-mode-notes');
+            if (v === 'notes') document.body.classList.add('print-mode-notes');
+
+            if (v === 'sim') { processImage(); updateScannerUI(); }
+        }
+
+        function updateUI() {
+            document.querySelectorAll('.stage-btn').forEach((btn, idx) => btn.classList.toggle('active', STAGES[idx].id === state.activeStage));
+            const stage = STAGES.find(s => s.id === state.activeStage);
+            document.getElementById('info-stage-title').innerText = stage.label;
+            document.getElementById('info-stage-desc').innerText = stage.desc;
+            document.getElementById('kernel-description').innerText = KERNEL_DESCRIPTIONS[state.kernelKey] || "Select a filter to see its logic.";
+            
+            const toggleBtn = document.getElementById('toggle-play');
+            if (toggleBtn) {
+                toggleBtn.innerHTML = state.isPlaying ? '<i data-lucide="pause" class="w-4 h-4"></i>' : '<i data-lucide="play" class="w-4 h-4"></i>';
+                if(state.isPlaying) {
+                    toggleBtn.className = "py-2 bg-amber-500 hover:bg-amber-600 text-white shadow shadow-amber-200 rounded-lg flex justify-center items-center transition";
+                } else {
+                    toggleBtn.className = "py-2 bg-blue-600 hover:bg-blue-700 text-white shadow shadow-blue-200 rounded-lg flex justify-center items-center transition";
+                }
+            }
+            lucide.createIcons();
+        }
+
+        function handleMove(e) {
+            const rect = document.getElementById('input-wrapper').getBoundingClientRect();
+            const px = (e.clientX - rect.left) / rect.width;
+            const py = (e.clientY - rect.top) / rect.height;
+            state.scanPos.x = Math.max(0, Math.min(197, px * 200));
+            state.scanPos.y = Math.max(0, Math.min(197, py * 200));
+            state.isPlaying = false; updateUI(); updateScannerUI();
+        }
+
+        document.getElementById('input-wrapper').onmousedown = (e) => { state.isDragging = true; handleMove(e); };
+        window.onmousemove = (e) => { if (state.isDragging) handleMove(e); };
+        window.onmouseup = () => state.isDragging = false;
+        document.getElementById('toggle-play').onclick = () => { state.isPlaying = !state.isPlaying; updateUI(); };
+
+        // --- Quiz Render Logic ---
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            container.innerHTML = '';
+            
+            QUIZ_QUESTIONS.forEach((q, qIndex) => {
+                const card = document.createElement('div');
+                card.className = "p-6 bg-slate-50 rounded-2xl border border-slate-200";
+                
+                const title = document.createElement('h3');
+                title.className = "text-md font-bold text-slate-800 mb-4";
+                title.innerText = `${qIndex + 1}. ${q.question}`;
+                card.appendChild(title);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = "space-y-2";
+
+                const rationaleDiv = document.createElement('div');
+                rationaleDiv.className = "mt-4 p-4 rounded-xl text-sm hidden";
+
+                q.options.forEach((opt, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-3 rounded-xl border border-slate-200 bg-white hover:border-blue-300 hover:bg-blue-50 transition-all text-sm text-slate-700";
+                    btn.innerText = opt.text;
+                    
+                    btn.onclick = () => {
+                        Array.from(optionsGrid.children).forEach(b => {
+                            b.disabled = true;
+                            b.classList.remove('hover:border-blue-300', 'hover:bg-blue-50', 'cursor-pointer');
+                        });
+                        rationaleDiv.classList.remove('hidden');
+
+                        if (opt.correct) {
+                            btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-900', 'font-bold');
+                            rationaleDiv.classList.add('bg-emerald-50', 'text-emerald-800', 'border', 'border-emerald-200', 'block');
+                            rationaleDiv.innerHTML = `<strong>Correct!</strong> ${opt.rationale}`;
+                        } else {
+                            btn.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-900');
+                            rationaleDiv.classList.add('bg-rose-50', 'text-rose-800', 'border', 'border-rose-200', 'block');
+                            rationaleDiv.innerHTML = `<strong>Incorrect.</strong> ${opt.rationale}`;
+                            
+                            Array.from(optionsGrid.children).forEach((b, i) => {
+                                if(q.options[i].correct) {
+                                    b.classList.add('border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+                                }
+                            });
+                        }
+                    };
+                    optionsGrid.appendChild(btn);
+                });
+
+                card.appendChild(optionsGrid);
+                card.appendChild(rationaleDiv);
+                container.appendChild(card);
+            });
+        }
+
+        // --- Note App Logic ---
+        function toggleCheck(btn) {
+            const current = parseInt(btn.dataset.status) || 0;
+            const next = (current + 1) % 4;
+            btn.dataset.status = next;
+            btn.className = `status-btn status-${next}`;
+            const icons = {
+                0: 'square',
+                1: 'check-square',
+                2: 'help-circle',
+                3: 'x-square'
+            };
+            const colorClasses = {
+                0: 'text-slate-300',
+                1: 'text-emerald-500',
+                2: 'text-amber-500',
+                3: 'text-red-500'
+            };
+            btn.innerHTML = `<i data-lucide="${icons[next]}" class="w-4 h-4 ${colorClasses[next]}"></i>`;
+            lucide.createIcons({ root: btn });
+            saveNotes();
+        }
+
+        function addChecklistItem(btn) {
+            const container = btn.closest('.syllabus-checklist');
+            const item = document.createElement('div');
+            item.className = 'checklist-item group';
+            item.innerHTML = `
+                <button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)">
+                    <i data-lucide="square" class="w-4 h-4 text-slate-300"></i>
+                </button>
+                <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Note objective..."></div>
+                <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print opacity-0 group-hover:opacity-100 transition">
+                    <i data-lucide="minus-circle" class="w-4 h-4"></i>
+                </button>
+            `;
+            container.insertBefore(item, btn.parentElement);
+            lucide.createIcons({ root: item });
+        }
+
+        function triggerImageUpload() {
+            if (!lastFocusedEditable) {
+                lastFocusedEditable = document.querySelector('.field-notes'); 
+                if(!lastFocusedEditable) return alert("Click inside a notes box first to place an image.");
+            }
+            document.getElementById('imageInput').click();
+        }
+
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const maxWidth = 600;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = height * (maxWidth / width);
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    insertImageAtCursor(dataUrl);
+                    saveNotes();
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
+        }
+
+        function insertImageAtCursor(src) {
+            lastFocusedEditable.focus();
+            const img = document.createElement('img');
+            img.src = src;
+            img.title = "Double-click to remove";
+            
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0 && sel.anchorNode && lastFocusedEditable.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(img);
+                sel.removeAllRanges();
+            } else {
+                lastFocusedEditable.appendChild(img);
+            }
+        }
+
+        function createPageElement(data = {}) {
+            const pageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'page-wrapper relative group';
+            wrapper.dataset.pageId = pageId;
+
+            const getVal = (key) => data[key] || '';
+            const dateVal = data['field-date'] || new Date().toLocaleDateString();
+
+            let checklistHTML = '';
+            if (data['checklist-data'] && Array.isArray(data['checklist-data'])) {
+                const icons = { 
+                    0: '<i data-lucide="square" class="w-4 h-4 text-slate-300"></i>', 
+                    1: '<i data-lucide="check-square" class="w-4 h-4 text-emerald-500"></i>', 
+                    2: '<i data-lucide="help-circle" class="w-4 h-4 text-amber-500"></i>', 
+                    3: '<i data-lucide="x-square" class="w-4 h-4 text-red-500"></i>' 
+                };
+                data['checklist-data'].forEach(item => {
+                    checklistHTML += `
+                        <div class="checklist-item group">
+                            <button class="status-btn status-${item.status}" data-status="${item.status}" onclick="toggleCheck(this)">${icons[item.status]}</button>
+                            <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true">${item.text}</div>
+                            <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print opacity-0 group-hover:opacity-100 transition"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
+                        </div>`;
+                });
+            } else {
+                 checklistHTML = `
+                    <div class="checklist-item group">
+                        <button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)"><i data-lucide="square" class="w-4 h-4 text-slate-300"></i></button>
+                        <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Objective..."></div>
+                        <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print opacity-0 group-hover:opacity-100 transition"><i data-lucide="minus-circle" class="w-4 h-4"></i></button>
+                    </div>`;
+            }
+
+            wrapper.innerHTML = `
+                <div class="absolute top-2 -right-12 h-full hidden xl:block no-print">
+                     <button onclick="deletePage(this)" class="delete-btn bg-red-500 text-white w-10 h-10 rounded-full shadow-lg hover:bg-red-600 opacity-0 transition flex items-center justify-center" title="Remove Page"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>
+                <button onclick="deletePage(this)" class="xl:hidden absolute top-2 right-2 z-10 text-red-400 hover:text-red-600 no-print p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+
+                <div class="page-container">
+                    <div class="cornell-grid rounded-lg overflow-hidden">
+                        <div class="header-section">
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Topic / Chapter</label>
+                                    <div class="field-topic editable font-bold text-lg border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true" placeholder="CNN Fundamentals">${getVal('field-topic')}</div>
+                                </div>
+                                <div class="text-right">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Class / Subject</label>
+                                    <div class="field-subject editable font-medium border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true" placeholder="Computer Science">${getVal('field-subject')}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div><div class="field-date editable text-sm text-slate-600" contenteditable="true">${dateVal}</div></div>
+                                <div class="text-right"><label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Date</label></div>
+                            </div>
+                            <div class="mt-4 syllabus-checklist">
+                                <label class="text-xs font-bold text-slate-500 uppercase mb-2 block tracking-wide">Learning Objectives</label>
+                                ${checklistHTML}
+                                <div class="no-print mt-2"><button onclick="addChecklistItem(this)" class="text-xs text-blue-600 font-bold flex items-center gap-1 hover:text-blue-800 transition"><i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Objective</button></div>
+                            </div>
+                            <div class="mt-4">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-wide">Key Words / Vocabulary</label>
+                                <div class="field-keywords editable text-sm border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true" placeholder="Vocabulary words...">${getVal('field-keywords')}</div>
+                            </div>
+                        </div>
+                        <div class="cues-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-3 tracking-wide">Questions / Cues</label>
+                            <div class="field-cues editable h-full text-sm leading-relaxed" contenteditable="true" placeholder="Generate questions here based on notes...">${getVal('field-cues')}</div>
+                        </div>
+                        <div class="notes-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-1 tracking-wide">Main Notes</label>
+                            <div class="field-notes editable h-full text-sm" contenteditable="true" placeholder="Take your main notes here...">${getVal('field-notes')}</div>
+                        </div>
+                        <div class="summary-section">
+                            <label class="text-xs font-bold text-slate-500 uppercase block mb-2 tracking-wide">Summary</label>
+                            <div class="field-summary editable text-sm leading-relaxed" contenteditable="true" placeholder="Summarize the core concepts in 1-2 sentences...">${getVal('field-summary')}</div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-4 right-6 text-xs font-bold text-slate-300 no-print uppercase tracking-widest">Page <span class="page-num"></span></div>
+                </div>
+            `;
+
+            const editables = wrapper.querySelectorAll('.editable');
+            editables.forEach(el => {
+                el.addEventListener('input', () => {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(saveNotes, 1000);
+                });
+                el.addEventListener('focus', () => lastFocusedEditable = el);
+            });
+            
+            // Re-render lucide icons inside the new page
+            lucide.createIcons({ root: wrapper });
+            return wrapper;
+        }
+
+        function addPage(data = {}) {
+            const notebook = document.getElementById('notebook');
+            const newPage = createPageElement(data);
+            notebook.appendChild(newPage);
+            updatePageNumbers();
+            if (Object.keys(data).length === 0) {
+                newPage.scrollIntoView({ behavior: 'smooth' });
+                saveNotes();
+            }
+        }
+
+        function deletePage(btn) {
+            const notebook = document.getElementById('notebook');
+            if (notebook.children.length <= 1) {
+                if(confirm("Clear content instead?")) {
+                    const page = btn.closest('.page-wrapper');
+                    page.querySelectorAll('.editable').forEach(el => el.innerHTML = '');
+                    saveNotes();
+                }
+                return;
+            }
+            if (confirm('Delete this page?')) {
+                btn.closest('.page-wrapper').remove();
+                updatePageNumbers();
+                saveNotes();
+                showToast('Page removed');
+            }
+        }
+
+        function updatePageNumbers() {
+            document.querySelectorAll('.page-wrapper').forEach((page, index) => {
+                page.querySelector('.page-num').innerText = index + 1;
+            });
+        }
+
+        function saveNotes() {
+            const pages = document.querySelectorAll('.page-wrapper');
+            const data = [];
+            pages.forEach(page => {
+                const pageData = {};
+                fieldClasses.forEach(cls => {
+                    const el = page.querySelector(`.${cls}`);
+                    if (el) pageData[cls] = el.innerHTML;
+                });
+                const checklistItems = [];
+                page.querySelectorAll('.checklist-item').forEach(item => {
+                    const btn = item.querySelector('.status-btn');
+                    const textDiv = item.querySelector('.checklist-text');
+                    if (textDiv) {
+                        checklistItems.push({
+                            status: btn ? parseInt(btn.dataset.status) : 0,
+                            text: textDiv.innerHTML
+                        });
+                    }
+                });
+                pageData['checklist-data'] = checklistItems;
+                data.push(pageData);
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showToast('Saved');
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') alert('Storage Limit Reached! Try removing images.');
+            }
+        }
+
+        function loadNotes() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const notebook = document.getElementById('notebook');
+            notebook.innerHTML = '';
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(pageData => addPage(pageData));
+                } else {
+                    prefilledNotes.forEach(pageData => addPage(pageData));
+                }
+            } else {
+                prefilledNotes.forEach(pageData => addPage(pageData));
+            }
+        }
+
+        function exportData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) return alert("No data to save!");
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            a.download = `CNN_Study_Notes_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Backup Saved!');
+        }
+
+        function importTrigger() { document.getElementById('importInput').click(); }
+        
+        function handleImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                        loadNotes();
+                        showToast('Notes Restored!');
+                    }
+                } catch(e){ alert('Error reading valid notes file.'); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function printPDF() { window.print(); }
+        
+        function toggleFont() { 
+            document.body.classList.toggle('font-handwritten-mode'); 
+            document.querySelectorAll('.page-container').forEach(p => p.classList.toggle('handwritten'));
+        }
+        
+        function resetToDefault() { 
+            if(confirm("Erase all changes and reset notes to defaults?")) {
+                localStorage.removeItem(STORAGE_KEY); 
+                loadNotes(); 
+                showToast('Reset Complete');
+            }
+        }
+        
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('translate-y-40');
+            setTimeout(() => t.classList.add('translate-y-40'), 2000);
+        }
+
+        displayImg.onload = () => processImage();
+        init();
+    </script>
+</body>
+</html>

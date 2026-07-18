@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wizarding World Data Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@400;700&display=swap');
+
+        :root {
+            --gryffindor: #740001;
+            --gryffindor-gold: #D3A625;
+            --slytherin: #1A472A;
+            --slytherin-silver: #AAAAAA;
+            --ravenclaw: #0E1A40;
+            --ravenclaw-bronze: #946B2D;
+            --hufflepuff: #ECB939;
+            --hufflepuff-black: #111111;
+            --accent-primary: #D3A625;
+            --accent-secondary: #740001;
+        }
+
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Crimson Pro', serif;
+            background-image: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Cinzel', serif;
+        }
+
+        .sorting-container {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #0f172a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 1s ease-out;
+        }
+
+        .hat-icon {
+            font-size: 8rem;
+            color: #4b3621;
+            filter: drop-shadow(0 0 20px rgba(211, 166, 37, 0.3));
+            animation: ponder 3s infinite ease-in-out;
+        }
+
+        @keyframes ponder {
+            0%, 100% { transform: rotate(-5deg) translateY(0); }
+            50% { transform: rotate(5deg) translateY(-10px); }
+        }
+
+        .parchment-card {
+            background: #fdf6e3;
+            color: #433422;
+            border-radius: 8px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            border: 2px solid var(--accent-primary);
+        }
+
+        .nav-tab {
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+        .nav-tab:hover {
+            opacity: 1;
+        }
+        .nav-tab.active {
+            border-bottom-color: var(--accent-primary);
+            color: var(--accent-primary);
+            opacity: 1;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 1px solid transparent;
+        }
+        .checklist-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(212, 175, 55, 0.3);
+        }
+        .checklist-item.checked {
+            opacity: 0.6;
+            background: rgba(0, 0, 0, 0.2);
+        }
+        .checklist-item.checked span {
+            text-decoration: line-through;
+        }
+
+        .hidden { display: none !important; }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+
+        .task-progress {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            width: 100%;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--accent-primary);
+            transition: width 0.5s ease-out;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            width: 100%;
+            text-align: left;
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            background: rgba(211, 166, 37, 0.1);
+            border-color: #d3a625;
+        }
+
+        .stat-card {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(211, 166, 37, 0.3);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            text-align: center;
+        }
+
+        .review-row {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 1rem 0;
+        }
+        .review-row:last-child { border: none; }
+
+        .audio-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #d3a625;
+            transition: all 0.2s;
+        }
+        .audio-toggle:hover { background: rgba(255,255,255,0.2); }
+
+        .dataset-card {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(211, 166, 37, 0.2);
+            transition: all 0.3s ease;
+        }
+        .dataset-card:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-5px);
+            background: rgba(15, 23, 42, 0.8);
+        }
+
+        @media print {
+            body { background: white !important; color: black !important; background-image: none !important; padding: 0 !important; }
+            #sorting-ceremony, #house-accent-bar, nav, .magical-btn, #bottom-palette, header .mt-6, .task-progress { display: none !important; }
+            #portal-content { display: block !important; }
+            #print-report-area {
+                display: block !important;
+                background: #fff;
+                color: #000;
+                padding: 40px;
+                border: 10px double #433422;
+                font-family: 'Crimson Pro', serif;
+                min-height: 100vh;
+            }
+        }
+
+        #print-report-area { display: none; }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Audio Elements -->
+    <audio id="ambient-music" loop preload="auto">
+        <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="reveal-music" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Sorting Ceremony Splash Screen -->
+    <div id="sorting-ceremony" class="sorting-container px-4 text-center">
+        <div onclick="toggleMute()" id="audio-btn" class="audio-toggle">
+            <i class="fas fa-volume-up"></i>
+        </div>
+        <div class="max-w-md w-full">
+            <i class="fas fa-hat-wizard hat-icon mb-8" id="hat-sprite"></i>
+            <div id="step-name">
+                <h1 class="text-3xl font-bold text-yellow-500 mb-6 uppercase tracking-widest">The Sorting Ceremony</h1>
+                <p class="text-slate-400 italic mb-8">"A student has arrived. Step forward and state your name..."</p>
+                <div class="space-y-4">
+                    <input type="text" id="student-name" placeholder="Enter Your Name..." 
+                           class="w-full bg-slate-800 border-2 border-slate-700 rounded-lg px-4 py-3 text-white focus:border-yellow-500 outline-none transition">
+                    <button onclick="startSortingProcess()" class="w-full magical-btn bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-3 rounded-lg shadow-lg">
+                        Step Forward
+                    </button>
+                </div>
+            </div>
+            <div id="step-questions" class="hidden">
+                <h2 class="text-xl text-yellow-500 mb-2 uppercase tracking-widest" id="question-count">Question 1 of 3</h2>
+                <p class="text-white text-lg mb-8" id="question-text"></p>
+                <div id="options-container" class="space-y-3"></div>
+            </div>
+            <div id="step-result" class="hidden">
+                <div id="thinking-state">
+                    <p class="text-xl text-slate-400 italic animate-pulse">Hmm... difficult... very difficult...</p>
+                </div>
+                <div id="sorting-final" class="hidden animate-bounce">
+                    <p class="text-xl text-white">Better be...</p>
+                    <h2 id="assigned-house" class="text-4xl font-bold uppercase tracking-tighter"></h2>
+                    <button onclick="enterStudio()" class="mt-6 text-sm text-yellow-500 underline uppercase tracking-widest block mx-auto">Enter the Studio</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Portal Content -->
+    <div id="portal-content" class="hidden">
+        
+        <!-- Print Area -->
+        <div id="print-report-area">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-bold uppercase border-b-2 border-black pb-4">Ministry of Magic</h1>
+                <h2 class="text-2xl mt-4 italic">Official Academic Progress Report</h2>
+            </div>
+            <div class="grid grid-cols-2 gap-8 mb-10 text-xl">
+                <div><strong>Student:</strong> <span id="print-name"></span></div>
+                <div><strong>House:</strong> <span id="print-house"></span></div>
+                <div><strong>Date:</strong> <span id="print-date"></span></div>
+                <div><strong>Current Rank:</strong> Apprentice Data Wizard</div>
+            </div>
+            <div class="mb-10">
+                <h3 class="text-2xl font-bold border-b border-black mb-4">Milestone Checklist</h3>
+                <ul id="print-checklist" class="list-disc list-inside space-y-1"></ul>
+            </div>
+        </div>
+
+        <header class="text-center py-12 px-4 relative overflow-hidden">
+            <div id="house-accent-bar" class="absolute top-0 left-0 h-1 w-full flex">
+                <div style="background: var(--gryffindor); flex: 1;"></div>
+                <div style="background: var(--slytherin); flex: 1;"></div>
+                <div style="background: var(--ravenclaw); flex: 1;"></div>
+                <div style="background: var(--hufflepuff); flex: 1;"></div>
+            </div>
+            <div class="mb-4">
+                <span class="text-xs uppercase tracking-[0.3em] text-slate-500">Student Portal</span>
+                <h1 class="text-4xl md:text-6xl font-bold text-yellow-500 tracking-widest uppercase mt-2">Wizarding World Data Studio</h1>
+                <div class="flex items-center justify-center gap-4 mt-4">
+                    <span id="display-name" class="text-white font-bold"></span>
+                    <span class="text-slate-600">|</span>
+                    <span id="display-house" class="uppercase font-bold tracking-widest text-xs"></span>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-col items-center gap-4">
+                <p id="task-text" class="text-xs text-slate-500 uppercase">Current Progress: Task 1 of 10</p>
+                <div class="task-progress"><div id="progress-bar" class="progress-fill" style="width: 10%"></div></div>
+                <button onclick="generatePDF()" class="magical-btn text-[10px] border border-yellow-600 px-4 py-1 rounded-full hover:bg-yellow-600 transition text-yellow-500 hover:text-white uppercase tracking-widest">
+                    <i class="fas fa-file-pdf mr-2"></i>Generate Progress Report
+                </button>
+            </div>
+            <nav class="flex justify-center space-x-4 md:space-x-8 mt-8 border-b border-slate-700 max-w-4xl mx-auto overflow-x-auto whitespace-nowrap px-4">
+                <button onclick="switchTab('main-task')" id="btn-main-task" class="nav-tab active px-4 py-2 font-bold uppercase tracking-wider text-xs md:text-sm"><i class="fas fa-tasks mr-2"></i>The Challenge</button>
+                <button onclick="switchTab('reviews-analytics')" id="btn-reviews-analytics" class="nav-tab px-4 py-2 font-bold uppercase tracking-wider text-xs md:text-sm"><i class="fas fa-chart-line mr-2"></i>Review Analytics</button>
+                <button onclick="switchTab('tutorial')" id="btn-tutorial" class="nav-tab px-4 py-2 font-bold uppercase tracking-wider text-xs md:text-sm"><i class="fas fa-chalkboard-teacher mr-2"></i>Tableau Tutorial</button>
+            </nav>
+        </header>
+
+        <main class="max-w-6xl mx-auto px-4">
+            <!-- TAB 1: MAIN TASK -->
+            <div id="main-task" class="tab-content active space-y-16">
+                <section class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="bg-slate-800 p-8 rounded-xl border-2 border-[var(--accent-primary)] shadow-2xl">
+                        <h2 class="text-3xl font-bold mb-6 text-yellow-500 flex items-center"><i class="fas fa-scroll mr-3"></i>The Reviewer's Spell</h2>
+                        <p class="text-slate-300 mb-4">Now that you've accessed the <strong>Harry Potter Reviews</strong> dataset, your mission is to transform raw feedback into visual insight.</p>
+                        <ol class="list-decimal list-inside space-y-4 text-slate-200">
+                            <li class="pl-2">Navigate to the <strong>Review Analytics</strong> tab to see the current magical analysis.</li>
+                            <li class="pl-2">Identify the most popular character and their average rating.</li>
+                            <li class="pl-2">Note the sentiment distribution: are the fans pleased?</li>
+                            <li class="pl-2 font-bold text-yellow-400">Complete the analytics checklist in the Tutorial tab!</li>
+                        </ol>
+                    </div>
+                    <div class="bg-slate-800 p-8 rounded-xl border border-slate-600">
+                        <h2 class="text-2xl font-bold mb-6 text-yellow-500">Kaggle Data Profile</h2>
+                        <div class="space-y-4 text-sm">
+                            <div class="bg-slate-900 p-3 rounded border-l-4 border-blue-500 flex justify-between">
+                                <span><i class="fas fa-database mr-2"></i>Rows:</span>
+                                <span class="font-bold">491 Synthetic Reviews</span>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded border-l-4 border-green-500 flex justify-between">
+                                <span><i class="fas fa-table mr-2"></i>Key Columns:</span>
+                                <span class="font-bold">Rating, Comment, Favourite_Character</span>
+                            </div>
+                            <div class="bg-slate-900 p-3 rounded border-l-4 border-red-500 flex justify-between">
+                                <span><i class="fas fa-globe mr-2"></i>Coverage:</span>
+                                <span class="font-bold">Global User Demographics</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section id="datasets">
+                    <h2 class="text-3xl font-bold mb-8 text-center border-b-2 border-yellow-700 pb-2 text-yellow-500 uppercase tracking-widest">Magical Data Repositories</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <!-- Dataset 1: Reviews -->
+                        <div class="dataset-card p-6 rounded-xl text-center flex flex-col items-center">
+                            <div class="text-yellow-500 mb-4"><i class="fas fa-star-half-stroke fa-3x"></i></div>
+                            <h3 class="text-xl font-bold text-white mb-2">Harry Potter Reviews</h3>
+                            <p class="text-slate-400 text-sm mb-6 flex-grow">User reviews, ratings, and character sentiment analysis for the first film.</p>
+                            <a href="https://www.kaggle.com/datasets/marcpaulo/harry-potter-reviews" target="_blank" class="w-full magical-btn bg-yellow-600 hover:bg-yellow-500 px-4 py-2 rounded-lg text-white font-bold transition text-xs">View Reviews Data</a>
+                        </div>
+                        
+                        <!-- Dataset 2: Characters -->
+                        <div class="dataset-card p-6 rounded-xl text-center flex flex-col items-center">
+                            <div class="text-blue-500 mb-4"><i class="fas fa-users-rays fa-3x"></i></div>
+                            <h3 class="text-xl font-bold text-white mb-2">HP Character Library</h3>
+                            <p class="text-slate-400 text-sm mb-6 flex-grow">A deep dive into character traits, houses, blood status, and magical abilities.</p>
+                            <a href="https://www.kaggle.com/datasets/gulsahdemiryurek/harry-potter-dataset" target="_blank" class="w-full magical-btn bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded-lg text-white font-bold transition text-xs">View Character Data</a>
+                        </div>
+
+                        <!-- Dataset 3: Movies -->
+                        <div class="dataset-card p-6 rounded-xl text-center flex flex-col items-center">
+                            <div class="text-red-500 mb-4"><i class="fas fa-film fa-3x"></i></div>
+                            <h3 class="text-xl font-bold text-white mb-2">Cinematic Universe</h3>
+                            <p class="text-slate-400 text-sm mb-6 flex-grow">Comprehensive data on movie runtimes, box office stats, and release dates.</p>
+                            <a href="https://www.kaggle.com/datasets/maricinnamon/harry-potter-movies-dataset" target="_blank" class="w-full magical-btn bg-red-600 hover:bg-red-500 px-4 py-2 rounded-lg text-white font-bold transition text-xs">View Movie Data</a>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- TAB 2: REVIEW ANALYTICS -->
+            <div id="reviews-analytics" class="tab-content space-y-12">
+                <h2 class="text-3xl font-bold text-yellow-500 text-center uppercase tracking-[0.2em] mb-8">Magical Review Dashboard</h2>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase mb-1">Total Reviews</div>
+                        <div class="text-3xl font-bold text-white" id="stat-total">491</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase mb-1">Avg. Rating</div>
+                        <div class="text-3xl font-bold text-yellow-500" id="stat-avg">4.2</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase mb-1">Top Character</div>
+                        <div class="text-xl font-bold text-blue-400" id="stat-top-char">Hermione</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase mb-1">Sentiment</div>
+                        <div class="text-3xl font-bold text-green-500" id="stat-sentiment">82% +</div>
+                    </div>
+                </div>
+
+                <!-- Analysis Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="parchment-card p-6">
+                        <h3 class="text-xl font-bold text-red-900 border-b border-red-200 pb-2 mb-6">Sentiment Spectrum</h3>
+                        <div class="space-y-6">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1"><span>Positive (4.0 - 5.0)</span><span>72%</span></div>
+                                <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden">
+                                    <div class="bg-green-600 h-full" style="width: 72%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1"><span>Neutral (2.5 - 3.5)</span><span>18%</span></div>
+                                <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden">
+                                    <div class="bg-yellow-500 h-full" style="width: 18%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-1"><span>Negative (0.0 - 2.0)</span><span>10%</span></div>
+                                <div class="w-full bg-slate-200 h-4 rounded-full overflow-hidden">
+                                    <div class="bg-red-600 h-full" style="width: 10%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="parchment-card p-6">
+                        <h3 class="text-xl font-bold text-green-900 border-b border-green-200 pb-2 mb-6">Favourite Character Votes</h3>
+                        <div id="character-rank-list" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- Review Feed -->
+                <section class="bg-slate-800/40 p-8 rounded-xl border border-slate-700">
+                    <h3 class="text-xl font-bold text-yellow-500 mb-6 flex items-center"><i class="fas fa-feather-pointed mr-3"></i>Live Review Extract</h3>
+                    <div id="review-feed" class="space-y-4 max-h-96 overflow-y-auto pr-4 custom-scrollbar"></div>
+                </section>
+            </div>
+
+            <!-- TAB 3: TABLEAU TUTORIAL -->
+            <div id="tutorial" class="tab-content space-y-12">
+                <section class="max-w-5xl mx-auto bg-slate-800/50 p-8 rounded-xl border border-yellow-700/50 shadow-lg">
+                    <h2 class="text-3xl font-bold mb-6 text-yellow-500 flex items-center"><i class="fas fa-clipboard-list mr-3"></i>O.W.L. Mastery Checklist</h2>
+                    
+                    <div id="tutorial-checklist-container" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8">
+                        <div>
+                            <h3 class="text-yellow-500 font-bold mb-4 uppercase tracking-widest text-xs border-b border-yellow-900/50 pb-2">Level 1: Review Data Analysis</h3>
+                            <div class="space-y-2">
+                                <div class="checklist-item" onclick="toggleCheck(this, 10)"><input type="checkbox" data-label="Inspect the Rating Distribution"> <span>Inspect the Rating Distribution</span></div>
+                                <div class="checklist-item" onclick="toggleCheck(this, 10)"><input type="checkbox" data-label="Calculate Average Review Score"> <span>Calculate Average Review Score</span></div>
+                                <div class="checklist-item" onclick="toggleCheck(this, 10)"><input type="checkbox" data-label="Identify Top Character Preference"> <span>Identify Top Character Preference</span></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-yellow-500 font-bold mb-4 uppercase tracking-widest text-xs border-b border-yellow-900/50 pb-2">Level 2: Visual Transfiguration</h3>
+                            <div class="space-y-2">
+                                <div class="checklist-item" onclick="toggleCheck(this, 15)"><input type="checkbox" data-label="Create Rating vs. Character Bar Chart"> <span>Create Rating vs. Character Bar Chart</span></div>
+                                <div class="checklist-item" onclick="toggleCheck(this, 15)"><input type="checkbox" data-label="Filter Reviews by 'User Sex'"> <span>Filter Reviews by 'User Sex'</span></div>
+                                <div class="checklist-item" onclick="toggleCheck(this, 15)"><input type="checkbox" data-label="Apply Sentiment Color Palette"> <span>Apply Sentiment Color Palette</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Palette -->
+    <div id="bottom-palette" class="hidden">
+        <section class="text-center pt-16 border-t border-slate-800 mt-12 max-w-6xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-yellow-500 tracking-wider uppercase">Official Wizarding Palette</h2>
+            <div class="flex flex-wrap justify-center gap-4 pb-12">
+                <div class="p-4 rounded-lg bg-slate-800 border-b-4 border-red-700 w-40"><div class="font-bold text-red-500">Gryffindor</div><code class="text-xs">#740001</code></div>
+                <div class="p-4 rounded-lg bg-slate-800 border-b-4 border-green-700 w-40"><div class="font-bold text-green-500">Slytherin</div><code class="text-xs">#1A472A</code></div>
+                <div class="p-4 rounded-lg bg-slate-800 border-b-4 border-blue-700 w-40"><div class="font-bold text-blue-500">Ravenclaw</div><code class="text-xs">#0E1A40</code></div>
+                <div class="p-4 rounded-lg bg-slate-800 border-b-4 border-yellow-500 w-40"><div class="font-bold text-yellow-500">Hufflepuff</div><code class="text-xs">#ECB939</code></div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const houses = [
+            { name: 'Gryffindor', primary: '#740001', secondary: '#D3A625' },
+            { name: 'Slytherin', primary: '#1A472A', secondary: '#AAAAAA' },
+            { name: 'Ravenclaw', primary: '#0E1A40', secondary: '#946B2D' },
+            { name: 'Hufflepuff', primary: '#ECB939', secondary: '#000000' }
+        ];
+
+        const mockReviews = [
+            { id: 1, sex: 'female', country: 'Germany', rating: 2.5, comment: "The transitions between scenes were awkward, and the soundtrack was forgettable.", favorite: "Severus Snape", date: "2004-12-27" },
+            { id: 2, sex: 'female', country: 'Spain', rating: 4.0, comment: "Severus Snape's role adds an intriguing layer.", favorite: "Severus Snape", date: "2003-11-22" },
+            { id: 3, sex: 'male', country: 'France', rating: 3.0, comment: "The pacing was a bit slow, but the characters were charming.", favorite: "Hermione Granger", date: "2005-03-16" },
+            { id: 4, sex: 'male', country: 'Spain', rating: 4.5, comment: "A magical masterpiece for the ages.", favorite: "Harry Potter", date: "2003-09-16" },
+            { id: 5, sex: 'female', country: 'Sweden', rating: 4.0, comment: "Hermione Granger's intelligence is a key asset.", favorite: "Hermione Granger", date: "2002-08-16" },
+            { id: 6, sex: 'other', country: 'Belgium', rating: 5.0, comment: "The magical world is brought to life with stunning visuals.", favorite: "Hermione Granger", date: "2004-01-12" },
+            { id: 7, sex: 'female', country: 'Turkey', rating: 5.0, comment: "The soundtrack is a masterpiece, enhancing the emotional impact.", favorite: "Hermione Granger", date: "2003-11-25" },
+            { id: 8, sex: 'female', country: 'Germany', rating: 3.5, comment: "Draco Malfoy's acting was exceptional.", favorite: "Draco Malfoy", date: "2005-10-26" },
+            { id: 9, sex: 'male', country: 'Turkey', rating: 4.5, comment: "Neville Longbottom's bravery is admirable.", favorite: "Neville Longbottom", date: "2002-07-31" },
+            { id: 10, sex: 'female', country: 'Greece', rating: 2.0, comment: "Draco Malfoy's character lacked depth.", favorite: "Draco Malfoy", date: "2005-08-23" }
+        ];
+
+        const questionsPool = [
+            { text: "Which artifact would you rather possess?", options: ["The Invisibility Cloak", "The Resurrection Stone", "The Elder Wand", "A Marauder's Map"] },
+            { text: "What is your greatest strength?", options: ["Bravery", "Ambition", "Wisdom", "Loyalty"] },
+            { text: "Choose a path to wander:", options: ["The Forbidden Forest", "The Room of Requirement", "The Library", "The Great Hall"] }
+        ];
+
+        let currentStudent = { name: '', house: null };
+        let currentIdx = 0;
+        let isMuted = false;
+        let progressPercent = 10;
+
+        const bgMusic = document.getElementById('ambient-music');
+        const revealMusic = document.getElementById('reveal-music');
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            bgMusic.muted = isMuted;
+            revealMusic.muted = isMuted;
+            document.getElementById('audio-btn').innerHTML = isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        }
+
+        function startSortingProcess() {
+            const nameInput = document.getElementById('student-name');
+            if (!nameInput.value.trim()) return;
+            currentStudent.name = nameInput.value.trim();
+            bgMusic.play().catch(e => console.log("Audio block:", e));
+            document.getElementById('step-name').classList.add('hidden');
+            document.getElementById('step-questions').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = questionsPool[currentIdx];
+            document.getElementById('question-count').innerText = `Question ${currentIdx + 1} of 3`;
+            document.getElementById('question-text').innerText = q.text;
+            const container = document.getElementById('options-container');
+            container.innerHTML = '';
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn text-slate-300';
+                btn.innerText = opt;
+                btn.onclick = () => selectAnswer();
+                container.appendChild(btn);
+            });
+        }
+
+        function selectAnswer() {
+            if (currentIdx < 2) {
+                currentIdx++;
+                renderQuestion();
+            } else {
+                finalizeSorting();
+            }
+        }
+
+        function finalizeSorting() {
+            document.getElementById('step-questions').classList.add('hidden');
+            document.getElementById('step-result').classList.remove('hidden');
+            const house = houses[Math.floor(Math.random() * houses.length)];
+            currentStudent.house = house;
+            setTimeout(() => {
+                bgMusic.pause();
+                revealMusic.play().catch(e => console.log("Audio block:", e));
+                document.getElementById('thinking-state').classList.add('hidden');
+                document.getElementById('sorting-final').classList.remove('hidden');
+                document.getElementById('assigned-house').innerText = house.name;
+                document.getElementById('assigned-house').style.color = house.secondary;
+            }, 2000);
+        }
+
+        function enterStudio() {
+            const house = currentStudent.house;
+            document.documentElement.style.setProperty('--accent-primary', house.secondary);
+            document.documentElement.style.setProperty('--accent-secondary', house.primary);
+            document.getElementById('display-name').innerText = currentStudent.name;
+            document.getElementById('display-house').innerText = house.name;
+            document.getElementById('display-house').style.color = house.secondary;
+            revealMusic.pause();
+            document.getElementById('sorting-ceremony').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('sorting-ceremony').classList.add('hidden');
+                document.getElementById('portal-content').classList.remove('hidden');
+                document.getElementById('bottom-palette').classList.remove('hidden');
+                initAnalytics();
+            }, 1000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(n => n.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.getElementById('btn-' + tabId).classList.add('active');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleCheck(element, increment) {
+            const checkbox = element.querySelector('input');
+            checkbox.checked = !checkbox.checked;
+            element.classList.toggle('checked', checkbox.checked);
+            
+            if (checkbox.checked) progressPercent += increment;
+            else progressPercent -= increment;
+            
+            const limited = Math.min(100, Math.max(10, progressPercent));
+            document.getElementById('progress-bar').style.width = limited + '%';
+            document.getElementById('task-text').innerText = `Current Progress: ${Math.floor(limited/10)} of 10 Tasks`;
+        }
+
+        function initAnalytics() {
+            const charCounts = {};
+            mockReviews.forEach(r => charCounts[r.favorite] = (charCounts[r.favorite] || 0) + 1);
+            const sortedChars = Object.entries(charCounts).sort((a,b) => b[1] - a[1]);
+            
+            const rankList = document.getElementById('character-rank-list');
+            rankList.innerHTML = sortedChars.map(([name, count], i) => `
+                <div class="flex items-center justify-between p-2 rounded ${i===0 ? 'bg-yellow-100 border-l-4 border-yellow-500' : 'bg-slate-100'}">
+                    <span class="font-bold text-slate-800">${i+1}. ${name}</span>
+                    <span class="text-xs font-bold text-slate-500">${count} reviews</span>
+                </div>
+            `).join('');
+
+            const feed = document.getElementById('review-feed');
+            feed.innerHTML = mockReviews.map(r => `
+                <div class="review-row">
+                    <div class="flex justify-between items-start mb-1">
+                        <span class="text-yellow-500 font-bold text-sm">${'★'.repeat(Math.floor(r.rating))}</span>
+                        <span class="text-[10px] text-slate-500 uppercase">${r.country} | ${r.sex}</span>
+                    </div>
+                    <p class="text-slate-200 text-sm italic">"${r.comment}"</p>
+                    <div class="mt-2 text-[10px] text-blue-400 font-bold uppercase tracking-widest">Fav: ${r.favorite}</div>
+                </div>
+            `).join('');
+        }
+
+        function generatePDF() {
+            document.getElementById('print-name').innerText = currentStudent.name;
+            document.getElementById('print-house').innerText = currentStudent.house ? currentStudent.house.name : 'Unknown';
+            document.getElementById('print-date').innerText = new Date().toLocaleDateString();
+            const printChecklist = document.getElementById('print-checklist');
+            printChecklist.innerHTML = '';
+            document.querySelectorAll('#tutorial-checklist-container input[type="checkbox"]').forEach(check => {
+                const li = document.createElement('li');
+                const label = check.getAttribute('data-label');
+                const status = check.checked ? '✅ COMPLETED' : '❌ IN PROGRESS';
+                li.innerHTML = `<strong>${label}:</strong> ${status}`;
+                printChecklist.appendChild(li);
+            });
+            window.print();
+        }
+    </script>
+</body>
+</html>

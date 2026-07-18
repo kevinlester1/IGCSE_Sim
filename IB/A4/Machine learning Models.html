@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning Model Selection Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MathJax for LaTeX support -->
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .table-container::-webkit-scrollbar {
+            height: 6px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 leading-relaxed">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-2">
+                    <div class="bg-indigo-600 p-1.5 rounded-lg">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></nav>
+                    </div>
+                    <span class="font-bold text-lg tracking-tight">ML Selection Guide</span>
+                </div>
+                <div class="hidden md:flex space-x-8 text-sm font-medium text-slate-600">
+                    <a href="#comparison" class="hover:text-indigo-600 transition-colors">Comparison Matrix</a>
+                    <a href="#deep-dive" class="hover:text-indigo-600 transition-colors">Selection Criteria</a>
+                    <a href="#flowchart" class="hover:text-indigo-600 transition-colors">Decision Flow</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        
+        <!-- Hero Section -->
+        <header class="text-center mb-16">
+            <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
+                Comprehensive <span class="gradient-text">Machine Learning</span><br/>Model Selection Guide
+            </h1>
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+                A technical side-by-side comparison of major architectures to help you choose the right tool based on data characteristics, performance requirements, and computational constraints.
+            </p>
+        </header>
+
+        <!-- Model Comparison Matrix -->
+        <section id="comparison" class="mb-20">
+            <div class="flex items-center gap-3 mb-6">
+                <div class="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                <h2 class="text-2xl font-bold">1. Model Comparison Matrix</h2>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200 overflow-hidden">
+                <div class="table-container overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Model</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Complexity</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Data Characteristics</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Performance Metrics</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Resources</th>
+                                <th class="p-4 text-xs font-bold uppercase tracking-wider text-slate-500">Ideal Example</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <!-- Linear Regression -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">Linear Regression</td>
+                                <td class="p-4 text-sm"><span class="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">Low</span> Simple additive relationships.</td>
+                                <td class="p-4 text-sm text-slate-600">Continuous features, linear independence, requires normalization.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">RMSE, MAE, \(R^2\)</td>
+                                <td class="p-4 text-sm"><span class="font-semibold">Minimal.</span> Basic CPUs, milliseconds.</td>
+                                <td class="p-4 text-sm italic text-slate-500">Predicting house prices via square footage.</td>
+                            </tr>
+                            <!-- Decision Trees -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">Decision Trees</td>
+                                <td class="p-4 text-sm"><span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">Medium</span> Non-linear logic branching.</td>
+                                <td class="p-4 text-sm text-slate-600">Categorical & numerical; sensitive to outliers.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">Accuracy, Gini, Entropy</td>
+                                <td class="p-4 text-sm"><span class="font-semibold">Low.</span> Fast training & inference.</td>
+                                <td class="p-4 text-sm italic text-slate-500">Simple credit scoring (Yes/No).</td>
+                            </tr>
+                            <!-- Random Forest -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">Random Forest</td>
+                                <td class="p-4 text-sm"><span class="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">High</span> Ensemble of many trees.</td>
+                                <td class="p-4 text-sm text-slate-600">Robust to noise; handles missing values well.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">Accuracy, Precision, Recall, F1</td>
+                                <td class="p-4 text-sm"><span class="font-semibold">Moderate.</span> Multi-threading, more RAM.</td>
+                                <td class="p-4 text-sm italic text-slate-500">Fraud detection in banking.</td>
+                            </tr>
+                            <!-- KNN -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">KNN</td>
+                                <td class="p-4 text-sm"><span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">Variable</span> High search complexity.</td>
+                                <td class="p-4 text-sm text-slate-600">Smaller datasets; requires feature scaling.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">Accuracy, Distance Metrics</td>
+                                <td class="p-4 text-sm"><span class="font-semibold text-rose-600">High (at Inference).</span> Stores entire dataset.</td>
+                                <td class="p-4 text-sm italic text-slate-500">Small e-commerce recommenders.</td>
+                            </tr>
+                            <!-- Neural Networks -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">Neural Networks</td>
+                                <td class="p-4 text-sm"><span class="bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">V. High</span> Layers of hidden units.</td>
+                                <td class="p-4 text-sm text-slate-600">Large data; complex interactions; high tuning.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">Cross-Entropy, AUC-ROC</td>
+                                <td class="p-4 text-sm"><span class="font-semibold">High.</span> Heavy CPU/GPU usage.</td>
+                                <td class="p-4 text-sm italic text-slate-500">Predicting churn in massive telecom DBs.</td>
+                            </tr>
+                            <!-- Deep Learning -->
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="p-4 font-bold text-indigo-700">Deep Learning</td>
+                                <td class="p-4 text-sm"><span class="bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full text-xs font-bold mr-1">Extreme</span> 100+ layer architectures.</td>
+                                <td class="p-4 text-sm text-slate-600">Unstructured (Images, Text). Huge scale.</td>
+                                <td class="p-4 text-sm font-mono text-slate-500">Perplexity, BLEU, mAP</td>
+                                <td class="p-4 text-sm"><span class="font-semibold text-rose-600">V. High.</span> Specialized hardware (GPUs).</td>
+                                <td class="p-4 text-sm italic text-slate-500">Face recognition, Translation.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Deep Dive Section -->
+        <section id="deep-dive" class="mb-20">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                <h2 class="text-2xl font-bold">2. Selection Criteria Deep Dive</h2>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Data Impacts -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">A. Data Characteristics</h3>
+                    <ul class="space-y-4 text-sm text-slate-600">
+                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Feature Scaling</strong> Models like KNN and Neural Networks fail if features aren't on the same scale (Age vs Income). Random Forests are scale-invariant.</li>
+                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Linearity</strong> If data forms circular distributions, Linear models result in <span class="text-rose-600 font-semibold">High Bias</span>. Non-linear kernels are required.</li>
+                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Imbalance</strong> When targets are rare, Accuracy is misleading. Prioritize Recall or F1-Score.</li>
+                    </ul>
+                </div>
+
+                <!-- Interpretability -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">B. Interpretability Trade-off</h3>
+                    <p class="text-sm text-slate-600 mb-6 leading-relaxed">As model complexity increases, transparency usually decreases. This is known as the "Black Box" problem.</p>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <span class="text-xs font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded">HIGH</span>
+                            <span class="text-xs font-medium">Linear Reg, Decision Trees</span>
+                        </div>
+                        <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                            <span class="text-xs font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded">LOW</span>
+                            <span class="text-xs font-medium">Deep Learning, Random Forest</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Computation -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    </div>
+                    <h3 class="text-xl font-bold mb-4">C. Resource Allocation</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">"Lazy" Learners (KNN)</span>
+                            <p class="text-sm text-slate-600 italic">Zero training time; extremely slow inference as every query searches the whole DB.</p>
+                        </div>
+                        <div class="h-px bg-slate-100"></div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">"Eager" Learners (Deep Learning)</span>
+                            <p class="text-sm text-slate-600 italic">Days or weeks to train; once converged, provides millisecond inference.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Decision Flowchart -->
+        <section id="flowchart" class="mb-12">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="h-8 w-1 bg-indigo-600 rounded-full"></div>
+                <h2 class="text-2xl font-bold">3. Quick Decision Flowchart</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-slate-900 text-white p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="text-indigo-400 font-bold text-xs uppercase mb-2">Q1: Unstructured?</div>
+                        <p class="text-sm font-medium">Images, Audio, or Natural Language?</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-800 font-bold text-emerald-400">→ Deep Learning</div>
+                </div>
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q2: Interpretability?</div>
+                        <p class="text-sm font-medium">Do you need to explain 'Why' to stakeholders?</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Linear / Trees</div>
+                </div>
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q3: Messy Tabular?</div>
+                        <p class="text-sm font-medium">Lots of categorical columns and missing values?</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Random Forest / XGBoost</div>
+                </div>
+                <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q4: Tiny Dataset?</div>
+                        <p class="text-sm font-medium">Less than 1,000 samples and high dimensionality?</p>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Naive Bayes / KNN</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200 py-12">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">ML Architect Reference v2.5</p>
+            <p class="text-slate-500 text-sm max-w-md mx-auto">This guide is optimized for quick model selection based on standard industry benchmarks and theoretical constraints.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

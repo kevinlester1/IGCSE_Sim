@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Database Exam Mastery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Base styles to match React version */
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 p-4 md:p-8 text-slate-800">
+    <div class="max-w-4xl mx-auto space-y-8" id="app-container">
+        
+        <!-- Header -->
+        <header class="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 text-center print:border-none print:shadow-none print:p-0 print:mb-8">
+            <div class="bg-blue-100 text-blue-700 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 print:hidden">
+                <i data-lucide="book-open" class="w-8 h-8"></i>
+            </div>
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">IB Database Exam Mastery</h1>
+            <p class="text-slate-600 max-w-2xl mx-auto print:hidden">
+                Interactive exercise to master IB command terms, decode question prompts, anticipate examiner expectations, and practice writing the perfect answer.
+            </p>
+            
+            <div class="max-w-sm mx-auto mt-6">
+                <input 
+                    type="text" 
+                    id="student-name"
+                    placeholder="Enter Student Name" 
+                    class="w-full text-center border-b-2 border-slate-300 focus:border-blue-500 outline-none px-4 py-2 text-lg bg-transparent font-medium print:border-b-0 print:text-2xl print:font-bold print:placeholder-transparent"
+                />
+            </div>
+        </header>
+
+        <!-- Part 1 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border-none print:shadow-none">
+            <div class="bg-slate-900 px-6 py-4 print:bg-slate-200">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2 print:text-slate-900">
+                    Part 1: Command Term Bootcamp
+                </h2>
+            </div>
+            <div class="p-6 print:px-0">
+                <p class="text-slate-600 mb-6 print:hidden">Match the IB command terms to their official definitions to ensure you know exactly what the examiner is asking for.</p>
+                <div class="space-y-4" id="part1-container">
+                    <!-- Definitions will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Part 2 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden print:border-none print:shadow-none print:mt-8">
+            <div class="bg-blue-900 px-6 py-4 print:bg-slate-200">
+                <h2 class="text-xl font-bold text-white flex items-center gap-2 print:text-slate-900">
+                    Part 2: Deconstruct & Answer
+                </h2>
+            </div>
+            <div class="p-6 print:px-0">
+                <p class="text-slate-600 mb-6 print:hidden">Read the past-paper questions below. First, break down the focus, think about what the examiner wants to see, and plan your marks. Then, write your final answer.</p>
+                <div class="space-y-10 print:space-y-16" id="part2-container">
+                    <!-- Questions will be injected here -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-center pb-12 print:hidden" id="action-container">
+            <div id="reveal-controls">
+                <button 
+                    onclick="revealFeedback()"
+                    class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2 text-lg"
+                >
+                    <i data-lucide="check-circle-2"></i>
+                    Reveal Feedback & Check Answers
+                </button>
+            </div>
+            
+            <div id="results-controls" class="hidden text-center space-y-4">
+                <div class="bg-green-100 text-green-800 font-bold py-3 px-6 rounded-xl inline-flex items-center gap-2 text-lg">
+                    <i data-lucide="check-circle-2"></i>
+                    Part 1 Score: <span id="score-display">0</span> / 8
+                </div>
+                <p class="text-slate-500">Compare your actual written answers with the Official Markscheme in green above.</p>
+                
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mt-6">
+                    <button 
+                        onclick="window.print()"
+                        class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-transform hover:scale-105 flex items-center gap-2 text-lg"
+                    >
+                        <i data-lucide="printer"></i>
+                        Print as PDF
+                    </button>
+                    <button 
+                        onclick="resetExercise()"
+                        class="text-slate-500 font-semibold hover:underline hover:text-slate-800 px-4 py-2"
+                    >
+                        Reset Exercise
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const COMMAND_TERMS = [
+            "Define", "Outline", "Explain", "Construct", "Distinguish", "Identify", "Describe", "State"
+        ];
+
+        const DEFINITIONS = [
+            { id: 1, text: "Give a detailed account including reasons or causes.", answer: "Explain" },
+            { id: 2, text: "Give the precise meaning of a word, phrase, concept, or physical quantity.", answer: "Define" },
+            { id: 3, text: "Make clear the differences between two or more concepts or items.", answer: "Distinguish" },
+            { id: 4, text: "Provide an answer from a number of possibilities.", answer: "Identify" },
+            { id: 5, text: "Display information in a diagrammatic or logical form.", answer: "Construct" },
+            { id: 6, text: "Give a brief account or summary.", answer: "Outline" },
+            { id: 7, text: "Give a detailed account.", answer: "Describe" },
+            { id: 8, text: "Give a specific name, value or other brief answer without explanation or calculation.", answer: "State" }
+        ];
+
+        const QUESTIONS = [
+            {
+                id: 1,
+                displayId: "1(a)",
+                text: "Define the term primary key. [1]",
+                marks: 1,
+                guide: {
+                    termMeaning: "Give the precise meaning.",
+                    focus: "primary key",
+                    context: "None specifically required for this general definition.",
+                    understanding: "The examiner wants to see if you know the core function of a primary key in a relational database, which is to uniquely identify each individual record.",
+                    keyTerms: "unique, identifier, record/row/entity, cannot be null.",
+                    decode: "1 mark means a single, accurate statement. (e.g., 'A field that acts as a unique identifier for each record in a database table')."
+                },
+                markscheme: "Award [1 max]:\n• A field/attribute that uniquely identifies a record/row in a database table;\n• An attribute or set of attributes that uniquely identifies each tuple in a relation;"
+            },
+            {
+                id: 2,
+                displayId: "1(b.i)",
+                text: "Outline why the use of WitnessID, CrimeID and OfficerID is not a suitable composite primary key. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Composite primary key unsuitability.",
+                    context: "Police Interviews (Witness, Crime, Officer).",
+                    understanding: "You need to demonstrate an understanding that a primary key MUST be completely unique for every single record. The examiner is testing your ability to spot real-world scenarios where combinations of IDs still result in duplicates over time.",
+                    keyTerms: "uniquely identify, duplicate records, interviewed more than once.",
+                    decode: "2 marks = 2 brief, linked points. Point out the flaw in the combination (e.g., doesn't uniquely identify an interview) [1], and give a reason based on context (e.g., a witness might be interviewed multiple times by the same officer) [1]."
+                },
+                markscheme: "Award [2 max]:\n• The three combined keys do not uniquely identify each interview;\n• A witness can be interviewed more than once by the same officer for the same crime;\n• A primary key (e.g. INTERVIEWID) is more suitable than a composite key with many fields / A composite key would need to include DateTimeStatement;\n• Indexing works better with one key than a composite key with multiple fields;"
+            },
+            {
+                id: 3,
+                displayId: "1(b.ii)",
+                text: "Outline why the INTERVIEW table is not in 3rd Normal Form (3NF). [4]",
+                marks: 4,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "3NF violations (partial/transitive dependencies).",
+                    context: "The INTERVIEW table from the scenario.",
+                    understanding: "You must explain the rules of normalisation. Showing that non-key attributes depend on other non-key attributes (transitive) or only part of a primary key (partial) proves it is not in 3NF.",
+                    keyTerms: "partial dependency, transitive dependency, non-key attribute, composite key.",
+                    decode: "4 marks = 1 mark for stating it lacks 1NF/2NF/PK + 1 mark identifying partial dependency + 1 mark identifying transitive dependency + 1 mark providing an example from the table."
+                },
+                markscheme: "Award [4 max]:\n• The table is not in 1NF/2NF so cannot be in the 3NF;\n• There is no (unique) Primary Key;\n• There is partial dependency // non-key attribute depends on part of primary key only...\n• ... Example: CrimeLocation is dependent on CrimeID only;\n• The table has transitive/non-key dependency; ...\n• ... Example: StationPhone is dependent on Station;"
+            },
+            {
+                id: 4,
+                displayId: "1(c)",
+                text: "Outline why an alphanumeric data type is used for the VictimPhone field. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Alphanumeric data type choice.",
+                    context: "VictimPhone field.",
+                    understanding: "The examiner wants you to show why storing numbers as 'integers' is a bad idea when those numbers aren't used for math and contain leading zeros or special characters.",
+                    keyTerms: "leading zero, magnitude/value, special characters, search.",
+                    decode: "2 marks = 2 separate reasons why a string/alphanumeric is better than an integer for a phone number."
+                },
+                markscheme: "Award [2 max]:\n• Phone number is not a value/amount/magnitude;\n• May start with 0 and get removed if integer type is used;\n• May include brackets and/or + symbol;\n• May need to search for part of the number;"
+            },
+            {
+                id: 5,
+                displayId: "1(d)",
+                text: "Construct the database in 3rd Normal Form (3NF) for all of the data shown in Figure 1. [6]",
+                marks: 6,
+                guide: {
+                    termMeaning: "Display information in a diagrammatic or logical form.",
+                    focus: "3rd Normal Form (3NF) schema.",
+                    context: "The provided Figure 1 dataset.",
+                    understanding: "The examiner expects you to demonstrate normalization skills by breaking down an unnormalized flat table into separate related entities, removing data redundancy while keeping referential integrity.",
+                    keyTerms: "Primary Key (PK), Foreign Key (FK), relational links (e.g., intermediate tables).",
+                    decode: "6 marks = ~1 mark per correctly identified table/entity + correct Primary/Foreign keys. You must list the tables (CRIME, EVIDENCE, VICTIM, OFFICER, etc.) with their respective fields clearly."
+                },
+                markscheme: "Award [6 max]:\nCRIME(CrimeID, CrimeType, CrimeAddress, CrimeDate, CrimeTime)\nCRIMEOFFICER (CrimeID, OfficerID)\nEVIDENCE (EvidenceID, EvidenceType, CrimeID*, EvidenceDesc)\nVICTIMCRIME (CrimeID*, VictimID*)\nVICTIM (VictimID, VictimName, VictimPhone)\nOFFICER (OfficerID, OfficerName)\n\n(Marks awarded for identifying the 4 main tables without PK [1], and 1 mark for each fully correct table with primary keys, foreign keys, and link tables like VICTIMCRIME and CRIMEOFFICER)."
+            },
+            {
+                id: 6,
+                displayId: "2(a)",
+                text: "Define the term database transaction. [1]",
+                marks: 1,
+                guide: {
+                    termMeaning: "Give the precise meaning.",
+                    focus: "Database transaction.",
+                    context: "General concept (Billetmania implied).",
+                    understanding: "You need to know that a transaction is a set of operations that must be treated as a single, indivisible unit to maintain data integrity.",
+                    keyTerms: "logical unit of work, ACID properties, executed in full or not at all.",
+                    decode: "1 mark = Give a precise definition mentioning that it's a complete unit of work."
+                },
+                markscheme: "Award [1 max]:\n• A logical unit of work that is executed in full or not at all;\n• A transaction is a single logical operation that comprises of a sequence of database operations;\n• A transation satisfies the ACID (Atomicity, Consistency, Isolation, Durability) properties;"
+            },
+            {
+                id: 7,
+                displayId: "2(b)",
+                text: "Outline how the Billetmania information system would utilize a database. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Interaction between Information System and Database.",
+                    context: "Billetmania ticket system.",
+                    understanding: "Examiners want to see you differentiate between the 'back-end' database (storage) and the 'front-end' information system (UI/processing data for decisions).",
+                    keyTerms: "store details, access, present data, decision making.",
+                    decode: "2 marks = 1 mark for stating what the database does (stores) + 1 mark for what the information system does (retrieves/analyzes) applied to Billetmania."
+                },
+                markscheme: "Award [2 max]:\n• The database would store details of concerts, tickets sold, customers;\n• An information system would access the database to present data it in a way that aids informs managers/aids decision making (e.g. charts of ticket sales);"
+            },
+            {
+                id: 8,
+                displayId: "2(c)",
+                text: "Explain the importance of transaction durability to Billetmania when clients book tickets. [3]",
+                marks: 3,
+                guide: {
+                    termMeaning: "Give a detailed account including reasons or causes.",
+                    focus: "Transaction Durability (ACID).",
+                    context: "Billetmania booking tickets.",
+                    understanding: "You need to demonstrate knowledge of the 'D' in ACID. Why does it matter that data is permanently saved, especially in a commercial ticketing scenario?",
+                    keyTerms: "saved permanently, power loss/crash, guaranteed.",
+                    decode: "3 marks = Define durability [1] + explain the threat (system crash) [1] + apply to the scenario (user doesn't lose their ticket) [1]."
+                },
+                markscheme: "Award [3 max]:\n• Durability ensures that transactions are saved permanently and do not accidentally disappear or get erased;\n• Billetmania does not need to worry the transaction being lost even in the event of power loss, crashes, or errors;\n• A seat in a theatre is guaranteed even if the database crashes;"
+            },
+            {
+                id: 9,
+                displayId: "2(d)",
+                text: "Explain how the Billetmania database management system ensures that a seat is not booked by two people simultaneously. [4]",
+                marks: 4,
+                guide: {
+                    termMeaning: "Give a detailed account including reasons or causes.",
+                    focus: "Concurrency control.",
+                    context: "Preventing double-booking seats at Billetmania.",
+                    understanding: "The examiner is testing your knowledge of 'Isolation' in ACID and how databases use locking mechanisms to handle multiple users modifying data at the exact same time.",
+                    keyTerms: "Concurrency, simultaneous access, row locking, double booked/overwritten.",
+                    decode: "4 marks = 1 mark for identifying concurrency + 1 mark for explaining what it prevents + 1 mark for the technical method (row locking) + 1 mark for linking to the specific seat scenario."
+                },
+                markscheme: "Award [4 max]:\n• Concurrency allows multiple users try to book tickets at the same time / complete a transaction at the same time;\n• Concurrency prevents access by more than one user to the same row/record;\n• Concurrency uses row locking;\n• Select seats are locked for a short period of time to ensure that they aren't double booked/overwritten;"
+            },
+            {
+                id: 10,
+                displayId: "3(a)",
+                text: "Construct an entity-relationship-diagram that shows the relationships between the class, order and family. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Display information in a diagrammatic or logical form.",
+                    focus: "ERD Construction.",
+                    context: "Biology taxonomy (Class, Order, Family).",
+                    understanding: "You need to translate a textual description of a hierarchy into standard ERD notation, correctly identifying entities and their 1-to-Many relationships.",
+                    keyTerms: "1:N relationship, entities, hierarchy.",
+                    decode: "2 marks = 1 mark for a top-down diagram with boxes/diamonds + 1 mark for correct labels and 1:N cardinality."
+                },
+                markscheme: "Award [2 max]:\n• Award [1] for each correct relationship with labels.\n• Award [1] for a top-down diagram showing the relationships.\n• One CLASS contains many ORDER;\n• One ORDER contains many FAMILY;\n(Diagram: [Class] --1--<contains>--N-- [Order] --1--<contains>--N-- [Family])"
+            },
+            {
+                id: 11,
+                displayId: "3(b.i)",
+                text: "Outline, using an example, how data validation can ensure that data is entered into the birds database correctly. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Data validation methods.",
+                    context: "Birds database (e.g. beak length).",
+                    understanding: "You need to explain that validation is an automated computer check against set rules, and provide a concrete example from the provided scenario.",
+                    keyTerms: "Range check, length check, type check, acceptable range.",
+                    decode: "2 marks = 1 mark for identifying a specific validation type (e.g., type check) + 1 mark for applying it to bird data (e.g., beak length must be a number)."
+                },
+                markscheme: "Award [2 max]:\n• Length check;\n• Could ensure only a value within an acceptable range is entered (allow example);\n• Type/format check on bill;\n• Only numerical (int/float etc.);"
+            },
+            {
+                id: 12,
+                displayId: "3(b.ii)",
+                text: "Outline, using an example, how data verification can ensure that data is entered into the birds database correctly. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Data verification methods.",
+                    context: "Birds database.",
+                    understanding: "You must differentiate verification (checking data matches the original source) from validation (checking against rules).",
+                    keyTerms: "Double entry, proof reading, visual check.",
+                    decode: "2 marks = 1 mark for identifying a verification type + 1 mark explaining how it prevents typos for bird data."
+                },
+                markscheme: "Award [2 max]:\n• Double entry;\n• Will only allow data entry if both match;\n• Proof reading;\n• Will give a visual check that the data is correct;"
+            },
+            {
+                id: 13,
+                displayId: "3(c)",
+                text: "Distinguish between data and information when entering the length of a spoonbill's beak in the database. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Make clear the differences.",
+                    focus: "Data vs. Information.",
+                    context: "Entering the length of a spoonbill's beak in the database.",
+                    understanding: "The examiner is testing a fundamental ITGS/CS concept: the difference between raw, uncontextualized facts (data) and processed, meaningful facts (information) specifically within a database.",
+                    keyTerms: "decontextualized / raw figure, meaning / context, interrogated.",
+                    decode: "2 marks = 1 point defining data side + 1 point defining info side, using context. (e.g., Data is the raw number '10' [1]; Information gives it meaning, such as '10 cm' representing the beak length [1])."
+                },
+                markscheme: "Award [2 max]:\n• When the length of the bill/beak of the spoonbill is measured it is simply a decontextualized figure such as 10 cm;\n• When it is included in the database and interrogated it will have a meaning, so it then becomes information;\n• The database will contain only the figure '10'; the 'cm' will not be included and is part of the meaning of the attribute/field."
+            },
+            {
+                id: 14,
+                displayId: "3(d)",
+                text: "Identify two characteristics of a conceptual schema. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Provide an answer from a number of possibilities.",
+                    focus: "Conceptual schema characteristics.",
+                    context: "None specific.",
+                    understanding: "You need to know the database development lifecycle and what the conceptual layer represents (the abstract, high-level map of entities, ignoring software specifics).",
+                    keyTerms: "high-level view, main concepts, overall view.",
+                    decode: "2 marks = 1 mark per valid characteristic."
+                },
+                markscheme: "Award [2 max]:\n• A high-level/overall/general view of the database;\n• Shows the main concepts;\n• Shows the main relationships,\n• Can be described by a Data Structure Diagram;"
+            },
+            {
+                id: 15,
+                displayId: "3(e)",
+                text: "Explain why the use of data modelling is critical to the success of a database, such as the one used in this scenario. [3]",
+                marks: 3,
+                guide: {
+                    termMeaning: "Give a detailed account including reasons or causes.",
+                    focus: "Importance of data modelling.",
+                    context: "Biology database scenario.",
+                    understanding: "The examiner wants to see if you understand *why* we plan databases before building them. It's about stakeholder communication, preventing structural errors, and guiding developers.",
+                    keyTerms: "visual representation, stakeholder understanding, redundancy, integrity.",
+                    decode: "3 marks = Identify the purpose of modeling [1] + explain the benefit (e.g. shared understanding) [1] + explain the technical consequence of not doing it (redundancy/poor integrity) [1]."
+                },
+                markscheme: "Award [3 max]:\n• Data modelling gives a visual representation of the proposed system;\n• So that all stakeholders have the same understanding of the system;\n• Shows basic relationships/establishes naming conventions etc.;\n• Some that developers are able to develop the actual database;\n• Avoiding issues such as redundancy/lack of integrity/lack of consistency;"
+            },
+            {
+                id: 16,
+                displayId: "3(f)",
+                text: "Explain, using the example described in the scenario, why referential integrity is important in databases. [3]",
+                marks: 3,
+                guide: {
+                    termMeaning: "Give a detailed account including reasons or causes.",
+                    focus: "Referential Integrity.",
+                    context: "Spoonbill taxonomic database scenario.",
+                    understanding: "You must explain that referential integrity stops you from creating 'orphan' records, ensuring that foreign keys always point to valid primary keys.",
+                    keyTerms: "foreign key corresponds to primary key, update anomalies, orphan record.",
+                    decode: "3 marks = Definition/Rule [1] + Specific scenario example [1] + Benefit (prevents anomalies) [1]."
+                },
+                markscheme: "Award [3 max]:\n• Referential integrity requires that a value used as a foreign key corresponds to a value of a primary key / validates the database through relationships;\n• Therefore if the Ciconiiformes/order of the Spoonbill is not in the database, you will not be able to add it because of referential integrity;\n• Ensure that if a record is updated or deleted, these changes will made in related cells and the possibility of update anomalies is reduced/eliminated;"
+            },
+            {
+                id: 17,
+                displayId: "4(a.i)",
+                text: "State the primary key in the STAFF table. [1]",
+                marks: 1,
+                guide: {
+                    termMeaning: "Give a specific name, value or brief answer.",
+                    focus: "Identifying a Primary Key.",
+                    context: "STAFF table in Figure 1.",
+                    understanding: "Simply read the provided schema diagram and identify the unique identifier field for the STAFF entity.",
+                    keyTerms: "StaffID.",
+                    decode: "1 mark = State the exact field name."
+                },
+                markscheme: "Award [1 max]:\n• StaffID;"
+            },
+            {
+                id: 18,
+                displayId: "4(a.ii)",
+                text: "State a foreign key in the STAFF table. [1]",
+                marks: 1,
+                guide: {
+                    termMeaning: "Give a specific name, value or brief answer.",
+                    focus: "Identifying a Foreign Key.",
+                    context: "STAFF table in Figure 1.",
+                    understanding: "Identify a field in the STAFF table that links to the primary key of another table in the diagram.",
+                    keyTerms: "RoleID, DepartmentID.",
+                    decode: "1 mark = State the exact field name of ONE of the valid foreign keys."
+                },
+                markscheme: "Award [1 max]:\n• RoleID\n• DepartmentID"
+            },
+            {
+                id: 19,
+                displayId: "4(b)",
+                text: "Describe the relationships between the three tables in Figure 1. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a detailed account.",
+                    focus: "Entity relationships (cardinality).",
+                    context: "ROLE, STAFF, and DEPARTMENT tables.",
+                    understanding: "You must look at the scenario rules ('Staff can only hold one role', 'Staff can work in several departments') and translate them into standard database relationship terminology.",
+                    keyTerms: "One to many, many to many.",
+                    decode: "2 marks = 1 mark for the ROLE-STAFF relationship + 1 mark for the STAFF-DEPARTMENT relationship."
+                },
+                markscheme: "Award [2 max]:\n• ROLE and STAFF: one to many [1]\n• STAFF and DEPARTMENT: one to many // accept many to many [1]"
+            },
+            {
+                id: 20,
+                displayId: "4(c)",
+                text: "Outline what a query is used for in a database. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Purpose of database queries.",
+                    context: "General concept.",
+                    understanding: "The examiner wants to see if you understand that queries do more than just 'search'—they filter, manipulate, and aggregate data.",
+                    keyTerms: "virtual representation, search/filter, manipulate (insert/delete), aggregate.",
+                    decode: "2 marks = 2 separate distinct uses for a query (e.g. searching/filtering data [1] and manipulating data [1])."
+                },
+                markscheme: "Award [2 max]:\n• The query provides a virtual representation of the database;\n• A query searches/provides a filter view of the database based on the criteria;\n• A query helps to manipulate the data (INSERT/DELETE/UPDATE);\n• A query is used to aggregate/summarize data (SUM, AVG);"
+            },
+            {
+                id: 21,
+                displayId: "4(d)",
+                text: "Identify the steps to create a query to list the staff with the surname Waters who are on pay grade 17. The query must display only FirstName, Surname, and PayGrade. [4]",
+                marks: 4,
+                guide: {
+                    termMeaning: "Provide an answer from a number of possibilities.",
+                    focus: "SQL Query construction (or Structured English).",
+                    context: "Hospital Staff database.",
+                    understanding: "You need to show you can construct a query across multiple tables using a JOIN, filter with WHERE clauses, and SELECT specific columns.",
+                    keyTerms: "SELECT, FROM, INNER JOIN, WHERE, AND.",
+                    decode: "4 marks = SELECTing correct fields [1] + Correct tables/JOIN [1] + Correct primary/foreign key link [1] + Correct WHERE criteria for surname and grade [1]."
+                },
+                markscheme: "Award [4 max]:\nExample SQL:\nSELECT STAFF.Firstname, STAFF.Surname, ROLE.PayGrade\nFROM STAFF INNER JOIN ROLE ON STAFF.RoleID = ROLE.RoleID\nWHERE STAFF.Surname = 'Waters' AND ROLE.PayGrade = 17;\n\n(Award [1] for selecting fields, [1] for joining tables, [1] for the join condition STAFF.RoleID=ROLE.RoleID, [1] for both conditions Waters AND 17)."
+            },
+            {
+                id: 22,
+                displayId: "4(e)",
+                text: "Outline why an integer is an appropriate data type for the PayGrade field. [2]",
+                marks: 2,
+                guide: {
+                    termMeaning: "Give a brief account or summary.",
+                    focus: "Integer data type selection.",
+                    context: "PayGrade field.",
+                    understanding: "You need to explain the benefits of using an integer over a string/text field for numerical categories.",
+                    keyTerms: "whole numbers, reduces size, calculation, sorting.",
+                    decode: "2 marks = Give 2 distinct technical reasons why 'integer' is the best choice (e.g., memory efficiency, sorting ability, math)."
+                },
+                markscheme: "Award [2 max]:\n• The pay grade values are whole numbers;\n• The use of an integer reduces the size of the field;\n• Listing/sorting the staff in order of the PayGrade/increasing or decreasing;\n• Allows calculation and mathematical functions;"
+            },
+            {
+                id: 23,
+                displayId: "4(f)",
+                text: "Explain two ways in which the database administrator can ensure the privacy of the hospital's staff data. [6]",
+                marks: 6,
+                guide: {
+                    termMeaning: "Give a detailed account including reasons or causes.",
+                    focus: "Two ways to ensure database privacy.",
+                    context: "Hospital's staff data.",
+                    understanding: "You must show practical knowledge of Database Administration (DBA) security practices. They want to see specific methods that restrict access or scramble data to protect identities.",
+                    keyTerms: "encryption, cipher text, access levels, authorization, data anonymisation, separate tables.",
+                    decode: "6 marks for 'two ways' = 3 marks per way. For each way: Identify the method (e.g., Encryption) [1] + Explain how it protects privacy (scrambles data) [1] + Apply to context (only hospital staff with the key can read it) [1]."
+                },
+                markscheme: "Award [6 max] (Award [3 max] x [2 ways]):\nWay 1 Example:\n• By separating sensitive data (paygrade/DoB) into a separate table [1];\n• Minimum number of people have access to sensitive data [1];\n• And only using the unique identifiers of the staff as a reference point [1];\n\nWay 2 Example:\n• Encrypting the stored data in the database [1];\n• The data is scrambled/converted to cipher text [1];\n• For example, only the employees with the key can decrypt the data [1];\n\n(Other accepted ways: Access levels/authorization, Data anonymisation/masking, Database views)"
+            }
+        ];
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', () => {
+            renderPart1();
+            renderPart2();
+            lucide.createIcons(); // Initialize icons after rendering HTML
+        });
+
+        function renderPart1() {
+            const container = document.getElementById('part1-container');
+            let optionsHtml = '<option value="" disabled selected>Select Term...</option>';
+            COMMAND_TERMS.forEach(term => {
+                optionsHtml += `<option value="${term}">${term}</option>`;
+            });
+
+            DEFINITIONS.forEach(def => {
+                const rowHtml = `
+                    <div id="def-row-${def.id}" class="p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors bg-slate-50 border-slate-200 print:border-b print:rounded-none print:p-2 print:bg-transparent">
+                        <span class="font-medium flex-1">${def.text}</span>
+                        <div class="flex items-center gap-3">
+                            <div class="relative">
+                                <select 
+                                    id="def-select-${def.id}"
+                                    class="appearance-none bg-white border outline-none font-semibold rounded-lg px-4 py-2 pr-10 min-w-[160px] border-slate-300 focus:border-blue-500 print:appearance-none print:pr-4 print:border-none print:bg-transparent print:text-slate-900"
+                                >
+                                    ${optionsHtml}
+                                </select>
+                                <i data-lucide="chevron-down" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none print:hidden w-4 h-4"></i>
+                            </div>
+                            <div id="def-icon-container-${def.id}" class="hidden print:hidden flex">
+                                <i data-lucide="check-circle-2" id="def-icon-correct-${def.id}" class="text-green-500 hidden w-6 h-6"></i>
+                                <i data-lucide="x-circle" id="def-icon-wrong-${def.id}" class="text-red-500 hidden w-6 h-6"></i>
+                            </div>
+                        </div>
+                        <div id="def-correct-text-${def.id}" class="hidden text-sm text-red-600 md:hidden mt-2 font-medium print:block print:text-slate-700">
+                            Correct Answer: ${def.answer}
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', rowHtml);
+            });
+        }
+
+        function renderPart2() {
+            const container = document.getElementById('part2-container');
+            
+            QUESTIONS.forEach(q => {
+                const questionHtml = `
+                    <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm print:border-none print:shadow-none print:break-inside-avoid">
+                        <div class="bg-slate-100 px-6 py-4 border-b border-slate-200 flex gap-4 print:bg-transparent print:px-0 print:border-slate-300">
+                            <div class="bg-blue-600 text-white font-bold h-8 px-3 rounded-full flex items-center justify-center shrink-0 print:bg-slate-800">
+                                ${q.displayId}
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-800">${q.text}</h3>
+                        </div>
+                        
+                        <div class="p-6 space-y-5">
+                            
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">1. Topic Focus & Context</label>
+                                    <textarea 
+                                        class="part2-input w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all print:border print:border-slate-300 print:bg-white"
+                                        placeholder="e.g., Focus is Primary Keys, Context is Police Interviews..."
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                                        2. Examiner's Intent & Key Terms
+                                    </label>
+                                    <textarea 
+                                        class="part2-input w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all print:border print:border-slate-300 print:bg-white"
+                                        placeholder="What understanding do you need to show? What specific vocabulary (e.g. 'unique', 'PK', 'redundancy') must you use?"
+                                        rows="3"
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">3. Decode the Marks [${q.marks}]</label>
+                                <textarea 
+                                    class="part2-input w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all print:border print:border-slate-300 print:bg-white"
+                                    placeholder="e.g., 1 mark for stating X, 1 mark for linking to the scenario..."
+                                    rows="2"
+                                ></textarea>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="flex items-center gap-2 text-sm font-bold text-blue-900 mb-2 print:text-slate-900">
+                                    <i data-lucide="file-text" class="w-4 h-4 print:hidden"></i>
+                                    4. Write your actual answer based on your plan:
+                                </label>
+                                <textarea 
+                                    class="part2-input w-full border-2 border-blue-100 rounded-xl p-4 text-base focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all print:border print:border-slate-300 print:bg-white"
+                                    placeholder="Type your final exam answer here..."
+                                    rows="4"
+                                ></textarea>
+                            </div>
+
+                            <!-- Feedback Block (Hidden initially) -->
+                            <div id="feedback-${q.id}" class="hidden mt-8 space-y-4">
+                                <!-- Teacher's Guide -->
+                                <div class="bg-blue-50 border border-blue-200 rounded-xl p-5 print:border-slate-300 print:bg-slate-50">
+                                    <div class="flex items-center gap-2 text-blue-800 font-bold mb-3 print:text-slate-800">
+                                        <i data-lucide="award" class="w-5 h-5 print:hidden"></i>
+                                        <h4>Teacher's Deconstruction Guide</h4>
+                                    </div>
+                                    <div class="space-y-4 text-sm text-blue-900 print:text-slate-800">
+                                        <div class="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <p><strong>Command Term Meaning:</strong> <br/>${q.guide.termMeaning}</p>
+                                                <p class="mt-2"><strong>Required Focus:</strong> <br/>${q.guide.focus}</p>
+                                                <p class="mt-2"><strong>Required Context:</strong> <br/>${q.guide.context}</p>
+                                            </div>
+                                            <div class="bg-white/50 p-3 rounded-lg border border-blue-100 print:border-slate-200">
+                                                <p class="flex items-start gap-1"><i data-lucide="target" class="w-4 h-4 shrink-0 mt-0.5 print:hidden"></i> <strong>Required Understanding:</strong></p>
+                                                <p class="mb-2">${q.guide.understanding}</p>
+                                                
+                                                <p class="flex items-start gap-1"><i data-lucide="key-round" class="w-4 h-4 shrink-0 mt-0.5 print:hidden"></i> <strong>Essential Key Terms:</strong></p>
+                                                <p class="font-mono text-xs bg-blue-100 px-2 py-1 rounded inline-block print:bg-slate-200">${q.guide.keyTerms}</p>
+                                            </div>
+                                        </div>
+                                        <div class="bg-white/60 p-3 rounded-lg border border-blue-100 mt-2 print:border-slate-200">
+                                            <strong>Mark Breakdown:</strong> ${q.guide.decode}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Official Markscheme -->
+                                <div class="bg-green-50 border border-green-200 rounded-xl p-5 print:border-slate-300 print:bg-slate-50">
+                                    <div class="flex items-center gap-2 text-green-800 font-bold mb-3 print:text-slate-800">
+                                        <i data-lucide="check-circle-2" class="w-5 h-5 print:hidden"></i>
+                                        <h4>Official Markscheme</h4>
+                                    </div>
+                                    <div class="text-sm text-green-900 whitespace-pre-line leading-relaxed print:text-slate-800">
+                                        ${q.markscheme}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', questionHtml);
+            });
+        }
+
+        function revealFeedback() {
+            let score = 0;
+
+            // Process Part 1
+            DEFINITIONS.forEach(def => {
+                const selectEl = document.getElementById(`def-select-${def.id}`);
+                const rowEl = document.getElementById(`def-row-${def.id}`);
+                const iconContainer = document.getElementById(`def-icon-container-${def.id}`);
+                const correctIcon = document.getElementById(`def-icon-correct-${def.id}`);
+                const wrongIcon = document.getElementById(`def-icon-wrong-${def.id}`);
+                const correctText = document.getElementById(`def-correct-text-${def.id}`);
+                
+                const selectedValue = selectEl.value;
+                const isCorrect = selectedValue === def.answer;
+                
+                // Disable select
+                selectEl.disabled = true;
+                iconContainer.classList.remove('hidden');
+
+                // Reset classes
+                rowEl.className = "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors print:border-b print:rounded-none print:p-2 print:bg-transparent";
+                selectEl.className = "appearance-none bg-white border outline-none font-semibold rounded-lg px-4 py-2 pr-10 min-w-[160px] print:appearance-none print:pr-4 print:border-none print:bg-transparent print:text-slate-900";
+
+                if (isCorrect) {
+                    score++;
+                    rowEl.classList.add('bg-green-50', 'border-green-200');
+                    selectEl.classList.add('border-green-400', 'text-green-700');
+                    correctIcon.classList.remove('hidden');
+                    wrongIcon.classList.add('hidden');
+                    correctText.classList.add('hidden');
+                } else {
+                    rowEl.classList.add('bg-red-50', 'border-red-200');
+                    selectEl.classList.add('border-red-400', 'text-red-700');
+                    correctIcon.classList.add('hidden');
+                    wrongIcon.classList.remove('hidden');
+                    correctText.classList.remove('hidden'); // Show correct answer text
+                }
+            });
+
+            // Process Part 2
+            QUESTIONS.forEach(q => {
+                document.getElementById(`feedback-${q.id}`).classList.remove('hidden');
+            });
+            
+            // Disable all textareas
+            document.querySelectorAll('.part2-input').forEach(input => {
+                input.disabled = true;
+            });
+
+            // Update UI Score & Buttons
+            document.getElementById('score-display').textContent = score;
+            document.getElementById('reveal-controls').classList.add('hidden');
+            document.getElementById('results-controls').classList.remove('hidden');
+            
+            // Re-render icons that might have been hidden
+            lucide.createIcons();
+        }
+
+        function resetExercise() {
+            // Reset Part 1
+            DEFINITIONS.forEach(def => {
+                const selectEl = document.getElementById(`def-select-${def.id}`);
+                const rowEl = document.getElementById(`def-row-${def.id}`);
+                const iconContainer = document.getElementById(`def-icon-container-${def.id}`);
+                const correctIcon = document.getElementById(`def-icon-correct-${def.id}`);
+                const wrongIcon = document.getElementById(`def-icon-wrong-${def.id}`);
+                const correctText = document.getElementById(`def-correct-text-${def.id}`);
+                
+                selectEl.value = "";
+                selectEl.disabled = false;
+                iconContainer.classList.add('hidden');
+                correctIcon.classList.add('hidden');
+                wrongIcon.classList.add('hidden');
+                correctText.classList.add('hidden');
+                
+                // Reset styling
+                rowEl.className = "p-4 rounded-xl border flex flex-col md:flex-row md:items-center justify-between gap-4 transition-colors bg-slate-50 border-slate-200 print:border-b print:rounded-none print:p-2 print:bg-transparent";
+                selectEl.className = "appearance-none bg-white border outline-none font-semibold rounded-lg px-4 py-2 pr-10 min-w-[160px] border-slate-300 focus:border-blue-500 print:appearance-none print:pr-4 print:border-none print:bg-transparent print:text-slate-900";
+            });
+
+            // Reset Part 2
+            QUESTIONS.forEach(q => {
+                document.getElementById(`feedback-${q.id}`).classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.part2-input').forEach(input => {
+                input.value = "";
+                input.disabled = false;
+            });
+
+            // Reset Header
+            document.getElementById('student-name').value = "";
+
+            // Update Buttons
+            document.getElementById('reveal-controls').classList.remove('hidden');
+            document.getElementById('results-controls').classList.add('hidden');
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>

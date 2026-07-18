@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mastering Binary Data Representation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
+        }
+
+        .mono { font-family: 'Fira Code', monospace; }
+
+        .bit-box {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+            user-select: none;
+        }
+
+        .bit-box:hover {
+            transform: translateY(-2px);
+            filter: brightness(0.95);
+        }
+
+        .bit-on {
+            background-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+            border-color: #1d4ed8;
+        }
+
+        .bit-off {
+            background-color: #f8fafc;
+            color: #64748b;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 1rem;
+        }
+
+        .tab-active {
+            border-bottom: 3px solid #2563eb;
+            color: #2563eb !important;
+        }
+
+        .comparison-bar {
+            height: 24px;
+            border-radius: 12px;
+            background: #e2e8f0;
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            transition: width 0.5s ease-out;
+        }
+        
+        .math-block {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.25rem;
+            font-family: 'Fira Code', monospace;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+            border-color: #2563eb;
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        section {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wave-bar {
+            width: 4px;
+            background: #2563eb;
+            border-radius: 2px;
+            transition: height 0.2s ease;
+        }
+
+        .video-strip {
+            display: flex;
+            gap: 4px;
+            overflow: hidden;
+            background: #e2e8f0;
+            padding: 4px;
+            border-radius: 8px;
+        }
+        .video-frame {
+            width: 65px;
+            height: 45px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #64748b;
+            font-weight: bold;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+        .checklist-item:hover {
+            background: #f8fafc;
+        }
+        .checklist-check {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            cursor: pointer;
+        }
+
+        .exam-card {
+            border-left: 4px solid #2563eb;
+            background: white;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-12 text-center">
+            <h1 class="text-4xl md:text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-emerald-600">
+                Data Representation
+            </h1>
+            <p class="text-slate-500 text-lg font-medium">A Master Guide to Binary, Multimedia, and Digital Logic.</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 border-b border-slate-200">
+            <button onclick="showSection('intro')" id="tab-intro" class="px-4 py-2 font-semibold tab-active transition text-slate-900">Fundamentals</button>
+            <button onclick="showSection('methods')" id="tab-methods" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Conversion</button>
+            <button onclick="showSection('arithmetic')" id="tab-arithmetic" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Arithmetic</button>
+            <button onclick="showSection('text')" id="tab-text" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Text</button>
+            <button onclick="showSection('signed')" id="tab-signed" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Signed</button>
+            <button onclick="showSection('real')" id="tab-real" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Real</button>
+            <button onclick="showSection('units')" id="tab-units" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Units</button>
+            <button onclick="showSection('images')" id="tab-images" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Images</button>
+            <button onclick="showSection('audio')" id="tab-audio" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Audio</button>
+            <button onclick="showSection('video')" id="tab-video" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Video</button>
+            <button onclick="showSection('exam')" id="tab-exam" class="px-4 py-2 font-semibold text-slate-500 hover:text-blue-600 transition">Exam Practice</button>
+        </nav>
+
+        <!-- Section: Fundamentals -->
+        <section id="section-intro" class="space-y-8">
+            <div class="glass-card p-8 border-2 border-blue-100">
+                <h2 class="text-2xl font-bold mb-6 text-slate-800 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                    A1.2 Curriculum Checklist
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-bold text-blue-600 text-xs uppercase tracking-widest mb-3 border-b pb-1">A1.2.1 Number Systems</h3>
+                            <div class="space-y-1">
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Binary vs. Decimal vs. Hexadecimal</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Conversions: Denary ↔ Binary ↔ Hex</span></label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-blue-600 text-xs uppercase tracking-widest mb-3 border-b pb-1">A1.2.2 Binary Arithmetic</h3>
+                            <div class="space-y-1">
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Addition rules and carry bits</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Logical Overflow (8-bit limits)</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Logical Binary Shifts (Multiplication/Division)</span></label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-blue-600 text-xs uppercase tracking-widest mb-3 border-b pb-1">A1.2.3 Signed Integers</h3>
+                            <div class="space-y-1">
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Sign and Magnitude (Flag bit & two zeros)</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Two's Complement (Negative weight -128)</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <h3 class="font-bold text-blue-600 text-xs uppercase tracking-widest mb-3 border-b pb-1">A1.2.4 Real Numbers</h3>
+                            <div class="space-y-1">
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Floating Point: Sign, Exponent, Mantissa</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Normalization & Hidden Bit (IEEE 754)</span></label>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-blue-600 text-xs uppercase tracking-widest mb-3 border-b pb-1">A1.2.5 Multimedia</h3>
+                            <div class="space-y-1">
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">ASCII vs Unicode; Variable vs Fixed Encoding</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">Bitmap Anatomy (Header vs Pixel Data)</span></label>
+                                <label class="checklist-item"><input type="checkbox" class="checklist-check"><span class="text-sm">ADC: Sampling & Quantization Process</span></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-4 text-slate-800 flex items-center gap-2">
+                    <span class="mr-2 text-blue-600">01.</span> The 8-Bit Playfield
+                </h2>
+                <div class="flex flex-col items-center">
+                    <div id="bit-container" class="flex gap-2 md:gap-4 mb-10"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
+                        <div class="bg-blue-50 p-6 rounded-2xl text-center border border-blue-100 shadow-sm">
+                            <span class="text-xs text-blue-600 uppercase font-bold tracking-wider block mb-1">Decimal</span>
+                            <span id="decimal-display" class="text-5xl font-bold text-blue-700 mono">0</span>
+                        </div>
+                        <div class="bg-emerald-50 p-6 rounded-2xl text-center border border-emerald-100 shadow-sm">
+                            <span class="text-xs text-emerald-600 uppercase font-bold tracking-wider block mb-1">Hexadecimal</span>
+                            <span id="hex-display" class="text-5xl font-bold text-emerald-700 mono">0x00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-8 bg-gradient-to-br from-white to-blue-50/30">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800">Hardware Reality: Why Binary?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-blue-600 uppercase text-xs tracking-widest flex items-center gap-2">Reliability</h3>
+                        <p class="text-sm text-slate-600">Hardware works with <strong>voltage</strong>. Detecting "High" vs "Low" is extremely reliable compared to trying to detect 10 different voltage levels accurately.</p>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="font-bold text-emerald-600 uppercase text-xs tracking-widest flex items-center gap-2">Signal Gap</h3>
+                        <p class="text-sm text-slate-600">Binary has a massive "safety gap". A 4.2V signal is still clearly a "1", even if it should have been 5V. This protects data from electrical interference.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Conversion Lab -->
+        <section id="section-methods" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800">Understanding Number Systems</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="p-6 bg-blue-50 border border-blue-100 rounded-2xl shadow-sm">
+                        <h3 class="font-bold text-blue-800 uppercase tracking-widest text-xs mb-2">Binary (Base-2)</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed">Computers operate using billions of microscopic switches that can only be <strong>On (1)</strong> or <strong>Off (0)</strong>. In binary, each position represents a power of 2 (1, 2, 4, 8, 16...). It is the fundamental, native language of all digital hardware.</p>
+                    </div>
+                    <div class="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm">
+                        <h3 class="font-bold text-emerald-800 uppercase tracking-widest text-xs mb-2">Hexadecimal (Base-16)</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed">Binary sequences get very long, making them hard for humans to read. Hexadecimal uses 16 symbols (0-9, and A-F for 10-15). Because exactly <strong>4 binary bits (a nibble) perfectly equal 1 Hex digit</strong>, it acts as a highly efficient shorthand for binary.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold mb-6 text-blue-600 border-b border-slate-100 pb-2">Number System Lab</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Binary to Decimal</h3>
+                        <input type="text" id="bin-to-dec-input" placeholder="e.g., 1011" class="w-full bg-white border border-slate-200 rounded-lg p-4 mono text-xl text-blue-600">
+                        <div id="bin-to-dec-math" class="math-block text-sm min-h-[80px] flex items-center justify-center text-slate-400 italic text-center font-mono">Result...</div>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest">Decimal to Binary</h3>
+                        <input type="number" id="dec-to-bin-input" placeholder="e.g., 42" class="w-full bg-white border border-slate-200 rounded-lg p-4 mono text-xl text-emerald-600">
+                        <div id="dec-to-bin-math" class="math-block text-sm min-h-[100px] flex items-center justify-center text-slate-400 italic text-center font-mono">Steps...</div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Binary to Hex</h3>
+                        <input type="text" id="bin-to-hex-input" placeholder="e.g., 1100" class="w-full bg-white border border-slate-200 rounded-lg p-4 mono text-xl text-blue-600">
+                        <div id="bin-to-hex-math" class="math-block text-sm min-h-[80px] flex items-center justify-center text-slate-400 italic text-center font-mono">Nibbles...</div>
+                    </div>
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider">Hex to Binary</h3>
+                        <input type="text" id="hex-to-bin-input" placeholder="e.g., FF" class="w-full bg-white border border-slate-200 rounded-lg p-4 mono text-xl text-emerald-600 uppercase">
+                        <div id="hex-to-bin-math" class="math-block text-sm min-h-[80px] flex items-center justify-center text-slate-400 italic text-center font-mono">Expansion...</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Arithmetic -->
+        <section id="section-arithmetic" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-blue-600 border-b pb-2">Binary Arithmetic & Overflow</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div class="math-block space-y-2 text-sm">
+                        <h3 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Addition Rules</h3>
+                        <p>0 + 0 = 0</p><p>0 + 1 = 1</p><p>1 + 1 = 10₂ (0, Carry 1)</p><p>1 + 1 + 1 = 11₂ (1, Carry 1)</p>
+                    </div>
+                    <div class="bg-slate-50 p-6 rounded-3xl border border-slate-200">
+                        <h3 class="text-center font-bold text-slate-400 uppercase text-xs mb-6">Interactive 8-Bit Adder</h3>
+                        <input type="number" id="add-a" value="150" class="w-full mb-2 p-2 border mono text-center rounded shadow-inner">
+                        <input type="number" id="add-b" value="120" class="w-full mb-4 p-2 border mono text-center rounded shadow-inner">
+                        <div class="flex justify-between items-center p-4 bg-white rounded-xl border shadow-sm">
+                            <div id="add-res-bin" class="text-2xl font-bold mono text-blue-600">00000000</div>
+                            <div id="overflow-flag" class="px-3 py-1 rounded-full bg-slate-200 text-slate-400 text-[10px] font-bold uppercase transition-all">Overflow</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                    <h3 class="font-bold text-emerald-800 text-sm uppercase mb-2">Logical Binary Shifts</h3>
+                    <p class="text-xs text-slate-600 leading-relaxed"><strong>Left Shift:</strong> Multiplies by 2ⁿ. Bits move left, trailing zeros added. <br> <strong>Right Shift:</strong> Divides by 2ⁿ. Bits move right, remainders discarded.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Text & Unicode -->
+        <section id="section-text" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800">Encoding Text</h2>
+                <input type="text" id="text-input" placeholder="Type text..." class="w-full bg-white border border-slate-200 rounded-lg p-4 mb-8 text-xl mono text-slate-700 shadow-sm">
+                <div id="binary-text-output" class="flex flex-wrap gap-4 text-center justify-center min-h-[100px] mb-12"></div>
+                
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Technical Comparison</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="p-5 bg-white border rounded-xl shadow-sm"><h4 class="font-bold text-blue-600 mb-2 uppercase text-[10px]">UTF-8</h4><p class="text-xs text-slate-500 leading-relaxed">Variable 1-4 Bytes. Web standard. Compatible with ASCII.</p></div>
+                    <div class="p-5 bg-white border rounded-xl shadow-sm"><h4 class="font-bold text-emerald-600 mb-2 uppercase text-[10px]">UTF-16</h4><p class="text-xs text-slate-500 leading-relaxed">Variable 2 or 4 Bytes. Java/Windows internal.</p></div>
+                    <div class="p-5 bg-white border rounded-xl shadow-sm"><h4 class="font-bold text-orange-600 mb-2 uppercase text-[10px]">UTF-32</h4><p class="text-xs text-slate-500 leading-relaxed">Fixed 4 Bytes. Simple indexing, heavy memory.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Signed Numbers -->
+        <section id="section-signed" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-orange-600 border-b pb-2 tracking-tight">Signed Integer Systems</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div class="space-y-6">
+                        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-slate-800 uppercase tracking-tighter mb-2 text-xs">1. Sign and Magnitude</h3>
+                            <p class="text-sm text-slate-600 leading-relaxed">The first bit is a flag: 0 (+), 1 (-). Flaw: Two zeros (+0, -0) and complex subtraction circuitry.</p>
+                        </div>
+                        <div class="p-6 bg-orange-50 border border-orange-100 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-orange-800 uppercase tracking-tighter mb-2 text-xs">2. Two's Complement</h3>
+                            <p class="text-sm text-slate-700 leading-relaxed mb-4">CPU standard. The MSB has a <strong>negative weight</strong> (-128). Allows addition and subtraction to use the same logic.</p>
+                            <p class="text-[10px] text-slate-500 font-mono">Conversion: Positive bits → Flip all → Add 1.</p>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-3xl border">
+                        <div id="signed-bit-container" class="flex gap-2 md:gap-4 mb-8"></div>
+                        <div class="grid grid-cols-2 gap-4 w-full">
+                            <div class="bg-white p-4 rounded-xl text-center border shadow-sm"><span class="text-[10px] font-bold text-slate-400">SM Value</span><div id="sm-display" class="text-2xl font-bold mono">0</div></div>
+                            <div class="bg-orange-600 p-4 rounded-xl text-center shadow-lg"><span class="text-[10px] font-bold text-orange-100">TC Value</span><div id="signed-decimal-display" class="text-2xl font-bold text-white mono">0</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Real Numbers -->
+        <section id="section-real" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-purple-600 border-b pb-2">Real Numbers: IEEE 754 Floating Point</h2>
+                
+                <p class="text-slate-600 mb-8 leading-relaxed">To represent fractional numbers like 0.5 or very large numbers like 10³⁸ in binary, computers use <strong>Floating Point</strong>. This is essentially scientific notation: ±1.Mantissa × 2^Exponent.</p>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div class="space-y-6">
+                        <div class="p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-slate-800 uppercase text-xs mb-3 flex items-center gap-2">
+                                <span class="bg-blue-600 text-white p-1 rounded">1</span> Normalization
+                            </h3>
+                            <p class="text-sm text-slate-600 leading-relaxed mb-4">Computers "normalize" numbers to keep the binary point consistent. Exactly one non-zero digit stays on the left (e.g., 1.011).</p>
+                            <div class="bg-slate-50 p-4 rounded-xl font-mono text-[11px] border"><strong>The "Hidden Bit":</strong> Normalized binary always starts with "1", so we <strong>save space by not storing it</strong>.</div>
+                        </div>
+                        <div class="p-6 bg-emerald-50 border border-emerald-100 rounded-2xl shadow-sm">
+                            <h3 class="font-bold text-emerald-800 uppercase text-xs mb-3 flex items-center gap-2">
+                                <span class="bg-emerald-600 text-white p-1 rounded">2</span> The Biased Exponent
+                            </h3>
+                            <p class="text-sm text-slate-700 leading-relaxed mb-4">Uses a <strong>Bias of 127</strong> to store negative powers safely without a second sign bit.</p>
+                            <div class="bg-white/60 p-4 rounded-xl text-[11px] text-emerald-900 border border-emerald-200">
+                                <strong>Formula:</strong> Stored Exponent = Actual Exponent + 127
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="p-6 bg-slate-900 text-slate-300 rounded-2xl border-4 border-slate-800 shadow-xl">
+                            <h4 class="text-blue-400 font-bold uppercase text-[10px] mb-4 tracking-widest">Example A: 13.5₁₀</h4>
+                            <div class="space-y-3 font-mono text-[11px]">
+                                <p><span class="text-slate-500">1. Binary:</span> 1101.1₂</p>
+                                <p><span class="text-slate-500">2. Normalize:</span> 1.1011 × 2³</p>
+                                <p><span class="text-slate-500">3. Exponent:</span> 127 + 3 = 130 (<span class="text-emerald-400">10000010₂</span>)</p>
+                                <p><span class="text-slate-500">4. Mantissa:</span> <span class="text-orange-400">1011...</span> (Hidden 1)</p>
+                            </div>
+                        </div>
+                        <div class="p-6 bg-slate-900 text-slate-300 rounded-2xl border-4 border-slate-800 shadow-xl">
+                            <h4 class="text-purple-400 font-bold uppercase text-[10px] mb-4 tracking-widest">Example B: 0.125₁₀</h4>
+                            <div class="space-y-3 font-mono text-[11px]">
+                                <p><span class="text-slate-500">1. Binary:</span> 0.001₂</p>
+                                <p><span class="text-slate-500">2. Normalize:</span> 1.0 × 2⁻³</p>
+                                <p><span class="text-slate-500">3. Exponent:</span> 127 - 3 = 124 (<span class="text-emerald-400">01111100₂</span>)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Storage Units -->
+        <section id="section-units" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 text-center uppercase tracking-widest text-sm">Measurement Systems</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div>
+                        <h3 class="text-blue-600 font-bold mb-4 uppercase text-xs border-b pb-2">Metric SI (10ⁿ)</h3>
+                        <table class="w-full text-left text-sm border-collapse">
+                            <tr class="border-b font-bold text-slate-400"><th>Unit</th><th>Symbol</th><th>Bytes</th></tr>
+                            <tr class="border-b"><td>Kilobyte</td><td>KB</td><td>10³</td></tr>
+                            <tr class="border-b"><td>Megabyte</td><td>MB</td><td>10⁶</td></tr>
+                            <tr class="border-b"><td>Gigabyte</td><td>GB</td><td>10⁹</td></tr>
+                            <tr class="border-b"><td>Terabyte</td><td>TB</td><td>10¹²</td></tr>
+                            <tr><td>... to Yottabyte</td><td>YB</td><td>10²⁴</td></tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h3 class="text-emerald-600 font-bold mb-4 uppercase text-xs border-b pb-2">IEC Binary (2ⁿ)</h3>
+                        <table class="w-full text-left text-sm border-collapse">
+                            <tr class="border-b font-bold text-slate-400"><th>Unit</th><th>Symbol</th><th>Bytes</th></tr>
+                            <tr class="border-b"><td>Kibibyte</td><td>KiB</td><td>2¹⁰</td></tr>
+                            <tr class="border-b"><td>Mebibyte</td><td>MiB</td><td>2²⁰</td></tr>
+                            <tr class="border-b"><td>Gibibyte</td><td>GiB</td><td>2³⁰</td></tr>
+                            <tr class="border-b"><td>Tebibyte</td><td>TiB</td><td>2⁴⁰</td></tr>
+                            <tr><td>... to Yobibyte</td><td>YiB</td><td>2⁸⁰</td></tr>
+                        </table>
+                    </div>
+                </div>
+                <div class="bg-blue-50 p-6 rounded-2xl border border-blue-100 flex items-center gap-8 shadow-inner">
+                    <input type="number" id="unit-input" value="1" class="w-32 bg-white border border-slate-200 rounded-lg p-4 mono">
+                    <div class="space-y-1">
+                        <div id="val-si" class="font-mono text-slate-900">1,000,000,000 Bytes (GB)</div>
+                        <div id="val-iec" class="font-mono text-emerald-700 font-bold">931.32 MiB</div>
+                        <div class="comparison-bar w-48 mt-2"><div id="iec-bar" class="bar-fill bg-emerald-500" style="width: 93%;"></div></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Images -->
+        <section id="section-images" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-b pb-2">Visual Data: Bitmaps & Compression</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 mb-12">
+                    <div class="lg:col-span-2 space-y-6">
+                        <h3 class="text-lg font-bold text-blue-700 uppercase text-xs tracking-widest">How Bitmaps are Formed</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed">A Bitmap (Raster) image is formed by dividing an image into a grid of tiny colored squares called <strong>pixels</strong>. The number of pixels (Width × Height) is the <strong>Resolution</strong>. Each pixel's color is represented by a binary number.</p>
+                        
+                        <div class="space-y-4 bg-slate-50 p-6 rounded-2xl border border-slate-100 shadow-inner">
+                            <h4 class="font-bold text-slate-700 text-[10px] uppercase">BMP Binary Anatomy</h4>
+                            <div class="flex gap-4"><div class="w-24 shrink-0 bg-blue-600 text-white text-[10px] font-bold p-2 rounded flex items-center justify-center text-center uppercase">FILE HEADER</div><p class="text-xs text-slate-500">Metadata identifier. Starts with bytes 'BM'. Stores total file size.</p></div>
+                            <div class="flex gap-4"><div class="w-24 shrink-0 bg-emerald-600 text-white text-[10px] font-bold p-2 rounded flex items-center justify-center text-center uppercase">DIB HEADER</div><p class="text-xs text-slate-500">Image specifications: width/height and bit-depth.</p></div>
+                            <div class="flex gap-4"><div class="w-24 shrink-0 bg-slate-800 text-white text-[10px] font-bold p-2 rounded flex items-center justify-center text-center uppercase">PIXEL ARRAY</div><p class="text-xs text-slate-500">The actual payload. Raw list of binary RGB numbers scanned left-to-right, top-to-bottom.</p></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">24-Bit Color Mixer</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-4"><span class="w-4 text-red-600 font-bold uppercase text-[10px]">R</span><input type="range" id="r-slider" min="0" max="255" value="128" class="flex-1"><span id="r-val" class="mono text-xs w-8 text-right font-bold">128</span></div>
+                            <div class="flex items-center gap-4"><span class="w-4 text-green-600 font-bold uppercase text-[10px]">G</span><input type="range" id="g-slider" min="0" max="255" value="128" class="flex-1"><span id="g-val" class="mono text-xs w-8 text-right font-bold">128</span></div>
+                            <div class="flex items-center gap-4"><span class="w-4 text-blue-600 font-bold uppercase text-[10px]">B</span><input type="range" id="b-slider" min="0" max="255" value="128" class="flex-1"><span id="b-val" class="mono text-xs w-8 text-right font-bold">128</span></div>
+                        </div>
+                        <div id="color-preview" class="w-full h-20 rounded-2xl border-4 border-slate-100 shadow-inner mt-4 transition-colors"></div>
+                        <div class="math-block mt-4 text-center p-4 text-[10px] font-bold">
+                            <div class="text-red-500" id="r-bin">10000000</div><div class="text-green-600" id="g-bin">10000000</div><div class="text-blue-600" id="b-bin">10000000</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <!-- Image Size Calculator -->
+                    <div class="bg-blue-50 p-8 rounded-2xl border border-blue-100 shadow-inner">
+                        <h3 class="text-lg font-bold text-blue-800 mb-4">Calculating Image Size & Colour Depth</h3>
+                        <p class="text-xs text-slate-600 mb-4 font-mono bg-white p-3 rounded border">Size (Bytes) = (Width × Height × Color Depth) ÷ 8</p>
+                        <div class="grid grid-cols-3 gap-4 mb-6">
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">Width</label><input type="number" id="img-width" value="1920" class="w-full p-2 border rounded mono text-sm mt-1"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">Height</label><input type="number" id="img-height" value="1080" class="w-full p-2 border rounded mono text-sm mt-1"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">Depth</label><select id="img-depth" class="w-full p-2 border rounded font-bold text-sm mt-1"><option value="1">1-bit (2 colors)</option><option value="8">8-bit (256 colors)</option><option value="24" selected>24-bit (16.7M)</option></select></div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-[10px] uppercase text-blue-600 font-bold tracking-widest">Uncompressed Size</div>
+                            <div id="calc-size" class="text-4xl font-bold text-blue-700 font-mono mt-1">5.93 MB</div>
+                        </div>
+                    </div>
+
+                    <!-- Compression & File Types -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Compression & File Types</h3>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm flex items-start gap-4">
+                                <div class="w-12 h-12 bg-slate-100 text-slate-500 font-bold rounded flex items-center justify-center text-xs shrink-0">.BMP</div>
+                                <div>
+                                    <h4 class="font-bold text-slate-700 text-sm">Uncompressed</h4>
+                                    <p class="text-[11px] text-slate-500 mt-1">Stores every pixel exactly as it is. Huge file sizes, perfect quality. Bad for web.</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm flex items-start gap-4">
+                                <div class="w-12 h-12 bg-emerald-100 text-emerald-700 font-bold rounded flex items-center justify-center text-xs shrink-0">.PNG</div>
+                                <div>
+                                    <h4 class="font-bold text-emerald-700 text-sm">Lossless Compression</h4>
+                                    <p class="text-[11px] text-slate-500 mt-1">Uses algorithms like <strong>Run-Length Encoding (RLE)</strong> to shrink file size without losing pixel data. Excellent for logos/text.</p>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-white border border-slate-200 rounded-xl shadow-sm flex items-start gap-4">
+                                <div class="w-12 h-12 bg-orange-100 text-orange-700 font-bold rounded flex items-center justify-center text-xs shrink-0">.JPG</div>
+                                <div>
+                                    <h4 class="font-bold text-orange-700 text-sm">Lossy Compression</h4>
+                                    <p class="text-[11px] text-slate-500 mt-1">Permanently discards visual data the human eye barely notices. Tiny file sizes, making it the standard for photos.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Audio -->
+        <section id="section-audio" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-b pb-2">Analog to Digital: Audio</h2>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-12 border-b pb-12">
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest border-b pb-2">The 3-Step ADC Process</h3>
+                        <li class="p-4 bg-white border border-slate-200 rounded-xl text-sm list-none shadow-sm">
+                            <strong class="text-blue-600 block">1. Sampling:</strong> Taking continuous analog sound waves and capturing voltage "snapshots" at fixed intervals. Higher sampling rate = smoother digital wave.
+                        </li>
+                        <li class="p-4 bg-white border border-slate-200 rounded-xl text-sm list-none shadow-sm">
+                            <strong class="text-emerald-600 block">2. Quantization:</strong> Measuring each snapshot's wave height and rounding it to the nearest available digital value (determined by Bit Depth).
+                        </li>
+                        <li class="p-4 bg-white border border-slate-200 rounded-xl text-sm list-none shadow-sm">
+                            <strong class="text-orange-600 block">3. Encoding:</strong> Storing those rounded measurement numbers as a sequence of binary bits.
+                        </li>
+                    </div>
+                    <div class="glass-card p-6 flex flex-col items-center justify-center border-slate-200 bg-slate-50 shadow-none">
+                        <div id="audio-wave-sim" class="flex items-end gap-1 h-32 w-full justify-center"></div>
+                        <p class="text-[10px] text-slate-400 mt-6 uppercase font-bold tracking-widest">Discrete Sample Points</p>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-8">
+                    <div class="space-y-6">
+                        <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm"><h3 class="font-bold text-blue-700 text-xs uppercase mb-2">Nyquist Theorem</h3><p class="text-[11px] text-slate-600 leading-relaxed">To accurately record a sound, sample at <strong>twice</strong> its highest frequency. Humans hear up to 20kHz, so CDs sample at 44.1kHz.</p></div>
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 shadow-sm"><h3 class="font-bold text-emerald-700 text-xs uppercase mb-2">Bitrate & Quality</h3><p class="text-[11px] text-slate-600 leading-relaxed">Bitrate is the amount of data processed per second. <br><em class="font-mono">Bitrate = Sample Rate × Bit Depth × Channels</em></p></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold text-slate-800 mb-4">Calculating Audio File Size</h3>
+                        <p class="text-[10px] text-slate-500 mb-4 font-mono bg-slate-50 p-2 rounded border">Size (Bytes) = (Sample Rate × Bit Depth × Channels × Seconds) ÷ 8</p>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">Duration (sec)</label><input type="number" id="audio-duration" value="60" class="w-full p-2 border rounded mono text-sm mt-1"></div>
+                            <div><label class="text-[10px] font-bold text-slate-500 uppercase">Sample Rate</label><select id="audio-rate" class="w-full p-2 border rounded font-bold text-sm mt-1"><option value="44100">44.1 kHz (CD)</option><option value="48000">48.0 kHz (DVD)</option></select></div>
+                        </div>
+                        <div class="text-center mt-4">
+                            <div class="text-[10px] uppercase text-blue-600 font-bold tracking-widest">Uncompressed Size (Stereo 16-bit)</div>
+                            <div id="audio-calc-size" class="text-4xl font-bold text-blue-700 font-mono mt-1">10.09 MB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Video -->
+        <section id="section-video" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-slate-800 border-b pb-2">Video Compression & Formats</h2>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-bold text-blue-700 uppercase text-xs tracking-widest">Compression Approaches</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed">Raw video takes up massive amounts of storage (e.g., 10 seconds of uncompressed 1080p is ~1.5 GB). To make streaming possible, compression is heavily applied:</p>
+                        <div class="space-y-4">
+                            <div class="p-5 bg-blue-50 border border-blue-100 rounded-xl shadow-sm">
+                                <h4 class="font-bold text-blue-800 text-sm mb-1">Spatial (Intra-frame) Compression</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed">Compresses each frame individually, similar to JPEG image compression. It removes redundant pixel data within the <em>same</em> picture.</p>
+                            </div>
+                            <div class="p-5 bg-emerald-50 border border-emerald-100 rounded-xl shadow-sm">
+                                <h4 class="font-bold text-emerald-800 text-sm mb-1">Temporal (Inter-frame) Compression</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed">Instead of storing every frame completely, it only saves the <strong>differences (deltas)</strong> between frames. Static backgrounds are kept in memory and reused.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 text-center flex flex-col justify-center">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-2">The GOP (Group of Pictures)</h3>
+                        <div class="video-strip flex justify-center items-center h-32 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner">
+                            <div class="video-frame border-emerald-500 border-2 font-bold text-emerald-600 bg-white leading-tight">I-Frame<br><span class="text-[8px] font-normal text-slate-400">(Key)</span></div>
+                            <div class="video-frame bg-slate-100 leading-tight">P-Frame<br><span class="text-[8px] font-normal text-slate-400">(Delta)</span></div>
+                            <div class="video-frame bg-slate-100 leading-tight">P-Frame<br><span class="text-[8px] font-normal text-slate-400">(Delta)</span></div>
+                            <div class="video-frame border-emerald-500 border-2 font-bold text-emerald-600 bg-white leading-tight">I-Frame<br><span class="text-[8px] font-normal text-slate-400">(Key)</span></div>
+                        </div>
+                        <div class="bg-slate-900 text-white p-4 rounded-xl mt-4 shadow-xl">
+                            <div class="text-[10px] uppercase text-slate-400 font-bold tracking-widest mb-1">Estimated Compressed Size (10s 1080p)</div>
+                            <div id="vid-calc-size" class="text-3xl font-bold text-emerald-400 font-mono">9.32 MB</div>
+                            <div class="text-[10px] text-slate-500 italic mt-1">(Assuming standard 200:1 H.264 ratio)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-slate-100 pt-8">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest mb-4">Codecs (The Compressors)</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm"><strong class="text-blue-600 text-xs">H.264 (AVC):</strong> <span class="text-xs text-slate-600">The most widely used codec globally. Highly compatible with all web devices.</span></div>
+                            <div class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm"><strong class="text-emerald-600 text-xs">H.265 (HEVC):</strong> <span class="text-xs text-slate-600">50% more efficient than H.264. The standard for 4K and high-end video.</span></div>
+                            <div class="p-3 bg-white border border-slate-200 rounded-lg shadow-sm"><strong class="text-orange-600 text-xs">AV1 / VP9:</strong> <span class="text-xs text-slate-600">Modern, royalty-free codecs heavily used by platforms like YouTube and Netflix.</span></div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest mb-4">Containers (The File Types)</h3>
+                        <div class="space-y-3">
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg"><strong class="text-slate-800 text-xs">.MP4:</strong> <span class="text-xs text-slate-600">The universal container. Can package video (usually H.264), audio, and subtitles together.</span></div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg"><strong class="text-slate-800 text-xs">.MKV:</strong> <span class="text-xs text-slate-600">An open-source container that supports unlimited audio and subtitle tracks.</span></div>
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-lg"><strong class="text-slate-800 text-xs">.MOV / .AVI:</strong> <span class="text-xs text-slate-600">Legacy containers created by Apple and Microsoft, respectively.</span></div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 mt-4 italic leading-relaxed border-l-2 border-slate-300 pl-3"><strong>Note:</strong> A file extension like .MP4 is just a "box" or wrapper. The actual binary data inside is compressed by a codec. You can have one MP4 file that uses H.264, and another MP4 file that uses H.265.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section: Exam Practice -->
+        <section id="section-exam" class="hidden space-y-8">
+            <div class="glass-card p-8">
+                <h2 class="text-2xl font-bold mb-8 text-blue-600 flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                    A1.2 IB Exam Practice Questions
+                </h2>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="exam-card"><strong>1.</strong> Define 'Hexadecimal' and state one reason why it is used in Computer Science.</div>
+                    <div class="exam-card"><strong>2.</strong> Convert the binary number 10110111₂ to Hexadecimal. Show your working.</div>
+                    <div class="exam-card"><strong>3.</strong> Convert the denary value 204₁₀ to 8-bit binary using the division method.</div>
+                    <div class="exam-card"><strong>4.</strong> Explain what is meant by a 'Logical Overflow' in an 8-bit addition.</div>
+                    <div class="exam-card"><strong>5.</strong> Perform binary addition on 11010011 and 01100101. State the 8-bit result and identify if overflow occurred.</div>
+                    <div class="exam-card"><strong>6.</strong> Describe the effect of a 'Logical Right Shift' of two positions on the binary integer 1100₂.</div>
+                    <div class="exam-card"><strong>7.</strong> Outline one disadvantage of using 'Sign and Magnitude' to represent negative integers.</div>
+                    <div class="exam-card"><strong>8.</strong> Convert the denary number -45₁₀ into 8-bit Two's Complement representation.</div>
+                    <div class="exam-card"><strong>9.</strong> Explain why Two's Complement is the preferred method for modern CPUs compared to Sign and Magnitude.</div>
+                    <div class="exam-card"><strong>10.</strong> Identify the purpose of the 'Biased Exponent' in an IEEE 754 floating-point number.</div>
+                    <div class="exam-card"><strong>11.</strong> Outline how 'Normalization' maximizes the precision of a floating-point number.</div>
+                    <div class="exam-card"><strong>12.</strong> Explain the 'Hidden Bit' concept in normalized binary floating point.</div>
+                    <div class="exam-card"><strong>13.</strong> Discuss why a value like 0.1₁₀ can cause precision errors when stored in binary.</div>
+                    <div class="exam-card"><strong>14.</strong> Compare ASCII and Unicode character sets in terms of storage requirements and global compatibility.</div>
+                    <div class="exam-card"><strong>15.</strong> State the contents of a 'Bitmap File Header' and its necessity for displaying an image correctly.</div>
+                    <div class="exam-card"><strong>16.</strong> Define 'Colour Depth' and calculate the number of unique colours available in a 24-bit image.</div>
+                    <div class="exam-card"><strong>17.</strong> Describe the process of 'Quantization' during Analog-to-Digital Conversion (ADC).</div>
+                    <div class="exam-card"><strong>18.</strong> Explain how the 'Sampling Rate' and 'Bit Depth' affect the file size and quality of digital audio.</div>
+                    <div class="exam-card"><strong>19.</strong> Explain the technical reason why a "1TB" hard drive shows only ~931GiB in Windows.</div>
+                    <div class="exam-card"><strong>20.</strong> Contrast 'Lossy' and 'Lossless' compression techniques, providing a specific multimedia file format for each.</div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="mt-12 text-center text-slate-400 text-sm pt-8 pb-12 border-t border-slate-200">
+            Interactive Computer Science Resource &copy; 2026 Binary Explorer
+        </footer>
+    </div>
+
+    <script>
+        let bits = new Array(8).fill(0);
+        let signedBits = new Array(8).fill(0);
+        const weights = [128, 64, 32, 16, 8, 4, 2, 1];
+        const signedWeights = [-128, 64, 32, 16, 8, 4, 2, 1];
+
+        window.onload = () => {
+            renderBits(); renderSignedBits(); setupTextConverter(); setupColorSliders();
+            setupUnitConverter(); setupConversionLab(); setupImageCalculator();
+            setupAudioLogic(); setupVideoLogic(); setupArithmetic();
+        };
+
+        function showSection(id) {
+            const sections = ['intro', 'methods', 'arithmetic', 'text', 'signed', 'real', 'units', 'images', 'audio', 'video', 'exam'];
+            sections.forEach(s => {
+                const el = document.getElementById(`section-${s}`);
+                const tab = document.getElementById(`tab-${s}`);
+                if (el) el.classList.add('hidden');
+                if (tab) { tab.classList.remove('tab-active', 'text-slate-900'); tab.classList.add('text-slate-500'); }
+            });
+            const activeSec = document.getElementById(`section-${id}`);
+            const activeTab = document.getElementById(`tab-${id}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+            if (activeTab) { activeTab.classList.add('tab-active', 'text-slate-900'); activeTab.classList.remove('text-slate-500'); }
+        }
+
+        function renderBits() {
+            const container = document.getElementById('bit-container');
+            if(!container) return;
+            container.innerHTML = '';
+            bits.forEach((val, idx) => {
+                const bitDiv = document.createElement('div');
+                bitDiv.className = `bit-box w-10 h-14 md:w-16 md:h-24 rounded-lg flex flex-col items-center justify-center font-bold text-xl md:text-2xl ${val ? 'bit-on' : 'bit-off'}`;
+                bitDiv.innerHTML = `<span>${val}</span><span class="text-[10px] md:text-xs mt-2 opacity-50 font-normal">${weights[idx]}</span>`;
+                bitDiv.onclick = () => { bits[idx] = bits[idx] ? 0 : 1; renderBits(); };
+                container.appendChild(bitDiv);
+            });
+            let decimal = bits.reduce((acc, bit, idx) => acc + (bit ? weights[idx] : 0), 0);
+            if(document.getElementById('decimal-display')) document.getElementById('decimal-display').innerText = decimal;
+            if(document.getElementById('hex-display')) document.getElementById('hex-display').innerText = '0x' + decimal.toString(16).toUpperCase().padStart(2, '0');
+        }
+
+        function renderSignedBits() {
+            const container = document.getElementById('signed-bit-container');
+            if(!container) return;
+            container.innerHTML = '';
+            signedBits.forEach((val, idx) => {
+                const bitDiv = document.createElement('div');
+                const isSign = idx === 0;
+                bitDiv.className = `bit-box w-10 h-14 md:w-16 md:h-24 rounded-lg flex flex-col items-center justify-center font-bold text-xl md:text-2xl ${val ? (isSign ? 'bg-orange-600 text-white border-orange-700 shadow-inner' : 'bit-on') : 'bit-off'}`;
+                bitDiv.innerHTML = `<span>${val}</span><span class="text-[10px] md:text-xs mt-2 opacity-50 font-normal">${signedWeights[idx]}</span>`;
+                bitDiv.onclick = () => { signedBits[idx] = signedBits[idx] ? 0 : 1; renderSignedBits(); };
+                container.appendChild(bitDiv);
+            });
+            let smSign = signedBits[0] === 1 ? -1 : 1;
+            let smMag = 0; for(let i=1; i<8; i++) if(signedBits[i]) smMag += weights[i];
+            if(document.getElementById('sm-display')) document.getElementById('sm-display').innerText = (smSign * smMag);
+            let tc = signedBits.reduce((acc, bit, idx) => acc + (bit ? signedWeights[idx] : 0), 0);
+            if(document.getElementById('signed-decimal-display')) document.getElementById('signed-decimal-display').innerText = tc;
+        }
+
+        function setupConversionLab() {
+            const b2dIn = document.getElementById('bin-to-dec-input'), b2dMat = document.getElementById('bin-to-dec-math');
+            if(b2dIn && b2dMat) b2dIn.addEventListener('input', (e) => {
+                const val = e.target.value.trim();
+                if (!/^[01]+$/.test(val)) { b2dMat.innerHTML = "Result..."; return; }
+                b2dMat.innerHTML = `<div class='text-2xl font-bold text-blue-700'>= ${parseInt(val, 2)}₁₀</div>`;
+            });
+            const d2bIn = document.getElementById('dec-to-bin-input'), d2bMat = document.getElementById('dec-to-bin-math');
+            if(d2bIn && d2bMat) d2bIn.addEventListener('input', (e) => {
+                let num = parseInt(e.target.value);
+                if (isNaN(num)) return;
+                d2bMat.innerHTML = `<div class='text-2xl font-bold text-emerald-600 mono'>${num.toString(2)}₂</div>`;
+            });
+            const b2hIn = document.getElementById('bin-to-hex-input'), b2hMat = document.getElementById('bin-to-hex-math');
+            if(b2hIn && b2hMat) b2hIn.addEventListener('input', (e) => {
+                const val = e.target.value.replace(/\s/g, '');
+                if (!/^[01]+$/.test(val)) return;
+                b2hMat.innerHTML = `<div class='text-2xl font-bold text-blue-700 mono'>0x${parseInt(val, 2).toString(16).toUpperCase()}</div>`;
+            });
+            const h2bIn = document.getElementById('hex-to-bin-input'), h2bMat = document.getElementById('hex-to-bin-math');
+            if(h2bIn && h2bMat) h2bIn.addEventListener('input', (e) => {
+                const val = e.target.value.trim().toUpperCase();
+                if (!/^[0-9A-F]+$/.test(val)) return;
+                let bin = [...val].map(c => parseInt(c, 16).toString(2).padStart(4, '0')).join(' ');
+                h2bMat.innerHTML = `<div class='text-xl font-bold text-emerald-600 mono'>${bin}</div>`;
+            });
+        }
+
+        function setupArithmetic() {
+            const addA = document.getElementById('add-a'), addB = document.getElementById('add-b');
+            const resBin = document.getElementById('add-res-bin'), flag = document.getElementById('overflow-flag');
+            const update = () => {
+                if(!addA || !addB) return;
+                const sum = parseInt(addA.value || 0) + parseInt(addB.value || 0);
+                if (resBin) resBin.innerText = sum.toString(2).padStart(8, '0').slice(-8);
+                if (flag) { flag.className = (sum > 255) ? "px-3 py-1 rounded-full bg-red-600 text-white text-[10px] font-bold uppercase" : "px-3 py-1 rounded-full bg-slate-200 text-slate-400 text-[10px] font-bold uppercase"; }
+            };
+            if(addA) addA.addEventListener('input', update);
+            if(addB) addB.addEventListener('input', update);
+            update();
+        }
+
+        function setupTextConverter() {
+            const input = document.getElementById('text-input'), output = document.getElementById('binary-text-output');
+            if(input && output) input.addEventListener('input', (e) => {
+                output.innerHTML = '';
+                Array.from(e.target.value).forEach(char => {
+                    const bytes = new TextEncoder().encode(char);
+                    const charGroup = document.createElement('div');
+                    charGroup.className = 'flex flex-col gap-1 p-3 bg-white rounded-xl border min-w-[90px] shadow-sm';
+                    let byteHtml = ''; bytes.forEach(b => byteHtml += `<span class="mono text-[10px] text-slate-700">${b.toString(2).padStart(8, '0')}</span>`);
+                    charGroup.innerHTML = `<span class="text-sm font-bold text-blue-600 mb-1">${char}</span><div class="flex flex-col items-center">${byteHtml}</div><span class="text-[8px] text-slate-400 mt-1">${bytes.length} B</span>`;
+                    output.appendChild(charGroup);
+                });
+            });
+        }
+
+        function setupUnitConverter() {
+            const input = document.getElementById('unit-input'), select = document.getElementById('unit-select');
+            const update = () => {
+                if(!input || !select) return;
+                const baseValue = parseFloat(input.value || 0) * parseFloat(select.value);
+                if (document.getElementById('val-si')) document.getElementById('val-si').innerText = baseValue.toLocaleString() + " Bytes";
+                const iecDisp = document.getElementById('val-iec'), bar = document.getElementById('iec-bar');
+                const unit = baseValue >= 1073741824 ? { name: 'GiB', val: 1073741824 } : (baseValue >= 1048576 ? { name: 'MiB', val: 1048576 } : { name: 'KiB', val: 1024 });
+                if (iecDisp) iecDisp.innerText = `${(baseValue / (unit.val || 1)).toLocaleString(undefined, {maximumFractionDigits: 2})} ${unit.name}`;
+                if (bar) bar.style.width = "93%";
+            };
+            if(input) input.addEventListener('input', update);
+            if(select) select.addEventListener('change', update);
+            update();
+        }
+
+        function setupColorSliders() {
+            const r = document.getElementById('r-slider'), g = document.getElementById('g-slider'), b = document.getElementById('b-slider');
+            const update = () => {
+                if(!r || !g || !b) return;
+                const rv = parseInt(r.value), gv = parseInt(g.value), bv = parseInt(b.value);
+                const targets = { 'r-val': rv, 'g-val': gv, 'b-val': bv, 'r-bin': rv.toString(2).padStart(8, '0'), 'g-bin': gv.toString(2).padStart(8, '0'), 'b-bin': bv.toString(2).padStart(8, '0') };
+                for (let id in targets) { const el = document.getElementById(id); if (el) el.innerText = targets[id]; }
+                const cp = document.getElementById('color-preview');
+                if(cp) cp.style.backgroundColor = `rgb(${rv},${gv},${bv})`;
+            };
+            if(r) r.addEventListener('input', update);
+            if(g) g.addEventListener('input', update);
+            if(b) b.addEventListener('input', update);
+            update();
+        }
+
+        function setupImageCalculator() {
+            const wIn = document.getElementById('img-width');
+            const hIn = document.getElementById('img-height');
+            const dIn = document.getElementById('img-depth');
+            const update = () => {
+                if(!wIn || !hIn || !dIn) return;
+                const pix = (parseInt(wIn.value) || 0) * (parseInt(hIn.value) || 0);
+                const bytes = (pix * parseInt(dIn.value)) / 8;
+                const sz = document.getElementById('calc-size');
+                if(sz) {
+                    if (bytes >= 1048576) {
+                        sz.innerText = (bytes / 1048576).toFixed(2) + " MB";
+                    } else if (bytes >= 1024) {
+                        sz.innerText = (bytes / 1024).toFixed(2) + " KB";
+                    } else {
+                        sz.innerText = bytes + " B";
+                    }
+                }
+            };
+            if(wIn) wIn.addEventListener('input', update);
+            if(hIn) hIn.addEventListener('input', update);
+            if(dIn) dIn.addEventListener('change', update);
+            update();
+        }
+
+        function setupAudioLogic() {
+            const durIn = document.getElementById('audio-duration');
+            const rateIn = document.getElementById('audio-rate');
+            const update = () => {
+                if(!durIn || !rateIn) return;
+                const rate = parseInt(rateIn.value) || 44100;
+                const bytes = (parseFloat(durIn.value) * rate * 16 * 2) / 8;
+                const asEl = document.getElementById('audio-calc-size');
+                if(asEl) asEl.innerText = (bytes / (1024*1024)).toFixed(2) + " MB";
+                const sim = document.getElementById('audio-wave-sim');
+                if(sim) { 
+                    sim.innerHTML = ''; 
+                    for(let i=0; i<15; i++) { 
+                        const b = document.createElement('div'); 
+                        b.className = 'wave-bar'; 
+                        b.style.height = (20 + Math.random()*80) + '%'; 
+                        sim.appendChild(b); 
+                    } 
+                }
+            };
+            if(durIn) durIn.addEventListener('input', update);
+            if(rateIn) rateIn.addEventListener('change', update);
+            update();
+        }
+
+        function setupVideoLogic() {
+            const update = () => {
+                const vsEl = document.getElementById('vid-calc-size');
+                if(vsEl) vsEl.innerText = "9.32 MB";
+            };
+            update();
+        }
+    </script>
+</body>
+</html>

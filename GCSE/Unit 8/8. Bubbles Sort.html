@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubble Sort Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .array-element {
+            transition: all 0.5s ease-in-out;
+            transform-origin: bottom;
+        }
+        .highlight-compare {
+            background-color: #60a5fa !important;
+            color: white;
+        }
+        .highlight-swap {
+            background-color: #facc15 !important;
+            color: white;
+        }
+        .highlight-sorted {
+            background-color: #4ade80 !important;
+            color: white;
+        }
+        .code-line, .flowchart-step {
+            transition: background-color 0.3s ease;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .active-line {
+            background-color: #fde047;
+        }
+        .svg-node {
+            fill: white;
+            stroke: #9ca3af;
+            stroke-width: 2px;
+            transition: all 0.3s ease;
+        }
+        .svg-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            fill: #1f2937;
+            pointer-events: none;
+            user-select: none;
+        }
+        .svg-arrow {
+            fill: none;
+            stroke: #6b7280;
+            stroke-width: 2px;
+        }
+        .flowchart-step.active-line .svg-node {
+            fill: #fde047;
+            stroke: #ca8a04;
+        }
+        .no-select {
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        .line-label {
+            background-color: #f3f4f6;
+            padding: 0 4px;
+            font-weight: 600;
+            color: #4b5563;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 lg:p-8 no-select">
+    <div class="max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">Bubble Sort Algorithm Simulation</h1>
+            <p class="text-lg text-gray-600 mt-2">Visualize how the Bubble Sort algorithm sorts an array of numbers.</p>
+        </header>
+
+        <div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-semibold mb-4 text-center">Array Visualization</h2>
+            <div id="array-container" class="flex justify-center items-end h-64 space-x-2 bg-gray-50 p-4 rounded-lg"></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Pseudo-code</h2>
+                <div id="pseudo-code" class="space-y-1 text-sm md:text-base font-mono bg-gray-50 p-4 rounded-lg">
+                    <div class="code-line" data-line="1"><strong>procedure</strong> bubbleSort(array A)</div>
+                    <div class="code-line pl-4" data-line="2">n = length of A</div>
+                    <div class="code-line" data-line="3"><strong>repeat</strong></div>
+                    <div class="code-line pl-4" data-line="4">swapped = false</div>
+                    <div class="code-line pl-4" data-line="5"><strong>for</strong> i from 1 to n-1</div>
+                    <div class="code-line pl-8" data-line="6"><strong>if</strong> A[i-1] > A[i] <strong>then</strong></div>
+                    <div class="code-line pl-12" data-line="7">swap(A[i-1], A[i])</div>
+                    <div class="code-line pl-12" data-line="8">swapped = true</div>
+                    <div class="code-line pl-8" data-line="9"><strong>end if</strong></div>
+                    <div class="code-line pl-4" data-line="10"><strong>end for</strong></div>
+                    <div class="code-line pl-4" data-line="11">n = n - 1</div>
+                    <div class="code-line" data-line="12"><strong>until not</strong> swapped</div>
+                    <div class="code-line" data-line="13"><strong>end procedure</strong></div>
+                </div>
+            </div>
+            
+            <div class="bg-white p-6 rounded-2xl shadow-lg overflow-x-auto">
+                <h2 class="text-2xl font-semibold mb-4 text-center">Flowchart</h2>
+                <div id="flowchart" class="flex justify-center w-full min-w-[500px]">
+                    <svg width="100%" viewBox="0 0 500 740" class="max-w-full h-auto drop-shadow-sm">
+                        <defs>
+                            <marker id="arrowhead" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280" />
+                            </marker>
+                        </defs>
+
+                        <!-- Lines and Arrows -->
+                        <polyline class="svg-arrow" points="250,65 250,95" marker-end="url(#arrowhead)" />
+                        <polyline class="svg-arrow" points="250,135 250,165" marker-end="url(#arrowhead)" />
+                        <polyline class="svg-arrow" points="250,205 250,235" marker-end="url(#arrowhead)" />
+                        <polyline class="svg-arrow" points="250,275 250,305" marker-end="url(#arrowhead)" />
+                        
+                        <!-- If Cond -> Decrement (No) -->
+                        <polyline class="svg-arrow" points="250,385 250,480" marker-end="url(#arrowhead)" />
+                        <text x="260" y="405" class="svg-text" font-weight="600" fill="#4b5563">No</text>
+                        
+                        <!-- If Cond -> Swap (Yes) -->
+                        <polyline class="svg-arrow" points="340,345 410,345 410,395" marker-end="url(#arrowhead)" />
+                        <text x="365" y="335" class="svg-text" font-weight="600" fill="#4b5563">Yes</text>
+                        
+                        <!-- Swap -> Decrement -->
+                        <polyline class="svg-arrow" points="410,445 410,460 250,460 250,480" marker-end="url(#arrowhead)" />
+                        
+                        <!-- Decrement -> Until Cond -->
+                        <polyline class="svg-arrow" points="250,520 250,550" marker-end="url(#arrowhead)" />
+                        
+                        <!-- Until Cond -> End (No) -->
+                        <polyline class="svg-arrow" points="250,630 250,670" marker-end="url(#arrowhead)" />
+                        <text x="260" y="650" class="svg-text" font-weight="600" fill="#4b5563">No</text>
+                        
+                        <!-- Until Cond -> Loop (Yes) -->
+                        <polyline class="svg-arrow" points="340,590 490,590 490,150 250,150 250,165" marker-end="url(#arrowhead)" />
+                        <text x="365" y="580" class="svg-text" font-weight="600" fill="#4b5563">Yes</text>
+
+                        <!-- Nodes -->
+                        <g class="flowchart-step cursor-default" data-step="start">
+                            <ellipse cx="250" cy="40" rx="60" ry="25" class="svg-node" />
+                            <text x="250" y="40" class="svg-text" font-weight="600" dominant-baseline="middle" text-anchor="middle">Start</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="init">
+                            <rect x="185" y="95" width="130" height="40" rx="6" class="svg-node" />
+                            <text x="250" y="115" class="svg-text" dominant-baseline="middle" text-anchor="middle">n = length(A)</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="swapped_false">
+                            <rect x="180" y="165" width="140" height="40" rx="6" class="svg-node" />
+                            <text x="250" y="185" class="svg-text" dominant-baseline="middle" text-anchor="middle">swapped = false</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="for_loop">
+                            <rect x="175" y="235" width="150" height="40" rx="6" class="svg-node" />
+                            <text x="250" y="255" class="svg-text" dominant-baseline="middle" text-anchor="middle">for i from 1 to n-1</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="if_cond">
+                            <polygon points="250,305 340,345 250,385 160,345" class="svg-node" />
+                            <text x="250" y="345" class="svg-text" dominant-baseline="middle" text-anchor="middle">A[i-1] &gt; A[i]?</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="swap">
+                            <rect x="345" y="395" width="130" height="50" rx="6" class="svg-node" />
+                            <text x="410" y="412" class="svg-text" dominant-baseline="middle" text-anchor="middle">swap(A[i-1], A[i])</text>
+                            <text x="410" y="432" class="svg-text" dominant-baseline="middle" text-anchor="middle">swapped = true</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="decrement">
+                            <rect x="190" y="480" width="120" height="40" rx="6" class="svg-node" />
+                            <text x="250" y="500" class="svg-text" dominant-baseline="middle" text-anchor="middle">n = n - 1</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="until_cond">
+                            <polygon points="250,550 340,590 250,630 160,590" class="svg-node" />
+                            <text x="250" y="590" class="svg-text" dominant-baseline="middle" text-anchor="middle">swapped?</text>
+                        </g>
+
+                        <g class="flowchart-step cursor-default" data-step="end">
+                            <ellipse cx="250" cy="695" rx="60" ry="25" class="svg-node" />
+                            <text x="250" y="695" class="svg-text" font-weight="600" dominant-baseline="middle" text-anchor="middle">End</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-2xl shadow-lg">
+             <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                <div class="flex items-center space-x-2">
+                    <label for="arraySize" class="font-medium">Array Size:</label>
+                    <input type="range" id="arraySize" min="5" max="20" value="10" class="w-36">
+                    <span id="arraySizeValue">10</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <label for="speed" class="font-medium">Speed:</label>
+                    <input type="range" id="speed" min="100" max="1000" value="500" class="w-36">
+                     <span id="speedValue">Medium</span>
+                </div>
+                <button id="reset-btn" class="px-6 py-2 bg-gray-600 text-white font-semibold rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 transition-colors">Reset</button>
+            </div>
+            <div class="flex items-center justify-center gap-4 mt-4">
+                <button id="start-btn" class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Start</button>
+                <button id="step-btn" class="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Step</button>
+                <button id="auto-btn" class="px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Auto Play</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const arrayContainer = document.getElementById('array-container');
+        const startBtn = document.getElementById('start-btn');
+        const stepBtn = document.getElementById('step-btn');
+        const autoBtn = document.getElementById('auto-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const arraySizeSlider = document.getElementById('arraySize');
+        const arraySizeValue = document.getElementById('arraySizeValue');
+        const speedSlider = document.getElementById('speed');
+        const speedValue = document.getElementById('speedValue');
+
+        let array = [];
+        let simulationState = null;
+        let isAutoPlaying = false;
+        let speed = 500;
+        let animationTimeout;
+
+        function generateArray(size) {
+            array = [];
+            for (let i = 0; i < size; i++) {
+                array.push(Math.floor(Math.random() * 90) + 10);
+            }
+            renderArray();
+        }
+
+        function renderArray(highlights = {}) {
+            arrayContainer.innerHTML = '';
+            const maxValue = Math.max(...array, 100);
+            array.forEach((value, index) => {
+                const element = document.createElement('div');
+                element.className = 'array-element flex items-start justify-center font-bold text-sm bg-gray-300 rounded-t-md';
+                element.textContent = value;
+                const height = (value / maxValue) * 95;
+                element.style.height = `${height}%`;
+                element.style.width = `${100 / array.length}%`;
+                
+                if (highlights.compare && highlights.compare.includes(index)) {
+                    element.classList.add('highlight-compare');
+                }
+                if (highlights.swap && highlights.swap.includes(index)) {
+                    element.classList.add('highlight-swap');
+                }
+                if (highlights.sorted && highlights.sorted.includes(index)) {
+                    element.classList.add('highlight-sorted');
+                }
+                
+                arrayContainer.appendChild(element);
+            });
+        }
+
+        function highlightCode(line) {
+            document.querySelectorAll('.code-line').forEach(el => el.classList.remove('active-line'));
+            if (line) {
+                document.querySelector(`.code-line[data-line="${line}"]`).classList.add('active-line');
+            }
+        }
+        
+        function highlightFlowchart(step) {
+            document.querySelectorAll('.flowchart-step').forEach(el => el.classList.remove('active-line', 'bg-yellow-200'));
+             if (step) {
+                const el = document.querySelector(`.flowchart-step[data-step="${step}"]`);
+                if(el) el.classList.add('active-line', 'bg-yellow-200');
+            }
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => {
+                animationTimeout = setTimeout(resolve, ms);
+            });
+        }
+
+        function* bubbleSortGenerator(arr) {
+            let n = arr.length;
+            let swapped;
+            yield { array: [...arr], highlights: {}, codeLine: 1, flowStep: 'start' };
+            yield { array: [...arr], highlights: {}, codeLine: 2, flowStep: 'init' };
+            
+            do {
+                yield { array: [...arr], highlights: {}, codeLine: 3, flowStep: 'swapped_false' };
+                swapped = false;
+                yield { array: [...arr], highlights: {}, codeLine: 4, flowStep: 'swapped_false' };
+
+                for (let i = 1; i < n; i++) {
+                    yield { array: [...arr], highlights: { compare: [i - 1, i] }, codeLine: 5, flowStep: 'for_loop' };
+                    yield { array: [...arr], highlights: { compare: [i - 1, i] }, codeLine: 6, flowStep: 'if_cond' };
+                    
+                    if (arr[i - 1] > arr[i]) {
+                        swapped = true;
+                        yield { array: [...arr], highlights: { swap: [i-1, i] }, codeLine: 7, flowStep: 'swap' };
+                        [arr[i - 1], arr[i]] = [arr[i], arr[i - 1]];
+                         yield { array: [...arr], highlights: { swap: [i-1, i] }, codeLine: 8, flowStep: 'swap' };
+                    }
+                     yield { array: [...arr], highlights: {}, codeLine: 9, flowStep: 'for_loop' };
+                }
+                yield { array: [...arr], highlights: {}, codeLine: 10, flowStep: 'decrement' };
+                n--;
+                 const sortedIndices = Array.from({length: arr.length - n-1}, (_, k) => n + 1 + k);
+                 yield { array: [...arr], highlights: { sorted: sortedIndices }, codeLine: 11, flowStep: 'decrement' };
+                 yield { array: [...arr], highlights: { sorted: sortedIndices }, codeLine: 12, flowStep: 'until_cond' };
+
+            } while (swapped);
+            
+            const finalSorted = Array.from({length: arr.length}, (_, k) => k);
+            yield { array: [...arr], highlights: { sorted: finalSorted }, codeLine: 13, flowStep: 'end' };
+            
+            isAutoPlaying = false;
+            toggleButtons(true);
+            return { array: [...arr], highlights: { sorted: finalSorted }, codeLine: null, flowStep: null };
+        }
+
+        function updateUI(state) {
+            if (!state) return;
+            array = state.array;
+            renderArray(state.highlights);
+            highlightCode(state.codeLine);
+            highlightFlowchart(state.flowStep);
+        }
+
+        async function step() {
+            if (simulationState) {
+                const nextState = simulationState.next();
+                updateUI(nextState.value);
+                if (nextState.done) {
+                    simulationState = null;
+                    isAutoPlaying = false;
+                    toggleButtons(true);
+                }
+            }
+        }
+        
+        async function autoPlay() {
+            if (!isAutoPlaying || !simulationState) return;
+            
+            const nextState = simulationState.next();
+            updateUI(nextState.value);
+            
+            if (nextState.done) {
+                isAutoPlaying = false;
+                simulationState = null;
+                toggleButtons(true);
+                autoBtn.textContent = 'Auto Play';
+                return;
+            }
+            
+            await sleep(1100 - speed);
+            autoPlay();
+        }
+        
+        function toggleButtons(enable) {
+            startBtn.disabled = !enable;
+            stepBtn.disabled = !enable;
+            autoBtn.disabled = !enable;
+            resetBtn.disabled = false; // Reset is always available
+            arraySizeSlider.disabled = !enable;
+        }
+        
+        function stopAutoPlay() {
+            isAutoPlaying = false;
+            clearTimeout(animationTimeout);
+        }
+
+        startBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            simulationState = bubbleSortGenerator([...array]);
+            step();
+            toggleButtons(false);
+            stepBtn.disabled = false;
+            autoBtn.disabled = false;
+        });
+
+        stepBtn.addEventListener('click', () => {
+             if (!simulationState) {
+                simulationState = bubbleSortGenerator([...array]);
+            }
+            step();
+            toggleButtons(false);
+            stepBtn.disabled = false;
+            autoBtn.disabled = false;
+        });
+
+        autoBtn.addEventListener('click', () => {
+            if (!simulationState) {
+                simulationState = bubbleSortGenerator([...array]);
+            }
+            if (!isAutoPlaying) {
+                isAutoPlaying = true;
+                autoBtn.textContent = 'Pause';
+                toggleButtons(false);
+                autoBtn.disabled = false;
+                autoPlay();
+            } else {
+                isAutoPlaying = false;
+                autoBtn.textContent = 'Auto Play';
+                toggleButtons(false);
+                stepBtn.disabled = false;
+                autoBtn.disabled = false;
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            stopAutoPlay();
+            simulationState = null;
+            isAutoPlaying = false;
+            autoBtn.textContent = 'Auto Play';
+            generateArray(parseInt(arraySizeSlider.value));
+            highlightCode(null);
+            highlightFlowchart(null);
+            toggleButtons(true);
+        });
+
+        arraySizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            arraySizeValue.textContent = size;
+            generateArray(parseInt(size));
+            simulationState = null;
+            toggleButtons(true);
+            highlightCode(null);
+            highlightFlowchart(null);
+        });
+        
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            if (speed < 300) speedValue.textContent = 'Fast';
+            else if (speed < 700) speedValue.textContent = 'Medium';
+            else speedValue.textContent = 'Slow';
+        });
+
+        // Initial setup
+        generateArray(10);
+        toggleButtons(true);
+    </script>
+</body>
+</html>

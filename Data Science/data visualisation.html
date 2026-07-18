@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Chart Simulator & Quiz</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- Chart.js extension for Box and Whisker plots -->
+    <script src="https://cdn.jsdelivr.net/npm/@sgratzl/chartjs-chart-boxplot@4.2.0/build/index.umd.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Style for the active button */
+        .btn-active {
+            background-color: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        /* Custom styles for the table */
+        .info-table {
+            width: 100%;
+            margin-top: 1rem;
+            border-collapse: collapse;
+        }
+        .info-table th, .info-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #4a5568;
+        }
+        .info-table th {
+            background-color: #2d3748;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .info-table tbody tr:nth-child(even) {
+            background-color: #262e3d;
+        }
+        /* Style for the explanation box */
+        .explanation-box {
+            background-color: rgba(30, 41, 59, 0.7);
+            border-left: 4px solid #4f46e5;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-radius: 0.5rem;
+        }
+        .explanation-box h4 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin-bottom: 0.75rem;
+        }
+        /* Quiz-specific styles */
+        .quiz-option {
+            transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+        }
+        .quiz-option.selected {
+            background-color: #4f46e5;
+            border-color: #6366f1;
+            color: white;
+        }
+        .feedback-correct {
+            color: #22c55e;
+        }
+        .feedback-incorrect {
+            color: #f59e0b;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white tracking-tight">Interactive Chart Simulator & Quiz</h1>
+            <p class="text-lg text-gray-400 mt-2">Explore chart types, key functions, and test your knowledge.</p>
+        </header>
+
+        <!-- Tab Selection -->
+        <div id="chart-selector" class="flex flex-wrap justify-center gap-2 md:gap-4 mb-8">
+            <button data-chart="bar" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Bar Chart</button>
+            <button data-chart="pie" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Pie Chart</button>
+            <button data-chart="line" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Line Chart</button>
+            <button data-chart="histogram" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Histogram</button>
+            <button data-chart="scatter" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Scatter Diagram</button>
+            <button data-chart="boxplot" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Box & Whisker</button>
+            <button data-chart="keyFunctions" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Key Functions</button>
+            <button data-chart="quiz" class="chart-btn px-5 py-2.5 font-semibold bg-gray-800 hover:bg-indigo-600 rounded-lg shadow-md transition-all duration-300 ease-in-out">Quiz</button>
+        </div>
+
+        <!-- Main Content Area -->
+        <main class="bg-gray-800 p-4 sm:p-6 rounded-2xl shadow-2xl border border-gray-700">
+            <!-- Chart Canvas Container -->
+            <div id="chart-section">
+                <div id="canvas-container" class="w-full h-[50vh] md:h-[60vh] relative">
+                    <canvas id="myChart"></canvas>
+                </div>
+                <!-- Controls -->
+                <div id="controls-container" class="mt-6 text-center">
+                    <button id="regenerate-data" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 ease-in-out">
+                        Regenerate Example Data
+                    </button>
+                </div>
+                <!-- Info Panel -->
+                <div id="info-panel" class="mt-8 text-left text-gray-300"></div>
+            </div>
+
+            <!-- Quiz Container -->
+            <div id="quiz-section" class="hidden">
+                 <div id="quiz-container" class="w-full max-w-2xl mx-auto">
+                    <div id="quiz-header" class="mb-6">
+                        <div class="flex justify-between items-center mb-2">
+                            <h1 class="text-2xl font-bold text-white">Data Viz Quiz</h1>
+                            <p id="progress-text" class="text-gray-400 font-medium"></p>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div id="quiz-body">
+                        <p id="question-text" class="text-xl text-gray-200 mb-6 min-h-[6rem]"></p>
+                        <div id="answer-options" class="space-y-3"></div>
+                        <div id="cloze-answer" class="hidden">
+                            <input type="text" id="cloze-input" class="w-full bg-gray-700 border border-gray-600 text-white text-lg rounded-lg focus:ring-indigo-500 focus:border-indigo-500 p-3" placeholder="Type your answer here...">
+                        </div>
+                    </div>
+
+                    <div id="quiz-footer" class="mt-8">
+                        <div id="feedback-container" class="min-h-[2rem] mb-4 text-center font-medium">
+                            <p id="feedback-text"></p>
+                        </div>
+                        <button id="submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 ease-in-out">
+                            Submit Answer
+                        </button>
+                    </div>
+
+                    <div id="results-screen" class="hidden text-center">
+                        <h2 class="text-3xl font-bold text-white mb-4">Quiz Complete!</h2>
+                        <p class="text-lg text-gray-300 mb-2">Great job! You've successfully answered all the questions.</p>
+                        <p class="text-lg text-gray-300">You've shown a solid understanding of data visualization concepts.</p>
+                        <button id="restart-btn" class="mt-8 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-transform transform hover:scale-105 duration-300 ease-in-out">
+                            Try Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="text-center mt-8 text-gray-500">
+            <p>Built with Tailwind CSS and Chart.js</p>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- CHART SIMULATOR SCRIPT ---
+        if (window.ChartBoxPlot) {
+            Chart.register(ChartBoxPlot.BoxPlotController, ChartBoxPlot.BoxAndWiskers);
+        }
+
+        const ctx = document.getElementById('myChart').getContext('2d');
+        const infoPanel = document.getElementById('info-panel');
+        const chartSection = document.getElementById('chart-section');
+        const quizSection = document.getElementById('quiz-section');
+
+        let currentChart = null;
+        let currentChartType = 'bar';
+        let histogramDistributionState = 0;
+        const distributionTypes = ['normal', 'right-skewed', 'left-skewed'];
+
+        const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const randFloat = (min, max) => (Math.random() * (max - min) + min);
+        const randomNormal = (mean, stdDev) => {
+            let u1 = 0, u2 = 0;
+            while (u1 === 0) u1 = Math.random();
+            while (u2 === 0) u2 = Math.random();
+            const z = Math.sqrt(-2.0 * Math.log(u1)) * Math.cos(2.0 * Math.PI * u2);
+            return z * stdDev + mean;
+        };
+        
+        const chartDetails = {
+            bar: { title: "Bar Chart: Quarterly Coffee Sales", description: "A bar chart compares values across discrete, separate categories. The distinct gaps between the bars emphasize this separation.", dataType: "This chart is ideal for <strong>Categorical Data</strong>. It compares values across distinct categories, such as different products, countries, or time periods.", useCase: "Imagine you're a coffee shop owner who wants to compare the sales performance of different types of coffee drinks over the last quarter.", dataGenerator: () => { const labels = ['Espresso', 'Latte', 'Cappuccino', 'Americano', 'Mocha']; const data = labels.map(() => randInt(150, 500)); return { chartData: { labels, datasets: [{ label: 'Units Sold', data, backgroundColor: 'rgba(75, 192, 192, 0.8)' }] }, tableHeaders: ['Drink Type', 'Units Sold'], tableData: labels.map((l, i) => [l, data[i]]) }; } },
+            pie: { title: "Pie Chart: Website Traffic Sources", description: "A pie chart shows the proportion of parts to a whole (composition). It's best used when you have a small number of categories that sum up to 100%.", dataType: "Use a pie chart for <strong>Categorical Data that represents parts of a whole</strong>. Each slice shows the proportion or percentage of a specific category.", useCase: "As a digital marketer, you want to visualize the percentage of website traffic coming from different sources for your monthly report.", dataGenerator: () => { const labels = ['Organic Search', 'Direct', 'Referral', 'Social Media', 'Paid Ads']; const data = [randInt(30,50), randInt(15,25), randInt(10,15), randInt(5,10), randInt(5,10)]; return { chartData: { labels, datasets: [{ data, backgroundColor: ['#4bc0c0', '#ff6384', '#36a2eb', '#ffce56', '#9966ff'] }] }, tableHeaders: ['Source', 'Traffic (%)'], tableData: labels.map((l, i) => [l, data[i]]) }; } },
+            line: { title: "Line Chart: Monthly Website Visitors", description: "A line chart is used to display data over a continuous period. It is excellent for showing trends, patterns, and changes over time.", dataType: "This chart is primarily used for <strong>Time-Series Data</strong>. The horizontal axis almost always represents a time scale.", useCase: "A business owner wants to track their website's visitor numbers over the past year to identify growth trends and seasonal peaks.", interpretation: { title: "Identifying Trends Over Time", content: "The main purpose of a line chart is to see trends. By looking at the direction of the line, you can quickly determine if values are increasing (upward trend), decreasing (downward trend), or staying stable." }, dataGenerator: () => { const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; let lastValue = 5000; const data = labels.map((month) => { let trendFactor = (month === 'Jun' || month === 'Jul') ? -0.2 : 0.05; lastValue += lastValue * (randFloat(-0.1, 0.1) + trendFactor); return Math.max(2000, Math.round(lastValue)); }); return { chartData: { labels, datasets: [{ label: 'Monthly Visitors', data, borderColor: 'rgba(139, 92, 246, 1)', borderWidth: 3, fill: true, tension: 0.4, backgroundColor: 'rgba(139, 92, 246, 0.2)' }] }, tableHeaders: ['Month', 'Visitors'], tableData: labels.map((l, i) => [l, data[i]]) }; } },
+            histogram: { title: "Histogram: Distribution of Exam Scores", description: "A histogram displays the frequency distribution of continuous data. The bars touch to show that the data is grouped into a continuous range.", dataType: "A histogram is designed for <strong>Continuous Numerical Data</strong>. It groups data into bins and shows the frequency of observations in each bin, revealing the data's underlying shape.", useCase: "A professor wants to understand the overall performance of a class by analyzing the distribution of scores from a recent exam.", distributionInfo: { normal: "This shows a <strong>Normal Distribution</strong> ('bell curve'). Most scores cluster around the central average.", 'right-skewed': "This is a <strong>Right-Skewed Distribution</strong>. The 'tail' extends to the right, meaning most students had lower scores, but a few high-achievers pulled the average up.", 'left-skewed': "This is a <strong>Left-Skewed Distribution</strong>. The 'tail' extends to the left, meaning scores are clustered at the high end." }, dataGenerator: () => { const dist = distributionTypes[histogramDistributionState]; let data; switch(dist) { case 'right-skewed': data = Array.from({ length: 200 }, () => 100 - Math.pow(Math.random() * 10, 2)); break; case 'left-skewed': data = Array.from({ length: 200 }, () => Math.pow(Math.random() * 10, 2)); break; default: data = Array.from({ length: 200 }, () => randomNormal(75, 12)); } data = data.map(d => Math.max(0, Math.min(100, Math.round(d)))); const bins = new Array(12).fill(0); const labels = []; for (let i = 0; i < 12; i++) { const start = i * 8.33; labels.push(`${Math.round(start)}-${Math.round(start + 8.33)}`); } data.forEach(v => { const binIdx = Math.min(Math.floor(v / 8.33), 11); if (binIdx >= 0) bins[binIdx]++; }); return { chartData: { labels, datasets: [{ label: 'Number of Students', data: bins, backgroundColor: 'rgba(54, 162, 235, 0.8)', barPercentage: 1.0, categoryPercentage: 1.0 }] }, tableHeaders: ['Score Range', 'Number of Students'], tableData: labels.map((l, i) => [l, bins[i]]), distributionType: dist }; } },
+            scatter: { title: "Scatter Diagram: Ice Cream Sales vs. Temperature", description: "A scatter diagram is used to observe relationships between two numeric variables. A line of best fit can show the general trend.", dataType: "This diagram is used for <strong>Bivariate Numerical Data</strong> (pairs of numbers) to visualize potential correlation.", useCase: "An ice cream shop owner wants to see if there's a correlation between daily temperature and ice cream sales.", interpretation: { title: "Interpreting Correlation & Outliers", content: "The purple line is the <strong>Line of Best Fit</strong>. An upward slope indicates a <strong>positive correlation</strong> (as temperature rises, sales rise). A downward slope indicates a <strong>negative correlation</strong>. Points far from this line are likely <strong>outliers</strong>." }, dataGenerator: () => { const data = Array.from({ length: 50 }, (v, i) => { const temp = randFloat(15, 35); let sales = Math.round(20 + (temp - 15) * randFloat(3, 5) + randInt(-10, 10)); if (i === 25) { sales = 150; } return { x: temp, y: sales }; }); const n = data.length; let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0, minX = Infinity, maxX = -Infinity; data.forEach(p => { sumX += p.x; sumY += p.y; sumXY += p.x * p.y; sumX2 += p.x * p.x; minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x); }); const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX); const intercept = (sumY - slope * sumX) / n; const trendline = [ { x: minX, y: slope * minX + intercept }, { x: maxX, y: slope * maxX + intercept } ]; return { chartData: { datasets: [{ label: 'Daily Sales', data: data, backgroundColor: 'rgba(255, 99, 132, 0.8)', type: 'scatter' }, { label: 'Line of Best Fit', data: trendline, type: 'line', borderColor: '#a78bfa', borderWidth: 3, pointRadius: 0, fill: false }] }, tableHeaders: ['Temperature (°C)', 'Ice Creams Sold'], tableData: data.map(p => [p.x.toFixed(1), p.y]) }; } },
+            boxplot: { title: "Box & Whisker Plot: House Prices by Neighborhood", description: "A Box & Whisker plot displays the distribution of data based on a five-number summary (min, Q1, median, Q3, max). It is excellent for showing spread and identifying outliers.", dataType: "A box plot is powerful for comparing the distributions (or range) of a <strong>Numerical Variable</strong> across different categories.", useCase: "A real estate analyst wants to compare the distribution of house prices across different neighborhoods.", outlierInfo: { title: "How to Identify Outliers", content: "Outliers are data points numerically distant from the rest of the data, shown here as individual dots outside the 'whiskers'. They can indicate unique events or data errors." }, dataGenerator: () => { const labels = ['Downtown', 'Suburbs', 'Riverside']; let data = [Array.from({length: 100}, () => randomNormal(500, 80)), Array.from({length: 100}, () => randomNormal(350, 50)), Array.from({length: 100}, () => randomNormal(700, 120))]; data[2].push(1150, 1200); data[0].push(200); return { chartData: { labels, datasets: [{ label: 'House Prices', data, backgroundColor: 'rgba(255, 159, 64, 0.5)', borderColor: 'rgba(255, 159, 64, 1)' }] }, tableHeaders: ['Neighborhood', 'Sample Prices ($1,000s)'], tableData: labels.map((l, i) => [l, data[i].slice(0, 5).map(d => d.toFixed(0)).join(', ') + ', ...']) }; } },
+            keyFunctions: { title: "Key Functions of Data Visualization", content: `<div class="space-y-6"><div class="explanation-box"><h4>1. Making Comparisons</h4><p>Comparing values to see differences and similarities. Best charts: <strong>Bar Chart</strong>, <strong>Box & Whisker Plot</strong>.</p></div><div class="explanation-box"><h4>2. Showing Distribution</h4><p>Displaying how data is spread out, clustered, or shaped. Best charts: <strong>Histogram</strong>, <strong>Box & Whisker Plot</strong>.</p></div><div class="explanation-box"><h4>3. Visualizing Data Over Time (Trends)</h4><p>Finding trends, patterns, and changes over a time period. Best chart: <strong>Line Chart</strong>.</p></div><div class="explanation-box"><h4>4. Understanding Relationships (Correlation)</h4><p>Showing the relationship or correlation between two or more variables. Best chart: <strong>Scatter Diagram</strong>.</p></div><div class="explanation-box"><h4>5. Seeing Composition (Part-to-Whole)</h4><p>Showing how a total value is divided into parts. Best chart: <strong>Pie Chart</strong>.</p></div></div>` }
+        };
+
+        let dataPackageCache = {};
+
+        function renderInfo(type) {
+            const details = chartDetails[type];
+            if (type === 'keyFunctions') {
+                 infoPanel.innerHTML = details.content;
+                 return null;
+            }
+            const dataPackage = dataPackageCache[type] || details.dataGenerator();
+            dataPackageCache[type] = dataPackage;
+            let customHtml = '';
+            if (details.distributionInfo) customHtml = `<div class="explanation-box"><h4>Understanding the Distribution</h4><p>${details.distributionInfo[dataPackage.distributionType]}</p></div>`;
+            if (details.interpretation) customHtml = `<div class="explanation-box"><h4>${details.interpretation.title}</h4><p>${details.interpretation.content}</p></div>`;
+            if (details.outlierInfo) customHtml = `<div class="explanation-box"><h4>${details.outlierInfo.title}</h4><p>${details.outlierInfo.content}</p></div>`;
+            const headerHtml = `<thead><tr>${dataPackage.tableHeaders.map(h => `<th>${h}</th>`).join('')}</tr></thead>`;
+            const bodyHtml = `<tbody>${dataPackage.tableData.map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody>`;
+            infoPanel.innerHTML = `<div class="space-y-6"><div><h3 class="text-xl font-semibold text-white">What is a ${type.charAt(0).toUpperCase() + type.slice(1)} Chart?</h3><p>${details.description}</p></div>${customHtml}<div><h3 class="text-xl font-semibold text-white">Type of Data Used</h3><p>${details.dataType}</p></div><div><h3 class="text-xl font-semibold text-white">Real-Life Use Case</h3><p>${details.useCase}</p></div><div><h3 class="text-xl font-semibold text-white">Sample Data Table</h3><div class="overflow-x-auto rounded-lg border border-gray-700"><table class="info-table">${headerHtml}${bodyHtml}</table></div></div></div>`;
+            return dataPackage.chartData;
+        }
+
+        const chartConfigs = {
+            bar: { type: 'bar', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, color: '#FFF', font: { size: 18 } } }, scales: { y: { beginAtZero: true, ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, x: { ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } } } } },
+            pie: { type: 'pie', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#FFF' } }, title: { display: true, color: '#FFF', font: { size: 18 } } } } },
+            line: { type: 'line', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, color: '#FFF', font: { size: 18 } } }, scales: { y: { ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, title: {display: true, text: 'Visitors', color: '#DDD'} }, x: { ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } } } } },
+            histogram: { type: 'bar', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, color: '#FFF', font: { size: 18 } } }, scales: { y: { title: { text: "Frequency", display: true, color: '#DDD' }, ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, x: { title: { text: "Value Bins", display: true, color: '#DDD' }, ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } } } } },
+            scatter: { type: 'scatter', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true, labels: { color: '#FFF' } }, title: { display: true, color: '#FFF', font: { size: 18 } } }, scales: { y: { title: { text: "Ice Creams Sold", display: true, color: '#DDD' }, ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } }, x: { type: 'linear', position: 'bottom', title: { text: "Temperature (°C)", display: true, color: '#DDD' }, ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' } } } } },
+            boxplot: { type: 'boxplot', options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, color: '#FFF', font: { size: 18 } } }, scales: { y: { ticks: { color: '#AAA' }, grid: { color: 'rgba(255, 255, 255, 0.1)' }, title: { display: true, text: 'Value', color: '#DDD' } }, x: { ticks: { color: '#AAA' }, grid: { display: false } } } } }
+        };
+
+        function renderContent(type) {
+            currentChartType = type;
+            if (currentChart) {
+                currentChart.destroy();
+                currentChart = null;
+            }
+
+            if (type === 'quiz') {
+                chartSection.style.display = 'none';
+                quizSection.style.display = 'block';
+                startOrResetQuiz();
+            } else {
+                chartSection.style.display = 'block';
+                quizSection.style.display = 'none';
+                
+                if (type === 'keyFunctions') {
+                    document.getElementById('canvas-container').style.display = 'none';
+                    document.getElementById('controls-container').style.display = 'none';
+                } else {
+                    document.getElementById('canvas-container').style.display = 'block';
+                    document.getElementById('controls-container').style.display = 'block';
+                    dataPackageCache[type] = null;
+                    const chartData = renderInfo(type);
+                    const config = JSON.parse(JSON.stringify(chartConfigs[type]));
+                    config.data = chartData;
+                    if (config.options.plugins.title) config.options.plugins.title.text = chartDetails[type].title;
+                    currentChart = new Chart(ctx, config);
+                }
+                renderInfo(type);
+            }
+
+            document.querySelectorAll('.chart-btn').forEach(btn => {
+                btn.classList.toggle('btn-active', btn.dataset.chart === type);
+            });
+        }
+        
+        document.getElementById('chart-selector').addEventListener('click', (e) => {
+            if (e.target.classList.contains('chart-btn')) {
+                renderContent(e.target.dataset.chart);
+            }
+        });
+
+        document.getElementById('regenerate-data').addEventListener('click', () => {
+             if (!chartDetails[currentChartType]) return;
+             if (currentChartType === 'histogram') {
+                histogramDistributionState = (histogramDistributionState + 1) % distributionTypes.length;
+             }
+             renderContent(currentChartType);
+        });
+
+        window.addEventListener('load', () => renderContent(currentChartType));
+
+        // --- QUIZ SCRIPT ---
+        const quizData = [
+            { question: "Which chart is best for showing the composition or parts of a whole, like traffic sources for a website?", type: 'mcq', options: ["Bar Chart", "Line Chart", "Pie Chart", "Histogram"], answer: "Pie Chart", hint: "Think about which chart looks like a sliced-up dessert." },
+            { question: "To compare the sales figures of five different products, which chart would be most effective?", type: 'mcq', options: ["Pie Chart", "Bar Chart", "Scatter Diagram", "Line Chart"], answer: "Bar Chart", hint: "This chart uses rectangular bars to compare discrete categories." },
+            { question: "A __________ chart is the standard for showing trends in data over a continuous period, such as monthly stock prices.", type: 'cloze', answer: "Line", hint: "This chart connects data points with a line." },
+            { question: "Which chart would you use to see the distribution of student exam scores, grouped into bins like 70-79, 80-89, etc.?", type: 'mcq', options: ["Histogram", "Bar Chart", "Pie Chart", "Box & Whisker Plot"], answer: "Histogram", hint: "This chart's bars touch to show a continuous range of data." },
+            { question: "The function of visualization that involves looking for patterns or changes over a period is called identifying _________.", type: 'cloze', answer: "Trends", hint: "Is the data generally going up, down, or staying stable over time?" },
+            { question: "To visualize the relationship between two numerical variables, like temperature and ice cream sales, you should use a:", type: 'mcq', options: ["Bar Chart", "Histogram", "Line Chart", "Scatter Diagram"], answer: "Scatter Diagram", hint: "This chart places dots on a graph to see if a pattern emerges." },
+            { question: "A Box & Whisker plot is excellent for comparing the ________ of data across several groups.", type: 'cloze', answer: "Distribution", hint: "This term refers to how data is spread out or clustered." },
+            { question: "On a scatter plot, a line of best fit that goes downwards from left to right indicates a ________ correlation.", type: 'cloze', answer: "Negative", hint: "This means as one variable increases, the other tends to decrease." },
+            { question: "A real estate analyst wants to compare the price ranges of houses in four different neighborhoods. Which chart is best for this task?", type: 'mcq', options: ["Pie Chart", "Line Chart", "Box & Whisker Plot", "Histogram"], answer: "Box & Whisker Plot", hint: "This chart is specifically designed to show statistical summaries like median and range for different groups." },
+            { question: "If a histogram's 'tail' extends to the right, it is described as a ______-skewed distribution.", type: 'cloze', answer: "Right", hint: "The direction of the long 'tail' gives this distribution its name." },
+            { question: "An observation of data that does not fit the rest of the data is called an:", type: 'mcq', options: ["Anomaly", "Outlier", "Variable", "Correlation"], answer: "Outlier", hint: "This is a term for an extreme value that lies outside the overall pattern." },
+            { question: "On a Box & Whisker plot, an outlier is typically represented as a single ________ outside the whiskers.", type: 'cloze', answer: "Dot", hint: "Think about how individual, extreme data points are shown on this type of plot." },
+            { question: "A data scientist finds that as study hours increase, exam scores also tend to increase. This is an example of a ________ correlation.", type: 'cloze', answer: "Positive", hint: "Both variables are moving in the same direction." },
+            { question: "You see a data point on a scatter plot that is very far from the line of best fit. This point is likely a(n) __________.", type: 'cloze', answer: "Outlier", hint: "This point deviates significantly from the general trend." },
+            { question: "To quickly compare the median and interquartile range of test scores between five different classes, the most efficient chart would be a:", type: 'mcq', options: ["Histogram", "Series of Pie Charts", "Bar Chart", "Box & Whisker Plot"], answer: "Box & Whisker Plot", hint: "This chart's entire purpose is to summarize and compare statistical distributions." },
+        ];
+        
+        let currentQuestionIndex = 0;
+        let selectedAnswer = null;
+        let incorrectAttempts = 0;
+
+        const questionTextEl = document.getElementById('question-text');
+        const answerOptionsContainer = document.getElementById('answer-options');
+        const clozeAnswerContainer = document.getElementById('cloze-answer');
+        const clozeInput = document.getElementById('cloze-input');
+        const submitBtn = document.getElementById('submit-btn');
+        const feedbackText = document.getElementById('feedback-text');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const resultsScreen = document.getElementById('results-screen');
+        const restartBtn = document.getElementById('restart-btn');
+
+        function loadQuestion() {
+            resetQuizState();
+            if (currentQuestionIndex >= quizData.length) {
+                showResults();
+                return;
+            }
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionTextEl.innerHTML = currentQuestion.question;
+            if (currentQuestion.type === 'mcq') {
+                answerOptionsContainer.classList.remove('hidden');
+                clozeAnswerContainer.classList.add('hidden');
+                currentQuestion.options.forEach(option => {
+                    const button = document.createElement('button');
+                    button.innerText = option;
+                    button.classList.add('quiz-option', 'w-full', 'text-left', 'p-4', 'bg-gray-700', 'rounded-lg', 'border-2', 'border-transparent', 'hover:border-indigo-500');
+                    button.addEventListener('click', () => selectOption(button, option));
+                    answerOptionsContainer.appendChild(button);
+                });
+            } else {
+                answerOptionsContainer.classList.add('hidden');
+                clozeAnswerContainer.classList.remove('hidden');
+                clozeInput.value = '';
+                clozeInput.focus();
+            }
+            updateProgress();
+        }
+
+        function selectOption(button, option) {
+            document.querySelectorAll('.quiz-option').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            selectedAnswer = option;
+        }
+
+        function resetQuizState() {
+            selectedAnswer = null;
+            incorrectAttempts = 0;
+            answerOptionsContainer.innerHTML = '';
+            feedbackText.innerText = '';
+            feedbackText.className = '';
+            submitBtn.disabled = false;
+        }
+
+        function updateProgress() {
+            const progress = (currentQuestionIndex / quizData.length) * 100;
+            progressText.innerText = `Question ${currentQuestionIndex + 1} of ${quizData.length}`;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        function showResults() {
+            document.getElementById('quiz-body').classList.add('hidden');
+            document.getElementById('quiz-footer').classList.add('hidden');
+            document.getElementById('quiz-header').classList.add('hidden');
+            resultsScreen.classList.remove('hidden');
+        }
+        
+        function startOrResetQuiz() {
+            currentQuestionIndex = 0;
+            resultsScreen.classList.add('hidden');
+            document.getElementById('quiz-body').classList.remove('hidden');
+            document.getElementById('quiz-footer').classList.remove('hidden');
+            document.getElementById('quiz-header').classList.remove('hidden');
+            loadQuestion();
+        }
+
+        submitBtn.addEventListener('click', () => {
+            const currentQuestion = quizData[currentQuestionIndex];
+            let userAnswer = (currentQuestion.type === 'cloze') ? clozeInput.value.trim() : selectedAnswer;
+            if (!userAnswer) {
+                feedbackText.innerText = "Please select or type an answer.";
+                feedbackText.className = 'feedback-incorrect';
+                return;
+            }
+            if (userAnswer.toLowerCase() === currentQuestion.answer.toLowerCase()) {
+                feedbackText.innerText = "Correct! Well done.";
+                feedbackText.className = 'feedback-correct';
+                submitBtn.disabled = true;
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    loadQuestion();
+                }, 1500);
+            } else {
+                incorrectAttempts++;
+                feedbackText.className = 'feedback-incorrect';
+                feedbackText.innerText = `Not quite. Hint: ${currentQuestion.hint}`;
+            }
+        });
+        
+        clozeInput.addEventListener('keyup', (e) => { if (e.key === 'Enter') submitBtn.click(); });
+        restartBtn.addEventListener('click', startOrResetQuiz);
+
+    </script>
+</body>
+</html>
+

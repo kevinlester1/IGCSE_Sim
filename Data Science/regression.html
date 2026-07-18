@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Regression Model</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #4b5563; /* gray-600 */
+            shape-rendering: crispEdges;
+        }
+        .axis text {
+            fill: #d1d5db; /* gray-300 */
+        }
+        .grid line {
+            stroke: #374151; /* gray-700 */
+            stroke-opacity: 0.7;
+            shape-rendering: crispEdges;
+        }
+        /* Custom slider styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4f46e5; /* indigo-600 */
+            border-radius: 5px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #eef2ff; /* indigo-100 */
+            cursor: pointer;
+            margin-top: -7px;
+            border: 2px solid #4f46e5; /* indigo-600 */
+        }
+        input[type=range]::-moz-range-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4f46e5;
+            border-radius: 5px;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 18px;
+            width: 18px;
+            border-radius: 50%;
+            background: #eef2ff;
+            cursor: pointer;
+            border: 2px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased">
+
+    <div class="container mx-auto px-4 py-8 md:py-12">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <h1 class="text-4xl md:text-5xl font-bold text-white tracking-tight">Interactive Linear Regression Explorer</h1>
+            <p class="mt-4 text-lg text-gray-400 max-w-3xl mx-auto">Predicting House Prices Based on Size. Click on the chart to add new data points and see how the model adapts!</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-8 border-b border-gray-700">
+            <ul class="flex flex-wrap -mb-px text-sm font-medium text-center justify-center" id="myTab" role="tablist">
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg" id="explorer-tab" type="button" role="tab" aria-controls="explorer" aria-selected="true">Explorer</button>
+                </li>
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-300 hover:border-gray-500" id="how-it-works-tab" type="button" role="tab" aria-controls="how-it-works" aria-selected="false">How It Works</button>
+                </li>
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-300 hover:border-gray-500" id="multivariate-tab" type="button" role="tab" aria-controls="multivariate" aria-selected="false">Multivariate</button>
+                </li>
+                <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-300 hover:border-gray-500" id="testing-tab" type="button" role="tab" aria-controls="testing" aria-selected="false">Testing the Model</button>
+                </li>
+                 <li class="mr-2" role="presentation">
+                    <button class="inline-block p-4 border-b-2 rounded-t-lg hover:text-gray-300 hover:border-gray-500" id="performance-tab" type="button" role="tab" aria-controls="performance" aria-selected="false">Model Performance</button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <main class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Chart Area -->
+            <div class="lg:col-span-2 bg-gray-800 p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-700">
+                <div id="chart-container" class="w-full h-full min-h-[500px] cursor-crosshair"></div>
+            </div>
+
+            <!-- Controls and Explanations -->
+            <div>
+                <!-- Tab Content -->
+                <div id="tabContent">
+                    <!-- Explorer Tab -->
+                    <div id="explorer" role="tabpanel" aria-labelledby="explorer-tab">
+                        <div class="space-y-8">
+                             <!-- Model Results Card -->
+                            <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
+                                <h2 class="text-2xl font-bold text-white mb-4">Model's Best Fit</h2>
+                                <div class="space-y-4 text-sm">
+                                    <!-- Intercept -->
+                                    <div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-indigo-400">Intercept (b)</span>
+                                            <span id="model-intercept" class="font-mono text-lg text-white">0</span>
+                                        </div>
+                                        <p class="text-gray-400 mt-1">This is the starting price of a house, even if it had zero square feet. It captures the value of the land and other fixed costs.</p>
+                                    </div>
+                                     <!-- Gradient -->
+                                    <div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-indigo-400">Gradient (m)</span>
+                                            <span id="model-gradient" class="font-mono text-lg text-white">0</span>
+                                        </div>
+                                        <p class="text-gray-400 mt-1">This shows how much the price increases for each additional square foot of space. A higher gradient means size is more valuable.</p>
+                                    </div>
+                                     <!-- R-squared -->
+                                    <div>
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-semibold text-indigo-400">R-Squared (R²)</span>
+                                            <span id="model-r-squared" class="font-mono text-lg text-white">0.00</span>
+                                        </div>
+                                        <p class="text-gray-400 mt-1">Measures how well the model explains the data (0 to 1). A value of 0.85 means 85% of price changes are explained by size.</p>
+                                    </div>
+                                </div>
+                                <!-- Add toggle here -->
+                                <div class="mt-5 pt-4 border-t border-gray-700">
+                                    <label for="show-error-toggle" class="flex items-center justify-between cursor-pointer">
+                                        <span class="font-semibold text-gray-300">Show Squared Errors</span>
+                                        <div class="relative">
+                                            <input type="checkbox" id="show-error-toggle" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-600 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                                        </div>
+                                    </label>
+                                    <p class="text-gray-400 text-sm mt-2">
+                                        Visualize the squared errors (residuals) the model tries to minimize. The smaller the total area of the red squares, the better the fit.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <!-- User Controls Card -->
+                            <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
+                                <h2 class="text-2xl font-bold text-white mb-4">Try It Yourself!</h2>
+                                <p class="text-gray-400 text-sm mb-5">Adjust the sliders to draw your own line. Can you get a higher R-Squared value than the model?</p>
+                                <div class="space-y-5 text-sm">
+                                     <!-- User Intercept -->
+                                     <div>
+                                        <label for="user-intercept-slider" class="font-semibold text-cyan-400 flex justify-between">
+                                            Your Intercept: <span id="user-intercept-value" class="font-mono text-white">50000</span>
+                                        </label>
+                                        <input type="range" id="user-intercept-slider" min="0" max="200000" step="1000" value="50000" class="w-full mt-2">
+                                     </div>
+                                      <!-- User Gradient -->
+                                     <div>
+                                        <label for="user-gradient-slider" class="font-semibold text-cyan-400 flex justify-between">
+                                            Your Gradient: <span id="user-gradient-value" class="font-mono text-white">150</span>
+                                        </label>
+                                         <input type="range" id="user-gradient-slider" min="0" max="500" step="1" value="150" class="w-full mt-2">
+                                     </div>
+                                     <!-- User R-squared -->
+                                     <div class="pt-2">
+                                         <div class="flex justify-between items-center bg-gray-700 p-3 rounded-lg">
+                                            <span class="font-bold text-cyan-400">Your R-Squared</span>
+                                            <span id="user-r-squared" class="font-mono text-2xl font-bold text-white">0.00</span>
+                                        </div>
+                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="flex gap-4">
+                                 <button id="reset-button" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">Reset Data</button>
+                                 <button id="new-data-button" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-200">New Data</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- How It Works Tab -->
+                    <div id="how-it-works" role="tabpanel" aria-labelledby="how-it-works-tab" class="hidden">
+                         <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700">
+                            <h2 class="text-2xl font-bold text-white mb-2">Building the Best Fit Line</h2>
+                            <p class="text-gray-400 text-sm mb-4">This animation shows how the Ordinary Least Squares method finds the optimal line.</p>
+                            <div id="animation-container" class="w-full h-64 bg-gray-900/50 rounded-lg mb-4"></div>
+                            <div class="space-y-3 text-sm" id="animation-explanation">
+                                <!-- Explanation text will be dynamically inserted here -->
+                            </div>
+                            <div class="mt-4">
+                                <button id="replay-animation-button" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">Replay Animation</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Multivariate Tab -->
+                    <div id="multivariate" role="tabpanel" aria-labelledby="multivariate-tab" class="hidden">
+                        <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 space-y-4 text-gray-300">
+                            <h2 class="text-2xl font-bold text-white mb-2">Beyond Two Dimensions</h2>
+                            <p>So far, we've only used one variable (house size) to predict the price. This is called <strong class="text-indigo-400">univariate regression</strong>.</p>
+                            <p>In the real world, many factors affect a house's price. We could include variables like the number of bedrooms, age of the house, or distance to the city center. When we use multiple variables, it's called <strong class="text-cyan-400">multivariate regression</strong>.</p>
+                            
+                            <div>
+                                <h3 class="text-xl font-bold text-white mt-4 mb-2">The Formula Expands</h3>
+                                <p>Our simple line equation was:</p>
+                                <p class="my-2 p-3 bg-gray-900 rounded-md text-center font-mono">\( \text{Price} = b_0 + m_1 \cdot \text{Size} \)</p>
+                                <p>For a multivariate model, we just add more terms—one for each new variable. Each new variable gets its own gradient (or coefficient).</p>
+                                <p class="my-2 p-3 bg-gray-900 rounded-md text-center font-mono">\( \text{Price} = b_0 + m_1 \cdot \text{Size} + m_2 \cdot \text{Bedrooms} + m_3 \cdot \text{Age} \)</p>
+                                <ul class="list-disc list-inside text-sm space-y-1 mt-2 text-gray-400">
+                                    <li>\(b_0\) is still the intercept.</li>
+                                    <li>\(m_1\) is the gradient for Size.</li>
+                                    <li>\(m_2\) is the gradient for Bedrooms.</li>
+                                    <li>\(m_3\) is the gradient for Age.</li>
+                                </ul>
+                            </div>
+
+                            <div>
+                                <h3 class="text-xl font-bold text-white mt-4 mb-2">From a Line to a Plane</h3>
+                                <p>With one predictor variable (size), we find the best-fitting <strong>line</strong>. If we add a second predictor (e.g., number of bedrooms), our data points now exist in 3D space. The model's goal is to find the best-fitting <strong>plane</strong> that slices through the data points, minimizing the squared errors just like before.</p>
+                                <div class="mt-4 p-4 bg-gray-900/50 rounded-lg text-center">
+                                    <!-- Embedded SVG for Multivariate Plane -->
+                                    <svg viewBox="0 0 200 150" class="mx-auto" style="max-height: 180px;">
+                                        <!-- Axes -->
+                                        <line x1="10" y1="140" x2="150" y2="140" stroke="#9ca3af" stroke-width="1"></line> <!-- X axis -->
+                                        <line x1="10" y1="140" x2="10" y2="10" stroke="#9ca3af" stroke-width="1"></line> <!-- Z axis -->
+                                        <line x1="10" y1="140" x2="60" y2="100" stroke="#9ca3af" stroke-width="1"></line> <!-- Y axis -->
+                                        <!-- Axis labels -->
+                                        <text x="155" y="145" fill="#9ca3af" font-size="8">Size</text>
+                                        <text x="65" y="100" fill="#9ca3af" font-size="8">Bedrooms</text>
+                                        <text x="0" y="15" fill="#9ca3af" font-size="8" transform="rotate(-90, 10, 10)">Price</text>
+                                        <!-- Plane -->
+                                        <polygon points="30,120 180,110 170,30 20,40" fill="#67e8f9" fill-opacity="0.2" stroke="#67e8f9" stroke-width="1"></polygon>
+                                        <!-- Data points -->
+                                        <circle cx="50" cy="100" r="2.5" fill="#eef2ff"></circle>
+                                        <circle cx="80" cy="80" r="2.5" fill="#eef2ff"></circle>
+                                        <circle cx="120" cy="90" r="2.5" fill="#eef2ff"></circle>
+                                        <circle cx="150" cy="50" r="2.5" fill="#eef2ff"></circle>
+                                        <circle cx="70" cy="40" r="2.5" fill="#eef2ff"></circle>
+                                        <circle cx="100" cy="20" r="2.5" fill="#eef2ff"></circle>
+                                    </svg>
+                                    <p class="text-sm text-gray-400 mt-2">Instead of a 2D line, a model with two variables creates a 3D plane.</p>
+                                </div>
+                                <p class="mt-4">If we add a third variable, we can't easily visualize it anymore! The model creates a "hyperplane" in 4D space. The math is the same, but our ability to picture it breaks down.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Testing the Model Tab -->
+                    <div id="testing" role="tabpanel" aria-labelledby="testing-tab" class="hidden">
+                        <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 space-y-4 text-gray-300">
+                            <h2 class="text-2xl font-bold text-white mb-2">Does the Model Generalize?</h2>
+                            <p>A model that perfectly describes the data it was trained on is useless if it can't make accurate predictions on <strong class="text-indigo-400">new, unseen data</strong>. This is why testing is critical.</p>
+
+                            <h3 class="text-xl font-bold text-white mt-4 mb-2">The Train-Test Split</h3>
+                            <p>The standard method is to split your dataset into two parts:</p>
+                            <ul class="list-disc list-inside text-sm space-y-2 mt-2 text-gray-400">
+                                <li><strong class="text-white">Training Set (e.g., 80% of data):</strong> The model learns the relationships from this data. The intercept and gradient(s) are calculated using only these points.</li>
+                                <li><strong class="text-white">Testing Set (e.g., 20% of data):</strong> This data is held back. The model never sees it during training. We use it at the very end to evaluate performance.</li>
+                            </ul>
+                            <div class="mt-4 p-4 bg-gray-900/50 rounded-lg text-center">
+                                 <!-- Embedded SVG for Train-Test Split -->
+                                <svg viewBox="0 0 300 100" class="mx-auto" style="max-height: 110px;">
+                                    <defs>
+                                        <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                        <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af"></path>
+                                        </marker>
+                                    </defs>
+                                    <!-- Full Dataset -->
+                                    <rect x="5" y="20" width="100" height="60" stroke="#9ca3af" fill="#374151" rx="5"></rect>
+                                    <text x="55" y="55" fill="#d1d5db" text-anchor="middle" font-size="10">Full Dataset</text>
+                                    <!-- Arrow -->
+                                    <line x1="115" y1="50" x2="145" y2="35" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrowhead)"></line>
+                                    <line x1="115" y1="50" x2="145" y2="65" stroke="#9ca3af" stroke-width="1.5" marker-end="url(#arrowhead)"></line>
+                                    <!-- Train Set -->
+                                    <rect x="150" y="15" width="140" height="40" stroke="#818cf8" fill="#4338ca" rx="5"></rect>
+                                    <text x="220" y="40" fill="#e0e7ff" text-anchor="middle" font-size="10">Training Set (~80%)</text>
+                                    <!-- Test Set -->
+                                    <rect x="150" y="65" width="140" height="25" stroke="#67e8f9" fill="#164e63" rx="5"></rect>
+                                    <text x="220" y="82" fill="#e0f2fe" text-anchor="middle" font-size="10">Testing Set (~20%)</text>
+                                </svg>
+                                <p class="text-sm text-gray-400 mt-2">The core principle of splitting data to test a model's real-world performance.</p>
+                            </div>
+
+                            <h3 class="text-xl font-bold text-white mt-4 mb-2">Common Evaluation Metrics</h3>
+                            <p>After training, we feed the test set's input variables (e.g., house sizes) to the model and compare its predictions to the actual prices. Here's how we measure the error:</p>
+
+                            <div class="space-y-3 text-sm">
+                                <div>
+                                    <p class="font-semibold text-cyan-400">Mean Absolute Error (MAE)</p>
+                                    <p class="text-gray-400">The average of the absolute differences between predicted and actual values. It's easy to interpret: "On average, our model's prediction is off by $X."</p>
+                                    <p class="my-2 p-2 bg-gray-900 rounded-md text-center font-mono text-xs">\( \text{MAE} = \frac{1}{n} \sum_{i=1}^{n} | \text{Actual}_i - \text{Predicted}_i | \)</p>
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-cyan-400">Root Mean Squared Error (RMSE)</p>
+                                    <p class="text-gray-400">This is the square root of the average of the squared errors. It penalizes large errors more heavily than MAE and is in the same unit as the output (e.g., dollars).</p>
+                                    <p class="my-2 p-2 bg-gray-900 rounded-md text-center font-mono text-xs">\( \text{RMSE} = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (\text{Actual}_i - \text{Predicted}_i)^2} \)</p>
+                                </div>
+                                <p class="pt-2">A good model will have low MAE and RMSE values on the test set. A large difference between training error and testing error often indicates <strong class="text-red-400">overfitting</strong>.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Model Performance Tab -->
+                    <div id="performance" role="tabpanel" aria-labelledby="performance-tab" class="hidden">
+                        <div class="bg-gray-800 p-6 rounded-2xl shadow-2xl border border-gray-700 space-y-4 text-gray-300">
+                            <h2 class="text-2xl font-bold text-white mb-2">Analyzing Prediction Accuracy</h2>
+                            <p>This <strong class="text-cyan-400">Residual Plot</strong> helps us diagnose the model's performance. It plots the prediction errors (residuals) against the size of the house.</p>
+                             <div id="residual-chart-container" class="w-full h-64 bg-gray-900/50 rounded-lg my-4"></div>
+                            <h3 class="text-xl font-bold text-white mt-4 mb-2">How to Interpret This Chart</h3>
+                             <ul class="list-disc list-inside text-sm space-y-2 mt-2 text-gray-400">
+                                <li>Each point's vertical position shows how far the model's prediction was from the actual price for that house.</li>
+                                <li><strong class="text-white">The Goal:</strong> We want to see a random, "shotgun blast" pattern of points scattered around the zero line.</li>
+                                <li><strong class="text-red-400">Warning Signs:</strong> If you see a clear pattern (like a U-shape, a funnel, or points consistently on one side), it means a simple straight line isn't capturing the full story in the data.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- INITIAL DATA & CONFIG ---
+        let data = [
+            { x: 1400, y: 245000 }, { x: 1600, y: 312000 }, { x: 1700, y: 279000 },
+            { x: 1875, y: 308000 }, { x: 1100, y: 199000 }, { x: 1550, y: 219000 },
+            { x: 2350, y: 405000 }, { x: 2450, y: 324000 }, { x: 1425, y: 319000 },
+            { x: 1700, y: 255000 }
+        ];
+        let activeInitialData = JSON.parse(JSON.stringify(data));
+
+        // --- D3 CHART SETUP ---
+        const container = document.getElementById('chart-container');
+        const margin = { top: 20, right: 30, bottom: 60, left: 80 };
+        let width, height;
+
+        const svg = d3.select("#chart-container")
+            .append("svg")
+            .attr("class", "w-full h-full");
+
+        const chartGroup = svg.append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+            
+        // Scales
+        const xScale = d3.scaleLinear().domain([0, 5000]);
+        const yScale = d3.scaleLinear().domain([0, 1000000]);
+        
+        // Axes
+        const xAxis = d3.axisBottom(xScale).tickFormat(d => `${d} sqft`);
+        const yAxis = d3.axisLeft(yScale).tickFormat(d3.format("$,.0f"));
+
+        const xAxisGroup = chartGroup.append("g")
+            .attr("class", "axis x-axis");
+        const yAxisGroup = chartGroup.append("g")
+            .attr("class", "axis y-axis");
+            
+        // Gridlines
+        const xGrid = chartGroup.append("g").attr("class", "grid x-grid");
+        const yGrid = chartGroup.append("g").attr("class", "grid y-grid");
+        
+        // Axis Labels
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("x", margin.left - 20)
+            .attr("y", margin.top - 10)
+            .attr("class", "text-indigo-400 font-semibold")
+            .text("Price");
+
+        svg.append("text")
+            .attr("text-anchor", "end")
+            .attr("class", "text-indigo-400 font-semibold")
+            .attr("id", "x-label")
+            .text("Size (sqft)");
+
+        // Lines
+        const modelLine = chartGroup.append("line").attr("stroke", "#818cf8").attr("stroke-width", 3).attr("stroke-dasharray", "5,5");
+        const userLine = chartGroup.append("line").attr("stroke", "#67e8f9").attr("stroke-width", 3);
+
+        const errorVizGroup = chartGroup.append("g").attr("class", "error-visualization");
+
+        // --- RESIDUAL PLOT SETUP ---
+        const residualContainer = document.getElementById('residual-chart-container');
+        const residualMargin = { top: 20, right: 20, bottom: 40, left: 70 };
+        let residualWidth, residualHeight;
+
+        const residualSvg = d3.select("#residual-chart-container").append("svg").attr("class", "w-full h-full");
+        const residualChartGroup = residualSvg.append("g").attr("transform", `translate(${residualMargin.left},${residualMargin.top})`);
+        const residualYScale = d3.scaleLinear();
+        const residualYAxis = d3.axisLeft(residualYScale).tickFormat(d3.format("$,.0f"));
+        const residualYAxisGroup = residualChartGroup.append("g").attr("class", "axis y-axis");
+        const residualXAxisGroup = residualChartGroup.append("g").attr("class", "axis x-axis");
+        residualSvg.append("text").attr("text-anchor", "end").attr("x", residualMargin.left - 10).attr("y", residualMargin.top - 5).attr("class", "text-cyan-400 font-semibold text-sm").text("Error");
+
+
+        // --- UI ELEMENTS ---
+        const modelInterceptEl = document.getElementById('model-intercept');
+        const modelGradientEl = document.getElementById('model-gradient');
+        const modelRSquaredEl = document.getElementById('model-r-squared');
+        const userInterceptSlider = document.getElementById('user-intercept-slider');
+        const userGradientSlider = document.getElementById('user-gradient-slider');
+        const userInterceptValueEl = document.getElementById('user-intercept-value');
+        const userGradientValueEl = document.getElementById('user-gradient-value');
+        const userRSquaredEl = document.getElementById('user-r-squared');
+        const resetButton = document.getElementById('reset-button');
+        const newDataButton = document.getElementById('new-data-button');
+        const showErrorToggle = document.getElementById('show-error-toggle');
+        const replayAnimationButton = document.getElementById('replay-animation-button');
+        
+        // --- TAB LOGIC ---
+        const tabs = {
+            explorer: { tab: document.getElementById('explorer-tab'), panel: document.getElementById('explorer') },
+            howItWorks: { tab: document.getElementById('how-it-works-tab'), panel: document.getElementById('how-it-works') },
+            multivariate: { tab: document.getElementById('multivariate-tab'), panel: document.getElementById('multivariate') },
+            testing: { tab: document.getElementById('testing-tab'), panel: document.getElementById('testing') },
+            performance: { tab: document.getElementById('performance-tab'), panel: document.getElementById('performance') }
+        };
+
+        function switchTab(targetTab) {
+            Object.values(tabs).forEach(({ tab, panel }) => {
+                if (tab === targetTab) {
+                    tab.classList.add('border-indigo-500', 'text-indigo-500');
+                    tab.classList.remove('border-transparent', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tab.setAttribute('aria-selected', 'true');
+                    panel.classList.remove('hidden');
+                } else {
+                    tab.classList.remove('border-indigo-500', 'text-indigo-500');
+                    tab.classList.add('border-transparent', 'hover:text-gray-300', 'hover:border-gray-500');
+                    tab.setAttribute('aria-selected', 'false');
+                    panel.classList.add('hidden');
+                }
+            });
+
+            if (targetTab === tabs.howItWorks.tab) {
+                startAnimation();
+            } else if (targetTab === tabs.multivariate.tab || targetTab === tabs.testing.tab) {
+                if (window.MathJax) {
+                    window.MathJax.typeset();
+                }
+            } else if (targetTab === tabs.performance.tab) {
+                // When switching to the performance tab, the container becomes visible.
+                // We need to call update() which will trigger the updateResidualPlot()
+                // with the now-correct dimensions.
+                update();
+            }
+        }
+
+        Object.values(tabs).forEach(({tab}) => {
+            tab.addEventListener('click', () => switchTab(tab));
+        });
+
+        // Initialize first tab
+        switchTab(tabs.explorer.tab);
+
+
+        // --- CORE LOGIC ---
+
+        function generateRandomData() {
+            const newData = [];
+            const numPoints = Math.floor(Math.random() * 8) + 8; // 8 to 15 points
+            const trueM = Math.random() * 300 + 50; // Gradient between 50 and 350
+            const trueB = Math.random() * 100000 + 10000; // Intercept between 10k and 110k
+            const xRange = 4000;
+            const noiseLevel = 200000; // How much points can deviate
+
+            for (let i = 0; i < numPoints; i++) {
+                const x = Math.random() * xRange + 500; // sqft between 500 and 4500
+                const perfectY = trueM * x + trueB;
+                const noise = (Math.random() - 0.5) * noiseLevel;
+                const y = perfectY + noise;
+                
+                newData.push({ x, y: Math.max(0, y) }); // Ensure y is not negative
+            }
+            return newData;
+        }
+
+        function calculateRegression(data) {
+            if (data.length < 2) return { m: 0, b: 0, rSquared: 0 };
+
+            const n = data.length;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            data.forEach(({ x, y }) => {
+                sumX += x;
+                sumY += y;
+                sumXY += x * y;
+                sumX2 += x * x;
+            });
+
+            const m = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const b = (sumY - m * sumX) / n;
+
+            // Calculate R-squared
+            const yMean = sumY / n;
+            let ssTot = 0; // Total sum of squares
+            let ssRes = 0; // Residual sum of squares
+            data.forEach(({ x, y }) => {
+                const yPred = m * x + b;
+                ssTot += (y - yMean) ** 2;
+                ssRes += (y - yPred) ** 2;
+            });
+            
+            const rSquared = ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
+            return { m, b, rSquared };
+        }
+
+        function calculateRSquaredForLine(data, m, b) {
+            if (data.length < 2) return 0;
+            const n = data.length;
+            const yMean = data.reduce((sum, d) => sum + d.y, 0) / n;
+            
+            let ssTot = 0;
+            let ssRes = 0;
+            data.forEach(({ x, y }) => {
+                const yPred = m * x + b;
+                ssTot += (y - yMean) ** 2;
+                ssRes += (y - yPred) ** 2;
+            });
+
+            return ssTot === 0 ? 1 : 1 - (ssRes / ssTot);
+        }
+
+        function update() {
+            // Recalculate model
+            const model = calculateRegression(data);
+
+            // Update model display
+            modelInterceptEl.textContent = d3.format("$,.0f")(model.b);
+            modelGradientEl.textContent = d3.format("$,.2f")(model.m);
+            modelRSquaredEl.textContent = model.rSquared.toFixed(2);
+            
+            // --- ERROR VISUALIZATION ---
+            errorVizGroup.selectAll("*").remove(); // Clear previous visuals
+            
+            if (showErrorToggle.checked && data.length > 0) {
+                const errorData = data.map(d => {
+                    const yPred = model.m * d.x + model.b;
+                    return { x: d.x, y: d.y, yPred: yPred };
+                });
+                
+                errorVizGroup.selectAll(".residual-line").data(errorData).enter().append("line")
+                    .attr("class", "residual-line").attr("x1", d => xScale(d.x)).attr("y1", d => yScale(d.y))
+                    .attr("x2", d => xScale(d.x)).attr("y2", d => yScale(d.yPred))
+                    .attr("stroke", "#ef4444").attr("stroke-width", 1).attr("stroke-dasharray", "2,2");
+                    
+                errorVizGroup.selectAll(".error-square").data(errorData).enter().append("rect")
+                    .attr("class", "error-square").attr("x", d => xScale(d.x))
+                    .attr("y", d => yScale(Math.max(d.y, d.yPred)))
+                    .attr("width", d => Math.abs(yScale(d.y) - yScale(d.yPred)))
+                    .attr("height", d => Math.abs(yScale(d.y) - yScale(d.yPred)))
+                    .attr("fill", "#ef4444").attr("fill-opacity", 0.2).attr("stroke", "#ef4444").attr("stroke-width", 1);
+            }
+
+            // Draw model line
+            const x1 = xScale.domain()[0];
+            const y1 = model.m * x1 + model.b;
+            const x2 = xScale.domain()[1];
+            const y2 = model.m * x2 + model.b;
+            modelLine
+                .attr("x1", xScale(x1)).attr("y1", yScale(y1))
+                .attr("x2", xScale(x2)).attr("y2", yScale(y2));
+
+            // Update user's line and R-squared based on current slider values
+            updateUserLine();
+
+            // Update dots
+            const dots = chartGroup.selectAll("circle").data(data);
+            dots.enter().append("circle")
+                .attr("r", 6).attr("fill", "#a78bfa").attr("stroke", "#eef2ff").attr("stroke-width", 2)
+                .merge(dots)
+                .attr("cx", d => xScale(d.x)).attr("cy", d => yScale(d.y));
+            dots.exit().remove();
+            
+            // Update the residual plot
+            updateResidualPlot();
+        }
+
+        function updateResidualPlot() {
+            // Guard clause: if the container is hidden, its width is 0. Don't draw.
+            if (residualContainer.clientWidth === 0) return;
+
+            // Set dimensions now that we know the container is visible
+            residualWidth = residualContainer.clientWidth - residualMargin.left - residualMargin.right;
+            residualHeight = residualContainer.clientHeight - residualMargin.top - residualMargin.bottom;
+            residualSvg.attr("width", residualContainer.clientWidth).attr("height", residualContainer.clientHeight);
+
+            residualChartGroup.selectAll("*").remove(); // Clear previous
+            if (data.length < 2) return;
+
+            const model = calculateRegression(data);
+            const residuals = data.map(d => ({ x: d.x, residual: d.y - (model.m * d.x + model.b) }));
+            
+            const yExtent = d3.extent(residuals, d => d.residual);
+            const buffer = (yExtent[1] - yExtent[0]) * 0.2 || 10000;
+            residualYScale.domain([yExtent[0] - buffer, yExtent[1] + buffer]).range([residualHeight, 0]).nice();
+            
+            const residualXAxis = d3.axisBottom(xScale).tickFormat(d => `${d}`);
+            residualXAxisGroup.attr("transform", `translate(0,${residualHeight})`).call(residualXAxis);
+            residualYAxisGroup.call(residualYAxis);
+
+            // Zero line
+            residualChartGroup.append("line")
+                .attr("x1", 0).attr("x2", residualWidth)
+                .attr("y1", residualYScale(0)).attr("y2", residualYScale(0))
+                .attr("stroke", "#9ca3af").attr("stroke-width", 2).attr("stroke-dasharray", "3,3");
+
+            // Residual dots
+            const resDots = residualChartGroup.selectAll(".residual-dot").data(residuals);
+            resDots.enter().append("circle")
+                .attr("class", "residual-dot")
+                .attr("r", 5).attr("fill", "#67e8f9").attr("fill-opacity", 0.7)
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => residualYScale(d.residual));
+        }
+        
+        function updateUserLine() {
+            const userIntercept = +userInterceptSlider.value;
+            const userGradient = +userGradientSlider.value;
+            
+            userInterceptValueEl.textContent = d3.format("$,.0f")(userIntercept);
+            userGradientValueEl.textContent = d3.format("$,.2f")(userGradient);
+
+            const userRSquared = calculateRSquaredForLine(data, userGradient, userIntercept);
+            userRSquaredEl.textContent = userRSquared.toFixed(2);
+            
+            const x1 = xScale.domain()[0], y1_user = userGradient * x1 + userIntercept;
+            const x2 = xScale.domain()[1], y2_user = userGradient * x2 + userIntercept;
+            
+            userLine
+                .attr("x1", xScale(x1)).attr("y1", yScale(y1_user))
+                .attr("x2", xScale(x2)).attr("y2", yScale(y2_user));
+        }
+
+        function resize() {
+            // Main chart
+            width = container.clientWidth - margin.left - margin.right;
+            height = container.clientHeight - margin.top - margin.bottom;
+            svg.attr("width", container.clientWidth).attr("height", container.clientHeight);
+            xScale.range([0, width]);
+            yScale.range([height, 0]);
+            xAxisGroup.attr("transform", `translate(0,${height})`).call(xAxis);
+            yAxisGroup.call(yAxis);
+            xGrid.call(d3.axisBottom(xScale).ticks(10).tickSize(-height).tickFormat(""));
+            yGrid.call(d3.axisLeft(yScale).ticks(10).tickSize(-width).tickFormat(""));
+            svg.select("#x-label").attr("x", width + margin.left).attr("y", height + margin.top + 40);
+           
+            update();
+        }
+
+        // --- EVENT LISTENERS ---
+        
+        userInterceptSlider.addEventListener('input', updateUserLine);
+        userGradientSlider.addEventListener('input', updateUserLine);
+
+        svg.on("click", function(event) {
+            if (event.target !== this) return;
+            const [mx, my] = d3.pointer(event);
+            const trueX = mx - margin.left, trueY = my - margin.top;
+            
+            if (trueX >= 0 && trueX <= width && trueY >= 0 && trueY <= height) {
+                data.push({ x: xScale.invert(trueX), y: yScale.invert(trueY) });
+                update();
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            data = JSON.parse(JSON.stringify(activeInitialData));
+            update();
+        });
+
+        newDataButton.addEventListener('click', () => {
+            const newData = generateRandomData();
+            data = newData;
+            activeInitialData = JSON.parse(JSON.stringify(newData));
+            update();
+        });
+
+        showErrorToggle.addEventListener('change', update);
+
+        // --- ANIMATION LOGIC ---
+        let animationTimeout;
+        const explanationEl = document.getElementById('animation-explanation');
+
+        function setExplanation(html) {
+            explanationEl.innerHTML = html;
+            if (window.MathJax) {
+                 window.MathJax.typeset();
+            }
+        }
+        
+        function startAnimation() {
+            clearTimeout(animationTimeout);
+            const container = d3.select("#animation-container");
+            container.selectAll("*").remove();
+
+            const animMargin = {top: 20, right: 20, bottom: 20, left: 20};
+            const animWidth = container.node().clientWidth - animMargin.left - animMargin.right;
+            const animHeight = container.node().clientHeight - animMargin.top - animMargin.bottom;
+
+            const animSvg = container.append("svg")
+                .attr("width", animWidth + animMargin.left + animMargin.right)
+                .attr("height", animHeight + animMargin.top + animMargin.bottom)
+                .append("g")
+                .attr("transform", `translate(${animMargin.left},${animMargin.top})`);
+
+            const animXScale = d3.scaleLinear().domain(d3.extent(data, d => d.x)).range([0, animWidth]).nice();
+            const animYScale = d3.scaleLinear().domain(d3.extent(data, d => d.y)).range([animHeight, 0]).nice();
+            
+            const xMean = d3.mean(data, d => d.x);
+            const yMean = d3.mean(data, d => d.y);
+            const model = calculateRegression(data);
+
+            animSvg.selectAll("circle").data(data).enter().append("circle")
+                .attr("cx", d => animXScale(d.x)).attr("cy", d => animYScale(d.y))
+                .attr("r", 0).attr("fill", "#a78bfa").transition().duration(500).attr("r", 4);
+            
+            setExplanation(`<p class="font-semibold text-white">Step 1: Start with the data points.</p><p>Each point represents a house with a specific size and price.</p>`);
+
+            animationTimeout = setTimeout(() => {
+                animSvg.append("line").attr("x1", animXScale(xMean)).attr("y1", 0).attr("x2", animXScale(xMean)).attr("y2", animHeight)
+                    .attr("stroke", "#67e8f9").attr("stroke-dasharray", "4,4").style("opacity", 0).transition().duration(500).style("opacity", 1);
+                animSvg.append("line").attr("x1", 0).attr("y1", animYScale(yMean)).attr("x2", animWidth).attr("y2", animYScale(yMean))
+                    .attr("stroke", "#67e8f9").attr("stroke-dasharray", "4,4").style("opacity", 0).transition().duration(500).style("opacity", 1);
+                animSvg.append("circle").attr("cx", animXScale(xMean)).attr("cy", animYScale(yMean))
+                    .attr("r", 0).attr("fill", "#67e8f9").transition().duration(500).attr("r", 6);
+                setExplanation(`<p class="font-semibold text-white">Step 2: Find the center of the data (centroid).</p><p>This is the average size (x̄) and average price (ȳ). The best-fit line will always pass through this point.</p>`);
+            }, 2000);
+
+            animationTimeout = setTimeout(() => {
+                 const rectsNumerator = animSvg.selectAll(".numerator-rect").data(data).enter().append("rect")
+                    .attr("class", "numerator-rect")
+                    .attr("x", d => animXScale(Math.min(d.x, xMean))).attr("y", d => animYScale(Math.max(d.y, yMean)))
+                    .attr("width", d => Math.abs(animXScale(d.x) - animXScale(xMean)))
+                    .attr("height", d => Math.abs(animYScale(d.y) - animYScale(yMean)))
+                    .attr("fill", d => (d.x - xMean) * (d.y - yMean) > 0 ? "#10b981" : "#ef4444")
+                    .style("opacity", 0).transition().duration(500).style("opacity", 0.3);
+                setExplanation(`<p class="font-semibold text-white">Step 3: Calculate the Gradient (Slope).</p><p>The formula is: \\( m = \\frac{\\sum(x_i - \\bar{x})(y_i - \\bar{y})}{\\sum(x_i - \\bar{x})^2} \\). The colored rectangles represent the numerator's components.</p>`);
+
+                animationTimeout = setTimeout(() => {
+                    rectsNumerator.transition().duration(500).style("opacity", 0);
+                    const rectsDenominator = animSvg.selectAll(".denominator-rect").data(data).enter().append("rect")
+                        .attr("class", "denominator-rect")
+                        .attr("x", d => animXScale(Math.min(d.x, xMean))).attr("y", animYScale(yMean))
+                        .attr("width", d => Math.abs(animXScale(d.x) - animXScale(xMean)))
+                        .attr("height", d => Math.abs(animXScale(d.x) - animXScale(xMean)))
+                        .attr("fill", "#f97316").style("opacity", 0).transition().duration(500).style("opacity", 0.3);
+                    setExplanation(`<p class="font-semibold text-white">Step 3 (cont.): Calculate the Gradient.</p><p>The orange squares represent the denominator's components, \\( (x_i - \\bar{x})^2 \\). Summing these up gives us the total horizontal variance from the mean.</p>`);
+                    
+                    animationTimeout = setTimeout(() => {
+                         rectsDenominator.transition().duration(500).style("opacity", 0);
+                         const x1 = animXScale.domain()[0], y1 = model.m * x1 + model.b;
+                         const x2 = animXScale.domain()[1], y2 = model.m * x2 + model.b;
+                         animSvg.append("line").attr("class", "final-line")
+                            .attr("x1", animXScale(x1)).attr("y1", animYScale(y1))
+                            .attr("x2", animXScale(x1)).attr("y2", animYScale(y1))
+                            .attr("stroke", "#818cf8").attr("stroke-width", 2.5)
+                            .transition().duration(1000)
+                            .attr("x2", animXScale(x2)).attr("y2", animYScale(y2));
+                        setExplanation(`<p class="font-semibold text-white">Step 4: Draw the Line!</p><p>With the gradient (m) calculated and knowing the line passes through the centroid, we can now determine the intercept (b) and draw the line of best fit.</p>`);
+                    }, 4000);
+                }, 4000);
+            }, 4000);
+        }
+
+        replayAnimationButton.addEventListener('click', startAnimation);
+
+
+        // Initial setup
+        window.addEventListener('resize', resize);
+        resize();
+    });
+    </script>
+</body>
+</html>
+

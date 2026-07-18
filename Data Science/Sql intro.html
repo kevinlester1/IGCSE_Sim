@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySQL 101: Interactive Teaching Resource</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+        
+        body { font-family: 'Inter', sans-serif; }
+        .code-font { font-family: 'JetBrains Mono', monospace; }
+        
+        .sql-keyword { color: #c678dd; font-weight: bold; }
+        .sql-string { color: #98c379; }
+        .sql-func { color: #61afef; }
+        .sql-num { color: #d19a66; }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Mobile Header -->
+    <div class="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center">
+        <h1 class="font-bold text-lg"><i class="fas fa-database mr-2 text-blue-400"></i>MySQL 101</h1>
+        <button id="mobile-menu-btn" class="text-white focus:outline-none">
+            <i class="fas fa-bars"></i>
+        </button>
+    </div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="bg-slate-900 text-slate-300 w-full md:w-64 flex-shrink-0 flex flex-col transition-all duration-300 transform md:translate-x-0 -translate-x-full absolute md:relative z-20 h-full">
+        <div class="p-6 border-b border-slate-700 hidden md:block">
+            <h1 class="font-extrabold text-2xl text-white tracking-tight"><i class="fas fa-database mr-2 text-blue-500"></i>MySQL 101</h1>
+            <p class="text-xs text-slate-400 mt-2">Interactive Learning Module</p>
+        </div>
+        
+        <nav class="flex-1 overflow-y-auto py-4">
+            <div class="px-4 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Modules</div>
+            <button onclick="loadModule('intro')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent active-nav-border" id="btn-intro">
+                <i class="fas fa-info-circle w-6"></i> Introduction
+            </button>
+            <button onclick="loadModule('structure')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent" id="btn-structure">
+                <i class="fas fa-table w-6"></i> Tables & Structure
+            </button>
+            <button onclick="loadModule('select')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent" id="btn-select">
+                <i class="fas fa-search w-6"></i> SELECT Basics
+            </button>
+            <button onclick="loadModule('advanced')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent" id="btn-advanced">
+                <i class="fas fa-filter w-6"></i> Advanced SELECT
+            </button>
+            
+            <div class="px-4 mt-6 mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wider">Practice</div>
+            <button onclick="loadModule('playground')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent" id="btn-playground">
+                <i class="fas fa-terminal w-6 text-green-400"></i> SQL Playground
+            </button>
+            <button onclick="loadModule('quiz')" class="nav-btn w-full text-left px-6 py-3 hover:bg-slate-800 hover:text-white transition-colors border-l-4 border-transparent" id="btn-quiz">
+                <i class="fas fa-graduation-cap w-6 text-yellow-400"></i> Knowledge Quiz
+            </button>
+        </nav>
+
+        <div class="p-4 border-t border-slate-700 text-xs text-center text-slate-500">
+            Teaching Resource v2.2
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full relative overflow-hidden">
+        <div id="content-area" class="flex-1 overflow-y-auto p-6 md:p-10 scroll-smooth">
+            <!-- Dynamic Content Injected Here -->
+        </div>
+    </main>
+
+    <!-- Content Templates (Hidden) -->
+    <template id="tpl-intro">
+        <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+            <div class="mb-8">
+                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Module 1</span>
+                <h2 class="text-4xl font-bold text-slate-900 mt-2">What is MySQL?</h2>
+                <p class="text-xl text-slate-600 mt-4 leading-relaxed">
+                    Imagine a giant, super-organized digital filing cabinet. That's a database. 
+                    <strong class="text-blue-600">MySQL</strong> is the language we use to talk to that filing cabinet.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 text-blue-600">
+                        <i class="fas fa-database text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">The Database</h3>
+                    <p class="text-slate-600 text-sm">A structured collection of data. Unlike a text file, it allows us to find specific information instantly, even if there are millions of records.</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4 text-green-600">
+                        <i class="fas fa-language text-xl"></i>
+                    </div>
+                    <h3 class="text-lg font-bold mb-2">SQL</h3>
+                    <p class="text-slate-600 text-sm">Structured Query Language. It's the standard English-like syntax used to ask questions (Queries) or give commands to the database.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 rounded-xl p-6 text-slate-300">
+                <h3 class="text-white font-bold mb-4 border-b border-slate-700 pb-2">Why MySQL?</h3>
+                <ul class="space-y-3">
+                    <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i> <span>It powers the web (Facebook, WordPress, Airbnb use it).</span></li>
+                    <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i> <span>It's Open Source (Free to use).</span></li>
+                    <li class="flex items-start"><i class="fas fa-check text-green-400 mt-1 mr-3"></i> <span>It's Relational (Data is linked together logically).</span></li>
+                </ul>
+            </div>
+            
+            <div class="flex justify-end mt-8">
+                <button onclick="loadModule('structure')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    Next: Anatomy of a Table <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-structure">
+        <div class="max-w-4xl mx-auto space-y-8 animate-fade-in">
+            <div class="mb-6">
+                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Module 2</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-2">Tables, Rows, and Columns</h2>
+                <p class="text-lg text-slate-600 mt-2">
+                    In MySQL, data is stored in <strong class="text-blue-600">Tables</strong>. It looks a lot like a spreadsheet, but stricter.
+                </p>
+            </div>
+
+            <!-- Visualization of a Table -->
+            <div class="bg-white p-1 rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+                <div class="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center">
+                    <span class="font-bold text-slate-700"><i class="fas fa-table text-slate-400 mr-2"></i>Table Name: <span class="text-blue-600">students</span></span>
+                    <span class="text-xs text-slate-500">5 Rows, 5 Columns</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-xs uppercase text-slate-500">
+                            <tr>
+                                <th class="px-6 py-3 border-b border-slate-200">
+                                    id <i class="fas fa-key text-yellow-500 ml-1" title="Primary Key"></i>
+                                    <div class="normal-case text-[10px] text-slate-400 font-normal">INT</div>
+                                </th>
+                                <th class="px-6 py-3 border-b border-slate-200">
+                                    first_name
+                                    <div class="normal-case text-[10px] text-slate-400 font-normal">VARCHAR(50)</div>
+                                </th>
+                                <th class="px-6 py-3 border-b border-slate-200">
+                                    grade
+                                    <div class="normal-case text-[10px] text-slate-400 font-normal">INT</div>
+                                </th>
+                                <th class="px-6 py-3 border-b border-slate-200">
+                                    house
+                                    <div class="normal-case text-[10px] text-slate-400 font-normal">VARCHAR(20)</div>
+                                </th>
+                                <th class="px-6 py-3 border-b border-slate-200">
+                                    pet
+                                    <div class="normal-case text-[10px] text-slate-400 font-normal">VARCHAR(20)</div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <tr class="hover:bg-blue-50 transition-colors">
+                                <td class="px-6 py-4 font-mono text-slate-600">1</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">Harry</td>
+                                <td class="px-6 py-4 text-slate-600">10</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Gryffindor</span></td>
+                                <td class="px-6 py-4 text-slate-600">Owl</td>
+                            </tr>
+                            <tr class="hover:bg-blue-50 transition-colors">
+                                <td class="px-6 py-4 font-mono text-slate-600">2</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">Hermione</td>
+                                <td class="px-6 py-4 text-slate-600">12</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Gryffindor</span></td>
+                                <td class="px-6 py-4 text-slate-600">Cat</td>
+                            </tr>
+                            <tr class="hover:bg-blue-50 transition-colors">
+                                <td class="px-6 py-4 font-mono text-slate-600">3</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">Draco</td>
+                                <td class="px-6 py-4 text-slate-600">11</td>
+                                <td class="px-6 py-4"><span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-bold">Slytherin</span></td>
+                                <td class="px-6 py-4 text-slate-600">Owl</td>
+                            </tr>
+                             <tr class="hover:bg-blue-50 transition-colors">
+                                <td class="px-6 py-4 font-mono text-slate-600">4</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">Ron</td>
+                                <td class="px-6 py-4 text-slate-600">10</td>
+                                <td class="px-6 py-4"><span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-bold">Gryffindor</span></td>
+                                <td class="px-6 py-4 text-slate-600">Rat</td>
+                            </tr>
+                            <tr class="hover:bg-blue-50 transition-colors">
+                                <td class="px-6 py-4 font-mono text-slate-600">5</td>
+                                <td class="px-6 py-4 font-bold text-slate-800">Luna</td>
+                                <td class="px-6 py-4 text-slate-600">11</td>
+                                <td class="px-6 py-4"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-bold">Ravenclaw</span></td>
+                                <td class="px-6 py-4 text-slate-600 text-xs italic">NULL</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-3 gap-4 mt-6">
+                <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <h4 class="font-bold text-blue-800 mb-1">Column (Field)</h4>
+                    <p class="text-sm text-blue-700">A specific category of information (e.g., 'pet'). Every row has this field, even if it's empty (NULL).</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                    <h4 class="font-bold text-purple-800 mb-1">Row (Record)</h4>
+                    <p class="text-sm text-purple-700">A single entry of data. One row equals one student.</p>
+                </div>
+                <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                    <h4 class="font-bold text-yellow-800 mb-1"><i class="fas fa-key text-xs"></i> Primary Key</h4>
+                    <p class="text-sm text-yellow-700">A unique ID for every row. Two rows cannot have the same ID.</p>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="loadModule('intro')" class="text-slate-500 hover:text-slate-800">
+                    <i class="fas fa-arrow-left mr-2"></i> Back
+                </button>
+                <button onclick="loadModule('select')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    Next: SELECT Basics <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-select">
+        <div class="max-w-4xl mx-auto space-y-12 animate-fade-in pb-12">
+            <div>
+                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Module 3</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-2">SELECT Basics</h2>
+                <p class="text-lg text-slate-600 mt-2">
+                    The core command of SQL. It's how we ask questions.
+                </p>
+            </div>
+
+            <!-- Syntax Card -->
+            <div class="bg-slate-900 rounded-lg p-6 font-mono text-sm md:text-base shadow-xl relative overflow-hidden">
+                <div class="absolute top-2 right-2 text-slate-500 text-xs">Basic Syntax</div>
+                <div class="leading-relaxed">
+                    <span class="sql-keyword">SELECT</span> <span class="text-white">column1, column2</span><br>
+                    <span class="sql-keyword">FROM</span> <span class="text-white">table_name</span><br>
+                    <span class="sql-keyword">WHERE</span> <span class="text-white">condition</span>;
+                </div>
+            </div>
+
+            <div class="grid gap-8">
+                <!-- Section 1: Basic Select -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-blue-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">1. Choosing Columns</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Select only what you need to make your queries faster.</p>
+                    <div class="bg-slate-800 text-white p-3 rounded font-mono text-sm mb-2">
+                        <span class="text-slate-500">-- Get everything</span><br>
+                        <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> students;<br><br>
+                        <span class="text-slate-500">-- Get specific columns</span><br>
+                        <span class="sql-keyword">SELECT</span> first_name, pet <span class="sql-keyword">FROM</span> students;
+                    </div>
+                </div>
+
+                <!-- Section 2: Filtering Logic -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-purple-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">2. Comparison Operators</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Use the <code>WHERE</code> clause to filter rows.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-800 block mb-1">Equals (=)</span>
+                            <code class="text-xs text-purple-700 bg-purple-50 px-1">WHERE house = 'Gryffindor'</code>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-800 block mb-1">Not Equals (!= or <>)</span>
+                            <code class="text-xs text-purple-700 bg-purple-50 px-1">WHERE house != 'Slytherin'</code>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-800 block mb-1">Greater Than (>)</span>
+                            <code class="text-xs text-purple-700 bg-purple-50 px-1">WHERE grade > 10</code>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded text-sm">
+                            <span class="font-bold text-slate-800 block mb-1">Less Than (<)</span>
+                            <code class="text-xs text-purple-700 bg-purple-50 px-1">WHERE grade < 12</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="loadModule('structure')" class="text-slate-500 hover:text-slate-800">
+                    <i class="fas fa-arrow-left mr-2"></i> Back
+                </button>
+                <button onclick="loadModule('advanced')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    Next: Advanced SELECT <i class="fas fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-advanced">
+        <div class="max-w-4xl mx-auto space-y-8 animate-fade-in pb-12">
+            <div class="mb-6">
+                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded">Module 4</span>
+                <h2 class="text-3xl font-bold text-slate-900 mt-2">Advanced SELECT</h2>
+                <p class="text-lg text-slate-600 mt-2">
+                    Take your queries to the next level with sorting, limiting, and patterns.
+                </p>
+            </div>
+
+             <div class="grid gap-8">
+                <!-- Section 3: Sorting -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-orange-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">3. Sorting Results (ORDER BY)</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Organize your data alphabetically or numerically. Default is Ascending (ASC).</p>
+                    <div class="bg-slate-800 text-white p-3 rounded font-mono text-sm">
+                        <span class="text-slate-500">-- Highest grades first</span><br>
+                        <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> students<br>
+                        <span class="sql-keyword">ORDER BY</span> grade <span class="sql-func">DESC</span>;
+                    </div>
+                </div>
+
+                <!-- Section 4: Limiting -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-green-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">4. Limiting Results (LIMIT)</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Useful when you have millions of rows and just want to see the top few.</p>
+                    <div class="bg-slate-800 text-white p-3 rounded font-mono text-sm">
+                        <span class="text-slate-500">-- Top 3 students</span><br>
+                        <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> students<br>
+                        <span class="sql-keyword">ORDER BY</span> grade <span class="sql-func">DESC</span><br>
+                        <span class="sql-keyword">LIMIT</span> <span class="sql-num">3</span>;
+                    </div>
+                </div>
+
+                <!-- Section 5: Pattern Matching -->
+                <div class="bg-white p-6 rounded-xl border-l-4 border-pink-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">5. Pattern Matching (LIKE)</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Search for partial text using the wildcard <code>%</code> (matches anything).</p>
+                    <div class="bg-slate-800 text-white p-3 rounded font-mono text-sm">
+                        <span class="text-slate-500">-- Find names starting with 'H'</span><br>
+                        <span class="sql-keyword">SELECT</span> * <span class="sql-keyword">FROM</span> students<br>
+                        <span class="sql-keyword">WHERE</span> first_name <span class="sql-keyword">LIKE</span> <span class="sql-string">'H%'</span>;
+                    </div>
+                </div>
+
+                 <!-- Section 6: Aggregates -->
+                 <div class="bg-white p-6 rounded-xl border-l-4 border-teal-500 shadow-sm">
+                    <h3 class="font-bold text-xl text-slate-800 mb-2">6. Counting Rows (COUNT)</h3>
+                    <p class="text-slate-600 mb-4 text-sm">Count how many rows match your condition.</p>
+                    <div class="bg-slate-800 text-white p-3 rounded font-mono text-sm">
+                        <span class="text-slate-500">-- How many students are there?</span><br>
+                        <span class="sql-keyword">SELECT COUNT</span>(*) <span class="sql-keyword">FROM</span> students;
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-between mt-8">
+                <button onclick="loadModule('select')" class="text-slate-500 hover:text-slate-800">
+                    <i class="fas fa-arrow-left mr-2"></i> Back
+                </button>
+                <button onclick="loadModule('playground')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition-all transform hover:scale-105 shadow-lg">
+                    Next: SQL Playground <i class="fas fa-terminal ml-2"></i>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-playground">
+        <div class="h-full flex flex-col animate-fade-in">
+            <div class="mb-4 flex justify-between items-end">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900">SQL Playground</h2>
+                    <p class="text-sm text-slate-500">Practice your queries on the live table.</p>
+                </div>
+                <button onclick="resetDB()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-1 rounded transition-colors">
+                    <i class="fas fa-undo mr-1"></i> Reset Data
+                </button>
+            </div>
+
+            <!-- Challenge Board -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-4 max-h-[220px] overflow-y-auto pr-2">
+                <!-- 1 -->
+                <div class="bg-blue-50 p-3 rounded border border-blue-100 relative group">
+                    <h4 class="font-bold text-blue-800 text-xs mb-1">#1 Filter</h4>
+                    <p class="text-xs text-blue-700 mb-2">Find students in <strong>Slytherin</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE house = \'Slytherin\'')" class="text-[10px] bg-blue-200 hover:bg-blue-300 text-blue-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 2 -->
+                <div class="bg-purple-50 p-3 rounded border border-purple-100">
+                    <h4 class="font-bold text-purple-800 text-xs mb-1">#2 Greater Than</h4>
+                    <p class="text-xs text-purple-700 mb-2">Find students with <strong>Grade > 10</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE grade > 10')" class="text-[10px] bg-purple-200 hover:bg-purple-300 text-purple-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 3 -->
+                <div class="bg-orange-50 p-3 rounded border border-orange-100">
+                    <h4 class="font-bold text-orange-800 text-xs mb-1">#3 Pattern (Start)</h4>
+                    <p class="text-xs text-orange-700 mb-2">Find pets starting with <strong>'O'</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE pet LIKE \'O%\'')" class="text-[10px] bg-orange-200 hover:bg-orange-300 text-orange-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 4 -->
+                <div class="bg-green-50 p-3 rounded border border-green-100">
+                    <h4 class="font-bold text-green-800 text-xs mb-1">#4 Less Than</h4>
+                    <p class="text-xs text-green-700 mb-2">Find students with <strong>Grade < 10</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE grade < 10')" class="text-[10px] bg-green-200 hover:bg-green-300 text-green-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 5 -->
+                <div class="bg-red-50 p-3 rounded border border-red-100">
+                    <h4 class="font-bold text-red-800 text-xs mb-1">#5 Specific Name</h4>
+                    <p class="text-xs text-red-700 mb-2">Find student named <strong>Ron</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE first_name = \'Ron\'')" class="text-[10px] bg-red-200 hover:bg-red-300 text-red-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 6 -->
+                <div class="bg-teal-50 p-3 rounded border border-teal-100">
+                    <h4 class="font-bold text-teal-800 text-xs mb-1">#6 Not Equal</h4>
+                    <p class="text-xs text-teal-700 mb-2">Find students <strong>NOT in Gryffindor</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE house != \'Gryffindor\'')" class="text-[10px] bg-teal-200 hover:bg-teal-300 text-teal-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 7 -->
+                <div class="bg-indigo-50 p-3 rounded border border-indigo-100">
+                    <h4 class="font-bold text-indigo-800 text-xs mb-1">#7 Sort A-Z</h4>
+                    <p class="text-xs text-indigo-700 mb-2">List students <strong>alphabetically</strong>.</p>
+                    <button onclick="setQuery('SELECT * FROM students ORDER BY first_name ASC')" class="text-[10px] bg-indigo-200 hover:bg-indigo-300 text-indigo-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 8 -->
+                <div class="bg-pink-50 p-3 rounded border border-pink-100">
+                    <h4 class="font-bold text-pink-800 text-xs mb-1">#8 Top Results</h4>
+                    <p class="text-xs text-pink-700 mb-2">Find the <strong>top 2 highest</strong> grades.</p>
+                    <button onclick="setQuery('SELECT * FROM students ORDER BY grade DESC LIMIT 2')" class="text-[10px] bg-pink-200 hover:bg-pink-300 text-pink-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 9 -->
+                <div class="bg-slate-100 p-3 rounded border border-slate-200">
+                    <h4 class="font-bold text-slate-800 text-xs mb-1">#9 Counting</h4>
+                    <p class="text-xs text-slate-700 mb-2"><strong>Count</strong> total students.</p>
+                    <button onclick="setQuery('SELECT COUNT(*) FROM students')" class="text-[10px] bg-slate-300 hover:bg-slate-400 text-slate-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+                <!-- 10 -->
+                <div class="bg-amber-50 p-3 rounded border border-amber-100">
+                    <h4 class="font-bold text-amber-800 text-xs mb-1">#10 Pattern (End)</h4>
+                    <p class="text-xs text-amber-700 mb-2">Find pets ending in <strong>'at'</strong> (Cat, Rat).</p>
+                    <button onclick="setQuery('SELECT * FROM students WHERE pet LIKE \'%at\'')" class="text-[10px] bg-amber-200 hover:bg-amber-300 text-amber-800 px-2 py-1 rounded font-bold"><i class="fas fa-eye mr-1"></i> Answer</button>
+                </div>
+            </div>
+
+            <!-- Editor Section -->
+            <div class="bg-slate-900 rounded-t-xl p-2 flex items-center justify-between border-b border-slate-700 overflow-x-auto">
+                <span class="text-xs text-slate-400 font-mono pl-2 hidden md:block">editor.sql</span>
+                <div class="flex gap-2 w-full md:w-auto overflow-x-auto">
+                     <span class="text-xs text-slate-500 uppercase tracking-wider font-bold py-1 px-2">Quick:</span>
+                     <button onclick="setQuery('SELECT * FROM students')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded whitespace-nowrap">SELECT ALL</button>
+                     <button onclick="setQuery('SELECT * FROM students WHERE first_name LIKE \'H%\'')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded whitespace-nowrap">LIKE 'H%'</button>
+                     <button onclick="setQuery('SELECT * FROM students ORDER BY grade DESC')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded whitespace-nowrap">SORT</button>
+                     <button onclick="setQuery('SELECT COUNT(*) FROM students')" class="text-xs bg-slate-700 hover:bg-slate-600 text-white px-2 py-1 rounded whitespace-nowrap">COUNT</button>
+                </div>
+            </div>
+            <div class="relative">
+                <textarea id="sql-input" class="w-full h-32 bg-slate-800 text-white font-mono p-4 focus:outline-none resize-none text-sm" spellcheck="false" placeholder="Type your SQL here...">SELECT * FROM students ORDER BY grade DESC</textarea>
+                <button onclick="runQuery()" class="absolute bottom-4 right-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded shadow-lg transition-transform active:scale-95">
+                    <i class="fas fa-play mr-2"></i> Run
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div class="mt-4 flex-1 bg-white rounded-xl shadow border border-slate-200 flex flex-col overflow-hidden">
+                <div class="bg-slate-50 p-2 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wide px-4">
+                    Query Results
+                </div>
+                <div class="overflow-auto flex-1 p-0" id="result-container">
+                    <!-- Table rendered here -->
+                </div>
+                <div id="query-status" class="bg-slate-100 p-2 text-xs font-mono border-t border-slate-200">
+                    Ready
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="tpl-quiz">
+        <div class="max-w-2xl mx-auto animate-fade-in pb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-slate-900">Knowledge Check</h2>
+                <p class="text-slate-600">Test what you've learned so far.</p>
+            </div>
+
+            <div class="space-y-6" id="quiz-container">
+                <!-- Question 1 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">1. Which command finds names starting with 'S'?</h3>
+                    <div class="space-y-2">
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">WHERE name = 'S'</button>
+                        <button onclick="checkAnswer(this, true)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">WHERE name LIKE 'S%'</button>
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">WHERE name START WITH 'S'</button>
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">2. How do you select ONLY the first 3 rows?</h3>
+                    <div class="space-y-2">
+                        <button onclick="checkAnswer(this, true)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">LIMIT 3</button>
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">TOP 3</button>
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">WHERE row < 3</button>
+                    </div>
+                </div>
+
+                 <!-- Question 3 -->
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-lg mb-4">3. How do you count all students?</h3>
+                    <div class="space-y-2">
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">SELECT ALL FROM students</button>
+                        <button onclick="checkAnswer(this, false)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">SELECT SUM(*) FROM students</button>
+                        <button onclick="checkAnswer(this, true)" class="w-full text-left p-3 rounded border border-slate-200 hover:bg-slate-50 transition-colors">SELECT COUNT(*) FROM students</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-8 text-center">
+                 <button onclick="loadModule('intro')" class="text-blue-600 font-bold hover:underline">Restart Course</button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        // --- Mock Database Engine ---
+        let db = [
+            { id: 1, first_name: 'Harry', grade: 10, house: 'Gryffindor', pet: 'Owl' },
+            { id: 2, first_name: 'Hermione', grade: 12, house: 'Gryffindor', pet: 'Cat' },
+            { id: 3, first_name: 'Draco', grade: 11, house: 'Slytherin', pet: 'Owl' },
+            { id: 4, first_name: 'Ron', grade: 10, house: 'Gryffindor', pet: 'Rat' },
+            { id: 5, first_name: 'Cedric', grade: 12, house: 'Hufflepuff', pet: null },
+            { id: 6, first_name: 'Luna', grade: 11, house: 'Ravenclaw', pet: null },
+            { id: 7, first_name: 'Neville', grade: 10, house: 'Gryffindor', pet: 'Toad' },
+            { id: 8, first_name: 'Ginny', grade: 9, house: 'Gryffindor', pet: 'Pygmy Puff' },
+            { id: 9, first_name: 'Cho', grade: 12, house: 'Ravenclaw', pet: 'Owl' },
+            { id: 10, first_name: 'Seamus', grade: 10, house: 'Gryffindor', pet: null }
+        ];
+
+        let initialDB = JSON.parse(JSON.stringify(db));
+
+        function resetDB() {
+            db = JSON.parse(JSON.stringify(initialDB));
+            renderTable(db);
+            document.getElementById('query-status').textContent = 'Database reset to initial state.';
+            document.getElementById('query-status').className = 'bg-slate-100 p-2 text-xs font-mono border-t border-slate-200 text-slate-600';
+        }
+
+        // --- Navigation Logic ---
+        function loadModule(moduleId) {
+            // Update Sidebar Active State
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-800', 'text-white', 'border-blue-500');
+                btn.classList.add('border-transparent');
+            });
+            const activeBtn = document.getElementById(`btn-${moduleId}`);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-slate-800', 'text-white', 'border-blue-500');
+                activeBtn.classList.remove('border-transparent');
+            }
+
+            // Inject Content
+            const template = document.getElementById(`tpl-${moduleId}`);
+            const contentArea = document.getElementById('content-area');
+            
+            // Simple Fade Effect
+            contentArea.style.opacity = '0';
+            setTimeout(() => {
+                contentArea.innerHTML = "";
+                contentArea.appendChild(template.content.cloneNode(true));
+                contentArea.style.opacity = '1';
+                
+                // If loading playground, init the table
+                if(moduleId === 'playground') {
+                    renderTable(db);
+                }
+            }, 150);
+            
+            // Mobile menu close
+            if(window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+            }
+        }
+
+        // --- Playground Logic (Enhanced) ---
+        function setQuery(q) {
+            const input = document.getElementById('sql-input');
+            input.value = q;
+        }
+
+        function runQuery() {
+            const query = document.getElementById('sql-input').value.trim();
+            const lowerQ = query.toLowerCase();
+            
+            try {
+                // 1. SELECT Logic
+                if (lowerQ.startsWith('select')) {
+                    let results = [...db];
+
+                    // -- A. Parse WHERE Clause --
+                    if (lowerQ.includes('where')) {
+                        // Match: where column operator value
+                        const whereMatch = query.match(/where\s+(\w+)\s*(=|!=|<>|>|<|>=|<=|like)\s*['"]?([^'"]+?)['"]?(?:\s+order|\s+limit|$)/i);
+                        
+                        if (whereMatch) {
+                            const col = whereMatch[1];
+                            const op = whereMatch[2].toLowerCase();
+                            const val = whereMatch[3];
+
+                            results = results.filter(row => {
+                                const rowVal = row[col];
+                                const compareVal = isNaN(val) ? val : Number(val); // Handle numbers vs strings
+                                const actualRowVal = (typeof compareVal === 'number') ? Number(rowVal) : String(rowVal);
+                                
+                                // Handling NULLs in filtering
+                                if(rowVal === null) return false;
+
+                                switch(op) {
+                                    case '=': return String(rowVal).toLowerCase() == String(val).toLowerCase();
+                                    case '!=': 
+                                    case '<>': return String(rowVal).toLowerCase() != String(val).toLowerCase();
+                                    case '>': return actualRowVal > compareVal;
+                                    case '<': return actualRowVal < compareVal;
+                                    case '>=': return actualRowVal >= compareVal;
+                                    case '<=': return actualRowVal <= compareVal;
+                                    case 'like':
+                                        // Simple LIKE implementation: startsWith or includes
+                                        if (val.endsWith('%') && val.startsWith('%')) {
+                                            return String(rowVal).toLowerCase().includes(val.slice(1, -1).toLowerCase());
+                                        } else if (val.endsWith('%')) {
+                                            return String(rowVal).toLowerCase().startsWith(val.slice(0, -1).toLowerCase());
+                                        } else if (val.startsWith('%')) {
+                                             return String(rowVal).toLowerCase().endsWith(val.slice(1).toLowerCase());
+                                        }
+                                        return String(rowVal).toLowerCase() === val.toLowerCase();
+                                    return false;
+                                }
+                            });
+                        }
+                    }
+
+                    // -- B. Parse ORDER BY --
+                    if (lowerQ.includes('order by')) {
+                        const orderMatch = query.match(/order\s+by\s+(\w+)(?:\s+(asc|desc))?/i);
+                        if (orderMatch) {
+                            const col = orderMatch[1];
+                            const dir = (orderMatch[2] || 'asc').toLowerCase();
+                            
+                            results.sort((a, b) => {
+                                let valA = a[col];
+                                let valB = b[col];
+                                
+                                if (valA === null) return 1;
+                                if (valB === null) return -1;
+
+                                if (valA < valB) return dir === 'asc' ? -1 : 1;
+                                if (valA > valB) return dir === 'asc' ? 1 : -1;
+                                return 0;
+                            });
+                        }
+                    }
+
+                    // -- C. Parse LIMIT --
+                    const limitMatch = query.match(/limit\s+(\d+)/i);
+                    if (limitMatch) {
+                        const limit = parseInt(limitMatch[1]);
+                        results = results.slice(0, limit);
+                    }
+
+                    // -- D. Parse Column Selection / Aggregates --
+                    // Check for COUNT(*)
+                    if (lowerQ.includes('count(*)')) {
+                        renderTable([{ 'COUNT(*)': results.length }]);
+                        setStatus('success', `Aggregation complete.`);
+                        return;
+                    }
+
+                    const colMatch = query.match(/select\s+(.+?)\s+from/i);
+                    if (colMatch && colMatch[1].trim() !== '*') {
+                        const cols = colMatch[1].split(',').map(c => c.trim());
+                        results = results.map(row => {
+                            let newRow = {};
+                            cols.forEach(c => {
+                                if (row[c] !== undefined) newRow[c] = row[c];
+                            });
+                            return newRow;
+                        });
+                    }
+
+                    renderTable(results);
+                    setStatus('success', `Fetched ${results.length} row(s).`);
+                } 
+                else if (lowerQ.startsWith('insert') || lowerQ.startsWith('update') || lowerQ.startsWith('delete')) {
+                    setStatus('error', 'This module is Read-Only (SELECT). Modification commands are disabled.');
+                }
+                else {
+                    setStatus('error', 'Command not supported in this demo.');
+                }
+            } catch (e) {
+                setStatus('error', 'An error occurred processing your query.');
+                console.error(e);
+            }
+        }
+
+        function setStatus(type, msg) {
+            const el = document.getElementById('query-status');
+            el.textContent = msg;
+            if(type === 'error') {
+                el.className = 'bg-red-100 p-2 text-xs font-mono border-t border-red-200 text-red-700';
+            } else {
+                el.className = 'bg-green-100 p-2 text-xs font-mono border-t border-green-200 text-green-700';
+            }
+        }
+
+        function renderTable(data) {
+            const container = document.getElementById('result-container');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="p-8 text-center text-slate-400 text-sm">No results found</div>';
+                return;
+            }
+
+            const cols = Object.keys(data[0]);
+            let html = '<table class="w-full text-left border-collapse min-w-full">';
+            
+            // Header
+            html += '<thead class="bg-slate-100 sticky top-0 text-xs uppercase text-slate-500 shadow-sm"><tr>';
+            cols.forEach(col => {
+                html += `<th class="px-4 py-2 border-b border-slate-200">${col}</th>`;
+            });
+            html += '</tr></thead>';
+
+            // Body
+            html += '<tbody class="text-sm font-mono">';
+            data.forEach((row, idx) => {
+                html += `<tr class="${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'} hover:bg-blue-50 transition-colors">`;
+                cols.forEach(col => {
+                    html += `<td class="px-4 py-2 border-b border-slate-100 text-slate-700 whitespace-nowrap">${row[col] === null ? '<span class="text-slate-400 italic text-xs">NULL</span>' : row[col]}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            
+            container.innerHTML = html;
+        }
+
+        // --- Quiz Logic ---
+        function checkAnswer(btn, isCorrect) {
+            const parent = btn.parentElement;
+            // Disable all buttons in this group
+            const buttons = parent.querySelectorAll('button');
+            buttons.forEach(b => b.disabled = true);
+
+            if(isCorrect) {
+                btn.classList.remove('hover:bg-slate-50');
+                btn.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                btn.innerHTML += ' <i class="fas fa-check ml-2"></i>';
+            } else {
+                btn.classList.remove('hover:bg-slate-50');
+                btn.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+                btn.innerHTML += ' <i class="fas fa-times ml-2"></i>';
+            }
+        }
+
+        // --- Init ---
+        // Mobile Menu Toggle
+        document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+            const sb = document.getElementById('sidebar');
+            if(sb.classList.contains('-translate-x-full')) {
+                sb.classList.remove('-translate-x-full');
+            } else {
+                sb.classList.add('-translate-x-full');
+            }
+        });
+
+        // Load Intro on start
+        loadModule('intro');
+
+    </script>
+</body>
+</html>

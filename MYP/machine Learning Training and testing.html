@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Machine Learning Adventure!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .scene {
+            display: none;
+        }
+        .active-scene {
+            display: block;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .clickable-emoji {
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+        }
+        .clickable-emoji:hover {
+            transform: scale(1.1);
+        }
+        .training-bin .emoji-item {
+            animation: dropIn 0.5s ease forwards;
+        }
+        #data-pool span, .training-bin span {
+            cursor: pointer;
+            transition: transform 0.2s, background-color 0.2s;
+        }
+        #data-pool span:hover, .training-bin span:hover {
+            transform: scale(1.2);
+        }
+        .selected-emoji {
+            background-color: #60a5fa; /* blue-400 */
+            border-radius: 50%;
+            transform: scale(1.2);
+        }
+        .bin-container {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .bin-container:hover {
+            background-color: #e0f2fe; /* sky-100 */
+        }
+        .noise-item {
+            animation: shake 0.82s cubic-bezier(.36,.07,.19,.97) both;
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+            border: 2px solid #ef4444;
+            border-radius: 50%;
+        }
+        @keyframes shake {
+          10%, 90% { transform: translate3d(-1px, 0, 0); }
+          20%, 80% { transform: translate3d(2px, 0, 0); }
+          30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+          40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes dropIn {
+            from { transform: translateY(-20px) scale(0.8); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        /* Decision Tree Styles */
+        .tree {
+            width: 100%;
+            text-align: center;
+        }
+        .tree ul {
+            padding-top: 20px;
+            position: relative;
+            transition: all 0.5s;
+        }
+        .tree li {
+            display: inline-block;
+            text-align: center;
+            list-style-type: none;
+            position: relative;
+            padding: 40px 5px 0 5px; /* Increased padding-top for emojis */
+        }
+        .tree li::before, .tree li::after {
+            content: '';
+            position: absolute;
+            top: 20px; /* Adjusted top for emojis */
+            right: 50%;
+            border-top: 2px solid #cbd5e1;
+            width: 50%;
+            height: 20px;
+        }
+        .tree li::after {
+            right: auto;
+            left: 50%;
+            border-left: 2px solid #cbd5e1;
+        }
+        .tree li:only-child::after, .tree li:only-child::before {
+            display: none;
+        }
+        .tree li:only-child {
+            padding-top: 0;
+        }
+        .tree li:first-child::before, .tree li:last-child::after {
+            border: 0 none;
+        }
+        .tree li:last-child::before {
+            border-right: 2px solid #cbd5e1;
+            border-radius: 0 5px 0 0;
+        }
+        .tree li:first-child::after {
+            border-radius: 5px 0 0 0;
+        }
+        .tree ul ul::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            border-left: 2px solid #cbd5e1;
+            width: 0;
+            height: 20px;
+        }
+        .tree li .node {
+            border: 2px solid #94a3b8;
+            padding: 10px 15px;
+            display: inline-block;
+            border-radius: 8px;
+            transition: all 0.5s;
+            background-color: #fff;
+            min-width: 100px;
+            font-size: 0.9rem;
+        }
+        .tree li .node:hover {
+            background-color: #f0f9ff;
+            border-color: #3b82f6;
+        }
+        .node.leaf {
+            background-color: #dcfce7;
+            border-color: #22c55e;
+            font-weight: bold;
+        }
+        .node.leaf-other {
+            background-color: #f1f5f9;
+            border-color: #64748b;
+        }
+        .branch-emojis {
+            position: absolute;
+            top: 0px;
+            left: 25%;
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 4px;
+            font-size: 1rem;
+            opacity: 0;
+            animation: popIn 0.5s forwards;
+            min-height: 20px;
+        }
+
+        /* Animation */
+        #scene3_5 .node {
+            opacity: 0;
+            transform: scale(0.8);
+            animation: popIn 0.5s forwards;
+        }
+        #scene3_5 .level-1 .node { animation-delay: 0.5s; }
+        #scene3_5 .level-2 .node { animation-delay: 1.5s; }
+        #scene3_5 .level-3 .node { animation-delay: 2.5s; }
+        #scene3_5 li::before, #scene3_5 li::after, #scene3_5 ul ul::before {
+            transform: scaleX(0);
+            transform-origin: center;
+            animation: drawLine 0.5s forwards;
+        }
+        #scene3_5 .level-2 > li::before, #scene3_5 .level-2 > li::after { animation-delay: 1s; }
+        #scene3_5 .level-2 ul::before { animation-delay: 1s; }
+        #scene3_5 .level-3 > li::before, #scene3_5 .level-3 > li::after { animation-delay: 2s; }
+        #scene3_5 .level-3 ul::before { animation-delay: 2s; }
+        #scene3_5 .level-2 .branch-emojis { animation-delay: 1.2s; }
+        #scene3_5 .level-3 .branch-emojis { animation-delay: 2.2s; }
+
+        @keyframes popIn {
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes drawLine {
+            to { transform: scaleX(1); }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-4xl mx-auto">
+
+        <!-- Scene 1: Introduction -->
+        <div id="scene1" class="scene active-scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-600 mb-4">Machine Learning Adventure!</h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-6 max-w-2xl mx-auto">
+                Ever wondered how a computer learns? We're going to teach one to tell the difference between drawings. This is the first step in building amazing AI projects, just like on the <span class="font-semibold text-blue-500">Machine Learning for Kids</span> website!
+            </p>
+            <button onclick="changeScene('scene1_5')" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-700 transition-colors shadow-md">Let's Get Started!</button>
+        </div>
+        
+        <!-- Scene 1.5: Data Planning -->
+        <div id="scene1_5" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-cyan-600 mb-4">First, Let's Plan Our Data! 🤔</h2>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto">
+                Before we train our computer, we need to think like a scientist. A good machine learning model needs good data.
+            </p>
+             <p class="text-lg text-slate-600 max-w-3xl mx-auto mt-4 bg-cyan-50 p-4 rounded-lg border border-cyan-200">
+                We need to ask: Where will we get our examples (our <span class="font-bold">data</span>) from? Will we draw them ourselves? Ask our friends? Find them online? Planning this helps make sure our data is good and fair.
+            </p>
+            <button onclick="changeScene('scene1_6')" class="mt-6 bg-cyan-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-cyan-700 transition-colors shadow-md">Got it! What's next?</button>
+        </div>
+        
+        <!-- Scene 1.6: Bias -->
+        <div id="scene1_6" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-red-600 mb-4">A Quick Warning: Beware of Bias! 👀</h2>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-6">
+               Sometimes, the data we collect can be unfair. This is called <span class="font-bold">bias</span>.
+            </p>
+            <div class="bg-red-50 p-6 rounded-xl border border-red-200 max-w-2xl mx-auto">
+                 <p class="text-2xl mb-2">🐕</p>
+                 <p class="text-slate-700">Imagine you teach a robot about "dogs" but only show it pictures of golden retrievers. When it sees a tiny chihuahua, it might get confused and say "That's not a dog!"</p>
+                 <p class="text-slate-500 text-sm mt-3">That's bias in action. A good model needs a <span class="font-bold">variety</span> of fair data.</p>
+            </div>
+            <p class="text-slate-600 mt-4 max-w-2xl mx-auto">Keep an eye out for bias in our emoji data!</p>
+            <button onclick="changeScene('scene1_65')" class="mt-6 bg-red-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-red-700 transition-colors shadow-md">Okay, I'll be careful!</button>
+        </div>
+
+        <!-- Scene 1.65: Overfitting -->
+        <div id="scene1_65" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-orange-600 mb-4">Another Trap: Overfitting! 🤯</h2>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-6">
+               Another problem is when a model learns your data <span class="font-bold">too well</span>. This is called <span class="font-bold">overfitting</span>.
+            </p>
+            <div class="bg-orange-50 p-6 rounded-xl border border-orange-200 max-w-2xl mx-auto">
+                 <p class="text-slate-700"><span class="text-2xl mr-2 float-left">🧑‍🎓</span>It's like a student memorizing the exact answers to the practice test but not learning the real subject. They'll do poorly on the final exam!</p>
+                 <p class="text-slate-500 text-sm mt-3 clear-both">Overfitting happens when the model learns mistakes or "noise" in your data. It's important to have <span class="font-bold">clean</span> data.</p>
+            </div>
+            <p class="text-slate-600 mt-4 max-w-2xl mx-auto">We'll see this happen in our simulation!</p>
+            <button onclick="changeScene('scene1_75')" class="mt-6 bg-orange-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-orange-700 transition-colors shadow-md">Let's see it in action!</button>
+        </div>
+        
+        <!-- Scene 1.75: Splitting Data -->
+        <div id="scene1_75" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-amber-600 mb-4">Splitting Our Data: Study vs. Exam 📚</h2>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-6">
+               Here's a secret trick all AI scientists use: they never use all their data for training! They split it into two important piles to make sure the computer is really learning, not just memorizing.
+            </p>
+            
+            <div class="flex flex-col md:flex-row gap-6 items-center justify-center">
+                 <!-- Training Data Box -->
+                <div class="w-full md:w-1/2 bg-blue-50 p-4 rounded-lg border-2 border-dashed border-blue-300">
+                    <h3 class="font-bold text-lg text-blue-800 text-center mb-2">Training Data (~80%)</h3>
+                    <div class="text-4xl">😄🤪😢😄🤪</div>
+                    <p class="text-sm text-blue-700 mt-2">This is the <span class="font-bold">Study Guide</span>. The computer studies these examples to learn patterns.</p>
+                </div>
+                <!-- Testing Data Box -->
+                 <div class="w-full md:w-1/2 bg-green-50 p-4 rounded-lg border-2 border-dashed border-green-300">
+                    <h3 class="font-bold text-lg text-green-800 text-center mb-2">Testing Data (~20%)</h3>
+                    <div class="text-4xl">😢😄</div>
+                     <p class="text-sm text-green-700 mt-2">This is the <span class="font-bold">Final Exam</span>. The computer has never seen these before! It's the true test of its knowledge.</p>
+                </div>
+            </div>
+            <p class="text-slate-500 text-sm mt-4">We've already split the data for you behind the scenes for this simulation.</p>
+
+            <button onclick="changeScene('scene2')" class="mt-6 bg-amber-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-amber-700 transition-colors shadow-md">Let's start training!</button>
+        </div>
+
+        <!-- Scene 2: Training -->
+        <div id="scene2" class="scene bg-white p-8 rounded-2xl shadow-lg">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold text-violet-600">Step 1: Sort and Train 🧠</h2>
+                <p id="training-instructions" class="text-lg text-slate-600 mt-2">Your job is to sort the drawings from the <span class="font-bold">Data Pool</span> into the correct training bins. First click a drawing, then click the bin it belongs in.</p>
+            </div>
+
+            <div class="bg-slate-100 p-4 rounded-lg mb-6">
+                <h3 class="text-xl font-semibold mb-3 text-center">Unsorted Data Pool</h3>
+                <div id="data-pool" class="flex flex-wrap justify-center items-center gap-4 text-5xl min-h-[64px]">
+                    <!-- Emojis will be populated here by JS -->
+                </div>
+            </div>
+
+            <div id="bins-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div onclick="addSelectedToBin('happy')" class="bin-container bg-green-50 p-4 rounded-lg border-2 border-dashed border-green-300">
+                    <h4 class="font-bold text-lg text-green-800 text-center mb-2">Happy Examples</h4>
+                    <div id="happy-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>
+                <div onclick="addSelectedToBin('sad')" class="bin-container bg-red-50 p-4 rounded-lg border-2 border-dashed border-red-300">
+                    <h4 class="font-bold text-lg text-red-800 text-center mb-2">Sad Examples</h4>
+                    <div id="sad-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>
+                <div onclick="addSelectedToBin('silly')" class="bin-container bg-yellow-50 p-4 rounded-lg border-2 border-dashed border-yellow-300">
+                    <h4 class="font-bold text-lg text-yellow-800 text-center mb-2">Silly Examples</h4>
+                    <div id="silly-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>
+                <!-- "Other" bin will be added here by JS -->
+            </div>
+            
+            <div id="training-message" class="text-center text-sm text-slate-500 mt-4">Add at least 2 examples to each category to continue.</div>
+
+            <div class="text-center mt-6">
+                <button id="train-button" onclick="changeScene('scene3')" class="bg-violet-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-violet-700 transition-all shadow-md opacity-50 cursor-not-allowed" disabled>Train The Computer!</button>
+            </div>
+        </div>
+        
+        <!-- Scene 3: Building the Model -->
+        <div id="scene3" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-orange-600 mb-4">The Computer is Learning...</h2>
+            <div class="flex justify-center items-center my-8">
+                <svg class="animate-spin h-16 w-16 text-orange-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+            </div>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto">
+                The computer is analyzing your examples to create a set of rules for telling them apart.
+            </p>
+        </div>
+
+        <!-- Scene 3.5: Decision Tree Animation -->
+        <div id="scene3_5" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-sky-600 mb-2">Building a Decision Tree 🌳</h2>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto mb-6">
+                The computer creates a set of "if/then" rules from your data, like a flowchart. This is called a <span class="font-bold">Decision Tree</span>. Watch it build the rules!
+            </p>
+            <div id="decision-tree-container" class="tree bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <!-- Tree will be dynamically generated here -->
+            </div>
+            <p class="text-slate-500 text-sm mt-4">It asks questions to sort the emojis into the categories you made.</p>
+            <button onclick="startTesting()" class="mt-6 bg-sky-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-sky-700 transition-colors shadow-md">Continue to Testing</button>
+        </div>
+
+
+        <!-- Scene 4: Testing -->
+        <div id="scene4" class="scene bg-white p-8 rounded-2xl shadow-lg">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold text-teal-600">Step 2: Testing the Computer 🧐</h2>
+                <p class="text-lg text-slate-600 mt-2">Now for the <span class="font-bold">Final Exam</span>! We'll show the computer our <span class="font-bold">Testing Data</span> — new drawings it has never seen — to check if it really learned.</p>
+            </div>
+            <div id="test-container" class="bg-slate-100 p-6 rounded-xl text-center">
+                 <h3 id="test-progress" class="text-lg font-semibold mb-4">Testing image 1 of 5...</h3>
+                <div id="test-image-container" class="flex justify-center text-8xl mb-4"></div>
+                <div id="test-result" class="mt-4 p-3 rounded-lg">
+                    <p id="result-text" class="text-lg font-semibold"></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Scene 4.5: Evaluation -->
+        <div id="scene4_5" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h2 class="text-3xl font-bold text-indigo-600 mb-4">Step 3: Evaluating Our Model 📊</h2>
+            <div class="max-w-md mx-auto bg-slate-100 p-6 rounded-xl border border-slate-200">
+                <h3 class="text-2xl font-bold mb-4">Model Report Card</h3>
+                <p class="text-7xl font-bold mb-2" id="accuracy-score">--%</p>
+                <p class="text-lg text-slate-600" id="correct-guesses">Guessed X out of Y correctly.</p>
+                <p class="text-md text-slate-500 mt-4" id="evaluation-details">It seems to have struggled with...</p>
+            </div>
+            <div class="mt-6">
+                 <h3 class="text-xl font-semibold mb-3">Our model isn't perfect. How should we improve it?</h3>
+                 <p class="text-slate-600 mb-4">This is a normal part of making AI! We <span class="font-bold">evaluate</span>, then <span class="font-bold">improve</span>.</p>
+                 <div class="flex flex-col md:flex-row justify-center gap-3">
+                    <button onclick="goToTraining()" class="bg-violet-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-violet-600 transition-colors">Fix the data!</button>
+                    <button id="add-category-button" onclick="addOtherCategory()" class="bg-orange-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-orange-600 transition-colors">Add a new 'Other' category</button>
+                    <button onclick="changeScene('scene5')" class="bg-gray-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-gray-600 transition-colors">I'm happy with this model</button>
+                 </div>
+            </div>
+        </div>
+
+        <!-- Scene 5: Conclusion -->
+        <div id="scene5" class="scene text-center bg-white p-8 rounded-2xl shadow-lg">
+            <h1 class="text-4xl md:text-5xl font-bold text-blue-600 mb-4">You're a Machine Learning Pro! 🎉</h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-6 max-w-3xl mx-auto">
+                You've just completed the full machine learning cycle. This process is exactly how you evaluate a project in MYP Design!
+            </p>
+            <div class="text-left max-w-3xl mx-auto bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <h3 class="font-bold text-2xl mb-4 text-slate-700">Connecting to MYP Design Criterion D: Evaluating</h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-bold text-lg text-blue-700">Strand i: Design a testing method</h4>
+                        <p class="text-slate-600">When we decided to split our data into "Training" and "Testing" piles, we were designing a fair test. The <span class="font-semibold">Testing Data</span>, which the model has never seen, generates data (the model's predictions) to measure the success of our solution.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg text-blue-700">Strand ii: Evaluate the success of the solution</h4>
+                        <p class="text-slate-600">The <span class="font-semibold">"Model Report Card"</span> was our evaluation. We didn't just look at the accuracy score; we critically evaluated the solution by looking at <span class="font-semibold">which</span> emojis it got wrong. This helped us understand its specific strengths and weaknesses against our goal.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg text-blue-700">Strand iii: Explain how the solution could be improved</h4>
+                        <p class="text-slate-600">You didn't just stop at the first result! You acted like a real designer by suggesting improvements:</p>
+                        <ul class="list-disc list-inside ml-4 mt-2 text-slate-500">
+                            <li><span class="font-semibold">Fixing Overfitting</span> by cleaning the noisy data.</li>
+                            <li><span class="font-semibold">Fixing Bias</span> by adding more varied examples.</li>
+                            <li><span class="font-semibold">Improving the Model's Structure</span> by adding a new "Other" category.</li>
+                        </ul>
+                         <p class="text-slate-600 mt-2">This iterative cycle of testing and improving is the key to good design.</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-lg text-blue-700">Strand iv: Explain the impact of the solution</h4>
+                        <p class="text-slate-600">By fixing these problems, you increased the model's <span class="font-semibold">positive impact</span>. An unbiased, accurate model is useful and fair to its users. A biased or overfitted model could make unfair or wrong decisions, having a negative impact on people who rely on it.</p>
+                    </div>
+                </div>
+            </div>
+            <button onclick="resetSimulation()" class="mt-8 bg-blue-600 text-white font-bold py-3 px-8 rounded-lg text-lg hover:bg-blue-700 transition-colors shadow-md">Start Over!</button>
+        </div>
+    </div>
+
+    <script>
+        let currentScene = 'scene1';
+        let examples = {};
+        const testItems = [
+            { emoji: '😄', category: 'happy' }, // Overfitting test
+            { emoji: '🤪', category: 'silly' },
+            { emoji: '😭', category: 'sad' }, // Bias test item
+            { emoji: '😅', category: 'happy' }, // Ambiguous emoji
+            { emoji: '😐', category: 'other' } // A tricky one!
+        ];
+        let testResults = [];
+        let hasOtherCategory = false;
+        let selectedEmojiElement = null;
+        let trainingRounds = 0; // Keep track of training attempts
+        let noiseInjected = false;
+        
+        function clearTrainingBins() {
+            document.getElementById('happy-bin').innerHTML = '';
+            document.getElementById('sad-bin').innerHTML = '';
+            document.getElementById('silly-bin').innerHTML = '';
+            const otherBin = document.getElementById('other-bin');
+            if (otherBin) {
+                otherBin.innerHTML = '';
+            }
+        }
+        
+        function initializeExamples() {
+            examples = { happy: 0, sad: 0, silly: 0 };
+            if(hasOtherCategory) {
+                examples.other = 0;
+            }
+            populateDataPool();
+        }
+
+        function createDataPool(isBiased = true) {
+            const pool = [];
+            if (isBiased) {
+                // Biased data: lots of happy, few sad/silly
+                for (let i = 0; i < 15; i++) pool.push({ emoji: '😄', type: 'happy' });
+                for (let i = 0; i < 4; i++) pool.push({ emoji: '😢', type: 'sad' });
+                for (let i = 0; i < 4; i++) pool.push({ emoji: '🤪', type: 'silly' });
+            } else {
+                // Balanced data for fixing bias
+                for (let i = 0; i < 8; i++) pool.push({ emoji: '😄', type: 'happy' });
+                for (let i = 0; i < 8; i++) pool.push({ emoji: '😢', type: 'sad' });
+                for (let i = 0; i < 8; i++) pool.push({ emoji: '😭', type: 'sad' }); // Add variety
+                for (let i = 0; i < 8; i++) pool.push({ emoji: '🤪', type: 'silly' });
+            }
+            
+            pool.push({ emoji: '😐', type: 'other' });
+            pool.push({ emoji: '🤔', type: 'other' });
+            pool.push({ emoji: '😲', type: 'other' });
+
+            // Fisher-Yates shuffle
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+            return pool;
+        }
+
+        function populateDataPool() {
+            // First round of training gets biased data. Subsequent rounds get balanced data.
+            const isFirstRound = (trainingRounds === 0);
+            const dataPool = createDataPool(isFirstRound);
+            const poolContainer = document.getElementById('data-pool');
+            poolContainer.innerHTML = '';
+
+            dataPool.forEach(item => {
+                const emojiEl = document.createElement('span');
+                emojiEl.textContent = item.emoji;
+                emojiEl.dataset.type = item.type;
+                emojiEl.onclick = () => selectEmoji(emojiEl);
+                poolContainer.appendChild(emojiEl);
+            });
+        }
+        
+        function selectEmoji(element) {
+            if (selectedEmojiElement) {
+                selectedEmojiElement.classList.remove('selected-emoji');
+            }
+            selectedEmojiElement = element;
+            selectedEmojiElement.classList.add('selected-emoji');
+        }
+
+        function addSelectedToBin(binType) {
+            if (!selectedEmojiElement) {
+                return;
+            }
+            const emojiElementToMove = selectedEmojiElement;
+            const originalCategory = emojiElementToMove.dataset.category;
+
+            if (originalCategory === binType) {
+                emojiElementToMove.classList.remove('selected-emoji');
+                selectedEmojiElement = null;
+                return;
+            }
+
+            if (originalCategory) {
+                examples[originalCategory]--;
+            }
+
+            const bin = document.getElementById(`${binType}-bin`);
+            bin.appendChild(emojiElementToMove);
+            emojiElementToMove.dataset.category = binType;
+            emojiElementToMove.onclick = () => selectEmoji(emojiElementToMove);
+
+            if (examples[binType] === undefined) examples[binType] = 0;
+            examples[binType]++;
+
+            emojiElementToMove.classList.remove('selected-emoji', 'noise-item');
+            selectedEmojiElement = null;
+
+            checkTrainingStatus();
+        }
+        
+        function changeScene(sceneId) {
+            document.getElementById(currentScene).classList.remove('active-scene');
+            document.getElementById(sceneId).classList.add('active-scene');
+            currentScene = sceneId;
+
+            if (sceneId === 'scene3') {
+                setTimeout(() => {
+                    changeScene('scene3_5');
+                }, 2500);
+            }
+            if (sceneId === 'scene3_5') {
+                populateDecisionTree();
+            }
+        }
+        
+        function populateDecisionTree() {
+            const treeContainer = document.getElementById('decision-tree-container');
+            
+            let treeHTML = `
+                <ul>
+                    <li class="level-1">
+                        <div class="node">Mouth open? 🤔</div>
+                        <ul>
+                            <li class="level-2">
+                                <div class="branch-emojis" id="tree-branch-1"></div>
+                                <div class="node">Eyes squinting? 👀</div>
+                                <ul class="level-3">
+                                    <li>
+                                        <div class="branch-emojis" id="tree-branch-2"></div>
+                                        <div class="node leaf">Silly 🤪</div>
+                                    </li>
+                                    <li>
+                                        <div class="branch-emojis" id="tree-branch-3"></div>
+                                        <div class="node leaf">Happy 😄</div>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="level-2">
+                                <div class="branch-emojis" id="tree-branch-4"></div>
+                                <div class="node">Mouth frowning? 😟</div>
+                                <ul class="level-3">
+                                    <li>
+                                        <div class="branch-emojis" id="tree-branch-5"></div>
+                                        <div class="node leaf">Sad 😢</div>
+                                    </li>
+            `;
+
+            if (hasOtherCategory) {
+                treeHTML += `
+                                    <li>
+                                        <div class="branch-emojis" id="tree-branch-6"></div>
+                                        <div class="node leaf leaf-other">Other 😐</div>
+                                    </li>
+                `;
+            }
+
+            treeHTML += `
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            `;
+            treeContainer.innerHTML = treeHTML;
+
+            const branches = {
+                b1: document.getElementById('tree-branch-1'),
+                b2: document.getElementById('tree-branch-2'),
+                b3: document.getElementById('tree-branch-3'),
+                b4: document.getElementById('tree-branch-4'),
+                b5: document.getElementById('tree-branch-5'),
+                b6: hasOtherCategory ? document.getElementById('tree-branch-6') : null,
+            };
+            
+            // Populate branches based on user-sorted data
+            document.querySelectorAll('.training-bin span').forEach(el => {
+                const emoji = el.textContent;
+                const category = el.dataset.category;
+                const span = `<span>${emoji}</span>`;
+
+                if (category === 'happy') {
+                    if(branches.b1) branches.b1.innerHTML += span;
+                    if(branches.b3) branches.b3.innerHTML += span;
+                } else if (category === 'silly') {
+                    if(branches.b1) branches.b1.innerHTML += span;
+                    if(branches.b2) branches.b2.innerHTML += span;
+                } else if (category === 'sad') {
+                    if(branches.b4) branches.b4.innerHTML += span;
+                    if(branches.b5) branches.b5.innerHTML += span;
+                } else if (category === 'other' && hasOtherCategory && branches.b6) {
+                    if(branches.b4) branches.b4.innerHTML += span;
+                    if(branches.b6) branches.b6.innerHTML += span;
+                }
+            });
+        }
+        
+        function injectNoise() {
+            if (noiseInjected) return; // Only do this once per round
+            
+            const happyBin = document.getElementById('happy-bin');
+            const sadBin = document.getElementById('sad-bin');
+            
+            const happyEmojiToMove = Array.from(happyBin.children).find(el => el.textContent === '😄');
+            
+            if (happyEmojiToMove) {
+                sadBin.appendChild(happyEmojiToMove);
+                examples['happy']--;
+                examples['sad']++;
+                happyEmojiToMove.dataset.category = 'sad';
+                happyEmojiToMove.classList.add('noise-item');
+                
+                document.getElementById('training-instructions').innerHTML = `Uh oh! A happy face fell into the sad bin. This is <span class="font-bold text-orange-600">"noisy data"</span>. Let's train it anyway to see what happens!`;
+                
+                noiseInjected = true;
+            }
+        }
+
+        function checkTrainingStatus() {
+            const trainButton = document.getElementById('train-button');
+            const trainingMessage = document.getElementById('training-message');
+            
+            const requiredCategories = ['happy', 'sad', 'silly'];
+            if (hasOtherCategory) {
+                requiredCategories.push('other');
+            }
+
+            const allCategoriesMet = requiredCategories.every(cat => (examples[cat] || 0) >= 2);
+
+            if (allCategoriesMet) {
+                trainButton.disabled = false;
+                trainButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                trainingMessage.textContent = "Great! You have enough examples to train the computer.";
+                trainingMessage.classList.add('text-green-600', 'font-semibold');
+                
+                if(trainingRounds === 0 && !noiseInjected) {
+                    injectNoise();
+                }
+
+            } else {
+                trainButton.disabled = true;
+                trainButton.classList.add('opacity-50', 'cursor-not-allowed');
+                let needed = requiredCategories.filter(cat => (examples[cat] || 0) < 2);
+                trainingMessage.textContent = `Add at least 2 examples to each category. Still need more for: ${needed.join(', ')}.`;
+                trainingMessage.classList.remove('text-green-600', 'font-semibold');
+            }
+        }
+
+        async function startTesting() {
+            changeScene('scene4');
+            trainingRounds++; // Increment for each training attempt
+            testResults = [];
+            for (let i = 0; i < testItems.length; i++) {
+                document.getElementById('test-progress').textContent = `Testing image ${i + 1} of ${testItems.length}...`;
+                const item = testItems[i];
+                document.getElementById('test-image-container').textContent = item.emoji;
+                const prediction = getComputerPrediction(item);
+                const isCorrect = prediction === item.category;
+                testResults.push({ item, prediction, isCorrect });
+
+                const resultDiv = document.getElementById('test-result');
+                const resultText = document.getElementById('result-text');
+                resultText.innerHTML = `Computer guessed: <span class="font-bold">${prediction.charAt(0).toUpperCase() + prediction.slice(1)}</span>.`;
+                resultDiv.className = `mt-4 p-3 rounded-lg ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`;
+                
+                await new Promise(resolve => setTimeout(resolve, 2500)); // Slowed down testing
+            }
+            evaluateModel();
+        }
+        
+        function getComputerPrediction(testItem) {
+            const firstRound = trainingRounds === 1;
+
+            if (testItem.emoji === '😄' && firstRound && noiseInjected) {
+                 return 'sad'; // The model overfit to the noisy data
+            }
+
+            if (testItem.emoji === '😭' && firstRound) {
+                // On the first biased run, it's very likely to guess the majority class.
+                return 'happy';
+            }
+            
+            if (testItem.category === 'other' && !hasOtherCategory) {
+                let maxCount = 0;
+                let bestGuess = 'happy';
+                ['happy', 'sad', 'silly'].forEach(cat => {
+                    if ((examples[cat] || 0) > maxCount) {
+                        maxCount = examples[cat];
+                        bestGuess = cat;
+                    }
+                });
+                return bestGuess;
+            }
+            // For all other cases, assume it predicts correctly if the category exists
+            return testItem.category;
+        }
+
+        function evaluateModel() {
+            changeScene('scene4_5');
+            const correctCount = testResults.filter(r => r.isCorrect).length;
+            const total = testItems.length;
+            const accuracy = Math.round((correctCount / total) * 100);
+            
+            document.getElementById('accuracy-score').textContent = `${accuracy}%`;
+            document.getElementById('correct-guesses').textContent = `Guessed ${correctCount} out of ${total} correctly.`;
+            
+            const addMoreButton = document.querySelector('button[onclick="goToTraining()"]');
+            addMoreButton.textContent = "Fix the data!";
+            const addCategoryButton = document.getElementById('add-category-button');
+            
+            const failedOnOverfit = testResults.find(r => !r.isCorrect && r.item.emoji === '😄');
+            const failedOnBias = testResults.find(r => !r.isCorrect && r.item.emoji === '😭');
+            const failedOnOther = testResults.find(r => !r.isCorrect && r.item.emoji === '😐');
+
+            // Set a priority for feedback: Overfitting > Bias > Other
+            if (failedOnOverfit) {
+                document.getElementById('evaluation-details').textContent = `It misclassified ${failedOnOverfit.item.emoji} as 'Sad'! This is overfitting. The model learned the mistake in our 'noisy' training data. Let's go back and clean the data by fixing the error.`;
+                addMoreButton.classList.add('animate-pulse', 'ring-4', 'ring-violet-300');
+                addCategoryButton.classList.remove('animate-pulse', 'ring-4', 'ring-orange-300');
+            } else if (failedOnBias) {
+                document.getElementById('evaluation-details').textContent = `Great, you fixed the noisy data! But now it misclassified ${failedOnBias.item.emoji}. This is data bias. We need to add more varied 'Sad' examples to fix it.`;
+                addMoreButton.textContent = "Add more examples";
+                addMoreButton.classList.add('animate-pulse', 'ring-4', 'ring-violet-300');
+                addCategoryButton.classList.remove('animate-pulse', 'ring-4', 'ring-orange-300');
+            } else if (failedOnOther) {
+                document.getElementById('evaluation-details').textContent = `Awesome, the bias is fixed! But now it's stuck on ${failedOnOther.item.emoji}. This probably needs a new 'Other' category.`;
+                addMoreButton.classList.remove('animate-pulse', 'ring-4', 'ring-violet-300');
+                addCategoryButton.classList.add('animate-pulse', 'ring-4', 'ring-orange-300');
+            } else {
+                 document.getElementById('evaluation-details').textContent = "Wow, a perfect score! You're a great trainer.";
+                 addMoreButton.classList.remove('animate-pulse', 'ring-4', 'ring-violet-300');
+                 addCategoryButton.classList.remove('animate-pulse', 'ring-4', 'ring-orange-300');
+            }
+             
+            addCategoryButton.style.display = 'inline-block';
+            if (accuracy === 100) {
+                 addCategoryButton.style.display = 'none';
+            }
+        }
+        
+        function goToTraining() {
+            populateDataPool(); // Repopulate the pool with fresh (and now more balanced) data to add
+            noiseInjected = false; // Reset noise flag so we can retrain cleanly
+            document.getElementById('training-instructions').innerHTML = `Your job is to sort the drawings from the <span class="font-bold">Data Pool</span> into the correct training bins. First click a drawing, then click the bin it belongs in.`;
+            changeScene('scene2');
+        }
+
+        function addOtherCategory() {
+            if (hasOtherCategory) {
+                populateDataPool();
+                changeScene('scene2');
+                return;
+            }
+            
+            hasOtherCategory = true;
+            document.getElementById('bins-container').classList.remove('md:grid-cols-3');
+            document.getElementById('bins-container').classList.add('md:grid-cols-4');
+            
+            const binContainer = document.getElementById('bins-container');
+            const newBin = document.createElement('div');
+            newBin.className = 'bin-container bg-gray-50 p-4 rounded-lg border-2 border-dashed border-gray-300';
+            newBin.setAttribute('onclick', "addSelectedToBin('other')");
+            newBin.innerHTML = `
+                <h4 class="font-bold text-lg text-gray-800 text-center mb-2">Other Examples</h4>
+                <div id="other-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>`;
+            binContainer.appendChild(newBin);
+
+            if (examples.other === undefined) {
+                examples.other = 0;
+            }
+
+            document.getElementById('add-category-button').textContent = "Add more 'Other' examples";
+            populateDataPool();
+            checkTrainingStatus();
+            changeScene('scene2');
+        }
+
+        function resetSimulation() {
+            hasOtherCategory = false;
+            selectedEmojiElement = null;
+            trainingRounds = 0;
+            noiseInjected = false;
+
+            document.getElementById('training-instructions').innerHTML = `Your job is to sort the drawings from the <span class="font-bold">Data Pool</span> into the correct training bins. First click a drawing, then click the bin it belongs in.`;
+            document.getElementById('bins-container').innerHTML = `
+                <div onclick="addSelectedToBin('happy')" class="bin-container bg-green-50 p-4 rounded-lg border-2 border-dashed border-green-300">
+                    <h4 class="font-bold text-lg text-green-800 text-center mb-2">Happy Examples</h4>
+                    <div id="happy-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>
+                <div onclick="addSelectedToBin('sad')" class="bin-container bg-red-50 p-4 rounded-lg border-2 border-dashed border-red-300">
+                    <h4 class="font-bold text-lg text-red-800 text-center mb-2">Sad Examples</h4>
+                    <div id="sad-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>
+                <div onclick="addSelectedToBin('silly')" class="bin-container bg-yellow-50 p-4 rounded-lg border-2 border-dashed border-yellow-300">
+                    <h4 class="font-bold text-lg text-yellow-800 text-center mb-2">Silly Examples</h4>
+                    <div id="silly-bin" class="training-bin min-h-[80px] flex flex-wrap gap-2 justify-center items-center text-4xl"></div>
+                </div>`;
+            
+            document.getElementById('bins-container').classList.remove('md:grid-cols-4');
+            document.getElementById('bins-container').classList.add('md:grid-cols-3');
+            document.getElementById('add-category-button').textContent = "Add a new 'Other' category";
+
+            clearTrainingBins(); 
+            initializeExamples();
+            checkTrainingStatus();
+            changeScene('scene1');
+        }
+
+        // Initialize on load
+        window.onload = () => {
+             initializeExamples();
+        };
+    </script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Database Normalization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .table-highlight {
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease-in-out;
+        }
+        .key-pk { background-color: #dbeafe; /* blue-100 */ }
+        .key-fk { background-color: #dcfce7; /* green-100 */ }
+        .key-composite { background-color: #fee2e2; /* red-100 */ }
+        .explanation-card {
+            transition: opacity 0.5s ease-in-out;
+        }
+        /* Tab styles */
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            border-color: #3b82f6; /* blue-500 */
+            background-color: #eff6ff; /* blue-50 */
+            color: #2563eb; /* blue-600 */
+        }
+        .choice-card {
+            border: 2px solid #e5e7eb; /* gray-200 */
+            cursor: pointer;
+        }
+        .choice-card.selected {
+            border-color: #3b82f6; /* blue-500 */
+            box-shadow: 0 0 0 3px #bfdbfe; /* blue-200 */
+        }
+        .feedback-correct {
+            background-color: #dcfce7; /* green-100 */
+            border-left: 4px solid #22c55e; /* green-500 */
+            color: #166534; /* green-800 */
+        }
+        .feedback-incorrect {
+            background-color: #fee2e2; /* red-100 */
+            border-left: 4px solid #ef4444; /* red-500 */
+            color: #991b1b; /* red-800 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-7xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-bold text-gray-900">Interactive Database Normalization</h1>
+            <p class="text-lg text-gray-600 mt-2">Learn by watching the simulation or test your skills in the exercise.</p>
+        </header>
+
+        <!-- Tabs -->
+        <div class="mb-6 border-b border-gray-200">
+            <nav class="-mb-px flex space-x-6" aria-label="Tabs">
+                <button id="tab-sim" class="tab-btn active whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg">
+                    Simulation
+                </button>
+                <button id="tab-ex" class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-lg">
+                    Exercise
+                </button>
+            </nav>
+        </div>
+
+        <!-- Simulation Content -->
+        <div id="simulation-content">
+            <main class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-center border-b pb-4 mb-6">
+                    <h2 id="step-title" class="text-2xl md:text-3xl font-bold text-blue-700"></h2>
+                    <div class="flex space-x-4 mt-4 md:mt-0">
+                        <button id="reset-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Reset</button>
+                        <button id="next-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Next Step &rarr;</button>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div id="tables-container" class="space-y-6"></div>
+                    <div id="explanation-container" class="space-y-4 prose max-w-none lg:border-l lg:pl-8"></div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Exercise Content -->
+        <div id="exercise-content" class="hidden">
+             <main class="bg-white rounded-xl shadow-lg p-6 md:p-8">
+                <div class="flex flex-col md:flex-row justify-between items-center border-b pb-4 mb-6">
+                    <h2 id="exercise-step-title" class="text-2xl md:text-3xl font-bold text-green-700"></h2>
+                    <div class="flex space-x-4 mt-4 md:mt-0">
+                        <button id="ex-reset-btn" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition duration-300 disabled:opacity-50 disabled:cursor-not-allowed">Reset Exercise</button>
+                        <button id="ex-next-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300" disabled>Next Step &rarr;</button>
+                    </div>
+                </div>
+                <div id="exercise-area" class="space-y-6">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-bold text-xl text-blue-800">Your Task:</h3>
+                        <p id="exercise-instruction" class="mt-1 text-blue-700"></p>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-lg mb-2">Source Table(s):</h4>
+                        <div id="exercise-source-tables" class="space-y-4"></div>
+                    </div>
+                    <div class="border-t pt-4">
+                        <h4 class="font-semibold text-lg mb-2">Choose the correct normalized structure:</h4>
+                        <div id="exercise-choices" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                    </div>
+                     <div id="exercise-feedback" class="p-4 rounded-lg hidden"></div>
+                    <div class="text-center pt-4">
+                         <button id="check-answer-btn" class="bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-2 px-6 rounded-lg transition duration-300">Check Answer</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <footer class="text-center mt-8 text-gray-500">
+            <p>A simulation to demonstrate database normalization principles.</p>
+        </footer>
+    </div>
+
+<script>
+// --- DATA FOR SIMULATION AND EXERCISE ---
+
+const simulationData = [
+    {
+        title: "Start: Unnormalized Form (UNF)",
+        explanation: `<h3 class="font-semibold text-xl text-gray-800">Our Starting Point</h3><p>We begin with a single, unnormalized table that stores information about student course enrollments. This form is common when data is first gathered, but it's inefficient and prone to errors.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">Analysis of Problems</h3><ul class="list-disc list-inside space-y-2"><li><strong class="text-red-600">Not Atomic:</strong> The <code>CourseDetails</code> column contains multiple, distinct pieces of information crammed into one cell. This makes querying for specific data (e.g., "Which courses does Dr. Smith teach?") nearly impossible.</li><li><strong class="text-red-600">Data Redundancy:</strong> Dr. Smith's details (ID, name, office) are repeated for every student enrolled in his "Intro to DB" course.</li><li><strong class="text-red-600">Anomalies:</strong> The structure leads to insertion, update, and deletion anomalies. For instance, we can't add a new course until a student enrolls, and deleting a student's last course could erase their entire record.</li></ul>`,
+        tables: [{name: "Student_Enrollments (UNF)", headers: ["StudentID", "StudentName", "StudentEmail", "CourseDetails"], data: [['S101', 'Alice', 'alice@uni.edu', 'C1: Intro to DB, P10: Dr. Smith, A-101; C2: Algorithms, P12: Dr. Jones, B-204'], ['S102', 'Bob', 'bob@uni.edu', 'C1: Intro to DB, P10: Dr. Smith, A-101; C3: Web Dev, P11: Dr. Chen, C-301'], ['S103', 'Charlie', 'charlie@uni.edu', 'C2: Algorithms, P12: Dr. Jones, B-204']]}]
+    },
+    {
+        title: "Step 1: First Normal Form (1NF)",
+        explanation: `<h3 class="font-semibold text-xl text-gray-800">The Rule for 1NF</h3><ol class="list-decimal list-inside space-y-2"><li><strong>Atomicity:</strong> Each cell must hold a single, indivisible (atomic) value.</li><li><strong>Unique Records:</strong> Each row must be unique, usually enforced by a primary key.</li></ol><h3 class="font-semibold text-xl text-gray-800 mt-4">The Reason</h3><p>The goal is to eliminate repeating groups from a single column. By breaking down the complex <code>CourseDetails</code> column, we make the data structured and queryable.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">The Simulation: Applying 1NF</h3><p>We take the <code>CourseDetails</code> column and create a new row for each course a student is enrolled in. To make each row unique, we define a <strong>composite primary key</strong> from <code>{StudentID, CourseID}</code>, highlighted in red.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">Review of 1NF</h3><p>We've solved the atomicity problem! However, the data redundancy is now even more obvious—student and course details are repeated across multiple rows. This leads us to 2NF.</p>`,
+        tables: [{name: "Student_Enrollments_1NF", headers: ["StudentID", "StudentName", "StudentEmail", "CourseID", "CourseTitle", "ProfessorID", "ProfessorName", "ProfessorOffice"], data: [['S101', 'Alice', 'alice@uni.edu', 'C1', 'Intro to DB', 'P10', 'Dr. Smith', 'A-101'], ['S101', 'Alice', 'alice@uni.edu', 'C2', 'Algorithms', 'P12', 'Dr. Jones', 'B-204'], ['S102', 'Bob', 'bob@uni.edu', 'C1', 'Intro to DB', 'P10', 'Dr. Smith', 'A-101'], ['S102', 'Bob', 'bob@uni.edu', 'C3', 'Web Dev', 'P11', 'Dr. Chen', 'C-301'], ['S103', 'Charlie', 'charlie@uni.edu', 'C2', 'Algorithms', 'P12', 'Dr. Jones', 'B-204']], keyColumns: {"StudentID": "key-composite", "CourseID": "key-composite"}}]
+    },
+    {
+        title: "Step 2: Second Normal Form (2NF)",
+        explanation: `<h3 class="font-semibold text-xl text-gray-800">The Rule for 2NF</h3><ol class="list-decimal list-inside space-y-2"><li>The table must be in <strong>1NF</strong>.</li><li>There must be <strong>no partial dependencies</strong>. This means every non-key attribute must depend on the <em>entire</em> composite primary key, not just a part of it.</li></ol><h3 class="font-semibold text-xl text-gray-800 mt-4">The Reason</h3><p>The goal of 2NF is to remove data redundancy. We do this by separating data that depends on only <em>part</em> of the composite key into its own table.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">The Simulation: Applying 2NF</h3><p>We analyze the dependencies. <code>StudentName</code> and <code>StudentEmail</code> depend only on <code>StudentID</code>. The course and professor details depend only on <code>CourseID</code>. These are partial dependencies, so we split the table into three new ones:</p><ul class="list-disc list-inside space-y-2"><li>A <code>Students</code> table.</li><li>A <code>Courses</code> table.</li><li>An <code>Enrollments</code> table to link them.</li></ul><p class="mt-2">Primary keys are highlighted in blue, and foreign keys in green.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">Review of 2NF</h3><p>This is a huge improvement! Student and course information is now stored only once. However, the <code>Courses</code> table still has a hidden issue: a transitive dependency. This brings us to 3NF.</p>`,
+        tables: [{name: "Students", headers: ["StudentID (PK)", "StudentName", "StudentEmail"], data: [['S101', 'Alice', 'alice@uni.edu'], ['S102', 'Bob', 'bob@uni.edu'], ['S103', 'Charlie', 'charlie@uni.edu']], keyColumns: {"StudentID (PK)": "key-pk"}}, {name: "Courses", headers: ["CourseID (PK)", "CourseTitle", "ProfessorID", "ProfessorName", "ProfessorOffice"], data: [['C1', 'Intro to DB', 'P10', 'Dr. Smith', 'A-101'], ['C2', 'Algorithms', 'P12', 'Dr. Jones', 'B-204'], ['C3', 'Web Dev', 'P11', 'Dr. Chen', 'C-301']], keyColumns: {"CourseID (PK)": "key-pk"}}, {name: "Enrollments", headers: ["StudentID (FK)", "CourseID (FK)"], data: [['S101', 'C1'], ['S101', 'C2'], ['S102', 'C1'], ['S102', 'C3'], ['S103', 'C2']], keyColumns: {"StudentID (FK)": "key-fk", "CourseID (FK)": "key-fk"}}]
+    },
+    {
+        title: "Step 3: Third Normal Form (3NF)",
+        explanation: `<h3 class="font-semibold text-xl text-gray-800">The Rule for 3NF</h3><ol class="list-decimal list-inside space-y-2"><li>The table must be in <strong>2NF</strong>.</li><li>There must be <strong>no transitive dependencies</strong>. A transitive dependency is when a non-key attribute depends on another non-key attribute (e.g., <code>PK → Attribute A → Attribute B</code>).</li></ol><h3 class="font-semibold text-xl text-gray-800 mt-4">The Reason</h3><p>The goal of 3NF is to ensure that all attributes in a table are dependent <em>only</em> on the primary key. This isolates data into its most logical, single-purpose groups.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">The Simulation: Applying 3NF</h3><p>In our <code>Courses</code> table, <code>ProfessorName</code> and <code>ProfessorOffice</code> depend on <code>ProfessorID</code>, which is not the primary key. This is a transitive dependency! The professor's details describe the professor, not the course.</p><p>We resolve this by splitting the <code>Courses</code> table into two: one for courses and a new one for professors.</p><h3 class="font-semibold text-xl text-gray-800 mt-4">Conclusion: Fully Normalized</h3><p>The database is now in 3NF. All data is stored logically, with no redundancy, and all anomalies have been solved. The final structure is robust, efficient, and maintains high data integrity.</p>`,
+        tables: [{name: "Students", headers: ["StudentID (PK)", "StudentName", "StudentEmail"], data: [['S101', 'Alice', 'alice@uni.edu'], ['S102', 'Bob', 'bob@uni.edu'], ['S103', 'Charlie', 'charlie@uni.edu']], keyColumns: {"StudentID (PK)": "key-pk"}}, {name: "Professors", headers: ["ProfessorID (PK)", "ProfessorName", "ProfessorOffice"], data: [['P10', 'Dr. Smith', 'A-101'], ['P11', 'Dr. Chen', 'C-301'], ['P12', 'Dr. Jones', 'B-204']], keyColumns: {"ProfessorID (PK)": "key-pk"}}, {name: "Courses", headers: ["CourseID (PK)", "CourseTitle", "ProfessorID (FK)"], data: [['C1', 'Intro to DB', 'P10'], ['C2', 'Algorithms', 'P12'], ['C3', 'Web Dev', 'P11']], keyColumns: {"CourseID (PK)": "key-pk", "ProfessorID (FK)": "key-fk"}}, {name: "Enrollments", headers: ["StudentID (FK)", "CourseID (FK)"], data: [['S101', 'C1'], ['S101', 'C2'], ['S102', 'C1'], ['S102', 'C3'], ['S103', 'C2']], keyColumns: {"StudentID (FK)": "key-fk", "CourseID (FK)": "key-fk"}}]
+    }
+];
+
+const exerciseData = [
+    {
+        title: "Exercise 1: Achieve 1NF",
+        instruction: "The table below is unnormalized. Select the option that correctly represents it in First Normal Form (1NF) by ensuring every column has atomic values.",
+        sourceTables: simulationData[0].tables,
+        correctChoice: 'B',
+        choices: [
+            { id: 'A', tables: [{ name: "Choice A", headers: ["StudentID", "Details"], data: [['S101', 'Alice, C1, C2'], ['S102', 'Bob, C1, C3'], ['S103', 'Charlie, C2']] }] },
+            { id: 'B', tables: [simulationData[1].tables[0]] }
+        ],
+        feedback: {
+            correct: "Excellent! You've correctly made the values atomic by creating a new row for each course enrollment, which is the core principle of 1NF.",
+            incorrect: "Not quite. Remember, 1NF requires every cell to have a single, indivisible value. The correct approach is to break up the repeating groups in the 'CourseDetails' column into separate rows."
+        }
+    },
+    {
+        title: "Exercise 2: Achieve 2NF",
+        instruction: "This table is in 1NF but has partial dependencies. Select the option that correctly represents it in Second Normal Form (2NF) by removing those dependencies.",
+        sourceTables: simulationData[1].tables,
+        correctChoice: 'A',
+        choices: [
+            { id: 'A', tables: simulationData[2].tables },
+            { id: 'B', tables: [{ name: "Students", headers: ["StudentID (PK)", "StudentName", "StudentEmail"], data: [['S101', 'Alice', 'alice@uni.edu']] }, { name: "Enrollments", headers: ["CourseID", "CourseTitle", "ProfessorName"], data: [['C1', 'Intro to DB', 'Dr. Smith']] }] }
+        ],
+        feedback: {
+            correct: "Perfect! You've identified that student details depend only on StudentID and course details depend only on CourseID, and correctly split them into separate tables.",
+            incorrect: "That's not the right structure. 2NF aims to eliminate partial dependencies. Look for attributes that depend on only part of the composite key {StudentID, CourseID} and move them to their own tables."
+        }
+    },
+     {
+        title: "Exercise 3: Achieve 3NF",
+        instruction: "These tables are in 2NF, but one contains a transitive dependency. Select the option that resolves this, achieving Third Normal Form (3NF).",
+        sourceTables: simulationData[2].tables,
+        correctChoice: 'B',
+        choices: [
+            { id: 'A', tables: [{ name: "Everything", headers: ["StudentID", "CourseID", "ProfessorID", "ProfessorName"], data: [['S101', 'C1', 'P10', 'Dr. Smith']] }] },
+            { id: 'B', tables: simulationData[3].tables }
+        ],
+        feedback: {
+            correct: "That's it! You've spotted the transitive dependency (Professor details depending on ProfessorID, not the CourseID) and correctly created a separate `Professors` table.",
+            incorrect: "Not quite. Look for attributes that don't depend on the primary key, but rather on another non-key column. That's a transitive dependency that needs to be moved to a new table."
+        }
+    }
+];
+
+let currentSimStep = 0;
+let currentExStep = 0;
+let selectedChoice = null;
+
+// --- DOM ELEMENTS ---
+// Simulation
+const stepTitleEl = document.getElementById('step-title');
+const tablesContainerEl = document.getElementById('tables-container');
+const explanationContainerEl = document.getElementById('explanation-container');
+const nextBtn = document.getElementById('next-btn');
+const resetBtn = document.getElementById('reset-btn');
+// Exercise
+const exStepTitleEl = document.getElementById('exercise-step-title');
+const exInstructionEl = document.getElementById('exercise-instruction');
+const exSourceTablesEl = document.getElementById('exercise-source-tables');
+const exChoicesEl = document.getElementById('exercise-choices');
+const exFeedbackEl = document.getElementById('exercise-feedback');
+const exNextBtn = document.getElementById('ex-next-btn');
+const exResetBtn = document.getElementById('ex-reset-btn');
+const checkAnswerBtn = document.getElementById('check-answer-btn');
+// Tabs
+const tabSim = document.getElementById('tab-sim');
+const tabEx = document.getElementById('tab-ex');
+const simContent = document.getElementById('simulation-content');
+const exContent = document.getElementById('exercise-content');
+
+
+// --- UNIVERSAL FUNCTIONS ---
+
+function renderTable(tableData) {
+    const { name, headers, data, keyColumns = {} } = tableData;
+    const tableWrapper = document.createElement('div');
+    tableWrapper.className = "table-highlight rounded-lg overflow-hidden";
+    const tableName = document.createElement('h4');
+    tableName.className = "text-lg font-semibold p-3 bg-gray-100 border-b";
+    tableName.textContent = name;
+    const tableEl = document.createElement('table');
+    tableEl.className = 'w-full text-sm text-left';
+    const thead = document.createElement('thead');
+    thead.className = 'bg-gray-50';
+    let tr = document.createElement('tr');
+    headers.forEach(header => {
+        let th = document.createElement('th');
+        th.scope = "col";
+        th.className = "px-4 py-3 font-medium";
+        th.textContent = header;
+        tr.appendChild(th);
+    });
+    thead.appendChild(tr);
+    const tbody = document.createElement('tbody');
+    data.forEach(rowData => {
+        let tr = document.createElement('tr');
+        tr.className = "border-t";
+        rowData.forEach((cellData, index) => {
+            let td = document.createElement('td');
+            td.className = "px-4 py-3";
+            const headerText = headers[index];
+            if (keyColumns[headerText]) {
+                td.classList.add(keyColumns[headerText]);
+            }
+            td.textContent = cellData;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    });
+    tableEl.appendChild(thead);
+    tableEl.appendChild(tbody);
+    tableWrapper.appendChild(tableName);
+    tableWrapper.appendChild(tableEl);
+    return tableWrapper;
+}
+
+// --- SIMULATION LOGIC ---
+
+function renderSimStep(stepIndex) {
+    const stepData = simulationData[stepIndex];
+    stepTitleEl.textContent = stepData.title;
+    explanationContainerEl.style.opacity = 0;
+    setTimeout(() => {
+        explanationContainerEl.innerHTML = stepData.explanation;
+        explanationContainerEl.style.opacity = 1;
+    }, 200);
+    tablesContainerEl.innerHTML = '';
+    stepData.tables.forEach(table => {
+        tablesContainerEl.appendChild(renderTable(table));
+    });
+    resetBtn.disabled = stepIndex === 0;
+    nextBtn.disabled = stepIndex === simulationData.length - 1;
+    nextBtn.innerHTML = nextBtn.disabled ? "Complete!" : "Next Step &rarr;";
+}
+
+// --- EXERCISE LOGIC ---
+
+function renderExStep(stepIndex) {
+    const stepData = exerciseData[stepIndex];
+    exStepTitleEl.textContent = stepData.title;
+    exInstructionEl.textContent = stepData.instruction;
+
+    exSourceTablesEl.innerHTML = '';
+    stepData.sourceTables.forEach(table => {
+        exSourceTablesEl.appendChild(renderTable(table));
+    });
+
+    exChoicesEl.innerHTML = '';
+    stepData.choices.forEach(choice => {
+        const choiceWrapper = document.createElement('div');
+        choiceWrapper.className = 'choice-card p-4 rounded-lg space-y-3';
+        choiceWrapper.dataset.choiceId = choice.id;
+        
+        const choiceHeader = document.createElement('h5');
+        choiceHeader.className = "font-bold text-lg";
+        choiceHeader.textContent = `Option ${choice.id}`;
+        choiceWrapper.appendChild(choiceHeader);
+
+        choice.tables.forEach(table => {
+            choiceWrapper.appendChild(renderTable(table));
+        });
+        exChoicesEl.appendChild(choiceWrapper);
+    });
+
+    // Reset state for new step
+    selectedChoice = null;
+    exFeedbackEl.classList.add('hidden');
+    checkAnswerBtn.disabled = false;
+    exNextBtn.disabled = true;
+    exResetBtn.disabled = stepIndex === 0;
+
+    if (stepIndex === exerciseData.length -1) {
+        exNextBtn.innerHTML = "Finish!";
+    } else {
+        exNextBtn.innerHTML = "Next Step &rarr;";
+    }
+}
+
+function handleChoiceSelection(e) {
+    const choiceCard = e.target.closest('.choice-card');
+    if (!choiceCard) return;
+
+    // Deselect previous
+    const currentlySelected = document.querySelector('.choice-card.selected');
+    if (currentlySelected) {
+        currentlySelected.classList.remove('selected');
+    }
+
+    // Select new
+    choiceCard.classList.add('selected');
+    selectedChoice = choiceCard.dataset.choiceId;
+}
+
+function checkAnswer() {
+    if (!selectedChoice) {
+        alert("Please select an answer first.");
+        return;
+    }
+    
+    const stepData = exerciseData[currentExStep];
+    const isCorrect = selectedChoice === stepData.correctChoice;
+    
+    exFeedbackEl.innerHTML = `<strong>${isCorrect ? 'Correct!' : 'Not Quite...'}</strong><p>${stepData.feedback[isCorrect ? 'correct' : 'incorrect']}</p>`;
+    exFeedbackEl.className = isCorrect ? 'feedback-correct p-4 rounded-lg' : 'feedback-incorrect p-4 rounded-lg';
+
+    if (isCorrect) {
+        exNextBtn.disabled = false;
+        checkAnswerBtn.disabled = true;
+    }
+}
+
+// --- EVENT LISTENERS ---
+
+// Simulation
+nextBtn.addEventListener('click', () => {
+    if (currentSimStep < simulationData.length - 1) {
+        currentSimStep++;
+        renderSimStep(currentSimStep);
+    }
+});
+resetBtn.addEventListener('click', () => {
+    currentSimStep = 0;
+    renderSimStep(currentSimStep);
+});
+
+// Exercise
+exChoicesEl.addEventListener('click', handleChoiceSelection);
+checkAnswerBtn.addEventListener('click', checkAnswer);
+exNextBtn.addEventListener('click', () => {
+    if (currentExStep < exerciseData.length - 1) {
+        currentExStep++;
+        renderExStep(currentExStep);
+    }
+});
+exResetBtn.addEventListener('click', () => {
+    currentExStep = 0;
+    renderExStep(currentExStep);
+});
+
+
+// Tabs
+tabSim.addEventListener('click', () => {
+    simContent.classList.remove('hidden');
+    exContent.classList.add('hidden');
+    tabSim.classList.add('active');
+    tabEx.classList.remove('active');
+});
+
+tabEx.addEventListener('click', () => {
+    exContent.classList.remove('hidden');
+    simContent.classList.add('hidden');
+    tabEx.classList.add('active');
+    tabSim.classList.remove('active');
+});
+
+// --- INITIAL RENDER ---
+window.onload = () => {
+    renderSimStep(currentSimStep);
+    renderExStep(currentExStep);
+};
+
+</script>
+</body>
+</html>
+

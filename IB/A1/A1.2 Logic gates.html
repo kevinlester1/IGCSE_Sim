@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS: Logic Gates & Boolean Algebra</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #f8fafc;
+            --card-color: #ffffff;
+            --border-color: #e2e8f0;
+            --text-color: #0f172a;
+            --accent-color: #3b82f6;
+            --output-on: #22c55e;
+            --output-off: #ef4444;
+            --wire-color: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+
+        .overline { text-decoration: overline; }
+
+        /* Canvas Styles */
+        #canvas-container { cursor: grab; background-color: #ffffff; border: 1px solid var(--border-color); border-radius: 0.75rem; }
+        #canvas-container:active { cursor: grabbing; }
+        #canvas { position: absolute; transform-origin: 0 0; background-image: radial-gradient(#cbd5e1 1px, transparent 1px); background-size: 20px 20px; }
+
+        .gate-symbol-svg path { stroke: #334155; stroke-width: 2; fill: none; }
+        .gate-symbol-svg circle { stroke: #334155; stroke-width: 2; fill: #f1f5f9; }
+        .gate-symbol-svg text { fill: #64748b; font-size: 10px; user-select: none; font-weight: 600; }
+
+        .draggable-gate { position: absolute; cursor: move; user-select: none; z-index: 10; transition: border-color 0.2s; background: white; }
+        .draggable-gate.selected { border-color: var(--accent-color) !important; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2); }
+
+        .node { position: absolute; width: 14px; height: 14px; background-color: white; border: 2px solid var(--wire-color); border-radius: 50%; cursor: pointer; z-index: 11; transition: all 0.2s; }
+        .node:hover { border-color: var(--accent-color); transform: scale(1.2); }
+        .node.active { background-color: var(--output-on); border-color: var(--output-on); }
+        
+        .node.output-node { right: -7px; top: 50%; transform: translateY(-50%); }
+        .node.input-node.a { left: -7px; top: 25%; }
+        .node.input-node.b { left: -7px; bottom: 25%; }
+        .node.input-node.single { left: -7px; top: 50%; transform: translateY(-50%); }
+
+        .wire { stroke: #64748b; stroke-width: 3; fill: none; pointer-events: all; cursor: pointer; transition: stroke 0.2s; }
+        .wire:hover { stroke: #ef4444; stroke-width: 4; }
+        .wire.active { stroke: var(--output-on); }
+        .temp-wire { stroke: var(--accent-color); stroke-width: 2; stroke-dasharray: 4,4; pointer-events: none; }
+
+        .tab-btn { padding: 0.75rem 1.25rem; font-weight: 600; color: #64748b; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab-btn.active { color: var(--accent-color); border-bottom-color: var(--accent-color); }
+
+        .kmap-cell { aspect-ratio: 1/1; cursor: pointer; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #e2e8f0; font-weight: bold; color: #64748b; }
+        .kmap-cell.active { background: #3b82f6; color: white; border-color: #2563eb; }
+
+        .input-btn.active { background-color: var(--output-on); border-color: var(--output-on); color: white; }
+        .output-display.active { background-color: var(--output-on) !important; box-shadow: 0 0 15px rgba(34, 197, 94, 0.4); border-color: #16a34a !important; }
+        
+        .rule-card { border-left: 4px solid #3b82f6; transition: transform 0.2s; }
+        .rule-card:hover { transform: translateX(4px); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white border-b border-slate-200 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">IB CS: Logic Fundamentals</h1>
+            <p class="text-slate-500 text-xs font-medium">Standard Level A.1.2.3 - A.1.2.5</p>
+        </div>
+        <nav class="flex bg-slate-100 rounded-lg p-1">
+            <button onclick="switchTab('theory')" id="tab-theory" class="tab-btn active text-sm">Theory & Rules</button>
+            <button onclick="switchTab('builder')" id="tab-builder" class="tab-btn text-sm">Circuit Builder</button>
+            <button onclick="switchTab('analyzer')" id="tab-analyzer" class="tab-btn text-sm">Expression Analyzer</button>
+            <button onclick="switchTab('kmaps')" id="tab-kmaps" class="tab-btn text-sm">Truth Tables & K-Maps</button>
+        </nav>
+    </header>
+
+    <main class="flex-grow flex flex-col md:flex-row overflow-hidden h-[calc(100vh-80px)]">
+        
+        <aside id="sidebar" class="w-full md:w-80 bg-white border-r border-slate-200 overflow-y-auto p-4 space-y-6">
+            <div id="sidebar-theory" class="space-y-4">
+                <h3 class="text-slate-900 font-bold uppercase tracking-wider text-xs">Gate Explorer</h3>
+                <div id="gate-explorer-container" class="space-y-3 text-xs"></div>
+            </div>
+
+            <div id="sidebar-builder" class="hidden space-y-4">
+                <h3 class="text-slate-900 font-bold uppercase tracking-wider text-xs">Components Palette</h3>
+                <div id="palette" class="grid grid-cols-2 gap-2"></div>
+                <div class="p-3 bg-slate-50 rounded text-[10px] text-slate-500 border border-slate-200 leading-relaxed">
+                    <strong class="text-slate-700">Controls:</strong><br>
+                    - Click <strong>Output Node</strong> (right side) then an <strong>Input Node</strong> (left side) to connect.<br>
+                    - Click a wire to delete it.<br>
+                    - Press <strong>Del</strong> or <strong>Backspace</strong> to remove a selected gate.<br>
+                    - Scroll to zoom, Middle-click + drag to pan.
+                </div>
+            </div>
+        </aside>
+
+        <section class="flex-grow relative bg-slate-50">
+            
+            <div id="content-theory" class="p-8 overflow-y-auto h-full max-w-4xl mx-auto space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-lg font-bold text-slate-900 border-b pb-2">Simplification Mnemonics</h2>
+                        
+                        <div class="rule-card bg-slate-50 p-3 rounded">
+                            <h4 class="font-bold text-sm text-blue-700">The "Black Hole" Rules</h4>
+                            <p class="text-xs text-slate-600 mb-1">Signals get "sucked in" and lost.</p>
+                            <code class="text-xs font-mono bg-blue-100 px-2 py-1 rounded">A &middot; 0 = 0</code> | <code class="text-xs font-mono bg-blue-100 px-2 py-1 rounded">A + 1 = 1</code>
+                        </div>
+
+                        <div class="rule-card bg-slate-50 p-3 rounded border-l-emerald-500">
+                            <h4 class="font-bold text-sm text-emerald-700">The "Mirror" Rules</h4>
+                            <p class="text-xs text-slate-600 mb-1">The signal just stays the same.</p>
+                            <code class="text-xs font-mono bg-emerald-100 px-2 py-1 rounded">A &middot; 1 = A</code> | <code class="text-xs font-mono bg-emerald-100 px-2 py-1 rounded">A + 0 = A</code>
+                        </div>
+
+                        <div class="rule-card bg-slate-50 p-3 rounded border-l-purple-500">
+                            <h4 class="font-bold text-sm text-purple-700">De Morgan's Secret</h4>
+                            <p class="text-xs text-slate-600 mb-1 italic">"Break the bar, change the sign."</p>
+                            <code class="text-xs font-mono bg-purple-100 px-2 py-1 rounded">&not;(A &middot; B) = &not;A + &not;B</code>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                        <h2 class="text-lg font-bold text-slate-900 border-b pb-2">Simplification Walkthrough</h2>
+                        <div class="text-xs space-y-4 font-sans leading-relaxed">
+                            <p class="text-slate-500 italic">Example: Z = (A &middot; B) + (A &middot; <span class="overline">B</span>)</p>
+                            
+                            <div class="bg-slate-50 p-3 rounded border-l-2 border-slate-300">
+                                <span class="font-bold text-slate-700 block mb-1">1. Factoring (Distributive Law)</span>
+                                <p class="text-slate-600 mb-2">Extract the common variable 'A' from both terms.</p>
+                                <code class="font-mono text-blue-600 text-sm">Z = A &middot; (B + <span class="overline">B</span>)</code>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded border-l-2 border-slate-300">
+                                <span class="font-bold text-slate-700 block mb-1">2. Redundancy (Inverse Law)</span>
+                                <p class="text-slate-600 mb-2">Anything OR-ed with its opposite is always TRUE (1).</p>
+                                <code class="font-mono text-blue-600 text-sm">Z = A &middot; (1)</code>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded border-l-2 border-slate-300">
+                                <span class="font-bold text-slate-700 block mb-1">3. Result (Identity Law)</span>
+                                <p class="text-slate-600 mb-2">Anything multiplied by 1 stays exactly as it is.</p>
+                                <code class="font-mono text-emerald-600 text-sm font-bold">Z = A</code>
+                            </div>
+
+                            <div class="p-2 bg-blue-50 rounded border border-blue-100 text-[10px]">
+                                <span class="font-bold text-blue-800 uppercase block mb-1">Hardware Saving:</span>
+                                We replaced 4 gates with a single wire!
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-4 text-slate-900">Standard Gate Logic Summary</h2>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left border border-slate-100">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="p-2 border">Gate</th>
+                                    <th class="p-2 border">Operation</th>
+                                    <th class="p-2 border">Logic Rule</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td class="p-2 border font-bold">AND</td><td class="p-2 border">Multiplication</td><td class="p-2 border">Output is 1 only if BOTH inputs are 1.</td></tr>
+                                <tr><td class="p-2 border font-bold">OR</td><td class="p-2 border">Addition</td><td class="p-2 border">Output is 1 if AT LEAST ONE input is 1.</td></tr>
+                                <tr><td class="p-2 border font-bold">NAND</td><td class="p-2 border">Inverse AND</td><td class="p-2 border">Output is 0 only if BOTH inputs are 1.</td></tr>
+                                <tr><td class="p-2 border font-bold">NOR</td><td class="p-2 border">Inverse OR</td><td class="p-2 border">Output is 1 only if BOTH inputs are 0.</td></tr>
+                                <tr><td class="p-2 border font-bold">XOR</td><td class="p-2 border">Exclusive OR</td><td class="p-2 border">Output is 1 if inputs are DIFFERENT.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-builder" class="hidden h-full flex flex-col">
+                <div class="flex-shrink-0 bg-white p-2 flex items-center justify-between border-b border-slate-200">
+                    <span class="text-xs font-bold px-4 text-slate-400 uppercase">Interactive Workspace</span>
+                    <div class="flex gap-2">
+                        <button onclick="generateExpr()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-xs font-semibold transition-colors">Trace Expression</button>
+                        <button onclick="generateTable()" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-semibold transition-colors">Generate Table</button>
+                        <button onclick="clearCanvas()" class="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-xs font-semibold transition-colors">Clear All</button>
+                    </div>
+                </div>
+                <div id="canvas-container" class="flex-grow relative overflow-hidden">
+                    <div id="canvas" class="w-[3000px] h-[3000px]">
+                        <svg id="wires-svg" class="w-full h-full pointer-events-none absolute inset-0"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-analyzer" class="hidden p-8 overflow-y-auto h-full">
+                <div class="max-w-2xl mx-auto space-y-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Boolean Analyzer</h2>
+                    <div class="flex gap-2">
+                        <input type="text" id="expr-input" placeholder="e.g. (A AND B) OR NOT C" class="flex-grow bg-white border border-slate-300 p-3 rounded text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm">
+                        <button onclick="analyzeExpr()" class="px-6 bg-blue-600 hover:bg-blue-700 text-white rounded font-bold transition-colors">Calculate</button>
+                    </div>
+                    <div id="expr-result" class="bg-white rounded-xl border border-slate-200 p-6 overflow-x-auto min-h-[200px] flex items-center justify-center shadow-sm">
+                        <p class="text-slate-400 font-medium">Results will appear here...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="content-kmaps" class="hidden p-8 overflow-y-auto h-full space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <h3 class="text-lg font-bold mb-4 text-slate-900">1. Transfer Data from Truth Table</h3>
+                        <p class="text-xs text-slate-500 mb-4">Toggle outputs below to see them update on the K-Map.</p>
+                        <div id="kmap-table-container" class="flex-grow"></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+                        <h3 class="text-lg font-bold mb-4 text-slate-900">2. The Gray Code Grid</h3>
+                        <div id="kmap-grid" class="grid grid-cols-5 border-2 border-slate-200 rounded-lg overflow-hidden w-full max-sm:scale-75">
+                            <div class="p-3 bg-slate-50 text-center font-bold text-xs border border-slate-100 text-slate-400">A \ BC</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold text-xs border border-slate-100 text-slate-700">00</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold text-xs border border-slate-100 text-slate-700">01</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold text-xs border border-slate-100 text-slate-700">11</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold text-xs border border-slate-100 text-slate-700">10</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold border border-slate-100 text-slate-700">0</div>
+                            <div id="k-000" onclick="toggleK(0,0,0)" class="kmap-cell">0</div>
+                            <div id="k-001" onclick="toggleK(0,0,1)" class="kmap-cell">0</div>
+                            <div id="k-011" onclick="toggleK(0,1,1)" class="kmap-cell">0</div>
+                            <div id="k-010" onclick="toggleK(0,1,0)" class="kmap-cell">0</div>
+                            <div class="p-3 bg-slate-50 text-center font-bold border border-slate-100 text-slate-700">1</div>
+                            <div id="k-100" onclick="toggleK(1,0,0)" class="kmap-cell">0</div>
+                            <div id="k-101" onclick="toggleK(1,0,1)" class="kmap-cell">0</div>
+                            <div id="k-111" onclick="toggleK(1,1,1)" class="kmap-cell">0</div>
+                            <div id="k-110" onclick="toggleK(1,1,0)" class="kmap-cell">0</div>
+                        </div>
+                        <div class="mt-4 p-4 bg-slate-50 rounded border border-slate-100 w-full">
+                            <h4 class="font-bold text-slate-800 text-xs mb-2">Why Gray Code?</h4>
+                            <p class="text-[10px] text-slate-600 leading-relaxed">Notice the sequence <strong>01 &rarr; 11 &rarr; 10</strong>. Only one bit changes at a time. This allows adjacent cells to be "factored out" logically because their physical proximity mirrors a mathematical relationship.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm max-w-4xl mx-auto">
+                    <h3 class="text-xl font-bold mb-6 text-slate-900 border-b pb-2">How to Construct a K-Map</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm leading-relaxed">
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-bold text-blue-600">Step 1: Size the Map</h4>
+                                <p class="text-slate-600 text-xs">For 3 variables (A, B, C), you need 8 cells (2 raised to the power of 3). The grid is arranged so variables change one at a time.</p>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-blue-600">Step 2: Transfer the 1s</h4>
+                                <p class="text-slate-600 text-xs">Find every row in your Truth Table where the final output is 1. Put a "1" in the matching cell on the K-map grid.</p>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-bold text-emerald-600">Step 3: Group the 1s (The Rules)</h4>
+                                <ul class="list-disc list-inside text-xs text-slate-600 space-y-1">
+                                    <li>Groups must contain 1, 2, 4, or 8 cells (powers of 2).</li>
+                                    <li>Groups must be as large as possible to maximize simplification.</li>
+                                    <li>Groups can wrap around from the left edge to the right edge.</li>
+                                    <li>Groups can overlap if it helps create a larger group.</li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-emerald-600">Step 4: Reading the Result</h4>
+                                <p class="text-slate-600 text-xs">Look at each group. Identify variables that stay the same (e.g., B is 1 in every cell of the group). Discard any variable that changes (e.g., A changes from 0 to 1).</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden z-[100] flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-xl shadow-2xl max-w-4xl w-full p-6 relative overflow-y-auto max-h-[80vh]">
+            <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-900 text-2xl transition-colors">&times;</button>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <script>
+        const GATES = {
+            AND: { logic: (a, b) => a && b, symbol: "A &middot; B", svg: `<path d="M10 5 h20 a15 15 0 0 1 0 30 h-20 v-30" />`, inputs: 2 },
+            OR: { logic: (a, b) => a || b, symbol: "A + B", svg: `<path d="M10 5 q10 15 0 30 q20 0 35 -15 q-15 -15 -35 -15" />`, inputs: 2 },
+            NOT: { logic: a => !a, symbol: "&not;A", svg: `<path d="M10 5 l25 15 l-25 15 z" /><circle cx="40" cy="20" r="4" />`, inputs: 1 },
+            NAND: { logic: (a, b) => !(a && b), symbol: "&not;(A&middot;B)", svg: `<path d="M10 5 h20 a15 15 0 0 1 0 30 h-20 v-30" /><circle cx="35" cy="20" r="4" />`, inputs: 2 },
+            NOR: { logic: (a, b) => !(a || b), symbol: "&not;(A+B)", svg: `<path d="M10 5 q10 15 0 30 q20 0 35 -15 q-15 -15 -35 -15" /><circle cx="50" cy="20" r="4" />`, inputs: 2 },
+            XOR: { logic: (a, b) => a !== b, symbol: "A &oplus; B", svg: `<path d="M5 5 q10 15 0 30" /><path d="M12 5 q10 15 0 30 q20 0 35 -15 q-15 -15 -35 -15" />`, inputs: 2 },
+            XNOR: { logic: (a, b) => a === b, symbol: "&not;(A&oplus;B)", svg: `<path d="M5 5 q10 15 0 30" /><path d="M12 5 q10 15 0 30 q20 0 35 -15 q-15 -15 -35 -15" /><circle cx="52" cy="20" r="4" />`, inputs: 2 }
+        };
+
+        const COMPONENTS = {
+            'INPUT-A': { type: 'INPUT', label: 'A', class: 'bg-blue-600', inputs: 0 },
+            'INPUT-B': { type: 'INPUT', label: 'B', class: 'bg-blue-600', inputs: 0 },
+            'INPUT-C': { type: 'INPUT', label: 'C', class: 'bg-blue-600', inputs: 0 },
+            'OUTPUT': { type: 'OUTPUT', label: 'OUT', class: 'bg-slate-700', inputs: 2 }
+        };
+
+        let circuit = {};
+        let wires = [];
+        let idCounter = 0;
+        let selectedId = null;
+        let wiring = { active: false, start: null };
+        let kmapState = Array(8).fill(0);
+        let view = { zoom: 1, panX: 0, panY: 0 };
+
+        function switchTab(id) {
+            ['theory', 'builder', 'analyzer', 'kmaps'].forEach(t => {
+                const btn = document.getElementById('tab-' + t);
+                const content = document.getElementById('content-' + t);
+                if(btn) btn.classList.toggle('active', t === id);
+                if(content) content.classList.toggle('hidden', t !== id);
+            });
+            document.getElementById('sidebar-builder').classList.toggle('hidden', id !== 'builder');
+            document.getElementById('sidebar-theory').classList.toggle('hidden', id === 'builder' || id === 'analyzer');
+            if (id === 'builder') updateWires();
+        }
+
+        function buildExplorer() {
+            const container = document.getElementById('gate-explorer-container');
+            container.innerHTML = '';
+            Object.entries(GATES).forEach(([name, def]) => {
+                const card = document.createElement('div');
+                card.className = "p-3 bg-slate-50 rounded border border-slate-200 flex flex-col items-center gap-2";
+                card.innerHTML = `
+                    <div class="flex justify-between w-full font-bold text-slate-700">
+                        <span>${name}</span>
+                        <span class="text-slate-400 font-mono">${def.symbol}</span>
+                    </div>
+                    <div class="flex items-center gap-4 py-2">
+                        <div class="flex flex-col gap-1">
+                            <button id="exp-in-${name}-1" onclick="toggleExpIn('${name}', 1)" class="input-btn w-6 h-6 rounded bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold border border-slate-300 transition-colors">0</button>
+                            ${def.inputs !== 1 ? `<button id="exp-in-${name}-2" onclick="toggleExpIn('${name}', 2)" class="input-btn w-6 h-6 rounded bg-slate-200 text-slate-600 flex items-center justify-center text-[10px] font-bold border border-slate-300 transition-colors">0</button>` : ''}
+                        </div>
+                        <svg width="60" height="40" class="gate-symbol-svg">${def.svg}</svg>
+                        <div id="exp-out-${name}" class="output-display w-6 h-6 rounded-full bg-slate-100 border border-slate-300 transition-all"></div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        const expStates = {};
+        function toggleExpIn(gate, num) {
+            const stateId = `${gate}-${num}`;
+            expStates[stateId] = !expStates[stateId];
+            const btn = document.getElementById(`exp-in-${stateId}`);
+            btn.innerText = expStates[stateId] ? "1" : "0";
+            btn.classList.toggle('active', expStates[stateId]);
+            const in1 = expStates[`${gate}-1`] || false;
+            const in2 = expStates[`${gate}-2`] || false;
+            const res = gate === 'NOT' ? GATES[gate].logic(in1) : GATES[gate].logic(in1, in2);
+            document.getElementById(`exp-out-${gate}`).classList.toggle('active', res);
+        }
+
+        function buildPalette() {
+            const p = document.getElementById('palette');
+            Object.keys(COMPONENTS).concat(Object.keys(GATES)).forEach(type => {
+                const item = document.createElement('div');
+                item.className = "p-2 bg-white border border-slate-200 rounded text-center text-[10px] font-bold text-slate-600 cursor-grab hover:bg-slate-50 transition-colors shadow-sm";
+                item.innerText = type;
+                item.draggable = true;
+                item.addEventListener('dragstart', (e) => e.dataTransfer.setData('type', type));
+                p.appendChild(item);
+            });
+        }
+
+        function createGate(type, x, y) {
+            const id = idCounter++;
+            const def = GATES[type] || COMPONENTS[type];
+            const el = document.createElement('div');
+            el.className = `draggable-gate p-2 bg-white border-2 border-slate-200 rounded-lg min-w-[80px] shadow-sm`;
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.id = 'gate-' + id;
+            el.innerHTML = `<div class="text-[10px] text-center font-bold text-slate-400 mb-1 uppercase">${type}</div>` + 
+                         (GATES[type] ? `<svg width="60" height="40" viewBox="0 0 60 40" class="gate-symbol-svg mx-auto">${def.svg}</svg>` : `<div class="text-xl font-bold text-center text-slate-700">${def.label}</div>`);
+            
+            const outNode = document.createElement('div');
+            outNode.className = "node output-node";
+            outNode.onclick = (e) => { e.stopPropagation(); startWiring(id); };
+            el.appendChild(outNode);
+
+            const inputCount = def.inputs;
+            if (inputCount > 0) {
+                for (let i = 0; i < inputCount; i++) {
+                    const node = document.createElement('div');
+                    const portLabel = i === 0 ? 'A' : 'B';
+                    node.className = `node input-node ${inputCount === 1 ? 'single' : (i === 0 ? 'a' : 'b')}`;
+                    node.onclick = (e) => { e.stopPropagation(); finishWiring(id, portLabel); };
+                    el.appendChild(node);
+                }
+            }
+
+            el.onclick = (e) => {
+                e.stopPropagation();
+                if (COMPONENTS[type]?.type === 'INPUT') {
+                    circuit[id].state = !circuit[id].state;
+                    el.classList.toggle('bg-green-600', circuit[id].state);
+                    const labelDiv = el.querySelector('.text-slate-700');
+                    if(labelDiv) labelDiv.classList.toggle('text-white', circuit[id].state);
+                    runCircuit();
+                } else selectGate(id);
+            };
+
+            makeDraggable(el, id);
+            document.getElementById('canvas').appendChild(el);
+            circuit[id] = { id, type, state: false, output: false };
+            runCircuit();
+        }
+
+        function makeDraggable(el, id) {
+            let px = 0, py = 0;
+            el.onmousedown = (e) => {
+                if (e.target.classList.contains('node')) return;
+                px = e.clientX; py = e.clientY;
+                document.onmousemove = (e) => {
+                    const dx = (px - e.clientX) / view.zoom;
+                    const dy = (py - e.clientY) / view.zoom;
+                    px = e.clientX; py = e.clientY;
+                    el.style.left = (el.offsetLeft - dx) + "px";
+                    el.style.top = (el.offsetTop - dy) + "px";
+                    updateWires();
+                };
+                document.onmouseup = () => document.onmousemove = null;
+            };
+        }
+
+        function startWiring(id) { wiring = { active: true, start: id }; }
+        function finishWiring(id, node) {
+            if (wiring.active && wiring.start !== id) {
+                wires = wires.filter(w => !(Number(w.to) === Number(id) && w.port === node));
+                wires.push({ from: wiring.start, to: id, port: node });
+                wiring.active = false;
+                runCircuit();
+            }
+        }
+
+        function updateWires() {
+            const svg = document.getElementById('wires-svg');
+            if(!svg) return;
+            svg.innerHTML = '';
+            wires.forEach((w, idx) => {
+                const fromEl = document.getElementById('gate-' + w.from);
+                const toEl = document.getElementById('gate-' + w.to);
+                if (!fromEl || !toEl) return;
+                
+                const outNode = fromEl.querySelector('.output-node');
+                const inNode = toEl.querySelector(`.input-node.${w.port === 'A' ? 'a' : 'b'}`) || toEl.querySelector('.single');
+                
+                const r1 = outNode.getBoundingClientRect();
+                const r2 = inNode.getBoundingClientRect();
+                const cr = document.getElementById('canvas').getBoundingClientRect();
+                
+                const x1 = (r1.left + r1.width/2 - cr.left) / view.zoom;
+                const y1 = (r1.top + r1.height/2 - cr.top) / view.zoom;
+                const x2 = (r2.left + r2.width/2 - cr.left) / view.zoom;
+                const y2 = (r2.top + r2.height/2 - cr.top) / view.zoom;
+                
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${x1} ${y1} C ${x1 + 40} ${y1}, ${x2 - 40} ${y2}, ${x2} ${y2}`);
+                path.setAttribute('class', `wire ${circuit[w.from].output ? 'active' : ''}`);
+                path.onclick = () => { wires.splice(idx, 1); runCircuit(); };
+                svg.appendChild(path);
+            });
+        }
+
+        function runCircuit() {
+            for (let i = 0; i < 5; i++) {
+                Object.values(circuit).forEach(gate => {
+                    const typeDef = GATES[gate.type] || COMPONENTS[gate.type];
+                    const inA = wires.find(w => Number(w.to) === Number(gate.id) && (w.port === 'A' || typeDef?.inputs === 1));
+                    const inB = wires.find(w => Number(w.to) === Number(gate.id) && w.port === 'B');
+                    const valA = inA ? circuit[inA.from].output : false;
+                    const valB = inB ? circuit[inB.from].output : false;
+
+                    if (typeDef?.type === 'INPUT') {
+                        gate.output = gate.state;
+                    } else if (gate.type === 'OUTPUT') {
+                        gate.output = valA || valB;
+                    } else {
+                        gate.output = GATES[gate.type] ? GATES[gate.type].logic(valA, valB) : valA;
+                    }
+
+                    const el = document.getElementById('gate-' + gate.id);
+                    if (el) {
+                        el.querySelector('.output-node')?.classList.toggle('active', gate.output);
+                        if (gate.type === 'OUTPUT') {
+                            el.classList.toggle('ring-4', gate.output);
+                            el.classList.toggle('ring-green-500/30', gate.output);
+                            el.classList.toggle('border-green-600', gate.output);
+                        }
+                    }
+                });
+            }
+            updateWires();
+        }
+
+        function selectGate(id) {
+            if (selectedId !== null) {
+                const prev = document.getElementById('gate-' + selectedId);
+                if(prev) prev.classList.remove('selected');
+            }
+            selectedId = id;
+            const current = document.getElementById('gate-' + id);
+            if(current) current.classList.add('selected');
+        }
+
+        function clearCanvas() {
+            const svg = document.getElementById('wires-svg');
+            const canvasEl = document.getElementById('canvas');
+            canvasEl.innerHTML = '';
+            canvasEl.appendChild(svg);
+            svg.innerHTML = '';
+            circuit = {}; wires = []; idCounter = 0;
+        }
+
+        function getExpression(gateId) {
+            const gate = circuit[gateId];
+            if (!gate) return '0';
+            const typeDef = GATES[gate.type] || COMPONENTS[gate.type];
+            if (typeDef?.type === 'INPUT') return typeDef.label;
+            
+            const inA = wires.find(w => Number(w.to) === Number(gateId) && (w.port === 'A' || typeDef?.inputs === 1));
+            const inB = wires.find(w => Number(w.to) === Number(gateId) && w.port === 'B');
+            
+            const exprA = inA ? getExpression(inA.from) : '0';
+            const exprB = inB ? getExpression(inB.from) : '0';
+            
+            if (gate.type === 'OUTPUT') {
+                if (inA && inB) return `(${exprA} + ${exprB})`;
+                return inA ? exprA : exprB;
+            }
+
+            switch(gate.type) {
+                case 'AND': return `(${exprA} &middot; ${exprB})`;
+                case 'OR': return `(${exprA} + ${exprB})`;
+                case 'NOT': return `&not;(${exprA})`;
+                case 'NAND': return `&not;(${exprA} &middot; ${exprB})`;
+                case 'NOR': return `&not;(${exprA} + ${exprB})`;
+                case 'XOR': return `(${exprA} &oplus; ${exprB})`;
+                case 'XNOR': return `&not;(${exprA} &oplus; ${exprB})`;
+                default: return exprA;
+            }
+        }
+
+        function generateExpr() {
+            const outputs = Object.values(circuit).filter(g => g.type === 'OUTPUT');
+            if (outputs.length === 0) { alertUser("Add an OUTPUT component to trace logic."); return; }
+            let html = `<h2 class="text-xl font-bold mb-4">Circuit Trace</h2><div class="space-y-4">`;
+            outputs.forEach((out, i) => {
+                const expr = getExpression(out.id);
+                html += `<div class="p-3 bg-slate-50 border rounded font-mono text-sm"><strong>OUT ${i+1}:</strong> ${expr}</div>`;
+            });
+            showModal(html + `</div>`);
+        }
+
+        function generateTable() {
+            const inputs = Object.values(circuit).filter(g => COMPONENTS[g.type]?.type === 'INPUT');
+            const outputs = Object.values(circuit).filter(g => g.type === 'OUTPUT');
+            if (inputs.length === 0 || outputs.length === 0) { alertUser("Need both INPUT and OUTPUT components."); return; }
+            const savedStates = {};
+            inputs.forEach(i => savedStates[i.id] = i.state);
+            let html = `<h2 class="text-xl font-bold mb-4 text-center">Truth Table</h2><table class="w-full text-xs text-center border-collapse"><thead><tr class="bg-slate-100 text-slate-600">`;
+            inputs.forEach(inp => html += `<th class="p-2 border border-slate-200">IN ${COMPONENTS[inp.type].label}</th>`);
+            outputs.forEach((out, idx) => html += `<th class="p-2 border border-slate-200 bg-blue-50 text-blue-700 font-bold">OUT ${idx+1}</th>`);
+            html += `</tr></thead><tbody>`;
+            const rows = Math.pow(2, inputs.length);
+            for (let i = 0; i < rows; i++) {
+                inputs.forEach((inp, idx) => inp.state = !!((i >> (inputs.length - 1 - idx)) & 1));
+                for(let k=0; k<10; k++) {
+                    Object.values(circuit).forEach(gate => {
+                        const td = GATES[gate.type] || COMPONENTS[gate.type];
+                        const inA = wires.find(w => Number(w.to) === Number(gate.id) && (w.port === 'A' || td?.inputs === 1));
+                        const inB = wires.find(w => Number(w.to) === Number(gate.id) && w.port === 'B');
+                        const valA = inA ? circuit[inA.from].output : false;
+                        const valB = inB ? circuit[inB.from].output : false;
+                        if (td?.type === 'INPUT') gate.output = gate.state;
+                        else if (gate.type === 'OUTPUT') gate.output = valA || valB;
+                        else gate.output = GATES[gate.type] ? GATES[gate.type].logic(valA, valB) : valA;
+                    });
+                }
+                html += `<tr class="border-b border-slate-100">`;
+                inputs.forEach(inp => html += `<td class="p-2 border border-slate-100 font-mono text-slate-500">${inp.state ? 1 : 0}</td>`);
+                outputs.forEach(out => html += `<td class="p-2 border border-slate-100 font-bold ${out.output ? 'text-green-600' : 'text-red-600'}">${out.output ? 1 : 0}</td>`);
+                html += `</tr>`;
+            }
+            inputs.forEach(i => {
+                i.state = savedStates[i.id];
+                const el = document.getElementById('gate-' + i.id);
+                if(el) {
+                    el.classList.toggle('bg-green-600', i.state);
+                    const labelDiv = el.querySelector('.text-slate-700');
+                    if(labelDiv) labelDiv.classList.toggle('text-white', i.state);
+                }
+            });
+            runCircuit();
+            showModal(html + `</tbody></table>`);
+        }
+
+        function showModal(content) {
+            const modal = document.getElementById('modal');
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = content;
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
+        function alertUser(msg) { showModal(`<div class="text-center py-4"><p class="text-slate-600 mb-4">${msg}</p><button onclick="closeModal()" class="px-4 py-2 bg-slate-900 text-white rounded font-bold">Close</button></div>`); }
+
+        function analyzeExpr() {
+            const rawStr = document.getElementById('expr-input').value.toUpperCase();
+            if (!rawStr.trim()) return;
+
+            const vars = [...new Set(rawStr.match(/[A-C]/g) || [])].sort();
+            if (vars.length === 0 && !rawStr.match(/[01]/)) {
+                alertUser("Please enter an expression with variables (A, B, C) or values (0, 1).");
+                return;
+            }
+
+            const container = document.getElementById('expr-result');
+            let html = `<table class="w-full text-xs text-center border-collapse"><thead><tr class="bg-slate-100 text-slate-600">`;
+            vars.forEach(v => html += `<th class="p-3 border border-slate-200">${v}</th>`);
+            html += `<th class="p-3 border border-slate-200 bg-blue-50 text-blue-700 font-bold">RESULT</th></tr></thead><tbody>`;
+
+            const rows = vars.length > 0 ? Math.pow(2, vars.length) : 1;
+            
+            for (let i = 0; i < rows; i++) {
+                let rowValues = {};
+                let evalStr = rawStr;
+
+                vars.forEach((v, idx) => {
+                    const val = (i >> (vars.length - 1 - idx)) & 1;
+                    rowValues[v] = val;
+                    evalStr = evalStr.replace(new RegExp('\\b' + v + '\\b', 'g'), val);
+                });
+
+                let jsExpr = evalStr
+                    .replace(/\bNAND\b/g, ' NAND ')
+                    .replace(/\bNOR\b/g, ' NOR ')
+                    .replace(/\bXNOR\b/g, ' XNOR ')
+                    .replace(/\bXOR\b/g, '^')
+                    .replace(/\bAND\b/g, '&')
+                    .replace(/\bOR\b/g, '|')
+                    .replace(/\bNOT\b/g, '!')
+                    .replace(/&middot;/g, '&')
+                    .replace(/&not;/g, '!')
+                    .replace(/&oplus;/g, '^');
+
+                jsExpr = jsExpr.replace(/(\d+|\btrue\b|\bfalse\b|\))\s*NAND\s*(\d+|\btrue\b|\bfalse\b|\()/g, '!($1 & $2)');
+                jsExpr = jsExpr.replace(/(\d+|\btrue\b|\bfalse\b|\))\s*NOR\s*(\d+|\btrue\b|\bfalse\b|\()/g, '!($1 | $2)');
+                jsExpr = jsExpr.replace(/(\d+|\btrue\b|\bfalse\b|\))\s*XNOR\s*(\d+|\btrue\b|\bfalse\b|\()/g, '!($1 ^ $2)');
+
+                let result;
+                try {
+                    result = eval(jsExpr) ? 1 : 0;
+                } catch(e) { 
+                    result = 'ERR'; 
+                }
+
+                html += `<tr class="border-b border-slate-100">`;
+                vars.forEach(v => {
+                    html += `<td class="p-2 border border-slate-100 font-mono text-slate-500">${rowValues[v]}</td>`;
+                });
+                html += `<td class="p-2 border border-slate-100 font-bold ${result === 1 ? 'text-green-600' : (result === 0 ? 'text-red-600' : 'text-orange-500')}">${result}</td></tr>`;
+            }
+            container.innerHTML = html + `</tbody></table>`;
+        }
+
+        function renderKmapTable() {
+            const container = document.getElementById('kmap-table-container');
+            let html = `<table class="w-full text-xs text-center border-collapse"><thead><tr class="bg-slate-50"><th>A</th><th>B</th><th>C</th><th class="bg-blue-50 text-blue-600">OUT</th></tr></thead><tbody>`;
+            kmapState.forEach((val, i) => {
+                const a = (i & 4) >> 2;
+                const b = (i & 2) >> 1;
+                const c = (i & 1);
+                html += `<tr class="border-b"><td class="p-2 text-slate-500">${a}</td><td class="p-2 text-slate-500">${b}</td><td class="p-2 text-slate-500">${c}</td>
+                    <td class="p-2"><button onclick="toggleRow(${i})" class="w-8 h-8 rounded border transition-all ${val ? 'bg-blue-600 text-white' : 'bg-white border-slate-200'}">${val}</button></td></tr>`;
+            });
+            container.innerHTML = html + `</tbody></table>`;
+            updateKmapGrid();
+        }
+
+        function toggleRow(i) { kmapState[i] = kmapState[i] ? 0 : 1; renderKmapTable(); }
+        function toggleK(a, b, c) {
+            const i = (a << 2) | (b << 1) | c;
+            kmapState[i] = kmapState[i] ? 0 : 1;
+            renderKmapTable();
+        }
+
+        function updateKmapGrid() {
+            kmapState.forEach((val, i) => {
+                const a = (i & 4) >> 2;
+                const b = (i & 2) >> 1;
+                const c = (i & 1);
+                const el = document.getElementById(`k-${a}${b}${c}`);
+                if (el) { el.innerText = val; el.classList.toggle('active', val === 1); }
+            });
+        }
+
+        window.addEventListener('dragover', (e) => e.preventDefault());
+        window.addEventListener('drop', (e) => {
+            const type = e.dataTransfer.getData('type');
+            if(!type) return;
+            const rect = document.getElementById('canvas-container').getBoundingClientRect();
+            const x = (e.clientX - rect.left - view.panX) / view.zoom;
+            const y = (e.clientY - rect.top - view.panY) / view.zoom;
+            createGate(type, x - 40, y - 20);
+        });
+
+        window.onkeydown = (e) => {
+            if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId !== null) {
+                const el = document.getElementById('gate-' + selectedId);
+                if(el) el.remove();
+                delete circuit[selectedId];
+                wires = wires.filter(w => Number(w.from) !== Number(selectedId) && Number(w.to) !== Number(selectedId));
+                selectedId = null;
+                runCircuit();
+            }
+        };
+
+        const canvasUI = document.getElementById('canvas-container');
+        canvasUI.onwheel = (e) => {
+            e.preventDefault();
+            view.zoom += e.deltaY * -0.001;
+            view.zoom = Math.min(Math.max(.25, view.zoom), 3);
+            document.getElementById('canvas').style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+        };
+
+        window.onload = () => {
+            buildExplorer();
+            buildPalette();
+            renderKmapTable();
+        };
+    </script>
+</body>
+</html>

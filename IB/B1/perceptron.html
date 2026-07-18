@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Perceptron: Activation Functions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+            margin-top: -7px; /* Align thumb */
+        }
+        .slider-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        /* Bias Slider Special */
+        .slider-thumb-bias::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #db2777; 
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+             margin-top: -7px;
+        }
+        
+        /* Custom Range Input Reset */
+        input[type=range] {
+            -webkit-appearance: none; 
+            background: transparent; 
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        
+        .neuron-line {
+            transition: stroke 0.3s ease, stroke-width 0.3s ease;
+        }
+        .pulse {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+        .active-node {
+            background-color: #3b82f6;
+            color: white;
+            border-color: #2563eb;
+        }
+        .inactive-node {
+            background-color: #e2e8f0;
+            color: #64748b;
+            border-color: #cbd5e1;
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #3b82f6;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #3b82f6;
+        }
+        
+        /* Graph Styles */
+        .axis {
+            stroke: #94a3b8;
+            stroke-width: 1.5; /* Thicker axis */
+            vector-effect: non-scaling-stroke; /* Keep consistent width on zoom */
+        }
+        .grid-line {
+            stroke: #e2e8f0;
+            stroke-width: 1;
+            vector-effect: non-scaling-stroke;
+        }
+        .graph-line {
+            stroke: #8b5cf6;
+            stroke-width: 3;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: d 0.3s ease;
+            vector-effect: non-scaling-stroke; /* Keep consistent curve width */
+        }
+        .current-point {
+            fill: #db2777;
+            stroke: white;
+            stroke-width: 1.5;
+            transition: cx 0.1s linear, cy 0.1s linear;
+            vector-effect: non-scaling-stroke;
+        }
+        .drop-line {
+            stroke: #db2777;
+            stroke-width: 1;
+            stroke-dasharray: 4, 4;
+            opacity: 0.6;
+            vector-effect: non-scaling-stroke;
+        }
+        select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-print-color-adjust: exact;
+        }
+    </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm p-3 z-10 shrink-0">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-lg md:text-xl font-bold text-slate-700 flex items-center gap-2">
+                <i class="fas fa-project-diagram text-purple-600"></i>
+                <span>Perceptron Simulator</span>
+            </h1>
+            
+            <!-- Activation Selector in Header for Visibility -->
+            <div class="flex items-center gap-2 bg-purple-50 px-3 py-1 rounded-lg border border-purple-100">
+                <label for="activation-select" class="text-xs font-bold text-purple-800 uppercase tracking-wider hidden sm:block">Activation Function:</label>
+                <select id="activation-select" class="bg-white border border-purple-200 text-purple-900 text-sm rounded focus:ring-purple-500 focus:border-purple-500 block p-1.5 font-semibold">
+                    <option value="relu">ReLU (Rectified Linear)</option>
+                    <option value="sigmoid">Sigmoid (Probability)</option>
+                    <option value="tanh">TanH (Hyperbolic Tangent)</option>
+                    <option value="softmax">Softmax (Binary)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow flex flex-col lg:flex-row max-w-7xl mx-auto w-full p-2 gap-4 overflow-hidden">
+        
+        <!-- Controls Panel (Left) - Scrollable -->
+        <div class="w-full lg:w-1/3 bg-white rounded-xl shadow-lg flex flex-col h-full overflow-hidden border border-slate-100">
+            <div class="p-4 overflow-y-auto custom-scrollbar space-y-6">
+                
+                <!-- Inputs Section -->
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span class="w-4 h-4 bg-blue-500 rounded-full text-white flex items-center justify-center text-[10px]">1</span> Inputs (x)
+                    </h2>
+                    <div class="space-y-2">
+                        <!-- Input 1 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-slate-700">Weekend?</span>
+                            </div>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                <input type="checkbox" name="toggle" id="input1" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 left-0 transition-all duration-300"/>
+                                <label for="input1" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                            </div>
+                        </div>
+                        <!-- Input 2 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-slate-700">Fridge Empty?</span>
+                            </div>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                <input type="checkbox" name="toggle" id="input2" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 left-0 transition-all duration-300"/>
+                                <label for="input2" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                            </div>
+                        </div>
+                        <!-- Input 3 -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex flex-col">
+                                <span class="font-bold text-sm text-slate-700">Payday?</span>
+                            </div>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none">
+                                <input type="checkbox" name="toggle" id="input3" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer border-slate-300 left-0 transition-all duration-300"/>
+                                <label for="input3" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer transition-colors duration-300"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Weights Section -->
+                <div>
+                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span class="w-4 h-4 bg-green-500 rounded-full text-white flex items-center justify-center text-[10px]">2</span> Weights (w)
+                    </h2>
+                    <div class="space-y-4 px-2">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label for="weight1" class="text-xs font-semibold text-slate-600">Weekend Importance</label>
+                                <span id="w1-val" class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 rounded">5</span>
+                            </div>
+                            <input type="range" id="weight1" min="-5" max="10" value="5" step="1" class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label for="weight2" class="text-xs font-semibold text-slate-600">Empty Fridge Importance</label>
+                                <span id="w2-val" class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 rounded">2</span>
+                            </div>
+                            <input type="range" id="weight2" min="-5" max="10" value="2" step="1" class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label for="weight3" class="text-xs font-semibold text-slate-600">Payday Importance</label>
+                                <span id="w3-val" class="text-xs font-bold text-blue-600 bg-blue-50 px-1.5 rounded">3</span>
+                            </div>
+                            <input type="range" id="weight3" min="-5" max="10" value="3" step="1" class="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bias Section -->
+                <div class="bg-pink-50/50 p-3 rounded-lg border border-pink-100">
+                    <h2 class="text-xs font-bold text-pink-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <span class="w-4 h-4 bg-pink-500 rounded-full text-white flex items-center justify-center text-[10px]">3</span> Bias (b)
+                    </h2>
+                    <div class="px-2">
+                        <div class="flex justify-between mb-1">
+                            <label for="bias" class="text-xs font-bold text-pink-800">Starting Bias</label>
+                            <span id="bias-val" class="text-xs font-bold text-pink-600 bg-pink-100 px-1.5 rounded">-4</span>
+                        </div>
+                        <input type="range" id="bias" min="-10" max="10" value="-4" step="1" class="w-full h-2 bg-pink-200 rounded-lg appearance-none cursor-pointer slider-thumb-bias">
+                    </div>
+                </div>
+
+                <!-- Concept Guide (Dynamic) -->
+                <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100 text-sm">
+                    <h3 class="font-bold text-indigo-800 mb-1 text-xs uppercase tracking-wider"><i class="fas fa-info-circle mr-1"></i> About This Function</h3>
+                    <p id="concept-text" class="text-slate-600 text-xs leading-relaxed">
+                        Select a function above to see how it processes the data.
+                    </p>
+                </div>
+                
+                <button onclick="resetDefaults()" class="w-full py-2 bg-white text-slate-500 border border-slate-200 rounded hover:bg-slate-50 text-xs font-bold uppercase tracking-wider transition-colors">
+                    Reset All
+                </button>
+            </div>
+        </div>
+
+        <!-- Visualization Panel (Right) -->
+        <div class="w-full lg:w-2/3 flex flex-col gap-4 h-full overflow-hidden">
+            
+            <!-- Neural Network Canvas -->
+            <div class="flex-grow bg-white rounded-xl shadow-lg relative overflow-hidden flex flex-col items-center justify-center p-4 border border-slate-100" style="min-height: 350px;">
+                <div class="absolute top-4 left-4 bg-white/80 backdrop-blur text-slate-500 text-[10px] font-bold px-2 py-1 rounded border border-slate-200 shadow-sm z-30">
+                    NEURAL VIEW
+                </div>
+                
+                <!-- SVG Connections Layer -->
+                <svg class="absolute inset-0 w-full h-full pointer-events-none" style="z-index: 0;">
+                    <line id="lineBias" x1="50%" y1="20%" x2="50%" y2="42%" stroke="#db2777" stroke-width="2" stroke-dasharray="4,4" class="neuron-line" />
+                    <line id="line1" x1="20%" y1="20%" x2="50%" y2="50%" stroke="#cbd5e1" stroke-width="2" class="neuron-line" />
+                    <line id="line2" x1="20%" y1="50%" x2="50%" y2="50%" stroke="#cbd5e1" stroke-width="2" class="neuron-line" />
+                    <line id="line3" x1="20%" y1="80%" x2="50%" y2="50%" stroke="#cbd5e1" stroke-width="2" class="neuron-line" />
+                    <line id="lineOutput" x1="50%" y1="50%" x2="80%" y2="50%" stroke="#cbd5e1" stroke-width="4" class="neuron-line" />
+                </svg>
+
+                <!-- Nodes Layer -->
+                <div class="relative w-full h-full max-w-lg" style="z-index: 1;">
+                    
+                    <!-- Bias Node -->
+                    <div class="absolute top-[18%] left-[50%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-20">
+                        <div class="w-10 h-10 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-md bg-pink-50 border-pink-500 text-pink-600">b</div>
+                        <div class="bg-pink-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow" id="label-bias">-4</div>
+                    </div>
+
+                    <!-- Input Nodes -->
+                    <div class="absolute top-[20%] left-[10%] -translate-y-1/2 flex flex-col items-center gap-1" id="node-x1">
+                        <div class="w-12 h-12 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-sm bg-slate-100 border-slate-300 text-slate-400" id="circle-x1">x₁</div>
+                        <div class="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border text-slate-500" id="label-x1">0</div>
+                    </div>
+
+                    <div class="absolute top-[50%] left-[10%] -translate-y-1/2 flex flex-col items-center gap-1" id="node-x2">
+                        <div class="w-12 h-12 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-sm bg-slate-100 border-slate-300 text-slate-400" id="circle-x2">x₂</div>
+                        <div class="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border text-slate-500" id="label-x2">0</div>
+                    </div>
+
+                    <div class="absolute top-[80%] left-[10%] -translate-y-1/2 flex flex-col items-center gap-1" id="node-x3">
+                        <div class="w-12 h-12 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-sm bg-slate-100 border-slate-300 text-slate-400" id="circle-x3">x₃</div>
+                        <div class="text-[10px] font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border text-slate-500" id="label-x3">0</div>
+                    </div>
+
+                    <!-- Weight Labels -->
+                    <div class="absolute top-[30%] left-[30%] bg-white px-1 py-0.5 rounded-[3px] text-[9px] font-bold border border-slate-200 text-blue-600 shadow-sm z-10" id="label-w1">w₁: 5</div>
+                    <div class="absolute top-[48%] left-[30%] bg-white px-1 py-0.5 rounded-[3px] text-[9px] font-bold border border-slate-200 text-blue-600 shadow-sm z-10" id="label-w2">w₂: 2</div>
+                    <div class="absolute top-[65%] left-[30%] bg-white px-1 py-0.5 rounded-[3px] text-[9px] font-bold border border-slate-200 text-blue-600 shadow-sm z-10" id="label-w3">w₃: 3</div>
+
+                    <!-- Summation Node (Processing Center) -->
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-white rounded-full border-4 border-purple-500 shadow-xl flex flex-col items-center justify-center z-10 overflow-hidden group">
+                        <!-- Mini Graph Background -->
+                        <div class="absolute inset-0 opacity-5 pointer-events-none group-hover:opacity-10 transition-opacity">
+                             <svg viewBox="0 0 100 100" class="w-full h-full p-2">
+                                <path id="mini-graph-path" d="M0,50 L50,50 L100,0" stroke="currentColor" stroke-width="5" fill="none" class="text-purple-600"/>
+                            </svg>
+                        </div>
+                        <div class="text-[9px] text-slate-400 uppercase tracking-wider font-bold mb-0.5 z-10">Total Input</div>
+                        <div class="text-xl font-bold text-slate-700 z-10 tabular-nums" id="sum-display">0</div>
+                        <div class="text-[8px] text-purple-600 font-bold mt-0.5 z-10 px-2 py-0.5 bg-purple-50 rounded-full" id="node-function-label">ReLU</div>
+                    </div>
+
+                    <!-- Output Node -->
+                    <div class="absolute top-1/2 right-[5%] -translate-y-1/2 flex flex-col items-center gap-2">
+                        <div class="w-20 h-20 rounded-full border-4 flex items-center justify-center text-3xl shadow-md transition-all duration-300 bg-slate-100 border-slate-300 opacity-50 grayscale" id="output-node">
+                            🍕
+                        </div>
+                        <div class="font-bold text-sm transition-colors duration-300 text-slate-400 text-center leading-tight" id="output-text">
+                            No Craving<br><span class="text-xs font-normal opacity-70">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Activation Graph & Math Panel -->
+            <div class="flex flex-col md:flex-row gap-4 h-48 shrink-0">
+                
+                <!-- Math Log -->
+                <div class="w-full md:w-5/12 bg-slate-800 text-white p-3 rounded-xl shadow-lg font-mono text-xs flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-slate-400 text-[10px] uppercase tracking-widest">Logic Trace</span>
+                            <span class="text-[10px] text-purple-300 bg-purple-900/50 px-1 rounded" id="math-func-name">ReLU</span>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1 mb-2 text-[10px] opacity-80">
+                            <span class="text-yellow-400">Sum</span> 
+                            <span>=</span> 
+                            <span>(</span><span id="math-x1">0</span>×<span id="math-w1">5</span><span>)</span>
+                            <span>+</span>
+                            <span>(</span><span id="math-x2">0</span>×<span id="math-w2">2</span><span>)</span>
+                            <span>+</span>
+                            <span>(</span><span id="math-x3">0</span>×<span id="math-w3">3</span><span>)</span>
+                            <span class="text-pink-400 font-bold ml-1">+ (<span id="math-bias">-4</span>)</span>
+                        </div>
+                        <div class="flex items-center gap-2 mb-2 border-t border-slate-600 pt-1">
+                             <span class="text-yellow-400 text-sm font-bold">Total Input (z) = <span id="math-sum">0</span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900/50 p-2 rounded border border-slate-700">
+                        <div class="text-[10px] text-slate-400 mb-1">Apply Formula:</div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-purple-300 font-bold" id="formula-display">max(0, z)</span>
+                            <span class="text-white">=</span>
+                            <span class="text-lg font-bold text-green-400" id="math-result">0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Graph -->
+                <div class="w-full md:w-7/12 bg-white p-2 rounded-xl shadow-lg border border-slate-200 relative flex flex-col">
+                    <div class="absolute top-2 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-white px-1">Activation Curve</div>
+                    <div class="flex-grow flex items-center justify-center pt-2 relative">
+                        <!-- Labels -->
+                        <div class="absolute left-1 top-1/2 -translate-y-1/2 text-[9px] text-slate-400 -rotate-90">Output</div>
+                        <div class="absolute bottom-1 left-1/2 -translate-x-1/2 text-[9px] text-slate-400">Input Sum (z)</div>
+                        
+                        <svg width="100%" height="100%" viewBox="-20 -5 40 25" preserveAspectRatio="none" id="main-graph-svg" class="overflow-visible px-6 py-2">
+                            
+                            <!-- Main Axes (X and Y) -->
+                            <line x1="-100" y1="0" x2="100" y2="0" class="axis" /> <!-- X Axis -->
+                            <line x1="0" y1="-100" x2="0" y2="100" class="axis" /> <!-- Y Axis -->
+                            
+                            <!-- Limits (Dashed Lines) -->
+                            <line x1="-20" y1="1" x2="20" y2="1" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,2" id="limit-line-top" vector-effect="non-scaling-stroke"/>
+                            <line x1="-20" y1="-1" x2="20" y2="-1" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="2,2" id="limit-line-bottom" vector-effect="non-scaling-stroke"/>
+
+                            <!-- Drop Lines (Dashed Pink) -->
+                            <line id="drop-line-x" x1="0" y1="0" x2="0" y2="0" class="drop-line" />
+                            <line id="drop-line-y" x1="0" y1="0" x2="0" y2="0" class="drop-line" />
+
+                            <!-- The Curve -->
+                            <path id="activation-path" d="" class="graph-line" vector-effect="non-scaling-stroke" />
+                            
+                            <!-- Current Point -->
+                            <circle id="graph-dot" cx="0" cy="0" r="1.5" class="current-point pulse" vector-effect="non-scaling-stroke"/>
+                        </svg>
+                    </div>
+                    <!-- Legend -->
+                    <div class="flex justify-between px-4 text-[9px] text-slate-400">
+                        <span>-20</span>
+                        <span>0</span>
+                        <span>+20</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        // DOM Elements
+        const inputs = {
+            x1: document.getElementById('input1'),
+            x2: document.getElementById('input2'),
+            x3: document.getElementById('input3')
+        };
+        const weights = {
+            w1: document.getElementById('weight1'),
+            w2: document.getElementById('weight2'),
+            w3: document.getElementById('weight3')
+        };
+        const biasInput = document.getElementById('bias');
+        const activationSelect = document.getElementById('activation-select');
+        
+        // Display Elements
+        const displays = {
+            w1: document.getElementById('w1-val'),
+            w2: document.getElementById('w2-val'),
+            w3: document.getElementById('w3-val'),
+            bias: document.getElementById('bias-val'),
+            labelBias: document.getElementById('label-bias'),
+            
+            sum: document.getElementById('sum-display'),
+            labelW1: document.getElementById('label-w1'),
+            labelW2: document.getElementById('label-w2'),
+            labelW3: document.getElementById('label-w3'),
+            outputNode: document.getElementById('output-node'),
+            outputText: document.getElementById('output-text'),
+            nodeFunctionLabel: document.getElementById('node-function-label'),
+            conceptText: document.getElementById('concept-text'),
+            
+            // Math Display
+            mathX1: document.getElementById('math-x1'),
+            mathW1: document.getElementById('math-w1'),
+            mathX2: document.getElementById('math-x2'),
+            mathW2: document.getElementById('math-w2'),
+            mathX3: document.getElementById('math-x3'),
+            mathW3: document.getElementById('math-w3'),
+            mathBias: document.getElementById('math-bias'),
+            mathSum: document.getElementById('math-sum'),
+            mathResult: document.getElementById('math-result'),
+            formulaDisplay: document.getElementById('formula-display'),
+            mathFuncName: document.getElementById('math-func-name'),
+            
+            // Graph Elements
+            graphDot: document.getElementById('graph-dot'),
+            activationPath: document.getElementById('activation-path'),
+            miniGraphPath: document.getElementById('mini-graph-path'),
+            svg: document.getElementById('main-graph-svg'),
+            limitTop: document.getElementById('limit-line-top'),
+            limitBottom: document.getElementById('limit-line-bottom'),
+            dropLineX: document.getElementById('drop-line-x'),
+            dropLineY: document.getElementById('drop-line-y')
+        };
+
+        const visuals = {
+            line1: document.getElementById('line1'),
+            line2: document.getElementById('line2'),
+            line3: document.getElementById('line3'),
+            lineOutput: document.getElementById('lineOutput'),
+            circleX1: document.getElementById('circle-x1'),
+            circleX2: document.getElementById('circle-x2'),
+            circleX3: document.getElementById('circle-x3'),
+            labelX1: document.getElementById('label-x1'),
+            labelX2: document.getElementById('label-x2'),
+            labelX3: document.getElementById('label-x3')
+        };
+
+        // Activation Functions Data
+        const activationFunctions = {
+            relu: {
+                name: "ReLU",
+                formula: "max(0, z)",
+                calc: (z) => Math.max(0, z),
+                // Graph Path: from -20 to 0 is flat, then linear up
+                path: "M -20 0 L 0 0 L 20 20",
+                viewBox: "-20 -5 40 25", // Optimized for 0 to 20 range
+                desc: "<strong>ReLU (Rectified Linear Unit):</strong> <br>The most popular modern function. It cuts off all negative values to 0 but lets positive values grow infinitely. Think of it as 'Craving Level'—you can't have negative craving.",
+                yFlip: true, // SVG Y is down, we need to flip positive results UP
+                dotRadius: 0.8
+            },
+            sigmoid: {
+                name: "Sigmoid",
+                formula: "1 / (1 + e⁻ᶻ)",
+                calc: (z) => 1 / (1 + Math.exp(-z)),
+                // Graph Path: S-curve from 0 to 1
+                path: generateSigmoidPath(),
+                viewBox: "-10 -0.2 20 1.4", // Optimized for 0 to 1 range
+                desc: "<strong>Sigmoid:</strong> <br>Squashes any number into a probability between 0 and 1. Perfect for 'Yes/No' confidence. If output is 0.95, the neuron is 95% sure you want pizza.",
+                yFlip: true,
+                dotRadius: 0.4
+            },
+            tanh: {
+                name: "TanH",
+                formula: "tanh(z)",
+                calc: (z) => Math.tanh(z),
+                // Graph Path: S-curve from -1 to 1
+                path: generateTanhPath(),
+                viewBox: "-5 -1.5 10 3", // Optimized for -1 to 1 range
+                desc: "<strong>TanH (Hyperbolic Tangent):</strong> <br>Like Sigmoid, but goes from -1 to 1. Zero is neutral. Useful if you want to model 'Dislike' (negative) vs 'Like' (positive) explicitly.",
+                yFlip: true,
+                dotRadius: 0.2
+            },
+            softmax: {
+                name: "Softmax (Binary)",
+                formula: "eᶻ / (eᶻ + e⁰)",
+                calc: (z) => Math.exp(z) / (Math.exp(z) + Math.exp(0)), // Assuming class 0 has score 0
+                path: generateSigmoidPath(), // Binary Softmax is essentially Sigmoid shape
+                viewBox: "-10 -0.2 20 1.4",
+                desc: "<strong>Softmax:</strong> <br>Used for multi-class problems. Here we simulate 'Pizza' vs 'Nothing'. It forces probabilities to sum to 100%. This calculates: <em>How much more likely is Pizza (z) compared to Nothing (0)?</em>",
+                yFlip: true,
+                dotRadius: 0.4
+            }
+        };
+
+        function generateSigmoidPath() {
+            let path = "M -10 0";
+            for (let x = -10; x <= 10; x += 0.5) {
+                let y = 1 / (1 + Math.exp(-x));
+                path += ` L ${x} ${y}`; // Note: Y flip handled in render
+            }
+            return path;
+        }
+
+        function generateTanhPath() {
+            let path = "M -5 -1";
+            for (let x = -5; x <= 5; x += 0.2) {
+                let y = Math.tanh(x);
+                path += ` L ${x} ${y}`;
+            }
+            return path;
+        }
+
+        function calculate() {
+            // 1. Get Inputs
+            const x1 = inputs.x1.checked ? 1 : 0;
+            const x2 = inputs.x2.checked ? 1 : 0;
+            const x3 = inputs.x3.checked ? 1 : 0;
+            const w1 = parseInt(weights.w1.value);
+            const w2 = parseInt(weights.w2.value);
+            const w3 = parseInt(weights.w3.value);
+            const b = parseInt(biasInput.value);
+            const funcKey = activationSelect.value;
+            const funcData = activationFunctions[funcKey];
+
+            // 2. Calculate Sum (z)
+            const z = (x1 * w1) + (x2 * w2) + (x3 * w3) + b;
+            
+            // 3. Activation
+            const output = funcData.calc(z);
+
+            // 4. Update UI Text
+            displays.w1.innerText = w1;
+            displays.w2.innerText = w2;
+            displays.w3.innerText = w3;
+            displays.bias.innerText = b > 0 ? `+${b}` : b;
+            displays.labelBias.innerText = b;
+            
+            displays.sum.innerText = z;
+            displays.sum.className = `text-xl font-bold z-10 tabular-nums ${z > 0 ? 'text-green-600' : (z < 0 ? 'text-red-500' : 'text-slate-700')}`;
+
+            displays.labelW1.innerText = `w₁: ${w1}`;
+            displays.labelW2.innerText = `w₂: ${w2}`;
+            displays.labelW3.innerText = `w₃: ${w3}`;
+            
+            displays.nodeFunctionLabel.innerText = funcData.name;
+            displays.conceptText.innerHTML = funcData.desc;
+
+            // 5. Update Math Panel
+            displays.mathX1.innerText = x1;
+            displays.mathW1.innerText = w1;
+            displays.mathX2.innerText = x2;
+            displays.mathW2.innerText = w2;
+            displays.mathX3.innerText = x3;
+            displays.mathW3.innerText = w3;
+            displays.mathBias.innerText = b;
+            displays.mathSum.innerText = z;
+            displays.mathFuncName.innerText = funcData.name;
+            displays.formulaDisplay.innerText = funcData.formula.replace('z', z).replace('max(0, z)', `max(0, ${z})`); // Simple replacement for visuals
+            displays.mathResult.innerText = output.toFixed(2);
+
+            // 6. Graph Updates
+            // Update ViewBox
+            displays.svg.setAttribute("viewBox", funcData.viewBox);
+            
+            // Re-generate paths to be SVG friendly (Y is down)
+            let pathString = "";
+            if (funcKey === 'relu') {
+                 pathString = "M -20 0 L 0 0 L 20 -20";
+            } else if (funcKey === 'sigmoid' || funcKey === 'softmax') {
+                pathString = "M -10 0";
+                for (let px = -10; px <= 10; px += 0.5) {
+                    pathString += ` L ${px} -${1 / (1 + Math.exp(-px))}`;
+                }
+            } else if (funcKey === 'tanh') {
+                pathString = "M -5 1"; // -(-1) = 1
+                for (let px = -5; px <= 5; px += 0.2) {
+                    pathString += ` L ${px} -${Math.tanh(px)}`;
+                }
+            }
+            displays.activationPath.setAttribute("d", pathString);
+            
+            // Set Dot Position & Radius
+            displays.graphDot.setAttribute("cx", z);
+            displays.graphDot.setAttribute("cy", -output);
+            displays.graphDot.setAttribute("r", funcData.dotRadius || 0.8);
+
+            // Update Drop Lines
+            // Vertical Line: From (z, 0) to (z, -output)
+            displays.dropLineX.setAttribute("x1", z);
+            displays.dropLineX.setAttribute("y1", 0);
+            displays.dropLineX.setAttribute("x2", z);
+            displays.dropLineX.setAttribute("y2", -output);
+
+            // Horizontal Line: From (0, -output) to (z, -output)
+            displays.dropLineY.setAttribute("x1", 0);
+            displays.dropLineY.setAttribute("y1", -output);
+            displays.dropLineY.setAttribute("x2", z);
+            displays.dropLineY.setAttribute("y2", -output);
+
+
+            // 7. Output Visualization Logic
+            updateOutputVisuals(output, funcKey);
+
+            // 8. Input Visuals
+            updateInputVisual(x1 === 1, visuals.circleX1, visuals.labelX1, visuals.line1);
+            updateInputVisual(x2 === 1, visuals.circleX2, visuals.labelX2, visuals.line2);
+            updateInputVisual(x3 === 1, visuals.circleX3, visuals.labelX3, visuals.line3);
+            
+            const getThick = (w) => Math.max(2, Math.min(6, Math.abs(w)));
+            visuals.line1.setAttribute("stroke-width", getThick(w1));
+            visuals.line2.setAttribute("stroke-width", getThick(w2));
+            visuals.line3.setAttribute("stroke-width", getThick(w3));
+        }
+
+        function updateOutputVisuals(val, type) {
+            let intensity = 0;
+            let scale = 1;
+            let colorClass = "bg-slate-100 border-slate-300 text-slate-400 opacity-50 grayscale";
+            let textHTML = `No Craving<br><span class="text-xs font-normal opacity-70">${val.toFixed(2)}</span>`;
+            let strokeColor = "#cbd5e1";
+            let strokeWidth = 2;
+
+            if (type === 'relu') {
+                if (val > 0) {
+                    intensity = Math.min(val, 10) / 10;
+                    scale = 1 + (intensity * 0.3);
+                    colorClass = "bg-green-100 border-green-500 text-green-600 pulse";
+                    textHTML = `CRAVING!<br><span class="text-xs font-bold text-green-600">${val.toFixed(2)}</span>`;
+                    strokeColor = "#22c55e";
+                    strokeWidth = 4 + (intensity * 2);
+                }
+            } else if (type === 'sigmoid' || type === 'softmax') {
+                // Range 0 to 1
+                scale = 0.8 + (val * 0.4); // 0.8 to 1.2
+                if (val > 0.5) {
+                    colorClass = "bg-green-100 border-green-500 text-green-600 pulse";
+                    textHTML = `${(val*100).toFixed(0)}% Sure<br><span class="text-xs text-green-600">Pizza!</span>`;
+                    strokeColor = "#22c55e";
+                    strokeWidth = 2 + (val * 4);
+                } else {
+                    colorClass = "bg-slate-100 border-slate-400 text-slate-500";
+                    textHTML = `${(val*100).toFixed(0)}% Prob.<br><span class="text-xs">Not enough</span>`;
+                }
+            } else if (type === 'tanh') {
+                // Range -1 to 1
+                scale = 0.8 + (Math.abs(val) * 0.4);
+                if (val > 0.2) {
+                    colorClass = "bg-green-100 border-green-500 text-green-600 pulse";
+                    textHTML = `LIKE IT<br><span class="text-xs font-bold">${val.toFixed(2)}</span>`;
+                    strokeColor = "#22c55e";
+                    strokeWidth = 2 + (val * 4);
+                } else if (val < -0.2) {
+                    colorClass = "bg-red-100 border-red-500 text-red-600";
+                    textHTML = `DISLIKE!<br><span class="text-xs font-bold">${val.toFixed(2)}</span>`;
+                    strokeColor = "#ef4444";
+                    strokeWidth = 2 + (Math.abs(val) * 4);
+                } else {
+                     textHTML = `Neutral<br><span class="text-xs">${val.toFixed(2)}</span>`;
+                }
+            }
+
+            displays.outputNode.className = `w-20 h-20 rounded-full border-4 flex items-center justify-center text-3xl shadow-md transition-all duration-300 ${colorClass}`;
+            displays.outputNode.style.transform = `scale(${scale})`;
+            displays.outputText.innerHTML = textHTML;
+            visuals.lineOutput.setAttribute("stroke", strokeColor);
+            visuals.lineOutput.setAttribute("stroke-width", strokeWidth);
+        }
+
+        const updateInputVisual = (isActive, circle, label, line) => {
+            if (isActive) {
+                circle.className = "w-12 h-12 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-sm transition-all duration-300 active-node";
+                label.innerText = "1";
+                label.className = "text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded shadow-sm border border-blue-600";
+                line.setAttribute("stroke", "#3b82f6");
+                line.setAttribute("stroke-opacity", "1");
+            } else {
+                circle.className = "w-12 h-12 rounded-full border-[3px] flex items-center justify-center text-sm font-bold shadow-sm transition-all duration-300 inactive-node";
+                label.innerText = "0";
+                label.className = "text-[10px] font-bold bg-white px-1.5 py-0.5 rounded shadow-sm border text-slate-500";
+                line.setAttribute("stroke", "#cbd5e1");
+                line.setAttribute("stroke-opacity", "0.5");
+            }
+        };
+
+        function resetDefaults() {
+            inputs.x1.checked = false;
+            inputs.x2.checked = false;
+            inputs.x3.checked = false;
+            weights.w1.value = 5;
+            weights.w2.value = 2;
+            weights.w3.value = 3;
+            biasInput.value = -4;
+            activationSelect.value = "relu";
+            calculate();
+        }
+
+        // Event Listeners
+        Object.values(inputs).forEach(el => el.addEventListener('change', calculate));
+        Object.values(weights).forEach(el => el.addEventListener('input', calculate));
+        biasInput.addEventListener('input', calculate);
+        activationSelect.addEventListener('change', calculate);
+
+        // Initial Run
+        calculate();
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CoSpaces Cadet Training Log</title>
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Custom scrollbar for sidebar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // --- Icon Components (Inline SVG for standalone functionality) ---
+        const IconWrapper = ({ children, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {children}
+            </svg>
+        );
+
+        const BookOpen = ({ className }) => <IconWrapper className={className}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconWrapper>;
+        const CheckCircle = ({ className }) => <IconWrapper className={className}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></IconWrapper>;
+        const CodeIcon = ({ className }) => <IconWrapper className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></IconWrapper>;
+        const Lock = ({ className }) => <IconWrapper className={className}><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></IconWrapper>;
+        const Play = ({ className, fill }) => <IconWrapper className={className}><polygon points="5 3 19 12 5 21 5 3" fill={fill || "none"} /></IconWrapper>;
+        const Award = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></IconWrapper>;
+        const Zap = ({ className }) => <IconWrapper className={className}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconWrapper>;
+        const Layers = ({ className }) => <IconWrapper className={className}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></IconWrapper>;
+        const BoxIcon = ({ className }) => <IconWrapper className={className}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></IconWrapper>;
+        const Terminal = ({ className }) => <IconWrapper className={className}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></IconWrapper>;
+        const Music = ({ className }) => <IconWrapper className={className}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></IconWrapper>;
+        const Flame = ({ className }) => <IconWrapper className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.2-2.2.5-3.3.3-1.1 1.8-2.2 3-3.3.4.4.4.9.4 1.3 0 1.39-.5 2.5-1 3.5 0 0 .1.1.1.1z"/></IconWrapper>;
+        const Globe = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></IconWrapper>;
+        const ListIcon = ({ className }) => <IconWrapper className={className}><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></IconWrapper>;
+        const ShieldAlert = ({ className }) => <IconWrapper className={className}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></IconWrapper>;
+        const Settings = ({ className }) => <IconWrapper className={className}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></IconWrapper>;
+
+        // --- Main Application Component ---
+        const TrainingLog = () => {
+            const [activeMission, setActiveMission] = useState(0);
+            const [completedMissions, setCompletedMissions] = useState([]);
+
+            const missions = [
+                {
+                    id: 1,
+                    title: "Operation: Square Patrol",
+                    icon: <BoxIcon className="w-6 h-6" />,
+                    difficulty: "Novice",
+                    skill: "Sequencing & Movement",
+                    briefing: "We need to secure the perimeter. Your goal is to program a guard dog or soldier to walk in a perfect square patrol route and return to their exact starting position.",
+                    tasks: [
+                        "Add a character from the Library.",
+                        "Enable 'Use in CoBlocks' for the character.",
+                        "Code a path: Forward 2m -> Turn Right 90° -> Repeat 4 times.",
+                        "Ensure the character ends exactly where they started."
+                    ],
+                    tutorial: {
+                        title: "CoBlocks Basics & Movement",
+                        url: "https://www.youtube.com/watch?v=15Vlqe22_x0",
+                        desc: "Learn how to snap blocks together and make things move."
+                    }
+                },
+                {
+                    id: 2,
+                    title: "Operation: Synchro Dance",
+                    icon: <Music className="w-6 h-6" />,
+                    difficulty: "Novice",
+                    skill: "Parallel Execution",
+                    briefing: "We need a diversion! Code two characters to perform different animations (e.g., Dancing vs Clapping) at the EXACT same time. They must not wait for one to finish before the other starts.",
+                    tasks: [
+                        "Place 2 Characters side-by-side.",
+                        "Use the 'Run Parallel' block (Control tab).",
+                        "Place animation blocks for Character A and Character B inside the parallel block.",
+                        "Verify they start moving simultaneously."
+                    ],
+                    tutorial: {
+                        title: "Loops & Concurrent Events",
+                        url: "https://www.youtube.com/watch?v=UdhnNNmfjLM",
+                        desc: "How to make multiple things happen at once."
+                    }
+                },
+                {
+                    id: 3,
+                    title: "Operation: Magic Door",
+                    icon: <Lock className="w-6 h-6" />,
+                    difficulty: "Apprentice",
+                    skill: "Events & Conditionals",
+                    briefing: "A door is locked. It should ONLY open if the player has found the hidden key first. If they try to open it without the key, it should stay closed and say 'Locked!'.",
+                    tasks: [
+                        "Place a Door and a Key object.",
+                        "Create a global variable 'hasKey' (set to false).",
+                        "When Key is clicked -> set 'hasKey' to true & hide Key.",
+                        "When Door is clicked -> IF 'hasKey' is true, open door. ELSE say 'Locked!'."
+                    ],
+                    tutorial: {
+                        title: "Conditionals & Interaction",
+                        url: "https://www.youtube.com/watch?v=nbJtKRRM42I",
+                        desc: "Guide on creating interactive doors and click events."
+                    }
+                },
+                {
+                    id: 4,
+                    title: "Operation: Hot Floor",
+                    icon: <Flame className="w-6 h-6" />,
+                    difficulty: "Apprentice",
+                    skill: "Collision Detection",
+                    briefing: "The floor is lava! Create a hazard zone. If the player steps on a red panel, they respawn. If they step on a blue panel, they are safe.",
+                    tasks: [
+                        "Create Red and Blue floor panels (Building blocks).",
+                        "Use 'When Camera collides with item' event.",
+                        "IF item color is Red -> Move Camera to Start Position.",
+                        "Add a sound effect for the collision."
+                    ],
+                    tutorial: {
+                        title: "Object Interaction & Collision",
+                        url: "https://www.youtube.com/watch?v=Ie7dSoMXyCU",
+                        desc: "Detecting when objects touch or crash."
+                    }
+                },
+                {
+                    id: 5,
+                    title: "Operation: Coin Collector",
+                    icon: <Zap className="w-6 h-6" />,
+                    difficulty: "Intermediate",
+                    skill: "Variables & Math",
+                    briefing: "Create a game loop. Hide 5 coins. The player must collect them all. The game must count how many are collected and trigger a 'You Win' message when the total reaches 5.",
+                    tasks: [
+                        "Create a variable named 'Score' (start at 0).",
+                        "Code each coin: When clicked -> Change Score by 1 -> Delete Coin.",
+                        "Add a check: Wait until Score = 5, then show Win message.",
+                        "Display the score using a Text Panel or Think bubble."
+                    ],
+                    tutorial: {
+                        title: "Working with Variables",
+                        url: "https://www.youtube.com/watch?v=uv-epnAnuBg",
+                        desc: "Essential guide to counting, scoring, and tracking data."
+                    }
+                },
+                {
+                    id: 6,
+                    title: "Operation: Solar System",
+                    icon: <Globe className="w-6 h-6" />,
+                    difficulty: "Intermediate",
+                    skill: "Loops & Relative Motion",
+                    briefing: "Model the cosmos. Create a Sun and an Earth. The Earth must orbit around the Sun forever, never stopping.",
+                    tasks: [
+                        "Place a Sun and an Earth object.",
+                        "Use a 'Forever' loop (Control tab).",
+                        "Use the 'Turn [Earth] around [Sun]' block.",
+                        "Experiment with speed to make the orbit smooth."
+                    ],
+                    tutorial: {
+                        title: "Loops & Animation",
+                        url: "https://www.youtube.com/watch?v=Ink_3VJm1JM",
+                        desc: "Using paths and loops for continuous movement."
+                    }
+                },
+                {
+                    id: 7,
+                    title: "Operation: Domino Effect",
+                    icon: <Layers className="w-6 h-6" />,
+                    difficulty: "Advanced",
+                    skill: "Physics Engine",
+                    briefing: "We need to test the laws of physics. Build a Rube Goldberg machine where a ball rolls down a ramp and knocks over a line of dominoes. No 'Move' blocks allowed for the dominoes!",
+                    tasks: [
+                        "Right-click objects -> Physics -> Enable.",
+                        "Set 'Precision' to 'High' for better collision.",
+                        "Code only the starter ball to push forward.",
+                        "Watch the dominoes fall using purely physics collisions."
+                    ],
+                    tutorial: {
+                        title: "Physics in CoSpaces",
+                        url: "https://www.youtube.com/watch?v=dTZUe2hqltk",
+                        desc: "How to enable gravity, collision, and mass."
+                    }
+                },
+                {
+                    id: 8,
+                    title: "Operation: Password Lock",
+                    icon: <ListIcon className="w-6 h-6" />,
+                    difficulty: "Advanced",
+                    skill: "Lists & Logic",
+                    briefing: "Security breach! Build a safe that only opens if 3 colored buttons are pressed in the correct order (e.g., Red, Blue, Green). Any other order resets the lock.",
+                    tasks: [
+                        "Create 3 buttons (Red, Green, Blue).",
+                        "Create a List variable named 'InputSequence'.",
+                        "When a button is clicked, add its color name to the List.",
+                        "Check IF List equals ['Red', 'Blue', 'Green'] -> Open Safe."
+                    ],
+                    tutorial: {
+                        title: "Using Lists",
+                        url: "https://www.youtube.com/watch?v=-sY0-tgwf34",
+                        desc: "Storing sequences and checking multiple values."
+                    }
+                },
+                {
+                    id: 9,
+                    title: "Operation: Synchronized Squad",
+                    icon: <Terminal className="w-6 h-6" />,
+                    difficulty: "Expert",
+                    skill: "Functions",
+                    briefing: "This is the ultimate test of efficiency. You have a squad of 3 characters (Knight, Pirate, Wizard). When the button is pressed, they must ALL perform a complex 'Victory Jump' simultaneously using a single reusable Function.",
+                    tasks: [
+                        "Create a Function 'VictoryJump' with a parameter 'hero' (Type: Item).",
+                        "Define the Logic: 'hero' moves Up 2m -> 'hero' turns 360° -> 'hero' moves Down 2m.",
+                        "On Button Click: Call 'VictoryJump' 3 times.",
+                        "Drag the Knight, Pirate, and Wizard objects into the 'hero' parameter slot for each call."
+                    ],
+                    tutorial: {
+                        title: "Mastering Functions",
+                        url: "https://www.youtube.com/watch?v=LqH660IZTp4",
+                        desc: "Learn to write code once and reuse it for multiple objects."
+                    }
+                },
+                {
+                    id: 10,
+                    title: "Operation: Parameter Puzzle",
+                    icon: <Settings className="w-6 h-6" />,
+                    difficulty: "Elite",
+                    skill: "Parameters (Data)",
+                    briefing: "The final test. Hardcoding values is inefficient. Create a single 'Master Function' that can change the environment (Weather/Mood) based on the Data parameters you send it.",
+                    tasks: [
+                        "Create Function 'SetMood' with parameters: 'SkyColor' (Color) and 'Message' (Text).",
+                        "Inside: Set background to 'SkyColor' & Show Info Panel with 'Message'.",
+                        "Create 2 Buttons: 'Day' and 'Night'.",
+                        "On 'Day' click: Call SetMood(Blue, 'It is sunny'). On 'Night': Call SetMood(Black, 'It is dark')."
+                    ],
+                    tutorial: {
+                        title: "Advanced Functions",
+                        url: "https://www.youtube.com/watch?v=LqH660IZTp4",
+                        desc: "Using functions with Data inputs (Strings, Colors, Numbers)."
+                    }
+                }
+            ];
+
+            const toggleComplete = (id) => {
+                if (completedMissions.includes(id)) {
+                    setCompletedMissions(completedMissions.filter(m => m !== id));
+                } else {
+                    setCompletedMissions([...completedMissions, id]);
+                }
+            };
+
+            const getInstructorNote = (id) => {
+                const notes = {
+                    1: "Tests spatial awareness and basic 'Transform' blocks. Watch for students who use 'Move' instead of 'Turn'.",
+                    2: "Crucial for storytelling. Without 'Run Parallel', characters act like robots taking turns instead of actors.",
+                    3: "Introduces logic gates. Common error: The door opens even if the key isn't collected because the IF statement is outside the event.",
+                    4: "Introduces 'Game Over' states. Good opportunity to teach about resetting state (moving camera back to start).",
+                    5: "Variables are abstract; this makes them tangible (visual score). Essential for any game design unit.",
+                    6: "Teaches relative positioning. If they don't use 'Around Object', the Earth will just spin in place.",
+                    7: "Moves students away from hard-coding movement to using simulation engines. Great for cross-curricular Physics lessons.",
+                    8: "Advanced logic. Requires understanding that Lists store history. Great introduction to arrays.",
+                    9: "Novice coders will instinctively just copy-paste the movement blocks three times. A student who understands Functions knows that if they want to change the jump height later, they only have to change it in one place (the Function definition) rather than updating it for every single character.",
+                    10: "The pinnacle of block coding. Tests if they understand that functions can accept DATA (Strings/Colors), not just Objects. This bridges the gap to text coding."
+                };
+                return notes[id] || "Complete the objectives to pass.";
+            };
+
+            return (
+                <div className="flex flex-col md:flex-row h-screen bg-slate-50 font-sans text-slate-800">
+                {/* Sidebar Navigation */}
+                <div className="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 overflow-y-auto">
+                    <div className="p-6 border-b border-slate-700">
+                    <h1 className="text-xl font-bold flex items-center gap-2">
+                        <CodeIcon className="text-blue-400" />
+                        CoSpaces Cadet
+                    </h1>
+                    <p className="text-xs text-slate-400 mt-2">Mission Log & Training</p>
+                    </div>
+                    <nav className="p-4 space-y-2">
+                    {missions.map((mission, index) => (
+                        <button
+                        key={mission.id}
+                        onClick={() => setActiveMission(index)}
+                        className={`w-full text-left p-3 rounded-lg flex items-center gap-3 transition-colors ${
+                            activeMission === index 
+                            ? 'bg-blue-600 text-white' 
+                            : 'hover:bg-slate-800 text-slate-300'
+                        }`}
+                        >
+                        <div className={`p-1 rounded ${completedMissions.includes(mission.id) ? 'bg-green-500/20 text-green-400' : 'bg-slate-700'}`}>
+                            {completedMissions.includes(mission.id) ? <CheckCircle size={14} /> : mission.icon}
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                            <div className="text-sm font-semibold truncate">{mission.title}</div>
+                            <div className="text-xs opacity-70">{mission.difficulty}</div>
+                        </div>
+                        </button>
+                    ))}
+                    </nav>
+                    <div className="p-6 mt-auto border-t border-slate-800">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-2">Progress</div>
+                    <div className="w-full bg-slate-800 rounded-full h-2.5">
+                        <div 
+                        className="bg-green-500 h-2.5 rounded-full transition-all duration-500" 
+                        style={{ width: `${(completedMissions.length / missions.length) * 100}%` }}
+                        ></div>
+                    </div>
+                    <div className="text-right text-xs text-slate-400 mt-1">
+                        {completedMissions.length}/{missions.length} Completed
+                    </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-10">
+                    <div className="max-w-4xl mx-auto">
+                    
+                    {/* Header */}
+                    <header className="mb-8 border-b pb-6">
+                        <div className="flex items-center gap-3 text-blue-600 font-bold uppercase tracking-wide text-sm mb-2">
+                        <Award size={18} />
+                        Mission #{missions[activeMission].id}
+                        </div>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                        {missions[activeMission].title}
+                        </h2>
+                        <div className="flex flex-wrap gap-3">
+                        <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                            Skill: {missions[activeMission].skill}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            missions[activeMission].difficulty === 'Elite' ? 'bg-red-600 text-white shadow-md' :
+                            missions[activeMission].difficulty === 'Expert' ? 'bg-red-100 text-red-800' : 
+                            missions[activeMission].difficulty === 'Advanced' ? 'bg-orange-100 text-orange-800' :
+                            'bg-purple-100 text-purple-800'
+                        }`}>
+                            Level: {missions[activeMission].difficulty}
+                        </span>
+                        </div>
+                    </header>
+
+                    {/* Briefing Section */}
+                    <section className="mb-10 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
+                        <BookOpen size={20} />
+                        Mission Briefing
+                        </h3>
+                        <p className="text-lg leading-relaxed text-slate-600">
+                        {missions[activeMission].briefing}
+                        </p>
+                    </section>
+
+                    <div className="grid md:grid-cols-2 gap-8">
+                        
+                        {/* Tasks Checklist */}
+                        <section>
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
+                            <CheckCircle size={20} />
+                            Success Criteria
+                        </h3>
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                            {missions[activeMission].tasks.map((task, i) => (
+                            <div key={i} className="p-4 border-b border-slate-100 last:border-0 flex items-start gap-3 hover:bg-slate-50 transition-colors">
+                                <div className="mt-1 min-w-[1.5rem] h-6 w-6 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center text-xs font-bold">
+                                {i + 1}
+                                </div>
+                                <p className="text-slate-700">{task}</p>
+                            </div>
+                            ))}
+                        </div>
+                        
+                        <button 
+                            onClick={() => toggleComplete(missions[activeMission].id)}
+                            className={`mt-6 w-full py-3 px-6 rounded-lg font-bold text-center transition-all ${
+                            completedMissions.includes(missions[activeMission].id)
+                                ? 'bg-green-100 text-green-700 border border-green-200 hover:bg-green-200'
+                                : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg hover:shadow-xl'
+                            }`}
+                        >
+                            {completedMissions.includes(missions[activeMission].id) 
+                            ? 'Mission Mark Completed ✓' 
+                            : 'Mark Mission Complete'}
+                        </button>
+                        </section>
+
+                        {/* Tutorial Intel */}
+                        <section>
+                        <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800">
+                            <Play size={20} />
+                            Required Intel (Tutorials)
+                        </h3>
+                        <div className="bg-blue-50 border border-blue-100 rounded-xl p-5">
+                            <h4 className="font-bold text-blue-900 mb-1">
+                            {missions[activeMission].tutorial.title}
+                            </h4>
+                            <p className="text-sm text-blue-700 mb-4">
+                            {missions[activeMission].tutorial.desc}
+                            </p>
+                            
+                            <a 
+                            href={missions[activeMission].tutorial.url} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="block w-full group relative rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
+                            >
+                            <div className="bg-white p-4 flex items-center gap-4">
+                                <div className="bg-red-600 text-white p-3 rounded-full group-hover:scale-110 transition-transform">
+                                <Play fill="currentColor" size={20} />
+                                </div>
+                                <div>
+                                <div className="font-semibold text-slate-800 group-hover:text-red-600 transition-colors">
+                                    Watch Tutorial Video
+                                </div>
+                                <div className="text-xs text-slate-500">Opens YouTube in new tab</div>
+                                </div>
+                            </div>
+                            </a>
+                            
+                            <div className="mt-4 text-xs text-blue-600/70 italic">
+                            *Watch closely: The instructor demonstrates the exact blocks needed for this mission.
+                            </div>
+                        </div>
+
+                        {/* Teacher Note */}
+                        <div className="mt-6 p-4 border border-dashed border-slate-300 rounded-lg bg-slate-50">
+                            <h5 className="text-xs font-bold text-slate-500 uppercase mb-1">Instructor Note (Why we do this)</h5>
+                            <p className="text-sm text-slate-600 italic">
+                            {getInstructorNote(missions[activeMission].id)}
+                            </p>
+                        </div>
+                        </section>
+                    </div>
+
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<TrainingLog />);
+    </script>
+</body>
+</html>

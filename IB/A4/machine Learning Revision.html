@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Machine Learning Revision Tool</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .tab-active {
+            border-color: #4f46e5;
+            color: #4f46e5;
+            background-color: #eef2ff;
+        }
+        .quiz-option {
+            transition: all 0.2s ease-in-out;
+        }
+        .quiz-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .correct {
+            background-color: #dcfce7 !important;
+            border-color: #22c55e !important;
+        }
+        .incorrect {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444 !important;
+        }
+        .prose ul {
+            padding-left: 1.5rem;
+        }
+        .prose ul > li::marker {
+            font-weight: bold;
+        }
+        .illustration {
+            max-width: 450px;
+            margin: 1.5rem auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-bold text-slate-900">IB Machine Learning</h1>
+            <p class="text-lg text-slate-600 mt-2">Interactive Revision Tool</p>
+        </header>
+
+        <!-- Tabs Navigation -->
+        <nav class="flex flex-wrap justify-center border-b-2 border-slate-200 mb-8" id="tab-nav">
+            <button data-tab="ml-types" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200 tab-active">ML Types</button>
+            <button data-tab="preprocessing" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200">Data Preprocessing</button>
+            <button data-tab="models" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200">ML Models (HL)</button>
+            <button data-tab="ga-ann" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200">Genetic Algs & ANNs (HL)</button>
+            <button data-tab="hardware" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200">Hardware</button>
+            <button data-tab="ethics" class="py-3 px-4 font-semibold border-b-2 border-transparent hover:border-indigo-500 hover:text-indigo-600 transition-colors duration-200">Ethics</button>
+        </nav>
+
+        <!-- Content Area -->
+        <main id="tab-content">
+            <!-- Content will be injected by JavaScript -->
+        </main>
+
+    </div>
+
+    <script>
+        const contentData = {
+            'ml-types': {
+                title: 'Types of Machine Learning',
+                summary: `
+                    <p class="mb-4">Machine learning is broadly categorized based on the nature of the learning signal or feedback available to the learning system.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>Supervised Learning:</strong> The algorithm learns from a labeled dataset, where each data point is tagged with a known, correct output or "ground truth". The goal is to learn a mapping function that can predict the output for new, unseen data.
+                            <ul class="list-['-_'] list-inside ml-6 mt-2 space-y-2">
+                                <li><strong>Classification:</strong> Predicts a discrete category. Examples include email spam filtering (spam/not spam), medical diagnosis (malignant/benign), or image recognition (cat/dog).</li>
+                                <li><strong>Regression:</strong> Predicts a continuous, numerical value. Examples include predicting house prices based on features, forecasting stock prices, or estimating a student's exam score based on hours studied.</li>
+                            </ul>
+                        </li>
+                        <li><strong>Unsupervised Learning:</strong> The algorithm is given unlabeled data and must find patterns or intrinsic structures on its own. There is no "teacher" or correct output.
+                            <ul class="list-['-_'] list-inside ml-6 mt-2 space-y-2">
+                                 <li><strong>Clustering:</strong> The most common task, it groups similar data points together. For example, segmenting customers into different purchasing groups or grouping similar news articles.</li>
+                                 <li><strong>Anomaly Detection:</strong> Identifying rare items, events, or observations which deviate significantly from the majority of the data, such as credit card fraud detection.</li>
+                                 <li><strong>Association Rule Learning:</strong> Discovers interesting relationships or "association rules" among variables in large datasets. A famous example is "market basket analysis," which finds relationships between items bought together in a supermarket (e.g., "Customers who buy diapers also tend to buy beer.").</li>
+                            </ul>
+                        </li>
+                        <li><strong>Reinforcement Learning:</strong> An <strong>agent</strong> learns to make a sequence of decisions by interacting with an <strong>environment</strong>. The agent starts in a particular <strong>state</strong>, performs an <strong>action</strong>, and receives a numerical <strong>reward</strong> (or penalty). The goal is to learn a policy (a strategy) that maximizes the total cumulative reward over time. It's the basis for training AI in games like chess or Go, and in robotics.
+                        </li>
+                        <li><strong>Transfer Learning:</strong> A technique where a model developed for a task is reused as the starting point for a model on a second, related task. This is highly efficient as it saves significant training time and computational resources.</li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "Predicting a patient's temperature tomorrow based on their temperature for the past week is a task for which algorithm type?", options: ["Clustering", "Reinforcement Learning", "Classification", "Regression"], answer: "Regression" },
+                    { question: "Which type of learning is used for fraud detection, where the goal is to identify unusual patterns in data?", options: ["Supervised Learning", "Unsupervised Learning", "Reinforcement Learning", "Transfer Learning"], answer: "Unsupervised Learning" },
+                    { question: "In Reinforcement Learning, what is the entity that interacts with an environment to learn a task?", options: ["The Reward", "The Action", "The Agent", "The State"], answer: "The Agent" },
+                    { question: "Why is Transfer Learning a popular approach in modern machine learning?", options: ["It works best with unlabeled data", "It saves training time and leverages pre-existing knowledge", "It is the only method that guarantees 100% accuracy", "It requires the least amount of hardware"], answer: "It saves training time and leverages pre-existing knowledge" },
+                    { question: "A bank wants to group its customers into segments based on their spending habits. What type of ML should be used?", options: ["Regression", "Clustering", "Reinforcement Learning", "Classification"], answer: "Clustering" },
+                    { question: "Identifying if an image contains a cat, a dog, or a bird is a classic example of:", options: ["Regression", "Classification", "Clustering", "Anomaly Detection"], answer: "Classification" },
+                    { question: "What is the primary goal of a Reinforcement Learning agent?", options: ["To label data", "To find hidden patterns", "To maximize cumulative reward", "To predict a continuous value"], answer: "To maximize cumulative reward" },
+                    { question: "A key characteristic of a supervised learning dataset is that it is:", options: ["Unstructured", "Unlabeled", "Labeled", "Small"], answer: "Labeled" },
+                    { question: "A supermarket analyzing purchase data to find that customers who buy bread also often buy milk is an example of what?", options: ["Classification", "Regression", "Association Rule Learning", "Reinforcement Learning"], answer: "Association Rule Learning" },
+                    { question: "In reinforcement learning, what does the agent receive from the environment to evaluate its actions?", options: ["A label", "A cluster ID", "A reward or penalty", "A new feature"], answer: "A reward or penalty" }
+                ]
+            },
+            'preprocessing': {
+                title: 'Data Preprocessing (HL)',
+                summary: `
+                    <p class="mb-4">Data preprocessing transforms raw data into a clean, understandable format. It is arguably the most important step in the machine learning pipeline, as model performance is highly dependent on data quality.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>Data Cleaning:</strong> Identifying and correcting or removing errors and inconsistencies. This includes handling missing values (e.g., by imputing the mean/median or removing the row) and managing outliers that can skew the model.</li>
+                        <li><strong>Data Transformation:</strong> Adjusting the data to be more suitable for modeling.
+                            <ul class="list-['-_'] list-inside ml-6 mt-2 space-y-2">
+                                <li><strong>Normalization/Standardization:</strong> Scaling numeric features to a common range (e.g., 0 to 1 for normalization) or to have a mean of 0 and standard deviation of 1 (standardization). This is crucial for algorithms sensitive to the scale of input data. </li>
+                                <li><strong>Encoding:</strong> Converting categorical features (like 'Red', 'Green', 'Blue') into a numerical format that models can understand, for example, through <strong>One-Hot Encoding</strong> which creates a new binary column for each category. </li>
+                            </ul>
+                        </li>
+                        <li><strong>Feature Selection:</strong> Selecting the most relevant features (variables) for the model. This combats the "curse of dimensionality," reduces model complexity, helps prevent overfitting, and decreases training time.</li>
+                        <li><strong>Dimensionality Reduction:</strong> Reducing the number of input features while retaining as much information as possible. A key technique is <strong>Principal Component Analysis (PCA)</strong>, which creates new, uncorrelated features (principal components) from linear combinations of the original features.</li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "The process of converting a 'color' feature with values 'Red' and 'Blue' into two separate binary columns, 'is_Red' and 'is_Blue', is called:", options: ["Normalization", "Data Cleaning", "One-Hot Encoding", "Dimensionality Reduction"], answer: "One-Hot Encoding" },
+                    { question: "Scaling all numeric features to a range between 0 and 1 is an example of:", options: ["Standardization", "Normalization", "Feature Selection", "Clustering"], answer: "Normalization" },
+                    { question: "What is the main purpose of Principal Component Analysis (PCA)?", options: ["To clean missing data", "To reduce the number of features while preserving information", "To encode categorical data", "To select the single best feature"], answer: "To reduce the number of features while preserving information" },
+                    { question: "If a dataset has a column with many missing values, which is the LEAST advisable action?", options: ["Remove the rows with missing values", "Fill them with the column's mean", "Fill them with the column's median", "Leave them as they are"], answer: "Leave them as they are" },
+                    { question: "The 'curse of dimensionality' refers to:", options: ["The difficulty of working with high-dimensional data", "A problem with data cleaning", "An error in encoding", "The slowness of CPUs"], answer: "The difficulty of working with high-dimensional data" },
+                    { question: "Why is feature scaling (Normalization/Standardization) important?", options: ["It makes the data smaller", "It prevents algorithms from being biased towards features with larger scales", "It converts text to numbers", "It removes outliers"], answer: "It prevents algorithms from being biased towards features with larger scales" },
+                    { question: "An observation that lies an abnormal distance from other values in a dataset is known as an:", options: ["Outlier", "Imputation", "Encoder", "Principal Component"], answer: "Outlier" },
+                    { question: "Which of these is NOT a goal of feature selection?", options: ["Reduce training time", "Improve model accuracy", "Prevent overfitting", "Increase the number of features"], answer: "Increase the number of features" },
+                    { question: "The process of replacing a missing value with a statistic like the mean or median is called:", options: ["Deletion", "Encoding", "Imputation", "Reduction"], answer: "Imputation" },
+                    { question: "Standardization scales features to have a mean of ___ and a standard deviation of ___.", options: ["0, 1", "0, 100", "1, 0", "1, 1"], answer: "0, 1" }
+                ]
+            },
+            'models': {
+                title: 'Machine Learning Models (HL)',
+                summary: `
+                    <p class="mb-4">This section details specific algorithms. Understanding their mechanics, strengths, and weaknesses is key.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>Linear Regression:</strong> A supervised algorithm that models the relationship between a dependent variable and one or more independent variables by fitting a linear equation (like y = mx + c) to the data. The model "learns" the optimal values for the slope (m) and intercept (c). </li>
+                        <li><strong>Decision Trees:</strong> A supervised model that uses a tree-like structure of decisions. It splits the data into smaller subsets based on feature values, starting from a root node and ending in leaf nodes that represent the final classification. They are highly interpretable but can easily overfit the training data. </li>
+                        <li><strong>K-Nearest Neighbors (KNN):</strong> A simple, supervised algorithm that classifies a new data point based on the majority class of its 'k' closest neighbors in the feature space. The choice of 'k' and the distance metric (e.g., Euclidean distance) are critical. </li>
+                        <li><strong>K-Means Clustering:</strong> An unsupervised algorithm that partitions data into 'k' distinct, non-overlapping clusters. It works iteratively: 1) Initialize 'k' centroids randomly. 2) Assign each data point to its nearest centroid. 3) Re-calculate the centroids as the mean of all points in the cluster. 4) Repeat steps 2-3 until the centroids no longer move. </li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "In a K-Means clustering algorithm, what does the model do after assigning each point to its nearest centroid?", options: ["It stops", "It adds more clusters", "It re-calculates the position of the centroids", "It removes the furthest points"], answer: "It re-calculates the position of the centroids" },
+                    { question: "A model that works like a flowchart, asking a series of 'if-then' questions to classify data, is a:", options: ["Linear Regression", "K-Means Clustering", "Neural Network", "Decision Tree"], answer: "Decision Tree" },
+                    { question: "The K-Nearest Neighbors (KNN) algorithm classifies a new data point based on what?", options: ["A linear equation", "The structure of a tree", "The majority class of its closest neighbors", "The center of a cluster"], answer: "The majority class of its closest neighbors" },
+                    { question: "A major weakness of Decision Trees is their tendency to:", options: ["Be slow to train", "Be difficult to interpret", "Underfit the data", "Overfit the data"], answer: "Overfit the data" },
+                    { question: "In the equation y = mx + c for Linear Regression, what does 'm' represent?", options: ["The y-intercept", "The slope of the line", "The predicted value", "The input feature"], answer: "The slope of the line" },
+                    { question: "Which of these models is unsupervised?", options: ["Decision Tree", "Linear Regression", "K-Means Clustering", "K-Nearest Neighbors"], answer: "K-Means Clustering" },
+                    { question: "In KNN, the 'k' refers to:", options: ["The number of clusters", "The number of features", "The number of neighbors to consider", "The number of training examples"], answer: "The number of neighbors to consider" },
+                    { question: "How are the initial centroids in K-Means typically chosen?", options: ["They are always the first 'k' points", "Based on a complex formula", "Randomly", "They are manually selected"], answer: "Randomly" },
+                    { question: "Which model is most suitable for predicting a continuous outcome like a house price?", options: ["Decision Tree", "K-Means Clustering", "K-Nearest Neighbors", "Linear Regression"], answer: "Linear Regression" },
+                    { question: "What is a common distance metric used in the KNN algorithm?", options: ["Manhattan distance", "Euclidean distance", "Minkowski distance", "All of the above"], answer: "All of the above" }
+                ]
+            },
+            'ga-ann': {
+                title: 'Genetic Algorithms & ANNs (HL)',
+                summary: `
+                    <p class="mb-4">These advanced topics cover models inspired by natural processes: evolution and the human brain.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>Genetic Algorithms (GAs):</strong> An optimization technique inspired by natural selection. GAs are used to find approximate solutions to difficult search problems, like the Traveling Salesperson Problem. The process involves a cycle of evaluation, selection, crossover, and mutation. 
+                            <ul class="list-['-_'] list-inside ml-6 mt-2 space-y-2">
+                                <li><strong>Population:</strong> An initial set of potential solutions (called individuals or chromosomes).</li>
+                                <li><strong>Fitness Function:</strong> A function that evaluates how good a solution is. In the TSP, this would be the total length of the route.</li>
+                                <li><strong>Selection:</strong> Fitter individuals are more likely to be selected for reproduction.</li>
+                                <li><strong>Crossover:</strong> Combines parts of two parent solutions to create new offspring, inheriting traits from both.</li>
+                                <li><strong>Mutation:</strong> Introduces small random changes into an individual's chromosome to ensure genetic diversity.</li>
+                            </ul>
+                        </li>
+                         <li><strong>Artificial Neural Networks (ANNs):</strong> Models inspired by the brain, consisting of interconnected nodes (neurons) organized in layers (input, hidden, and output). Neurons process signals and pass them to subsequent neurons. 
+                            <ul class="list-['-_'] list-inside ml-6 mt-2 space-y-2">
+                                <li><strong>Neurons, Weights, and Biases:</strong> Each connection between neurons has a 'weight', which determines the strength of the signal. Each neuron has a 'bias' which is an extra parameter that can be tweaked. The network "learns" by adjusting these weights and biases.</li>
+                                <li><strong>Activation functions</strong> (like Sigmoid or ReLU) within neurons introduce non-linearity, allowing ANNs to learn incredibly complex patterns that a linear model cannot.</li>
+                                <li><strong>Deep Learning:</strong> Refers to ANNs with many hidden layers, allowing them to learn hierarchical representations of data.</li>
+                            </ul>
+                        </li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "In a Genetic Algorithm, what is the purpose of the fitness function?", options: ["To create new solutions", "To evaluate the quality of a solution", "To introduce random changes", "To select random solutions"], answer: "To evaluate the quality of a solution" },
+                    { question: "What process in a Genetic Algorithm combines two parent solutions to create offspring?", options: ["Mutation", "Selection", "Crossover", "Evaluation"], answer: "Crossover" },
+                    { question: "The purpose of mutation in a GA is to:", options: ["Ensure the best solutions survive", "Combine two solutions", "Introduce diversity and avoid getting stuck", "Evaluate solutions"], answer: "Introduce diversity and avoid getting stuck" },
+                    { question: "What is the 'population' in a Genetic Algorithm?", options: ["A single best solution", "A set of potential solutions", "The problem to be solved", "The fitness score"], answer: "A set of potential solutions" },
+                    { question: "In an ANN, what is the role of an activation function?", options: ["To start the training process", "To calculate the final accuracy", "To introduce non-linearity for learning complex patterns", "To connect the input layer to the output layer directly"], answer: "To introduce non-linearity for learning complex patterns" },
+                    { question: "Deep Learning refers to ANNs with what characteristic?", options: ["Many input neurons", "Many output neurons", "Many hidden layers", "A complex activation function"], answer: "Many hidden layers" },
+                    { question: "In an ANN, the 'learning' process primarily involves adjusting what?", options: ["The number of layers", "The activation functions", "The weights and biases", "The input data"], answer: "The weights and biases" },
+                    { question: "For the Traveling Salesperson Problem, an appropriate fitness function would measure:", options: ["The number of cities", "The total distance of the route", "The time taken to find a route", "The number of possible routes"], answer: "The total distance of the route" },
+                    { question: "Which biological process is NOT a direct inspiration for Genetic Algorithms?", options: ["Selection", "Mutation", "Metabolism", "Reproduction (Crossover)"], answer: "Metabolism" },
+                    { question: "The interconnected nodes in an Artificial Neural Network are analogous to what in the human brain?", options: ["Synapses", "Neurons", "Blood vessels", "The skull"], answer: "Neurons" }
+                ]
+            },
+            'hardware': {
+                title: 'Hardware Requirements',
+                summary: `
+                    <p class="mb-4">The computational demands of ML tasks determine the necessary hardware, ranging from everyday devices to massive data centers.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>CPU (Central Processing Unit):</strong> A general-purpose processor excellent at handling a few complex operations sequentially. Suitable for traditional data analysis, preprocessing, and running simpler ML models, but inefficient for training large neural networks.</li>
+                        <li><strong>GPU (Graphics Processing Unit):</strong> A specialized processor with thousands of cores designed to handle many simple operations in parallel. This architecture is perfectly suited for the matrix and vector calculations that are fundamental to training deep neural networks, making the process dramatically faster than on a CPU. </li>
+                        <li><strong>TPU (Tensor Processing Unit):</strong> An Application-Specific Integrated Circuit (ASIC) developed by Google specifically for neural network workloads. They are designed to accelerate the tensor operations used in frameworks like TensorFlow, providing even greater performance and efficiency than GPUs for these specific tasks.</li>
+                        <li><strong>Cloud Platforms (AWS, Google Cloud, Azure):</strong> These services provide on-demand access to vast computational resources, including powerful GPUs and TPUs, without the need for large upfront investment in physical hardware. They offer scalability, allowing users to rent exactly the amount of power they need.</li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "Why are GPUs generally preferred over CPUs for training deep learning models?", options: ["They have a faster clock speed", "They are better at sequential tasks", "Their parallel architecture is ideal for matrix operations", "They use less electricity"], answer: "Their parallel architecture is ideal for matrix operations" },
+                    { question: "An ASIC specifically designed by Google to accelerate machine learning workloads is called a:", options: ["CPU", "GPU", "FPGA", "TPU"], answer: "TPU" },
+                    { question: "What is the primary advantage of using a cloud platform like AWS or Google Cloud for ML?", options: ["It is always free", "It provides access to powerful hardware on-demand without ownership costs", "Models trained on the cloud are more accurate", "It does not require an internet connection"], answer: "It provides access to powerful hardware on-demand without ownership costs" },
+                    { question: "Which task is a CPU generally better at than a GPU?", options: ["Rendering high-resolution graphics", "Training a deep neural network", "Running the operating system and complex sequential tasks", "Mining cryptocurrency"], answer: "Running the operating system and complex sequential tasks" },
+                    { question: "The 'T' in TPU stands for:", options: ["Tensor", "Training", "Tesla", "Technology"], answer: "Tensor" },
+                    { question: "A small startup wants to train a large language model but cannot afford a server farm. What is their best option?", options: ["Buy thousands of laptops", "Use a cloud computing platform", "Simplify their model to run on a single CPU", "Abandon the project"], answer: "Use a cloud computing platform" },
+                    { question: "The ability of GPUs to handle many calculations simultaneously is known as:", options: ["Sequential processing", "Serial processing", "Parallel processing", "Quantum processing"], answer: "Parallel processing" },
+                    { question: "What does 'ASIC' stand for?", options: ["Application-Specific Integrated Circuit", "Advanced Standard Input Component", "Automated Scientific Intel Chip", "Applied System for Intelligent Computing"], answer: "Application-Specific Integrated Circuit" },
+                    { question: "Which of the following is NOT a major cloud platform for machine learning?", options: ["Amazon Web Services (AWS)", "Microsoft Azure", "Google Cloud Platform (GCP)", "Adobe Creative Cloud"], answer: "Adobe Creative Cloud" },
+                    { question: "For which task would a standard laptop be most sufficient?", options: ["Training a self-driving car model", "Running a large-scale language model", "Learning basic linear regression on a small dataset", "Training a facial recognition system for a whole country"], answer: "Learning basic linear regression on a small dataset" }
+                ]
+            },
+            'ethics': {
+                title: 'Ethical Considerations',
+                summary: `
+                    <p class="mb-4">As ML systems become more powerful and integrated into society, understanding their ethical implications is critically important.</p>
+                    <ul class="list-disc space-y-4">
+                        <li><strong>Bias:</strong> ML models learn from data. If training data reflects historical or societal biases, the model will learn and often amplify them. For example, a resume screening tool trained on data from a male-dominated industry might unfairly penalize female applicants. </li>
+                        <li><strong>Privacy:</strong> ML models often require large amounts of data, which can be personal and sensitive. This creates major concerns about data collection, consent, security, and potential for misuse. Regulations like GDPR aim to protect user data, and techniques like Federated Learning attempt to train models without centralizing sensitive data.</li>
+                        <li><strong>Accountability and Transparency:</strong> When an AI system makes a critical error, who is responsible? The complexity of models like deep neural networks creates a "black box" problem, where even the creators may not fully understand the model's reasoning. The field of <strong>Explainable AI (XAI)</strong> seeks to develop methods to make these decisions more transparent. </li>
+                        <li><strong>Societal Impact:</strong> The deployment of AI can lead to significant societal shifts, including job displacement through automation, the creation of new job categories, and the potential for misuse in autonomous weapons systems, mass surveillance, or the spread of misinformation.</li>
+                    </ul>
+                `,
+                quiz: [
+                    { question: "If a hiring AI shows a preference for male candidates because it was trained on historical company data, this is a direct example of:", options: ["A privacy breach", "The black box problem", "Learned bias", "Lack of data"], answer: "Learned bias" },
+                    { question: "The field of research that aims to make complex AI models' decisions understandable to humans is known as:", options: ["Reinforcement Learning", "Explainable AI (XAI)", "Data Engineering", "Cloud Computing"], answer: "Explainable AI (XAI)" },
+                    { question: "Regulations like GDPR and techniques like Federated Learning are primarily aimed at addressing which ethical concern?", options: ["Bias", "Privacy", "Accountability", "Societal Impact"], answer: "Privacy" },
+                    { question: "The 'black box' problem in AI refers to:", options: ["AI models being physically sealed in boxes", "The difficulty in understanding how complex models make decisions", "Data privacy and security", "The potential for job displacement"], answer: "The difficulty in understanding how complex models make decisions" },
+                    { question: "An autonomous vehicle causing an accident raises complex questions primarily related to:", options: ["Data privacy", "Algorithmic bias", "Accountability and liability", "Hardware limitations"], answer: "Accountability and liability" },
+                    { question: "Which of the following is a potential negative societal impact of AI?", options: ["Job displacement due to automation", "Development of new medical treatments", "More efficient energy consumption", "Personalized education"], answer: "Job displacement due to automation" },
+                    { question: "Training a model on data from only one hospital to be used in hospitals worldwide is likely to introduce:", options: ["Privacy issues", "Sampling bias", "Accountability problems", "Hardware errors"], answer: "Sampling bias" },
+                    { question: "The use of AI to generate fake videos or audio (deepfakes) is an ethical concern related to:", options: ["Hardware requirements", "Misinformation and manipulation", "Algorithmic efficiency", "Data storage"], answer: "Misinformation and manipulation" },
+                    { question: "If a company uses your personal data to train an AI without your permission, it is a violation of:", options: ["Transparency", "Accountability", "Privacy", "Fairness"], answer: "Privacy" },
+                    { question: "Why is transparency important in AI systems used for loan applications?", options: ["It makes the AI faster", "It allows applicants to understand the reason for a decision", "It ensures the AI is always correct", "It reduces the hardware costs"], answer: "It allows applicants to understand the reason for a decision" }
+                ]
+            },
+        };
+
+        const tabNav = document.getElementById('tab-nav');
+        const tabContent = document.getElementById('tab-content');
+        let currentQuizData = [];
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        function renderTabContent(tabKey) {
+            const data = contentData[tabKey];
+            if (!data) return;
+            
+            const summaryHtml = data.summary;
+
+            tabContent.innerHTML = `
+                <div id="${tabKey}" class="tab-pane bg-white p-6 md:p-8 rounded-xl shadow-md">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-4 text-slate-800">${data.title}</h2>
+                    <div class="prose max-w-none text-slate-700">${summaryHtml}</div>
+                    <hr class="my-8">
+                    <div id="quiz-container">
+                        <h3 class="text-xl font-bold mb-4">Test Your Knowledge</h3>
+                        <div id="quiz-content"></div>
+                    </div>
+                </div>
+            `;
+            
+            startQuiz(data.quiz);
+        }
+
+        function startQuiz(quizData) {
+            currentQuizData = quizData;
+            currentQuestionIndex = 0;
+            score = 0;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const quizContent = document.getElementById('quiz-content');
+            if (currentQuestionIndex < currentQuizData.length) {
+                const questionData = currentQuizData[currentQuestionIndex];
+                const optionsHtml = questionData.options.map(option => 
+                    `<button class="quiz-option w-full text-left p-4 my-2 border-2 border-slate-200 rounded-lg bg-slate-50 hover:bg-indigo-100 hover:border-indigo-300" onclick="checkAnswer(this, '${option.replace(/'/g, "\\'") === questionData.answer.replace(/'/g, "\\'")}')">${option}</button>`
+                ).join('');
+
+                quizContent.innerHTML = `
+                    <div class="mb-2 text-slate-600">Question ${currentQuestionIndex + 1} of ${currentQuizData.length} | Score: ${score}</div>
+                    <p class="text-lg font-semibold mb-4">${questionData.question}</p>
+                    <div id="quiz-options">${optionsHtml}</div>
+                    <div id="feedback" class="mt-4"></div>
+                `;
+            } else {
+                showFinalScore();
+            }
+        }
+        
+        function checkAnswer(button, isCorrect) {
+            const optionsContainer = document.getElementById('quiz-options');
+            const feedback = document.getElementById('feedback');
+            
+            // Disable all buttons after an answer is chosen
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.disabled = true;
+                // Highlight the correct answer
+                 if (btn.innerText === currentQuizData[currentQuestionIndex].answer) {
+                    btn.classList.add('correct');
+                 }
+            });
+
+            if (isCorrect === 'true') {
+                score++;
+                button.classList.add('correct');
+                feedback.innerHTML = `<p class="text-green-600 font-semibold">Correct!</p>`;
+            } else {
+                button.classList.add('incorrect');
+                feedback.innerHTML = `<p class="text-red-600 font-semibold">Incorrect. The correct answer is highlighted.</p>`;
+            }
+
+            currentQuestionIndex++;
+            
+            setTimeout(showQuestion, 2000); // Wait 2 seconds before showing the next question
+        }
+
+        function showFinalScore() {
+            const quizContent = document.getElementById('quiz-content');
+            quizContent.innerHTML = `
+                <div class="text-center p-6 bg-indigo-50 rounded-lg">
+                    <h4 class="text-2xl font-bold">Quiz Complete!</h4>
+                    <p class="text-lg my-2">Your final score is:</p>
+                    <p class="text-4xl font-bold text-indigo-600">${score} / ${currentQuizData.length}</p>
+                    <button class="mt-6 bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors" onclick="startQuiz(currentQuizData)">Try Again</button>
+                </div>
+            `;
+        }
+
+        tabNav.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON') {
+                const tabKey = e.target.dataset.tab;
+
+                // Update active tab style
+                Array.from(tabNav.children).forEach(tab => tab.classList.remove('tab-active'));
+                e.target.classList.add('tab-active');
+
+                // Render content
+                renderTabContent(tabKey);
+            }
+        });
+
+        // Initial load
+        renderTabContent('ml-types');
+
+    </script>
+</body>
+</html>
+

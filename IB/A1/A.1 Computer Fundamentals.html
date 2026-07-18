@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS A1.3 & A1.4 Revision Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .hl-content { display: block; }
+        body.sl-only .hl-content { display: none; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .nav-btn.active { 
+            background-color: #4f46e5; 
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+        
+        .gantt-block {
+            transition: all 0.3s ease;
+            min-width: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .syllabus-check:checked + label {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        /* Simulation Styles */
+        .cpu-box { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .status-pulse { animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.1); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+        
+        /* Deadlock Styles */
+        .resource-node { transition: all 0.3s ease; border-width: 4px; }
+        .holding { border-color: #10b981; background-color: #ecfdf5; }
+        .requesting { border-color: #f43f5e; background-color: #fff1f2; animation: pulse 1.5s infinite; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 transition-colors duration-200">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="text-white w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                </div>
+                <h1 class="font-black text-xl tracking-tight hidden sm:block italic">IB A1.3 - 1.4</h1>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-slate-100 p-1 rounded-full px-3 py-1.5 border border-slate-200">
+                    <span id="sl-label" class="text-xs font-black text-slate-400">SL</span>
+                    <button id="hl-toggle" onclick="toggleHL()" class="w-10 h-5 bg-indigo-600 rounded-full relative transition-colors duration-200">
+                        <div id="toggle-dot" class="absolute top-1 left-6 w-3 h-3 bg-white rounded-full transition-all duration-200"></div>
+                    </button>
+                    <span id="hl-label" class="text-xs font-black text-indigo-600">HL</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-8">
+        
+        <!-- Granular Tab Navigation -->
+        <nav class="flex flex-wrap justify-center gap-2 mb-8 bg-slate-200/40 p-2 rounded-[2rem] w-fit mx-auto border border-slate-200 shadow-inner">
+            <button onclick="showTab('checklist')" id="btn-checklist" class="nav-btn active flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">TRACKER</button>
+            <div class="w-px h-6 bg-slate-300 my-auto mx-1"></div>
+            <button onclick="showTab('os-functions')" id="btn-os-functions" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.3.1-2 ROLE/FUNCTIONS</button>
+            <button onclick="showTab('scheduling')" id="btn-scheduling" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.3.3 SCHEDULING</button>
+            <button onclick="showTab('events')" id="btn-events" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.3.4 POLLING/INT</button>
+            <button onclick="showTab('multitasking')" id="btn-multitasking" class="hl-content nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.3.5 MULTITASKING (HL)</button>
+            <button onclick="showTab('control')" id="btn-control" class="hl-content nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.3.6-7 CONTROL (HL)</button>
+            <button onclick="showTab('translation')" id="btn-translation" class="hl-content nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">A1.4.1 TRANSLATION (HL)</button>
+            <div class="w-px h-6 bg-slate-300 my-auto mx-1"></div>
+            <button onclick="showTab('vocabulary')" id="btn-vocabulary" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">VOCABULARY</button>
+            <button onclick="showTab('quiz')" id="btn-quiz" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">QUIZ</button>
+            <button onclick="showTab('challenges')" id="btn-challenges" class="nav-btn flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-black transition-all duration-200 text-slate-500 hover:text-slate-900">CHALLENGES</button>
+        </nav>
+
+        <!-- Content Area -->
+        <div class="bg-white rounded-[3rem] shadow-xl border border-slate-200 p-8 md:p-16 min-h-[70vh]">
+            
+            <!-- TRACKER TAB -->
+            <div id="checklist" class="tab-content active animate-fade">
+                <div class="max-w-3xl mx-auto text-center">
+                    <h2 class="text-4xl font-black text-slate-800 mb-2">Syllabus Tracker</h2>
+                    <p class="text-slate-500 mb-12">Computer Fundamentals (A1.3 & A1.4)</p>
+                    <div class="space-y-12 text-left">
+                        <section>
+                            <h3 class="font-black text-indigo-600 border-b-4 border-indigo-50 pb-2 mb-6 uppercase text-sm tracking-widest">A1.3 OS & Control</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl hover:shadow-md transition-all"><input type="checkbox" id="c1" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-slate-300 text-indigo-600"><label for="c1" class="text-sm font-semibold cursor-pointer">A1.3.1: Role of OS in abstracting hardware complexities.</label></div>
+                                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl hover:shadow-md transition-all"><input type="checkbox" id="c2" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-slate-300 text-indigo-600"><label for="c2" class="text-sm font-semibold cursor-pointer">A1.3.2: Full functions (Memory, Files, etc.) of an OS.</label></div>
+                                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl hover:shadow-md transition-all"><input type="checkbox" id="c3" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-slate-300 text-indigo-600"><label for="c3" class="text-sm font-semibold cursor-pointer">A1.3.3: Compare Scheduling algorithms.</label></div>
+                                <div class="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl hover:shadow-md transition-all"><input type="checkbox" id="c4" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-slate-300 text-indigo-600"><label for="c4" class="text-sm font-semibold cursor-pointer">A1.3.4: Evaluate Polling vs Interrupt handling.</label></div>
+                                <div class="hl-content flex items-start gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100"><input type="checkbox" id="c5" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-indigo-300 text-indigo-600"><label for="c5" class="text-sm font-black text-indigo-900 italic">A1.3.5: Multitasking and Deadlock Simulation (HL).</label></div>
+                                <div class="hl-content flex items-start gap-4 p-4 bg-indigo-50 rounded-2xl border border-indigo-100"><input type="checkbox" id="c6" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-indigo-300 text-indigo-600"><label for="c6" class="text-sm font-black text-indigo-900 italic">A1.3.6-7: Control Systems Applications & Components (HL).</label></div>
+                            </div>
+                        </section>
+                        <section class="hl-content">
+                            <h3 class="font-black text-orange-600 border-b-4 border-orange-50 pb-2 mb-6 uppercase text-sm tracking-widest">A1.4 Translation</h3>
+                            <div class="space-y-4">
+                                <div class="flex items-start gap-4 p-4 bg-orange-50 rounded-2xl hover:shadow-md transition-all border border-orange-100">
+                                    <input type="checkbox" id="c7" class="syllabus-check mt-1 w-6 h-6 rounded-lg border-orange-300 text-orange-600 focus:ring-orange-500">
+                                    <label for="c7" class="text-sm font-black leading-relaxed cursor-pointer text-orange-900 italic">A1.4.1: Evaluate translation processes (Interpreters, Compilers, JIT, Bytecode).</label>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.3.1-2 ROLE & FUNCTIONS -->
+            <div id="os-functions" class="tab-content animate-fade">
+                <div class="max-w-5xl mx-auto space-y-12">
+                    <div class="text-center"><h2 class="text-4xl font-black text-slate-800 mb-2">Role & Full Functions</h2><span class="px-4 py-1 bg-slate-100 rounded-full text-[10px] font-black uppercase text-slate-500">A1.3.1 & A1.3.2</span></div>
+                    <div class="bg-indigo-600 text-white p-10 rounded-[3rem] shadow-xl"><p class="text-lg leading-relaxed">The OS <strong>abstracts hardware complexities</strong> to manage system resources and maintain <strong>system integrity</strong>.</p></div>
+                    <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">1. Memory Management</h4><p class="text-sm text-slate-500">Allocates RAM, prevents interference, and handles <strong>Virtual Memory</strong>.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">2. File System</h4><p class="text-sm text-slate-500">Organizes naming, storage, and retrieval on disk.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">3. Device Management</h4><p class="text-sm text-slate-500">Communicates with hardware via <strong>Drivers</strong>.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">4. Process Scheduling</h4><p class="text-sm text-slate-500">Decides which process gets CPU time.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">5. Security</h4><p class="text-sm text-slate-500">Authentication and access control lists (ACLs).</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">6. Accounting</h4><p class="text-sm text-slate-500">Tracks usage for logs, performance, and billing.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">7. GUI / Interface</h4><p class="text-sm text-slate-500">Human-Hardware interaction layer.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">8. Virtualization</h4><p class="text-sm text-slate-500">Running multiple VMs on one physical box.</p></div>
+                        <div class="p-8 bg-white border-2 border-slate-100 rounded-[2.5rem] shadow-sm hover:border-indigo-300 transition-colors"><h4 class="font-black text-indigo-600 mb-2 uppercase text-xs">9. Networking</h4><p class="text-sm text-slate-500">Managing protocols and network ports.</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.3.3 SCHEDULING -->
+            <div id="scheduling" class="tab-content animate-fade">
+                <div class="space-y-12">
+                    <div class="text-center"><h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Process Scheduling (A1.3.3)</h2><span class="px-4 py-1 bg-slate-100 rounded-full text-[10px] font-black uppercase text-slate-500">Interactive Simulator & Real-World Use</span></div>
+                    <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-10 shadow-2xl">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+                            <h3 class="text-2xl font-black text-slate-800 italic">Algorithm Simulator</h3>
+                            <div class="flex gap-4">
+                                <select id="algo-select" class="bg-slate-50 border-2 rounded-2xl px-5 py-2 text-sm font-black focus:ring-4 focus:ring-indigo-100 outline-none"><option value="fcfs">FCFS (First-Come First-Served)</option><option value="rr">Round Robin (Quantum=2ms)</option><option value="priority">Priority</option></select>
+                                <button onclick="resetSim()" class="bg-slate-100 px-6 py-2 rounded-2xl text-sm font-black transition-all">RESET</button>
+                            </div>
+                        </div>
+                        <div class="grid lg:grid-cols-4 gap-12">
+                            <div class="lg:col-span-1"><div class="rounded-3xl border-2 border-slate-100 overflow-hidden shadow-sm"><table class="w-full text-xs font-bold"><thead class="bg-slate-50 text-slate-400"><tr><th class="p-4 text-left">ID</th><th class="p-4 text-right">REM</th></tr></thead><tbody id="proc-table-body" class="divide-y divide-slate-100"></tbody></table></div><button onclick="addProcess()" class="w-full mt-6 bg-indigo-50 text-indigo-600 border-2 border-dashed border-indigo-200 py-4 rounded-3xl text-xs font-black transition-all">+ NEW PROCESS</button></div>
+                            <div class="lg:col-span-3 space-y-10">
+                                <div class="grid grid-cols-3 gap-6">
+                                    <div class="bg-slate-50 p-8 rounded-[3rem] border border-slate-100 text-center shadow-inner"><p class="text-[10px] uppercase font-black text-slate-400 mb-1">Time</p><p id="sim-time" class="text-4xl font-black text-slate-800">0</p></div>
+                                    <div class="bg-indigo-600 p-8 rounded-[3rem] text-center shadow-xl shadow-indigo-100 col-span-2"><p class="text-[10px] uppercase font-black text-indigo-200 mb-1 tracking-widest">Active Task</p><p id="sim-active" class="text-4xl font-black text-white">-</p></div>
+                                </div>
+                                <div><p class="text-[10px] uppercase font-black text-slate-400 mb-4 tracking-widest">Gantt Chart (Timeline Visualization)</p><div id="gantt-chart" class="h-20 w-full bg-slate-100 rounded-3xl flex overflow-hidden border-8 border-slate-100 shadow-inner"></div></div>
+                                <button onclick="stepSim()" class="w-full bg-indigo-600 text-white font-black py-6 rounded-[2.5rem] shadow-2xl flex items-center justify-center gap-4 text-xl">Next Cycle (1ms)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REAL WORLD EXAMPLES BLOCK -->
+                    <div class="bg-slate-900 text-white rounded-[3.5rem] p-12 shadow-2xl">
+                        <h3 class="text-3xl font-black text-indigo-400 mb-10 italic uppercase tracking-widest text-center">When are these used?</h3>
+                        <div class="grid md:grid-cols-3 gap-8">
+                            <!-- FCFS Example -->
+                            <div class="space-y-4 p-8 bg-white/5 rounded-[2.5rem] border border-white/10 hover:bg-white/10 transition-all">
+                                <div class="w-12 h-12 bg-sky-500/20 rounded-2xl flex items-center justify-center text-sky-400 font-black mb-4">A</div>
+                                <h4 class="text-sky-300 font-black uppercase text-sm tracking-widest">FCFS: Batch Jobs</h4>
+                                <p class="text-xs leading-relaxed text-slate-400">
+                                    <strong>Example: Printer Queues.</strong> A printer handles documents exactly as they arrive. If User A sends a 100-page book, User B's 1-page memo must wait. FCFS is "fair" in order but poor for high-priority small tasks.
+                                </p>
+                            </div>
+                            <!-- Round Robin Example -->
+                            <div class="space-y-4 p-8 bg-white/5 rounded-[2.5rem] border border-white/10 hover:bg-white/10 transition-all">
+                                <div class="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center text-indigo-400 font-black mb-4">B</div>
+                                <h4 class="text-indigo-300 font-black uppercase text-sm tracking-widest">RR: Modern Desktop OS</h4>
+                                <p class="text-xs leading-relaxed text-slate-400">
+                                    <strong>Example: Windows/macOS.</strong> Your music player (Spotify) needs constant CPU to avoid stuttering, while your Browser (Chrome) needs CPU for loading. RR gives each a 2ms "slice," ensuring both feel responsive at the same time.
+                                </p>
+                            </div>
+                            <!-- Priority Example -->
+                            <div class="space-y-4 p-8 bg-white/5 rounded-[2.5rem] border border-white/10 hover:bg-white/10 transition-all">
+                                <div class="w-12 h-12 bg-rose-500/20 rounded-2xl flex items-center justify-center text-rose-400 font-black mb-4">C</div>
+                                <h4 class="text-rose-300 font-black uppercase text-sm tracking-widest">Priority: Critical Systems</h4>
+                                <p class="text-xs leading-relaxed text-slate-400">
+                                    <strong>Example: Flight Control.</strong> In an airplane, a "Low Altitude Alert" task is far more important than a "Refresh In-Flight Entertainment" task. The critical safety task is assigned a higher priority and processed immediately.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.3.4 POLLING/INT -->
+            <div id="events" class="tab-content animate-fade">
+                <div class="max-w-7xl mx-auto space-y-12">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Polling vs Interrupts Interactive</h2>
+                        <span class="px-4 py-1 bg-slate-100 rounded-full text-[10px] font-black uppercase text-slate-500">A1.3.4 Interaction & Evaluation</span>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="bg-white border-4 border-sky-100 rounded-[3rem] p-8 shadow-xl flex flex-col">
+                            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-black text-sky-700 italic">Multi-Device Polling</h3><div class="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Inefficient Loop</div></div>
+                            <div class="relative py-12 px-4 flex flex-col items-center gap-8">
+                                <div id="polling-cpu-track" class="w-full h-24 border-b-2 border-dashed border-sky-100 relative"><div id="polling-cpu" class="cpu-box absolute left-0 top-0 w-20 h-20 bg-sky-600 rounded-2xl flex flex-col items-center justify-center text-white shadow-lg z-10"><span class="text-[10px] font-black uppercase opacity-60">CPU</span><span id="polling-status" class="text-xs font-bold">IDLE</span></div></div>
+                                <div class="grid grid-cols-3 gap-4 w-full">
+                                    <div id="p-dev-0" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV A</p><p id="p-dev-0-data" class="text-xs text-slate-300 font-bold mt-1">EMPTY</p></div>
+                                    <div id="p-dev-1" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV B</p><p id="p-dev-1-data" class="text-xs text-slate-300 font-bold mt-1">EMPTY</p></div>
+                                    <div id="p-dev-2" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV C</p><p id="p-dev-2-data" class="text-xs text-slate-300 font-bold mt-1">EMPTY</p></div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-[2rem] text-center space-y-4">
+                                <div class="flex justify-between text-[10px] font-black text-slate-400"><span>QUERYING: <span id="polling-target" class="text-sky-600">-</span></span><span>TOTAL CYCLES: <span id="polling-cycles" class="text-slate-800">0</span></span></div>
+                                <p class="text-xs text-slate-500 italic">The CPU visits each device in order. If a device has no data, that cycle is <strong>wasted</strong>.</p>
+                            </div>
+                            <div class="mt-8 flex flex-wrap gap-2">
+                                <button onclick="togglePollingSim()" id="polling-btn" class="flex-1 bg-sky-600 text-white font-black py-4 rounded-2xl text-sm shadow-lg">Start Polling Loop</button>
+                                <div class="w-full grid grid-cols-3 gap-2">
+                                    <button onclick="triggerPollingData(0)" class="bg-sky-50 text-sky-700 py-2 rounded-xl text-[10px] font-black">Send A</button>
+                                    <button onclick="triggerPollingData(1)" class="bg-sky-50 text-sky-700 py-2 rounded-xl text-[10px] font-black">Send B</button>
+                                    <button onclick="triggerPollingData(2)" class="bg-sky-50 text-sky-700 py-2 rounded-xl text-[10px] font-black">Send C</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white border-4 border-rose-100 rounded-[3rem] p-8 shadow-xl flex flex-col">
+                            <div class="flex justify-between items-center mb-6"><h3 class="text-2xl font-black text-rose-700 italic">Multi-Device Interrupts</h3><div class="bg-rose-100 text-rose-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Signal-Driven</div></div>
+                            <div class="relative py-12 px-4 flex flex-col items-center gap-8">
+                                <div id="int-cpu" class="cpu-box w-24 h-24 bg-rose-600 rounded-3xl flex flex-col items-center justify-center text-white font-black shadow-lg relative"><span class="text-[10px] uppercase opacity-60">CPU</span><span id="int-task" class="text-xs">IDLE</span><div id="int-alert" class="absolute -top-2 -right-2 bg-yellow-400 text-slate-900 rounded-full w-8 h-8 flex items-center justify-center text-xs font-black hidden">!</div></div>
+                                <div class="grid grid-cols-3 gap-4 w-full">
+                                    <div id="i-dev-0" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV A</p><p id="i-dev-0-status" class="text-[10px] text-slate-300 font-bold mt-1">STANDBY</p></div>
+                                    <div id="i-dev-1" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV B</p><p id="i-dev-1-status" class="text-[10px] text-slate-300 font-bold mt-1">STANDBY</p></div>
+                                    <div id="i-dev-2" class="p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl text-center"><p class="text-[10px] font-black text-slate-400">DEV C</p><p id="i-dev-2-status" class="text-[10px] text-slate-300 font-bold mt-1">STANDBY</p></div>
+                                </div>
+                            </div>
+                            <div class="bg-slate-50 p-6 rounded-[2rem] text-center space-y-4">
+                                <div class="flex justify-between text-[10px] font-black text-slate-400"><span>STATUS: <span id="int-status" class="text-rose-600">IDLE</span></span><span>CYCLES: <span id="int-cycles" class="text-slate-800">0</span></span></div>
+                                <p class="text-xs text-slate-500 italic">The CPU ignores devices and does <strong>productive work</strong> until a device pulls the interrupt line.</p>
+                            </div>
+                            <div class="mt-8 flex flex-wrap gap-2">
+                                <button onclick="toggleIntSim()" id="int-btn" class="flex-1 bg-rose-600 text-white font-black py-4 rounded-2xl text-sm shadow-lg">Start CPU Task</button>
+                                <div class="w-full grid grid-cols-3 gap-2">
+                                    <button onclick="triggerInterrupt(0)" class="bg-rose-50 text-rose-700 py-2 rounded-xl text-[10px] font-black">Signal A</button>
+                                    <button onclick="triggerInterrupt(1)" class="bg-rose-50 text-rose-700 py-2 rounded-xl text-[10px] font-black">Signal B</button>
+                                    <button onclick="triggerInterrupt(2)" class="bg-rose-50 text-rose-700 py-2 rounded-xl text-[10px] font-black">Signal C</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-slate-900 text-white rounded-[3.5rem] p-12 shadow-2xl">
+                        <h3 class="text-3xl font-black text-indigo-400 mb-10 italic uppercase tracking-widest text-center">How & When are they used?</h3>
+                        <div class="grid lg:grid-cols-2 gap-12">
+                            <div>
+                                <h4 class="font-black text-sky-400 uppercase text-sm mb-6 border-b border-white/10 pb-2">Uses: Polling</h4>
+                                <div class="space-y-6">
+                                    <div class="flex gap-4 items-start"><div class="w-8 h-8 bg-sky-500/20 rounded flex-shrink-0 flex items-center justify-center text-sky-400 font-black">1</div><p class="text-sm leading-relaxed text-slate-300 italic"><strong>Game Loops:</strong> Games poll the keyboard/mouse every single frame (e.g. 144Hz) to ensure movement is perfectly responsive without latency jitter.</p></div>
+                                    <div class="flex gap-4 items-start"><div class="w-8 h-8 bg-sky-500/20 rounded flex-shrink-0 flex items-center justify-center text-sky-400 font-black">2</div><p class="text-sm leading-relaxed text-slate-300 italic"><strong>High-Speed Sensors:</strong> In automation, a sensor might trigger 10,000+ times a second. The context-switching overhead for interrupts would be slower than just polling the buffer.</p></div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 class="font-black text-rose-400 uppercase text-sm mb-6 border-b border-white/10 pb-2">Uses: Interrupts</h4>
+                                <div class="space-y-6">
+                                    <div class="flex gap-4 items-start"><div class="w-8 h-8 bg-rose-500/20 rounded flex-shrink-0 flex items-center justify-center text-rose-400 font-black">1</div><p class="text-sm leading-relaxed text-slate-300 italic"><strong>Keyboards:</strong> Humans type slowly (to a CPU). Interrupts allow the CPU to render graphics or run code until a key is actually pressed.</p></div>
+                                    <div class="flex gap-4 items-start"><div class="w-8 h-8 bg-rose-500/20 rounded flex-shrink-0 flex items-center justify-center text-rose-400 font-black">2</div><p class="text-sm leading-relaxed text-slate-300 italic"><strong>Network Cards:</strong> Data packets arrive at unpredictable times. The NIC card interrupts the CPU only when a full packet is ready in the buffer.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-12 pt-12 border-t border-white/10">
+                            <h4 class="text-indigo-400 font-black uppercase text-center text-xs tracking-widest mb-8">Syllabus Evaluation Factors (A1.3.4)</h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div class="p-4 bg-white/5 rounded-2xl text-center border border-white/10"><p class="text-[10px] font-bold text-white mb-1">Frequency</p><p class="text-[10px] text-slate-500 italic">High = Polling</p></div>
+                                <div class="p-4 bg-white/5 rounded-2xl text-center border border-white/10"><p class="text-[10px] font-bold text-white mb-1">Power Source</p><p class="text-[10px] text-slate-500 italic">Battery = Int</p></div>
+                                <div class="p-4 bg-white/5 rounded-2xl text-center border border-white/10"><p class="text-[10px] font-bold text-white mb-1">Predictability</p><p class="text-[10px] text-slate-500 italic">Unpredictable = Int</p></div>
+                                <div class="p-4 bg-white/5 rounded-2xl text-center border border-white/10"><p class="text-[10px] font-bold text-white mb-1">Overhead</p><p class="text-[10px] text-slate-500 italic">Context Switch Cost</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.3.5 MULTITASKING & DEADLOCK -->
+            <div id="multitasking" class="tab-content animate-fade">
+                <div class="max-w-5xl mx-auto space-y-12">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Deadlock Simulation</h2>
+                        <span class="px-4 py-1 bg-indigo-100 rounded-full text-[10px] font-black uppercase text-indigo-500 tracking-[0.2em]">A1.3.5 (HL ONLY)</span>
+                    </div>
+
+                    <!-- Simulator Block -->
+                    <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+                        <div class="flex flex-col md:flex-row justify-between items-start mb-12 gap-8">
+                            <div class="max-w-md"><h3 class="text-2xl font-black text-slate-800 mb-2">Circular Wait Interaction</h3><p class="text-sm text-slate-500 leading-relaxed">Manually trigger resource requests to see how a "Hold and Wait" cycle freezes the system.</p></div>
+                            <button onclick="resetDeadlock()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 px-8 py-3 rounded-2xl text-xs font-black transition-all">RESET SYSTEM</button>
+                        </div>
+                        <div class="grid grid-cols-2 gap-12 mb-12 relative">
+                            <div class="space-y-20"><div id="p1-node" class="resource-node p-8 bg-slate-50 rounded-[2rem] text-center border-4"><p class="font-black text-slate-800">PROCESS 1</p><p id="p1-status" class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">IDLE</p></div><div id="p2-node" class="resource-node p-8 bg-slate-50 rounded-[2rem] text-center border-4"><p class="font-black text-slate-800">PROCESS 2</p><p id="p2-status" class="text-[10px] font-bold text-slate-400 mt-2 uppercase tracking-widest">IDLE</p></div></div>
+                            <div class="space-y-20"><div id="res-printer" class="resource-node p-8 bg-slate-50 rounded-[2rem] text-center border-4"><p class="font-black uppercase tracking-widest">PRINTER</p><p id="printer-owner" class="text-[10px] font-bold text-slate-400 mt-2 uppercase">AVAILABLE</p></div><div id="res-scanner" class="resource-node p-8 bg-slate-50 rounded-[2rem] text-center border-4"><p class="font-black uppercase tracking-widest">SCANNER</p><p id="scanner-owner" class="text-[10px] font-bold text-slate-400 mt-2 uppercase">AVAILABLE</p></div></div>
+                            <div id="deadlock-alert" class="absolute inset-0 bg-rose-600/90 rounded-3xl flex flex-col items-center justify-center text-white hidden"><h3 class="text-3xl font-black uppercase">Deadlock Detected!</h3><p class="text-center px-8 mt-2">P1 waits for P2's Scanner. P2 waits for P1's Printer.</p></div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4"><button id="p1-btn" onclick="p1Action()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]">P1: ACQUIRE PRINTER</button><button id="p2-btn" onclick="p2Action()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all hover:scale-[1.02] active:scale-[0.98]">P2: ACQUIRE SCANNER</button></div>
+                    </div>
+
+                    <!-- RESOLUTION STRATEGIES SECTION -->
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <div class="bg-indigo-900 rounded-[3rem] p-12 text-white shadow-xl relative overflow-hidden">
+                             <h3 class="text-2xl font-black text-indigo-300 mb-6 italic">Resolving Deadlocks</h3>
+                             <div class="space-y-6">
+                                <div class="bg-white/5 p-6 rounded-2xl border border-white/10"><h4 class="font-black text-indigo-200 text-sm uppercase mb-2">1. Prevention</h4><p class="text-[10px] text-slate-300 leading-relaxed italic">Modify the system to ensure one of the 4 Coffman conditions can <strong>never</strong> occur. e.g. Require process to request all resources at once.</p></div>
+                                <div class="bg-white/5 p-6 rounded-2xl border border-white/10"><h4 class="font-black text-indigo-200 text-sm uppercase mb-2">2. Avoidance</h4><p class="text-[10px] text-slate-300 leading-relaxed italic">OS denies unsafe requests that might lead to a deadlock cycle (e.g. Banker's Algorithm).</p></div>
+                             </div>
+                        </div>
+                        <div class="bg-slate-50 border-2 border-slate-200 rounded-[3rem] p-12 shadow-sm">
+                             <h3 class="text-2xl font-black text-slate-800 mb-6 italic">Recovery Methods</h3>
+                             <div class="space-y-6">
+                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-inner"><h4 class="font-black text-indigo-600 text-sm uppercase mb-2">3. Detection & Recovery</h4><p class="text-[10px] text-slate-500 leading-relaxed italic">Allow deadlocks, identify the cycle, and <strong>abort</strong> one of the processes or preempt resources to break the chain.</p></div>
+                                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-inner"><h4 class="font-black text-indigo-600 text-sm uppercase mb-2">4. The Ostrich Algorithm</h4><p class="text-[10px] text-slate-500 leading-relaxed italic">If extremely rare, ignore the deadlock entirely to save system overhead. System will require a manual reboot.</p></div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Coffman Conditions Recap -->
+                    <div class="bg-slate-900 rounded-[3rem] p-10 text-center text-white border border-white/10">
+                        <h4 class="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Required Conditions (A1.3.5)</h4>
+                        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div><p class="text-indigo-300 font-bold text-xs">Mutual Exclusion</p></div>
+                            <div><p class="text-indigo-300 font-bold text-xs">Hold and Wait</p></div>
+                            <div><p class="text-indigo-300 font-bold text-xs">No Preemption</p></div>
+                            <div><p class="text-indigo-300 font-bold text-xs">Circular Wait</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.3.6 & A1.3.7 CONTROL SYSTEMS -->
+            <div id="control" class="tab-content animate-fade">
+                <div class="max-w-6xl mx-auto space-y-12">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Control System Simulation</h2>
+                        <span class="px-4 py-1 bg-indigo-100 rounded-full text-[10px] font-black uppercase text-indigo-500">A1.3.6 & A1.3.7 (HL)</span>
+                    </div>
+
+                    <!-- Interactive Smart Thermostat Simulator -->
+                    <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-10 shadow-2xl">
+                        <div class="grid lg:grid-cols-3 gap-12">
+                            
+                            <!-- Left: Thermometer Visual -->
+                            <div class="lg:col-span-1 bg-slate-50 rounded-[2.5rem] p-8 border border-slate-200 flex flex-col items-center">
+                                <h3 class="font-black text-slate-800 uppercase text-xs mb-8">Environment State</h3>
+                                <div class="relative w-20 h-64 bg-slate-200 rounded-full border-4 border-white shadow-inner overflow-hidden flex flex-col justify-end">
+                                    <div id="temp-visual" class="temp-fill w-full bg-rose-500" style="height: 50%;"></div>
+                                </div>
+                                <div class="mt-8 text-center">
+                                    <p class="text-[10px] font-black text-slate-400 uppercase">Actual Temp</p>
+                                    <p id="actual-temp-display" class="text-4xl font-black text-slate-800">22.0°C</p>
+                                </div>
+                            </div>
+
+                            <!-- Middle: Control Logic & Logic Flow -->
+                            <div class="lg:col-span-2 space-y-8">
+                                <div class="flex justify-between items-center bg-indigo-50 p-6 rounded-[2rem] border border-indigo-100">
+                                    <div><h3 class="font-black text-indigo-700">Thermostat Controller</h3><p id="control-mode-desc" class="text-[10px] text-indigo-500">Closed-Loop stability via feedback.</p></div>
+                                    <button id="toggle-loop-btn" onclick="toggleLoopType()" class="bg-indigo-600 text-white px-6 py-2 rounded-xl text-[10px] font-black uppercase transition-all">Switch Loop Mode</button>
+                                </div>
+                                
+                                <!-- Animated Hardware Cycle Diagram -->
+                                <div class="relative bg-white p-6 rounded-[2rem] border-2 border-slate-100 shadow-sm my-4">
+                                    <div class="flex flex-col md:flex-row justify-between items-center relative z-10 gap-2 md:gap-0">
+                                        <!-- Connecting Path Background -->
+                                        <div class="hidden md:block absolute top-1/2 left-8 right-8 h-1 bg-slate-100 -z-10 -translate-y-1/2"></div>
+                                        
+                                        <div id="comp-sensor" class="w-full md:w-24 h-auto md:h-24 bg-white border-4 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 p-2 md:p-0">
+                                            <p class="text-[9px] font-black text-slate-400 mb-1">SENSOR</p>
+                                            <p class="text-[9px] font-bold italic">Thermistor</p>
+                                        </div>
+                                        
+                                        <svg class="w-6 h-6 text-slate-300 rotate-90 md:rotate-0 my-1 md:my-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                        
+                                        <div id="comp-trans" class="w-full md:w-24 h-auto md:h-24 bg-white border-4 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 p-2 md:p-0">
+                                            <p class="text-[9px] font-black text-slate-400 mb-1">ADC TRANSDUCER</p>
+                                            <p class="text-[9px] font-bold italic">A-to-D</p>
+                                        </div>
+
+                                        <svg class="w-6 h-6 text-slate-300 rotate-90 md:rotate-0 my-1 md:my-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+
+                                        <div id="comp-algo" class="w-full md:w-32 h-auto md:h-24 bg-white border-4 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 p-2 md:p-0">
+                                            <p class="text-[9px] font-black text-slate-400 mb-1">MICROPROCESSOR</p>
+                                            <p class="text-[9px] font-bold italic text-indigo-600">Algorithm Logic</p>
+                                        </div>
+
+                                        <svg class="w-6 h-6 text-slate-300 rotate-90 md:rotate-0 my-1 md:my-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+
+                                        <div id="comp-actuator" class="w-full md:w-24 h-auto md:h-24 bg-white border-4 border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center transition-all duration-300 p-2 md:p-0">
+                                            <p class="text-[9px] font-black text-slate-400 mb-1">ACTUATOR</p>
+                                            <p id="actuator-status" class="text-[9px] font-bold italic">Heater OFF</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Physical Feedback Loop Indicator -->
+                                    <div id="feedback-path" class="hidden md:flex mt-6 border-b-4 border-l-4 border-r-4 border-slate-200 border-dashed rounded-b-3xl h-8 mx-12 relative items-center justify-center transition-all duration-300">
+                                        <span id="feedback-label" class="bg-white px-3 text-[10px] font-black text-slate-400 uppercase tracking-widest absolute -bottom-3 transition-colors">Physical Environment Feedback</span>
+                                        <div id="feedback-arrow" class="absolute -left-2 top-0 w-3 h-3 border-t-4 border-r-4 border-slate-200 -rotate-45 transition-colors"></div>
+                                    </div>
+                                </div>
+
+                                <!-- User Controls -->
+                                <div class="bg-slate-50 p-8 rounded-[2rem] space-y-6">
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between"><label class="text-xs font-black text-slate-500 uppercase tracking-widest">Target Setpoint (°C)</label><span id="target-val" class="text-xs font-black text-indigo-600">22.0</span></div>
+                                        <input type="range" id="target-slider" min="10" max="40" step="0.5" value="22" oninput="updateTarget(this.value)" class="w-full accent-indigo-600">
+                                    </div>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between"><label class="text-xs font-black text-slate-500 uppercase tracking-widest">Ambient Weather (°C)</label><span id="ambient-val" class="text-xs font-black text-sky-600">10.0</span></div>
+                                        <input type="range" id="ambient-slider" min="-10" max="40" step="0.5" value="10" oninput="updateAmbient(this.value)" class="w-full accent-sky-600">
+                                    </div>
+                                </div>
+
+                                <div class="bg-slate-900 p-6 rounded-[2rem] flex items-center justify-between">
+                                    <div class="text-white">
+                                        <p class="text-[10px] font-black uppercase text-slate-500">Current Error Margin</p>
+                                        <p id="error-display" class="text-2xl font-black text-indigo-400">0.0°C</p>
+                                    </div>
+                                    <div id="system-logic-output" class="text-right text-[10px] font-mono text-indigo-300 max-w-[200px]">
+                                        // Logic Output<br>IF actual < target THEN heater = true
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- OVERVIEW & TERMINOLOGY -->
+                    <div class="bg-indigo-600 text-white p-12 rounded-[3rem] shadow-xl">
+                        <h3 class="text-3xl font-black mb-6 italic">Control Systems Overview</h3>
+                        <div class="grid md:grid-cols-2 gap-10">
+                            <div class="space-y-4">
+                                <div class="bg-white/10 p-5 rounded-2xl border border-white/20">
+                                    <h4 class="font-black text-indigo-200 text-xs uppercase tracking-widest mb-1">Closed-Loop (Feedback)</h4>
+                                    <p class="text-sm opacity-90 leading-relaxed">The output of the system is continuously measured and fed back into the controller to adjust the input, maintaining a target state (e.g., HVAC). Adapts to external changes.</p>
+                                </div>
+                                <div class="bg-white/10 p-5 rounded-2xl border border-white/20">
+                                    <h4 class="font-black text-indigo-200 text-xs uppercase tracking-widest mb-1">Open-Loop</h4>
+                                    <p class="text-sm opacity-90 leading-relaxed">Executes a fixed process based solely on the input, regardless of the actual output or result (e.g., a basic toaster timer). Cannot adapt to changes.</p>
+                                </div>
+                            </div>
+                            <div class="space-y-4 flex flex-col justify-center">
+                                <h4 class="font-black text-indigo-200 text-xs uppercase tracking-widest mb-2">Hardware Stack</h4>
+                                <ul class="space-y-3 text-sm bg-indigo-900/50 p-6 rounded-2xl border border-indigo-500/30">
+                                    <li class="flex items-start gap-3"><span class="font-black text-indigo-300 w-24">Sensors:</span><span class="opacity-90">Collects physical data (temp, light, motion).</span></li>
+                                    <li class="flex items-start gap-3"><span class="font-black text-indigo-300 w-24">Transducers:</span><span class="opacity-90">Converts physical energy into electrical signals (e.g., Analog-to-Digital Converter).</span></li>
+                                    <li class="flex items-start gap-3"><span class="font-black text-indigo-300 w-24">Algorithm:</span><span class="opacity-90">The logic loop ("If temp < target, heat").</span></li>
+                                    <li class="flex items-start gap-3"><span class="font-black text-indigo-300 w-24">Actuators:</span><span class="opacity-90">Mechanical outputs (motors, valves, heaters).</span></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ALL 8 SYLLABUS EXAMPLES -->
+                    <div class="bg-slate-900 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden">
+                        <h3 class="text-3xl font-black text-indigo-400 mb-10 italic uppercase tracking-widest text-center">A1.3.7 Real-World Applications</h3>
+                        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 relative z-10">
+                            
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">1. Auto Vehicles</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">LIDAR, Radar, Cameras</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Steering motors, Brakes</p>
+                                <p class="text-[10px] text-indigo-400 italic">Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">2. Thermostats</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Thermistors (Temp)</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">HVAC Switches, Boiler</p>
+                                <p class="text-[10px] text-indigo-400 italic">Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">3. Elevators</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Load (Weight), Proximity</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Winch motor, Door servos</p>
+                                <p class="text-[10px] text-indigo-400 italic">Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">4. Washing Machines</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Water level, Load weight</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Drum motor, Water valves</p>
+                                <p class="text-[10px] text-indigo-400 italic">Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">5. Traffic Signals</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Induction loops, Cameras</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">LED Light clusters</p>
+                                <p class="text-[10px] text-indigo-400 italic">Adaptive Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">6. Irrigation</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Soil moisture, Temp</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Water pumps, Sprinklers</p>
+                                <p class="text-[10px] text-indigo-400 italic">Closed-Loop</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">7. Home Security</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">PIR (Motion), Glass break</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Alarm sirens, Auto-locks</p>
+                                <p class="text-[10px] text-rose-400 italic">Open-Loop (Triggered)</p>
+                            </div>
+
+                            <div class="p-6 bg-white/5 rounded-3xl border border-white/10 hover:bg-white/10 transition-all">
+                                <h4 class="font-black text-indigo-300 mb-4 border-b border-white/10 pb-2 text-sm uppercase">8. Auto Doors</h4>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Sensors</p><p class="text-xs mb-3 text-slate-300">Radar / IR Motion</p>
+                                <p class="text-[10px] uppercase font-bold text-slate-500">Actuators</p><p class="text-xs mb-3 text-slate-300">Linear motors / Pneumatics</p>
+                                <p class="text-[10px] text-rose-400 italic">Open-Loop (Triggered)</p>
+                            </div>
+
+                        </div>
+                        <div class="absolute -top-32 -left-32 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A1.4.1 TRANSLATION -->
+            <div id="translation" class="tab-content animate-fade">
+                <div class="max-w-6xl mx-auto space-y-12 text-center">
+                    <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Translation Processes (HL)</h2>
+                    <span class="px-4 py-1 bg-orange-100 rounded-full text-[10px] font-black uppercase text-orange-600 tracking-widest">A1.4.1 Evaluating Interpreters & Compilers</span>
+                    
+                    <!-- Core Mechanics & Differences -->
+                    <div class="grid md:grid-cols-2 gap-8 text-left mt-8">
+                        <div class="bg-white border-4 border-orange-100 rounded-[3rem] overflow-hidden shadow-xl">
+                            <div class="bg-orange-600 p-8 text-white">
+                                <h3 class="text-3xl font-black mb-1 italic">Compilers</h3>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Ahead-Of-Time (AOT)</p>
+                            </div>
+                            <div class="p-8 space-y-6 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-orange-600 uppercase text-xs tracking-widest">Mechanics:</strong> Translates the <em>entire</em> source program into machine code (object code) to create a standalone executable file before execution begins.</p>
+                                
+                                <div class="bg-orange-50 p-6 rounded-3xl border border-orange-100 space-y-4">
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Translation Time</strong>Slow initially (translates everything at once), but execution is extremely fast.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Error Detection</strong>Full list of syntax errors reported only <em>after</em> the entire compilation scan finishes.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Portability</strong>Low. The generated executable is tied to a specific hardware architecture/OS.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Applicability</strong>Final production builds, commercial software distribution.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white border-4 border-indigo-100 rounded-[3rem] overflow-hidden shadow-xl">
+                            <div class="bg-indigo-600 p-8 text-white">
+                                <h3 class="text-3xl font-black mb-1 italic">Interpreters</h3>
+                                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Line-by-Line Runtime</p>
+                            </div>
+                            <div class="p-8 space-y-6 text-sm text-slate-600 leading-relaxed">
+                                <p><strong class="text-indigo-600 uppercase text-xs tracking-widest">Mechanics:</strong> Translates and executes instructions <em>one line at a time</em> directly from the source code during runtime. No executable is saved.</p>
+                                
+                                <div class="bg-indigo-50 p-6 rounded-3xl border border-indigo-100 space-y-4">
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Translation Time</strong>Fast to start running, but overall execution is slower due to continuous translation overhead.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Error Detection</strong>Stops execution immediately upon encountering the <em>first</em> error, highlighting the exact line.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Portability</strong>High. Source code runs anywhere the interpreter software is installed.</div>
+                                    <div><strong class="text-slate-800 block text-xs uppercase mb-1">Applicability</strong>Scripting, rapid prototyping, web development (JS, Python).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Modern Hybrid Methods (JIT & Bytecode) -->
+                    <div class="bg-slate-900 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden text-left mt-12">
+                        <h3 class="text-2xl font-black text-indigo-400 mb-8 italic uppercase tracking-widest text-center">Modern Hybrid Methods</h3>
+                        <div class="grid md:grid-cols-2 gap-12 relative z-10">
+                            <div class="space-y-4">
+                                <h4 class="text-white font-black uppercase text-sm border-b-2 border-indigo-500/50 pb-2">Bytecode Interpreters</h4>
+                                <p class="text-sm text-slate-300 leading-relaxed">
+                                    Source code is pre-compiled into a highly optimized, platform-neutral intermediate code called <strong>Bytecode</strong>. A Virtual Machine (VM) then interprets this bytecode for the specific hardware (e.g., Java Virtual Machine). Combines syntax checking with high portability.
+                                </p>
+                            </div>
+                            <div class="space-y-4">
+                                <h4 class="text-white font-black uppercase text-sm border-b-2 border-indigo-500/50 pb-2">Just-In-Time (JIT) Compilation</h4>
+                                <p class="text-sm text-slate-300 leading-relaxed">
+                                    Works alongside bytecode. Instead of interpreting bytecode line-by-line, the JIT compiler translates frequently used bytecode into native machine code <strong>during runtime</strong>. This provides near-compiled execution speed while maintaining cross-platform portability.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-[100px]"></div>
+                    </div>
+
+                    <!-- Mandatory Example Scenarios -->
+                    <div class="bg-white border-4 border-slate-100 rounded-[3.5rem] p-10 shadow-lg mt-12">
+                        <h3 class="text-2xl font-black text-slate-800 mb-10 uppercase tracking-tighter text-center">Syllabus Example Scenarios</h3>
+                        <div class="grid md:grid-cols-3 gap-6 text-left">
+                            
+                            <div class="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-indigo-400 transition-all flex flex-col h-full">
+                                <div class="w-12 h-12 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-black mb-6">1</div>
+                                <h4 class="font-black text-slate-800 text-sm uppercase mb-3">Rapid Development & Testing</h4>
+                                <p class="text-xs text-slate-500 mb-8 leading-relaxed flex-grow">Developers need immediate feedback on code changes without waiting for lengthy build times. Line-by-line error pausing is crucial.</p>
+                                <div class="bg-indigo-600 text-white text-[10px] font-black py-3 rounded-xl uppercase tracking-widest text-center mt-auto shadow-md">Use: Interpreter</div>
+                            </div>
+
+                            <div class="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-orange-400 transition-all flex flex-col h-full">
+                                <div class="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 font-black mb-6">2</div>
+                                <h4 class="font-black text-slate-800 text-sm uppercase mb-3">Performance-Critical Apps</h4>
+                                <p class="text-xs text-slate-500 mb-8 leading-relaxed flex-grow">Game engines, complex physics simulations, or OS kernels where maximum execution speed and zero runtime-translation overhead is paramount.</p>
+                                <div class="bg-orange-600 text-white text-[10px] font-black py-3 rounded-xl uppercase tracking-widest text-center mt-auto shadow-md">Use: Compiler</div>
+                            </div>
+
+                            <div class="p-8 bg-slate-50 rounded-3xl border border-slate-200 hover:border-emerald-400 transition-all flex flex-col h-full">
+                                <div class="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 font-black mb-6">3</div>
+                                <h4 class="font-black text-slate-800 text-sm uppercase mb-3">Cross-Platform Development</h4>
+                                <p class="text-xs text-slate-500 mb-8 leading-relaxed flex-grow">Writing an application once and deploying it on Windows, macOS, Android, and iOS hardware without needing to rewrite or recompile code for each.</p>
+                                <div class="bg-emerald-600 text-white text-[10px] font-black py-3 rounded-xl uppercase tracking-widest text-center mt-auto shadow-md">Use: Bytecode / JIT</div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- VOCABULARY TAB -->
+            <div id="vocabulary" class="tab-content animate-fade">
+                <div class="max-w-6xl mx-auto space-y-12">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Vocabulary & Key Terms</h2>
+                        <span class="px-4 py-1 bg-slate-100 rounded-full text-[10px] font-black uppercase text-slate-500">Definitions for A1.3 to A1.4</span>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-8">
+                        <!-- OS & Scheduling Vocab -->
+                        <div class="space-y-4">
+                            <h3 class="font-black text-indigo-600 uppercase text-sm border-b-2 border-indigo-100 pb-2">Operating Systems & Scheduling</h3>
+                            
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">Virtual Memory</h4>
+                                <p class="text-xs text-slate-600 mt-1">A memory management capability of an OS that uses hardware and software to allow a computer to compensate for physical memory shortages by temporarily transferring data from random access memory (RAM) to disk storage.</p>
+                            </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">Device Driver</h4>
+                                <p class="text-xs text-slate-600 mt-1">A software program that operates or controls a particular type of device that is attached to a computer.</p>
+                            </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">Round Robin (RR)</h4>
+                                <p class="text-xs text-slate-600 mt-1">A scheduling algorithm where each process is assigned a fixed time slot (quantum) in a cyclic order. It ensures fairness and prevents starvation.</p>
+                            </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">First-Come, First-Served (FCFS)</h4>
+                                <p class="text-xs text-slate-600 mt-1">A scheduling algorithm that automatically executes queued requests and processes by the order of their arrival.</p>
+                            </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">Polling</h4>
+                                <p class="text-xs text-slate-600 mt-1">The continuous checking of the status of a hardware device by the CPU to see if it needs attention (Busy-Waiting).</p>
+                            </div>
+                            <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200">
+                                <h4 class="font-black text-slate-800">Interrupt</h4>
+                                <p class="text-xs text-slate-600 mt-1">A signal to the processor emitted by hardware or software indicating an event that needs immediate attention.</p>
+                            </div>
+                        </div>
+
+                        <!-- HL Vocab -->
+                        <div class="space-y-4">
+                            <h3 class="font-black text-rose-600 uppercase text-sm border-b-2 border-rose-100 pb-2">HL Specific: Multitasking, Control & Translation</h3>
+                            
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Deadlock</h4>
+                                <p class="text-xs text-rose-700 mt-1">A situation in OS multitasking where two or more processes are unable to proceed because each is waiting for one of the others to do something.</p>
+                            </div>
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Transducer</h4>
+                                <p class="text-xs text-rose-700 mt-1">An electronic device that converts energy from one form to another. In control systems, it usually converts physical property measurements into electrical signals (e.g., ADC).</p>
+                            </div>
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Actuator</h4>
+                                <p class="text-xs text-rose-700 mt-1">A component of a machine that is responsible for moving and controlling a mechanism or system (e.g., a motor or valve).</p>
+                            </div>
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Closed-Loop System</h4>
+                                <p class="text-xs text-rose-700 mt-1">A control system that uses feedback from the output to control the input, allowing it to automatically correct errors.</p>
+                            </div>
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Compiler</h4>
+                                <p class="text-xs text-rose-700 mt-1">A translator that converts a high-level programming language into machine code in one single batch before execution.</p>
+                            </div>
+                            <div class="bg-rose-50 p-5 rounded-2xl border border-rose-100 hl-content">
+                                <h4 class="font-black text-rose-900">Just-In-Time (JIT) Compilation</h4>
+                                <p class="text-xs text-rose-700 mt-1">A method that translates intermediate code (bytecode) into machine code at runtime, combining the speed of compilation with the portability of interpretation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QUIZ TAB -->
+            <div id="quiz" class="tab-content animate-fade">
+                <div class="max-w-4xl mx-auto space-y-8">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">A1.3 & A1.4 Knowledge Check</h2>
+                        <span class="px-4 py-1 bg-indigo-100 rounded-full text-[10px] font-black uppercase text-indigo-500">10 Questions</span>
+                    </div>
+
+                    <div id="quiz-container" class="bg-white border-4 border-slate-100 rounded-[3rem] p-10 shadow-xl relative overflow-hidden">
+                        
+                        <div class="flex justify-between items-center mb-8 border-b-2 border-slate-100 pb-4" id="quiz-header">
+                            <p class="font-black text-slate-400 text-sm tracking-widest">QUESTION <span id="quiz-q-num" class="text-indigo-600 text-xl">1</span>/10</p>
+                            <p class="font-black text-slate-400 text-sm tracking-widest">SCORE: <span id="quiz-score" class="text-indigo-600 text-xl">0</span></p>
+                        </div>
+
+                        <div id="quiz-question-area">
+                            <h3 id="quiz-question-text" class="text-2xl font-bold text-slate-800 mb-8 leading-relaxed">Loading question...</h3>
+                            <div id="quiz-options-container" class="space-y-4"></div>
+                        </div>
+
+                        <div id="quiz-feedback-area" class="mt-8 hidden">
+                            <div id="quiz-feedback-box" class="p-6 rounded-2xl border-2 mb-6">
+                                <h4 id="quiz-feedback-title" class="font-black text-lg mb-2">Correct!</h4>
+                                <p id="quiz-feedback-text" class="text-sm">Explanation text goes here.</p>
+                            </div>
+                            <button onclick="nextQuizQuestion()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl shadow-lg transition-all active:scale-95 text-lg">Next Question</button>
+                        </div>
+
+                        <div id="quiz-results-area" class="text-center py-12 hidden">
+                            <div class="inline-flex items-center justify-center w-32 h-32 bg-indigo-50 rounded-full mb-6 border-8 border-indigo-100">
+                                <span id="quiz-final-score" class="text-5xl font-black text-indigo-600">70%</span>
+                            </div>
+                            <h3 class="text-3xl font-black text-slate-800 mb-4">Quiz Complete!</h3>
+                            <p id="quiz-final-message" class="text-slate-500 mb-10 text-lg">Great job reviewing the fundamentals.</p>
+                            <button onclick="resetQuiz()" class="bg-indigo-600 text-white font-black px-10 py-4 rounded-2xl shadow-lg hover:bg-indigo-700 transition-all">RETAKE QUIZ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHALLENGES TAB -->
+            <div id="challenges" class="tab-content animate-fade">
+                <div class="max-w-6xl mx-auto space-y-12">
+                    <div class="text-center">
+                        <h2 class="text-4xl font-black text-slate-800 mb-2 tracking-tight">Research Challenges</h2>
+                        <span class="px-4 py-1 bg-indigo-100 rounded-full text-[10px] font-black uppercase text-indigo-500">Apply Your Knowledge</span>
+                    </div>
+
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <!-- Challenge 1 -->
+                        <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-8 shadow-xl flex flex-col hover:border-indigo-300 transition-colors">
+                            <div class="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 font-black mb-6 text-xl">1</div>
+                            <h3 class="text-xl font-black text-slate-800 mb-3">The Mars Rover OS</h3>
+                            <div class="space-y-4 text-sm text-slate-600 leading-relaxed flex-grow">
+                                <p><strong>Context:</strong> NASA's Mars rovers (like Perseverance) use a Real-Time Operating System (RTOS) called <em>VxWorks</em>.</p>
+                                <p><strong>Research Task:</strong> Investigate why a space rover cannot use a standard Round Robin scheduling approach. Explain why <em>Priority Scheduling</em> and strict <em>Interrupt Handling</em> are critical for its survival. Look up the famous "Mars Pathfinder Priority Inversion" glitch to understand how a multitasking synchronization issue almost cost the mission.</p>
+                            </div>
+                            <div class="mt-6 pt-6 border-t-2 border-slate-100">
+                                <span class="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Syllabus: A1.3.3 & A1.3.4</span>
+                            </div>
+                        </div>
+
+                        <!-- Challenge 2 -->
+                        <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-8 shadow-xl flex flex-col hover:border-emerald-300 transition-colors">
+                            <div class="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600 font-black mb-6 text-xl">2</div>
+                            <h3 class="text-xl font-black text-slate-800 mb-3">Smart Greenhouse</h3>
+                            <div class="space-y-4 text-sm text-slate-600 leading-relaxed flex-grow">
+                                <p><strong>Context:</strong> You are hired to automate a large-scale commercial greenhouse to maximize crop yield while minimizing water and energy waste.</p>
+                                <p><strong>Research Task:</strong> Design the complete Control System. Map out at least three distinct sub-systems (e.g., watering, temperature, light). Identify the specific sensors, transducers, and actuators required. For each sub-system, justify whether it should use Open-Loop or Closed-Loop logic, and detail the feedback mechanism.</p>
+                            </div>
+                            <div class="mt-6 pt-6 border-t-2 border-slate-100">
+                                <span class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Syllabus: A1.3.6 & A1.3.7 (HL)</span>
+                            </div>
+                        </div>
+
+                        <!-- Challenge 3 -->
+                        <div class="bg-white border-4 border-slate-100 rounded-[3rem] p-8 shadow-xl flex flex-col hover:border-orange-300 transition-colors">
+                            <div class="w-14 h-14 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 font-black mb-6 text-xl">3</div>
+                            <h3 class="text-xl font-black text-slate-800 mb-3">The V8 Engine</h3>
+                            <div class="space-y-4 text-sm text-slate-600 leading-relaxed flex-grow">
+                                <p><strong>Context:</strong> JavaScript was originally a pure interpreted language, making it slow. Today, modern web browsers use complex engines like Google's V8 to run rich, 3D applications seamlessly.</p>
+                                <p><strong>Research Task:</strong> Research how the V8 engine processes code. Explain how it uniquely combines both an Interpreter (for rapid initial execution) and a Just-In-Time (JIT) Compiler (to optimize "hot" code paths into machine code). Summarize how this hybrid translation approach gives web apps the best of both worlds.</p>
+                            </div>
+                            <div class="mt-6 pt-6 border-t-2 border-slate-100">
+                                <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Syllabus: A1.4.1 (HL)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="max-w-7xl mx-auto p-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">
+        <p>IB COMPUTER SCIENCE REVISION HUB • A1.3 to A1.4 COMPLETE</p>
+    </footer>
+
+    <script>
+        let isHL = true;
+
+        // --- SCHEDULING SIMULATOR ---
+        let simProcesses = [{ id: 'P1', burst: 5, remaining: 5, priority: 2, color: '#4f46e5' }, { id: 'P2', burst: 3, remaining: 3, priority: 1, color: '#ec4899' }, { id: 'P3', burst: 2, remaining: 2, priority: 3, color: '#f59e0b' }];
+        let simTime = 0; let simHistory = []; let rrQueue = ['P1', 'P2', 'P3']; let rrCounter = 0; const QUANTUM = 2;
+        function updateSimUI() {
+            const timeEl = document.getElementById('sim-time'); if(timeEl) timeEl.innerText = simTime;
+            const tableBody = document.getElementById('proc-table-body'); if(tableBody) tableBody.innerHTML = simProcesses.map(p => `<tr class="${p.remaining === 0 ? 'opacity-30' : ''}"><td class="p-4" style="color: ${p.remaining > 0 ? p.color : ''}">${p.id}</td><td class="p-4 text-right">${p.remaining}ms</td></tr>`).join('');
+            const chart = document.getElementById('gantt-chart'); if(chart) { const totalSteps = Math.max(simTime, 12); chart.innerHTML = simHistory.map(entry => `<div class="gantt-block" style="background-color: ${entry.color}; width: ${100 / totalSteps}%">${entry.id}</div>`).join(''); }
+            const activeDisplay = document.getElementById('sim-active'); if(activeDisplay) { const last = simHistory[simHistory.length - 1]; activeDisplay.innerText = (last && simProcesses.find(p => p.id === last.id).remaining >= 0) ? last.id : '-'; }
+        }
+        function stepSim() {
+            const algo = document.getElementById('algo-select').value; let activeProc = null;
+            if (algo === 'fcfs') activeProc = simProcesses.find(p => p.remaining > 0);
+            else if (algo === 'priority') { const ready = simProcesses.filter(p => p.remaining > 0); if (ready.length > 0) activeProc = ready.reduce((prev, curr) => prev.priority <= curr.priority ? prev : curr); }
+            else if (algo === 'rr') { while (rrQueue.length > 0) { const cand = rrQueue[0]; const p = simProcesses.find(proc => proc.id === cand); if (p.remaining > 0) { activeProc = p; break; } else { rrQueue.shift(); } }
+                if (activeProc) { rrCounter++; if (rrCounter >= QUANTUM || (activeProc.remaining - 1) === 0) { rrQueue.shift(); if (activeProc.remaining - 1 > 0) rrQueue.push(activeProc.id); rrCounter = 0; } }
+            }
+            if (!activeProc) return; activeProc.remaining--; simTime++; simHistory.push({ id: activeProc.id, color: activeProc.color }); updateSimUI();
+        }
+        function resetSim() { simProcesses = [{ id: 'P1', burst: 5, remaining: 5, priority: 2, color: '#4f46e5' }, { id: 'P2', burst: 3, remaining: 3, priority: 1, color: '#ec4899' }, { id: 'P3', burst: 2, remaining: 2, priority: 3, color: '#f59e0b' }]; simTime = 0; simHistory = []; rrQueue = simProcesses.map(p => p.id); rrCounter = 0; updateSimUI(); }
+        function addProcess() { const id = 'P' + (simProcesses.length + 1); const colors = ['#8b5cf6', '#06b6d4', '#f43f5e']; simProcesses.push({ id: id, burst: 4, remaining: 4, priority: 2, color: colors[simProcesses.length % colors.length] }); resetSim(); }
+
+        // --- POLLING & INTERRUPT LOGIC ---
+        let pollingActive = false; let pollingIdx = 0; let pCycles = 0; let pData = [false, false, false];
+        const pPositions = ["0%", "37%", "75%"]; const pNames = ["DEVICE A", "DEVICE B", "DEVICE C"];
+        function togglePollingSim() { pollingActive = !pollingActive; const btn = document.getElementById('polling-btn'); if(btn) btn.innerText = pollingActive ? "Stop Polling Loop" : "Resume Polling Loop"; if(pollingActive) runPollingStep(); }
+        function runPollingStep() { if(!pollingActive) return; const cpu = document.getElementById('polling-cpu'); const status = document.getElementById('polling-status'); const target = document.getElementById('polling-target'); const cycleCount = document.getElementById('polling-cycles'); if(cpu) cpu.style.left = pPositions[pollingIdx]; if(target) target.innerText = pNames[pollingIdx]; if(status) status.innerText = "QUERY..."; pCycles++; if(cycleCount) cycleCount.innerText = pCycles; [0,1,2].forEach(i => { if(document.getElementById(`p-dev-${i}`)) document.getElementById(`p-dev-${i}`).classList.remove('device-active'); }); if(document.getElementById(`p-dev-${pollingIdx}`)) document.getElementById(`p-dev-${pollingIdx}`).classList.add('device-active'); setTimeout(() => { if(pData[pollingIdx]) { if(status) status.innerText = "FETCHING!"; if(document.getElementById(`p-dev-${pollingIdx}-data`)) document.getElementById(`p-dev-${pollingIdx}-data`).innerText = "RECEIVED!"; pData[pollingIdx] = false; setTimeout(() => { if(document.getElementById(`p-dev-${pollingIdx}-data`)) document.getElementById(`p-dev-${pollingIdx}-data`).innerText = "EMPTY"; if(status) status.innerText = "NEXT >>"; pollingIdx = (pollingIdx + 1) % 3; setTimeout(runPollingStep, 600); }, 1000); } else { if(status) status.innerText = "NO DATA"; setTimeout(() => { pollingIdx = (pollingIdx + 1) % 3; runPollingStep(); }, 800); } }, 500); }
+        function triggerPollingData(idx) { pData[idx] = true; if(document.getElementById(`p-dev-${idx}-data`)) document.getElementById(`p-dev-${idx}-data`).innerText = "DATA READY"; }
+        let intActive = false; let iCycles = 0; let isHandlingInt = false; const iNames = ["DEVICE A", "DEVICE B", "DEVICE C"];
+        function toggleIntSim() { intActive = !intActive; const btn = document.getElementById('int-btn'); if(btn) btn.innerText = intActive ? "Stop CPU Work" : "Resume CPU Work"; if(intActive) runIntStep(); }
+        function runIntStep() { if(!intActive || isHandlingInt) return; iCycles++; if(document.getElementById('int-cycles')) document.getElementById('int-cycles').innerText = iCycles; if(document.getElementById('int-task')) document.getElementById('int-task').innerText = "BG PROCESS: " + (iCycles % 9999); if(document.getElementById('int-status')) document.getElementById('int-status').innerText = "BACKGROUND WORK"; setTimeout(runIntStep, 150); }
+        function triggerInterrupt(idx) { if(!intActive || isHandlingInt) return; isHandlingInt = true; const cpu = document.getElementById('int-cpu'); const status = document.getElementById('int-status'); const alert = document.getElementById('int-alert'); if(status) status.innerText = "SIGNAL FROM " + iNames[idx]; if(alert) alert.classList.remove('hidden'); if(cpu) { cpu.classList.add('status-pulse', 'bg-rose-700'); if(document.getElementById('int-task')) document.getElementById('int-task').innerText = "ISR [" + iNames[idx] + "]"; } setTimeout(() => { isHandlingInt = false; if(alert) alert.classList.add('hidden'); if(cpu) cpu.classList.remove('status-pulse', 'bg-rose-700'); runIntStep(); }, 2000); }
+
+        // --- DEADLOCK LOGIC (WITH NULL CHECKS) ---
+        let deadlockState = { p1Holding: null, p1Requesting: null, p2Holding: null, p2Requesting: null };
+        function p1Action() { 
+            if (deadlockState.p1Holding === null) { 
+                deadlockState.p1Holding = 'printer'; 
+                if(document.getElementById('p1-status')) document.getElementById('p1-status').innerText = "HOLDING PRINTER"; 
+                if(document.getElementById('res-printer')) document.getElementById('res-printer').classList.add('holding'); 
+                if(document.getElementById('printer-owner')) document.getElementById('printer-owner').innerText = "HELD BY P1"; 
+                if(document.getElementById('p1-btn')) {
+                    document.getElementById('p1-btn').innerText = "P1: REQUEST SCANNER"; 
+                    document.getElementById('p1-btn').classList.replace('bg-indigo-600', 'bg-emerald-600');
+                }
+            } else if (deadlockState.p1Requesting === null) { 
+                deadlockState.p1Requesting = 'scanner'; 
+                if(document.getElementById('p1-status')) document.getElementById('p1-status').innerText = "WAITING FOR SCANNER"; 
+                if(document.getElementById('p1-node')) document.getElementById('p1-node').classList.add('requesting'); 
+                checkDeadlock(); 
+            } 
+        }
+        function p2Action() { 
+            if (deadlockState.p2Holding === null) { 
+                deadlockState.p2Holding = 'scanner'; 
+                if(document.getElementById('p2-status')) document.getElementById('p2-status').innerText = "HOLDING SCANNER"; 
+                if(document.getElementById('res-scanner')) document.getElementById('res-scanner').classList.add('holding'); 
+                if(document.getElementById('scanner-owner')) document.getElementById('scanner-owner').innerText = "HELD BY P2"; 
+                if(document.getElementById('p2-btn')) {
+                    document.getElementById('p2-btn').innerText = "P2: REQUEST PRINTER"; 
+                    document.getElementById('p2-btn').classList.replace('bg-indigo-600', 'bg-emerald-600');
+                }
+            } else if (deadlockState.p2Requesting === null) { 
+                deadlockState.p2Requesting = 'printer'; 
+                if(document.getElementById('p2-status')) document.getElementById('p2-status').innerText = "WAITING FOR PRINTER"; 
+                if(document.getElementById('p2-node')) document.getElementById('p2-node').classList.add('requesting'); 
+                checkDeadlock(); 
+            } 
+        }
+        function checkDeadlock() { 
+            if (deadlockState.p1Holding === 'printer' && deadlockState.p1Requesting === 'scanner' && deadlockState.p2Holding === 'scanner' && deadlockState.p2Requesting === 'printer') { 
+                if(document.getElementById('deadlock-alert')) document.getElementById('deadlock-alert').classList.remove('hidden'); 
+            } 
+        }
+        function resetDeadlock() { 
+            deadlockState = { p1Holding: null, p1Requesting: null, p2Holding: null, p2Requesting: null }; 
+            document.querySelectorAll('.resource-node').forEach(n => n.classList.remove('holding', 'requesting')); 
+            if(document.getElementById('deadlock-alert')) document.getElementById('deadlock-alert').classList.add('hidden'); 
+            if(document.getElementById('p1-status')) document.getElementById('p1-status').innerText = "IDLE"; 
+            if(document.getElementById('p2-status')) document.getElementById('p2-status').innerText = "IDLE"; 
+            if(document.getElementById('printer-owner')) document.getElementById('printer-owner').innerText = "AVAILABLE"; 
+            if(document.getElementById('scanner-owner')) document.getElementById('scanner-owner').innerText = "AVAILABLE"; 
+            if(document.getElementById('p1-btn')) { 
+                document.getElementById('p1-btn').innerText = "P1: ACQUIRE PRINTER"; 
+                document.getElementById('p1-btn').className = "w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all"; 
+            }
+            if(document.getElementById('p2-btn')) { 
+                document.getElementById('p2-btn').innerText = "P2: ACQUIRE SCANNER"; 
+                document.getElementById('p2-btn').className = "w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-lg transition-all"; 
+            }
+        }
+
+        // --- CONTROL SYSTEM SIMULATOR LOGIC ---
+        let actualTemp = 22.0; let targetTemp = 22.0; let ambientTemp = 10.0; let loopType = 'closed'; let heaterOn = false;
+        let controlState = 0; 
+        function updateTarget(val) { targetTemp = parseFloat(val); document.getElementById('target-val').innerText = targetTemp.toFixed(1); }
+        function updateAmbient(val) { ambientTemp = parseFloat(val); document.getElementById('ambient-val').innerText = ambientTemp.toFixed(1); }
+        function toggleLoopType() { 
+            loopType = (loopType === 'closed' ? 'open' : 'closed'); 
+            const btn = document.getElementById('toggle-loop-btn'); 
+            const desc = document.getElementById('control-mode-desc'); 
+            const output = document.getElementById('system-logic-output');
+            
+            if (loopType === 'closed') {
+                if(btn) btn.innerText = "Switch to Open-Loop";
+                if(desc) desc.innerText = "Maintaining stability via feedback.";
+                if(output) output.innerHTML = "// Logic Output<br>IF actual < target THEN heater = true";
+            } else {
+                if(btn) btn.innerText = "Switch to Closed-Loop";
+                if(desc) desc.innerText = "Timer-based. Ignores environment.";
+                if(output) output.innerHTML = "// Logic Output<br>HEATER = ON (Fixed Timer)";
+            }
+            
+            if(loopType === 'open') {
+                const fbPath = document.getElementById('feedback-path');
+                if(fbPath) {
+                    fbPath.classList.replace('border-indigo-500', 'border-slate-200');
+                    if(document.getElementById('feedback-label')) document.getElementById('feedback-label').classList.replace('text-indigo-600', 'text-slate-400');
+                    if(document.getElementById('feedback-arrow')) document.getElementById('feedback-arrow').classList.replace('border-indigo-500', 'border-slate-200');
+                }
+            }
+        }
+        function runControlTick() { 
+            const lossFactor = 0.05; 
+            const comps = ['comp-sensor', 'comp-trans', 'comp-algo', 'comp-actuator'];
+            comps.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) { el.classList.remove('border-indigo-500', 'shadow-lg', 'scale-110'); el.classList.add('border-slate-100'); }
+            });
+            const fbPath = document.getElementById('feedback-path');
+            const fbLabel = document.getElementById('feedback-label');
+            const fbArrow = document.getElementById('feedback-arrow');
+
+            if (controlState === 0) {
+                const el = document.getElementById('comp-sensor');
+                if(el) { el.classList.remove('border-slate-100'); el.classList.add('border-indigo-500', 'shadow-lg', 'scale-110'); }
+                if(fbPath && loopType === 'closed') {
+                    fbPath.classList.replace('border-indigo-500', 'border-slate-200');
+                    if(fbLabel) fbLabel.classList.replace('text-indigo-600', 'text-slate-400');
+                    if(fbArrow) fbArrow.classList.replace('border-indigo-500', 'border-slate-200');
+                }
+            } 
+            else if (controlState === 1) {
+                const el = document.getElementById('comp-trans');
+                if(el) { el.classList.remove('border-slate-100'); el.classList.add('border-indigo-500', 'shadow-lg', 'scale-110'); }
+            }
+            else if (controlState === 2) {
+                const el = document.getElementById('comp-algo');
+                if(el) { el.classList.remove('border-slate-100'); el.classList.add('border-indigo-500', 'shadow-lg', 'scale-110'); }
+                if (loopType === 'closed') { heaterOn = actualTemp < targetTemp; } 
+                else { heaterOn = (Math.round(Date.now() / 1000) % 10 < 5); }
+            }
+            else if (controlState === 3) {
+                const el = document.getElementById('comp-actuator');
+                if(el) { el.classList.remove('border-slate-100'); el.classList.add('border-indigo-500', 'shadow-lg', 'scale-110'); }
+                const actStat = document.getElementById('actuator-status'); 
+                if(actStat) { actStat.innerText = heaterOn ? "Heater ON" : "Heater OFF"; actStat.style.color = heaterOn ? "#f43f5e" : "#94a3b8"; }
+            }
+            else if (controlState === 4) {
+                if (loopType === 'closed' && fbPath) {
+                    fbPath.classList.replace('border-slate-200', 'border-indigo-500');
+                    if(fbLabel) fbLabel.classList.replace('text-slate-400', 'text-indigo-600');
+                    if(fbArrow) fbArrow.classList.replace('border-slate-200', 'border-indigo-500');
+                }
+                actualTemp += (ambientTemp - actualTemp) * lossFactor; 
+                if (heaterOn) actualTemp += 0.8; 
+                
+                const tempDisplay = document.getElementById('actual-temp-display'); 
+                if(tempDisplay) tempDisplay.innerText = actualTemp.toFixed(1) + "°C";
+                const visual = document.getElementById('temp-visual'); 
+                if(visual) { visual.style.height = ((actualTemp - 0) / 40 * 100) + "%"; visual.style.backgroundColor = actualTemp > 25 ? '#f43f5e' : actualTemp < 18 ? '#0ea5e9' : '#10b981'; }
+                
+                const error = targetTemp - actualTemp;
+                const errDisplay = document.getElementById('error-display'); 
+                if(errDisplay) { errDisplay.innerText = error.toFixed(1) + "°C"; errDisplay.style.color = Math.abs(error) < 0.5 ? '#10b981' : '#f43f5e'; }
+            }
+            
+            controlState = (controlState + 1) % 5;
+            setTimeout(runControlTick, 350); 
+        }
+
+        // --- QUIZ LOGIC ---
+        const quizData = [
+            { question: "Which Operating System function is responsible for preventing two applications from writing to the same physical RAM location at the same time?", options: ["Device Management", "Memory Management", "Virtualization", "Process Scheduling"], correct: 1, explanation: "Memory Management oversees RAM allocation, ensuring isolation and preventing memory contention between processes." },
+            { question: "In the Round Robin scheduling approach, what happens when a process's assigned time quantum expires?", options: ["The process is terminated.", "It is moved to the back of the queue.", "It gains a higher priority.", "The CPU stops and waits for user input."], correct: 1, explanation: "Round Robin is preemptive. When the time slice (quantum) runs out, the CPU is given to the next process, and the paused process goes to the back of the line." },
+            { question: "What is the primary disadvantage of using 'Polling' to check peripheral devices?", options: ["It requires complex interrupt service routines.", "It limits the number of devices you can connect.", "It wastes CPU cycles performing 'busy-waiting'.", "It requires a battery backup."], correct: 2, explanation: "Polling means the CPU constantly checks if a device is ready. If no data is there, those query cycles are entirely wasted, hurting efficiency." },
+            { question: "[HL] Which 'Coffman Condition' states that a resource cannot be forcibly taken away from a process by the OS?", options: ["Mutual Exclusion", "Circular Wait", "Hold and Wait", "No Preemption"], correct: 3, explanation: "No Preemption means a process must willingly release its resources; the OS cannot forcefully revoke them to resolve a deadlock." },
+            { question: "[HL] In an automated control system, what is the specific role of a Transducer?", options: ["To perform the physical mechanical movement.", "To convert physical measurements into electrical signals.", "To execute the IF/THEN algorithm.", "To measure the final output of the system."], correct: 1, explanation: "Transducers convert one form of energy (like heat or pressure detected by a sensor) into an electrical signal (Analog-to-Digital) the microprocessor can read." },
+            { question: "[HL] A standard microwave timer (set for 2 minutes) is an example of what type of control system?", options: ["Closed-Loop System", "Open-Loop System", "Interrupt-Driven System", "Polled System"], correct: 1, explanation: "It is an Open-Loop system because there is no feedback. It runs for exactly 2 minutes regardless of whether the food is actually hot or frozen." },
+            { question: "[HL] Which translation approach analyzes and translates the ENTIRE source code into object code before execution?", options: ["Interpreter", "Compiler", "Assembler", "Just-In-Time (JIT) Engine"], correct: 1, explanation: "Compilers translate the whole program in one batch (Ahead-Of-Time), resulting in a highly optimized executable file." },
+            { question: "[HL] If a developer wants execution to pause IMMEDIATELY on the exact line where a syntax error occurs, they should use an:", options: ["Interpreter", "Compiler", "Ostrich Algorithm", "Interrupt Service Routine"], correct: 0, explanation: "Interpreters translate line-by-line. The moment it hits a flawed line, it crashes/pauses, making it excellent for rapid debugging." },
+            { question: "Which of the following would NOT typically be handled by an Operating System?", options: ["Managing file directory structures", "Providing a Graphical User Interface", "Creating new hardware drivers", "Allocating CPU time to different apps"], correct: 2, explanation: "The OS uses hardware drivers to communicate with devices, but it does not *create* them—drivers are written by the hardware manufacturers (like Nvidia or Logitech)." },
+            { question: "[HL] What is the primary benefit of translating source code into 'Bytecode' rather than native machine code?", options: ["It executes faster than native machine code.", "It requires zero RAM to run.", "It allows the code to be highly portable across different platforms (OS/Hardware).", "It prevents deadlocks in multitasking."], correct: 2, explanation: "Bytecode is a platform-neutral intermediate code. As long as a device has the correct Virtual Machine installed (like the Java JVM), it can run the bytecode." }
+        ];
+
+        let currentQIndex = 0; let score = 0; let isQuestionAnswered = false;
+
+        function loadQuizQuestion() {
+            isQuestionAnswered = false; const q = quizData[currentQIndex];
+            const qNumEl = document.getElementById('quiz-q-num'); if(qNumEl) qNumEl.innerText = currentQIndex + 1;
+            const qTextEl = document.getElementById('quiz-question-text'); if(qTextEl) qTextEl.innerText = q.question;
+            const feedbackArea = document.getElementById('quiz-feedback-area'); if(feedbackArea) feedbackArea.classList.add('hidden');
+            const optionsContainer = document.getElementById('quiz-options-container'); 
+            if(optionsContainer) {
+                optionsContainer.innerHTML = '';
+                q.options.forEach((opt, index) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-5 rounded-2xl border-2 border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 font-semibold text-slate-700 transition-all block";
+                    btn.innerText = opt; btn.onclick = () => selectQuizAnswer(index, btn); optionsContainer.appendChild(btn);
+                });
+            }
+        }
+
+        function selectQuizAnswer(selectedIndex, btnElement) {
+            if (isQuestionAnswered) return; isQuestionAnswered = true; const q = quizData[currentQIndex]; const isCorrect = (selectedIndex === q.correct);
+            const optionsContainer = document.getElementById('quiz-options-container');
+            if(optionsContainer) {
+                const allButtons = optionsContainer.children;
+                for(let i=0; i<allButtons.length; i++) {
+                    allButtons[i].classList.add('opacity-50', 'cursor-not-allowed'); allButtons[i].onclick = null;
+                    if(i === q.correct) { allButtons[i].classList.remove('opacity-50', 'border-slate-200', 'hover:border-indigo-400', 'hover:bg-indigo-50'); allButtons[i].classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-800'); }
+                }
+            }
+            if (!isCorrect) { btnElement.classList.remove('opacity-50', 'border-slate-200'); btnElement.classList.add('border-rose-500', 'bg-rose-50', 'text-rose-800', 'opacity-100'); } 
+            else { score++; const scoreEl = document.getElementById('quiz-score'); if(scoreEl) scoreEl.innerText = score; }
+            
+            const feedbackArea = document.getElementById('quiz-feedback-area'); const feedbackBox = document.getElementById('quiz-feedback-box'); const feedbackTitle = document.getElementById('quiz-feedback-title');
+            if(feedbackArea) feedbackArea.classList.remove('hidden');
+            if(feedbackBox && feedbackTitle) {
+                if (isCorrect) { feedbackBox.className = "p-6 rounded-2xl border-2 mb-6 border-emerald-200 bg-emerald-50 text-emerald-900"; feedbackTitle.innerText = "Correct!"; } 
+                else { feedbackBox.className = "p-6 rounded-2xl border-2 mb-6 border-rose-200 bg-rose-50 text-rose-900"; feedbackTitle.innerText = "Incorrect"; }
+            }
+            const feedbackText = document.getElementById('quiz-feedback-text'); if(feedbackText) feedbackText.innerText = q.explanation;
+        }
+
+        function nextQuizQuestion() { currentQIndex++; if (currentQIndex >= quizData.length) { showQuizResults(); } else { loadQuizQuestion(); } }
+
+        function showQuizResults() {
+            const qArea = document.getElementById('quiz-question-area'); if(qArea) qArea.classList.add('hidden'); 
+            const fArea = document.getElementById('quiz-feedback-area'); if(fArea) fArea.classList.add('hidden'); 
+            const qHeader = document.getElementById('quiz-header'); if(qHeader) qHeader.classList.add('hidden');
+            const resArea = document.getElementById('quiz-results-area'); if(resArea) resArea.classList.remove('hidden');
+            
+            const percentage = Math.round((score / quizData.length) * 100); 
+            const fScore = document.getElementById('quiz-final-score'); if(fScore) fScore.innerText = percentage + "%";
+            let msg = "Keep studying!"; if (percentage >= 80) msg = "Excellent job! You have a solid grasp of OS and Control Systems."; if (percentage === 100) msg = "Perfect Score! You've mastered this syllabus section.";
+            const fMsg = document.getElementById('quiz-final-message'); if(fMsg) fMsg.innerText = msg;
+        }
+
+        function resetQuiz() {
+            score = 0; currentQIndex = 0; 
+            const scoreEl = document.getElementById('quiz-score'); if(scoreEl) scoreEl.innerText = score;
+            const qArea = document.getElementById('quiz-question-area'); if(qArea) qArea.classList.remove('hidden'); 
+            const qHeader = document.getElementById('quiz-header'); if(qHeader) qHeader.classList.remove('hidden'); 
+            const resArea = document.getElementById('quiz-results-area'); if(resArea) resArea.classList.add('hidden');
+            loadQuizQuestion();
+        }
+
+        // --- TAB & HL TOGGLE LOGIC ---
+        function toggleHL() { isHL = !isHL; const body = document.body; const toggleDot = document.getElementById('toggle-dot'); if (isHL) { body.classList.remove('sl-only'); if(toggleDot) toggleDot.style.left = '1.5rem'; } else { body.classList.add('sl-only'); if(toggleDot) toggleDot.style.left = '0.25rem'; const activeTab = document.querySelector('.tab-content.active'); if (activeTab && ['multitasking', 'control', 'translation'].includes(activeTab.id)) { showTab('checklist'); } } }
+        function showTab(tabId) { document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active')); const target = document.getElementById(tabId); if(target) target.classList.add('active'); document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active')); const btn = document.getElementById('btn-' + tabId); if(btn) btn.classList.add('active'); }
+        
+        window.onload = () => { updateSimUI(); resetSim(); resetDeadlock(); runControlTick(); loadQuizQuestion(); };
+    </script>
+</body>
+</html>

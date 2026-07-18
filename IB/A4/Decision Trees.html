@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGCSE Computer Science Quiz - Data Representation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .question-card {
+            transition: all 0.3s ease-in-out;
+            border-left: 5px solid transparent;
+        }
+        .option-label, .cloze-input {
+            transition: all 0.2s;
+        }
+        .option-label:hover {
+            background-color: #f0f4f8;
+        }
+        .correct-mc {
+            background-color: #d1fae5 !important;
+            border-color: #10b981;
+        }
+        .incorrect-mc {
+            background-color: #fee2e2 !important;
+            border-color: #ef4444;
+        }
+        .correct-cloze {
+            border-color: #10b981;
+            background-color: #d1fae5;
+        }
+        .incorrect-cloze {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+        }
+        .feedback-correct {
+            color: #10b981;
+        }
+        .feedback-incorrect {
+            color: #ef4444;
+        }
+        .cloze-input {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            border-radius: 0.375rem;
+            width: 120px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800">IGCSE CS Quiz: Data Representation</h1>
+            <p class="text-lg text-gray-600 mt-2">Test your knowledge on Number Systems, Text, Sound, Images, and Data Storage.</p>
+        </header>
+
+        <!-- Student Name Input -->
+        <div id="name-container" class="bg-white p-8 rounded-xl shadow-lg text-center">
+            <h2 class="text-2xl font-bold mb-4">Enter Your Name to Begin</h2>
+            <input type="text" id="student-name-input" placeholder="Your Name" class="w-full max-w-sm p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <p id="name-error" class="text-red-500 mt-2 h-4 font-semibold"></p>
+            <button id="start-quiz-btn" class="mt-4 bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-bold">Start Quiz</button>
+        </div>
+
+        <!-- Main Quiz Content -->
+        <div id="quiz-main-content" class="hidden">
+            <div class="bg-white p-6 rounded-xl shadow-lg sticky top-0 z-10 mb-8">
+                 <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-semibold">Your Progress</h2>
+                    <div>
+                        <span class="text-xl font-bold">Score: </span>
+                        <span id="score" class="text-2xl font-bold text-blue-600">0</span> / <span id="total-questions">5</span>
+                    </div>
+                 </div>
+                 <div class="text-center mt-4">
+                     <button id="quiz-action-btn" class="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 transition-colors font-bold w-full sm:w-auto">Check All Answers</button>
+                 </div>
+            </div>
+
+            <main id="quiz-container" class="space-y-6">
+                <!-- Questions will be dynamically inserted here -->
+            </main>
+
+            <div id="summary-container" class="mt-8 bg-white p-6 rounded-xl shadow-md hidden">
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">Quiz Summary</h3>
+                <div id="review-summary"></div>
+            </div>
+        </div>
+        
+        <!-- Results Leaderboard -->
+        <div id="results-container" class="mt-8 bg-white p-6 rounded-xl shadow-md">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800">Leaderboard</h3>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student Name</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-body" class="bg-white divide-y divide-gray-200">
+                        <!-- Results will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, setLogLevel, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Firebase Config (from environment)
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "test", authDomain: "test.firebaseapp.com", projectId: "test" };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        setLogLevel('debug');
+        
+        let userId = null;
+        let currentStudentName = '';
+        let quizState = 'nameEntry'; // State machine: 'nameEntry', 'inProgress', 'finished'
+
+        // --- Authentication ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log("User is signed in with UID:", user.uid);
+                userId = user.uid;
+                fetchResults();
+            } else {
+                console.log("User is signed out.");
+                userId = null;
+            }
+        });
+
+        async function authenticateUser() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication failed:", error);
+            }
+        }
+        
+        // --- Quiz Data ---
+        const quizData = [
+            { type: 'mc', topic: '1.1 Number systems', question: 'Why do computers use binary to represent data?', options: ['It\'s easier for humans to read', 'It corresponds to the on/off state of transistors', 'It allows for more complex calculations', 'It takes up less storage space'], answer: 'It corresponds to the on/off state of transistors' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The denary number 10 is represented as _____ in binary.', answer: '1010' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The binary number 1101 is _____ in denary.', answer: '13' },
+            { type: 'mc', topic: '1.1 Number systems', question: 'What is the base of the hexadecimal number system?', options: ['2', '10', '8', '16'], answer: '16' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The denary number 26 is _____ in hexadecimal.', answer: '1A' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The hexadecimal number 3B is _____ in denary.', answer: '59' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The hexadecimal number F is _____ in binary.', answer: '1111' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The binary number 10011110 is _____ in hexadecimal.', answer: '9E' },
+            { type: 'mc', topic: '1.1 Number systems', question: 'Why is hexadecimal often used in computer science?', options: ['It is the native language of the CPU', 'It directly represents decimal numbers', 'It is a shorter, more human-friendly representation of binary', 'It supports floating-point numbers better than binary'], answer: 'It is a shorter, more human-friendly representation of binary' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'Adding the 8-bit binary numbers 00101101 and 01010010 results in ____________.', answer: '01111111' },
+            { type: 'mc', topic: '1.1 Number systems', question: 'An overflow error occurs in an 8-bit register when the result of an addition is:', options: ['Greater than 127', 'Exactly 255', 'Greater than 255', 'A negative number'], answer: 'Greater than 255' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'Performing a logical left shift by one position on the binary number 00010110 results in ____________.', answer: '00101100' },
+            { type: 'mc', topic: '1.1 Number systems', question: 'What is the effect of a logical right shift by two positions on a positive binary integer?', options: ['Multiplication by 4', 'Division by 4', 'Multiplication by 2', 'Division by 2'], answer: 'Division by 4' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The denary number -5 represented in 8-bit two\'s complement is ____________.', answer: '11111011' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The 8-bit two\'s complement number 11111111 represents the denary number _____.', answer: '-1' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'Which character set uses 7 bits and can represent 128 different characters?', options: ['Unicode', 'ASCII', 'Hexadecimal', 'EBCDIC'], answer: 'ASCII' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'Why was Unicode introduced?', options: ['To save storage space compared to ASCII', 'To represent characters from all languages across the world', 'To provide a more secure way of storing text', 'To be a shorter representation of binary'], answer: 'To represent characters from all languages across the world' },
+            { type: 'cloze', topic: '1.2 Text, sound and images', question: 'The process of converting an analogue sound wave into a digital format is called _________.', answer: 'sampling' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'What is the sample rate?', options: ['The number of bits used per sample', 'The number of samples taken per second', 'The maximum frequency in the sound wave', 'The amplitude of the sound wave'], answer: 'The number of samples taken per second' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'Increasing the sample resolution when recording sound will...', options: ['Decrease the file size', 'Decrease the accuracy of the recording', 'Increase the accuracy and the file size', 'Only increase the file size'], answer: 'Increase the accuracy and the file size' },
+            { type: 'cloze', topic: '1.2 Text, sound and images', question: 'A digital image is made up of a grid of tiny squares called ________.', answer: 'pixels' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'What does the resolution of an image refer to?', options: ['The number of colours used', 'The number of bits per pixel', 'The physical size of the image in cm', 'The number of pixels in the image (width x height)'], answer: 'The number of pixels in the image (width x height)' },
+            { type: 'cloze', topic: '1.2 Text, sound and images', question: 'The number of bits used to represent the colour of a single pixel is known as the colour _____.', answer: 'depth' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'If you increase the colour depth of an image from 8-bit to 24-bit, what is the effect?', options: ['The image quality decreases and file size increases', 'The file size decreases and image quality increases', 'Both the image quality and file size increase', 'Only the file size increases'], answer: 'Both the image quality and file size increase' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'A 1-bit image can represent a maximum of how many colours?', options: ['1', '2', '8', '16'], answer: '2' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'How many bits are in a byte?', options: ['4', '8', '16', '1024'], answer: '8' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'A ______ is a group of 4 bits.', answer: 'nibble' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'Which is the largest unit of data storage?', options: ['Gibibyte (GiB)', 'Mebibyte (MiB)', 'Tebibyte (TiB)', 'Kibibyte (KiB)'], answer: 'Tebibyte (TiB)' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'There are _____ Mebibytes (MiB) in one Gibibyte (GiB).', answer: '1024' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'Calculate the file size in bits for an image that is 100 pixels wide, 50 pixels high, with a colour depth of 8 bits. The file size is _______ bits.', answer: '40000' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'A sound file has a sample rate of 44100 Hz, a sample resolution of 16 bits, and is 10 seconds long. Its file size is _________ bits.', answer: '7056000' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'What is the main purpose of data compression?', options: ['To increase the quality of a file', 'To reduce the size of a file', 'To encrypt the data in a file', 'To make files easier to open'], answer: 'To reduce the size of a file' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'Which of these is a benefit of compressing files?', options: ['Less storage space required', 'Higher image resolution', 'Improved sound quality', 'Faster processor speed'], answer: 'Less storage space required' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'Which type of compression reduces file size without any loss of data?', options: ['Lossy', 'Lossless', 'Partial', 'Secure'], answer: 'Lossless' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'Run Length Encoding (RLE) is an example of _________ compression.', answer: 'lossless' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'Which type of compression permanently removes data from the file?', options: ['Lossy', 'Lossless', 'Complete', 'Standard'], answer: 'Lossy' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'Reducing the colour depth of an image is an example of ______ compression.', answer: 'lossy' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The binary number 11110000 added to 00010001 results in an _________ error in an 8-bit system.', answer: 'overflow' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'ASCII can represent fewer characters than:', options: ['Binary', 'Denary', 'Unicode', 'Hexadecimal'], answer: 'Unicode' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: '1 mebibyte is equal to 1024 _________.', answer: 'kibibytes' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The denary number 15 is represented as _ in hexadecimal.', answer: 'F' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'To improve the quality of a digital sound recording, one should increase the sample rate and the sample __________.', options: ['size', 'resolution', 'length', 'volume'], answer: 'resolution' },
+            { type: 'cloze', topic: '1.3 Data storage and compression', question: 'JPEG image compression is a form of ______ compression because it permanently discards some data.', answer: 'lossy' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'A logical left shift by 3 on the number 00000101 is equivalent to multiplying the denary value by _.', answer: '8' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'A bitmap image file size is determined by its resolution and its...', options: ['File name', 'Compression type', 'Aspect ratio', 'Colour depth'], answer: 'Colour depth' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The number -128 is the smallest number that can be represented using 8-bit two\'s _________.', answer: 'complement' },
+            { type: 'mc', topic: '1.3 Data storage and compression', question: 'Which compression method would be most suitable for a text document to ensure all original information is preserved?', options: ['Lossy', 'Lossless', 'JPEG', 'MP3'], answer: 'Lossless' },
+            { type: 'cloze', topic: '1.1 Number systems', question: 'The hexadecimal color code #FFFFFF represents the color _____.', answer: 'white' },
+            { type: 'mc', topic: '1.2 Text, sound and images', question: 'The term for the height of a sound wave, which determines its volume, is:', options: ['Frequency', 'Pitch', 'Amplitude', 'Sample Rate'], answer: 'Amplitude' },
+        ];
+
+        // --- DOM Elements ---
+        const nameContainer = document.getElementById('name-container');
+        const quizMainContent = document.getElementById('quiz-main-content');
+        const studentNameInput = document.getElementById('student-name-input');
+        const nameError = document.getElementById('name-error');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const quizContainer = document.getElementById('quiz-container');
+        const scoreElement = document.getElementById('score');
+        const totalQuestionsElement = document.getElementById('total-questions');
+        const quizActionBtn = document.getElementById('quiz-action-btn');
+        const summaryContainer = document.getElementById('summary-container');
+        const reviewSummary = document.getElementById('review-summary');
+        const resultsBody = document.getElementById('results-body');
+        
+        let score = 0;
+        let selectedQuestionsData = [];
+        
+        // --- Event Listeners ---
+        startQuizBtn.addEventListener('click', () => {
+            currentStudentName = studentNameInput.value.trim();
+            nameError.textContent = ''; // Clear previous error
+            if (currentStudentName) {
+                nameContainer.classList.add('hidden');
+                quizMainContent.classList.remove('hidden');
+                buildQuiz();
+            } else {
+                nameError.textContent = 'Please enter your name.';
+            }
+        });
+        
+        quizActionBtn.addEventListener('click', () => {
+            if (quizState === 'inProgress') {
+                checkAllAnswers();
+            } else if (quizState === 'finished') {
+                buildQuiz();
+            }
+        });
+
+        // --- Functions ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function buildQuiz() {
+            quizState = 'inProgress';
+            const shuffled = shuffleArray([...quizData]);
+            selectedQuestionsData = shuffled.slice(0, 5);
+
+            totalQuestionsElement.textContent = selectedQuestionsData.length;
+            quizContainer.innerHTML = '';
+            summaryContainer.classList.add('hidden');
+            scoreElement.textContent = '0';
+            
+            quizActionBtn.textContent = "Check All Answers";
+            quizActionBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+            quizActionBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+
+            selectedQuestionsData.forEach((item, index) => {
+                const questionId = `q${index}`;
+                let questionHtml = '';
+
+                if (item.type === 'mc') {
+                    let optionsHtml = '';
+                    const shuffledOptions = [...item.options].sort(() => Math.random() - 0.5);
+                    shuffledOptions.forEach(option => {
+                        optionsHtml += `
+                            <label class="block p-4 rounded-lg border border-gray-200 cursor-pointer option-label">
+                                <input type="radio" name="${questionId}" value="${option}" class="mr-3">
+                                ${option}
+                            </label>
+                        `;
+                    });
+                    questionHtml = `<div class="space-y-3 mt-4">${optionsHtml}</div>`;
+                } else if (item.type === 'cloze') {
+                    const placeholder = item.question.includes('_____') ? '_____' : '______';
+                    const clozeHtml = item.question.replace(placeholder, `<input type="text" id="${questionId}-input" class="cloze-input">`);
+                    questionHtml = `<div class="text-lg my-2">${clozeHtml}</div>`;
+                }
+
+                quizContainer.innerHTML += `
+                    <div id="${questionId}-card" class="bg-white p-6 rounded-xl shadow-md question-card">
+                        <p class="text-gray-500 text-sm font-medium">${item.topic}</p>
+                        <p class="text-lg font-semibold my-2">${item.type === 'mc' ? `${index + 1}. ${item.question}` : `${index + 1}.`}</p>
+                        ${questionHtml}
+                        <p id="${questionId}-feedback" class="mt-3 text-md font-medium"></p>
+                    </div>
+                `;
+            });
+        }
+        
+        async function checkAllAnswers() {
+            score = 0;
+            const topicsToReview = [];
+            quizState = 'finished';
+
+            selectedQuestionsData.forEach((item, index) => {
+                const questionId = `q${index}`;
+                const card = document.getElementById(`${questionId}-card`);
+                const feedback = document.getElementById(`${questionId}-feedback`);
+                feedback.innerHTML = ''; 
+
+                let isCorrect = false;
+
+                if (item.type === 'mc') {
+                    const selectedOption = document.querySelector(`input[name="${questionId}"]:checked`);
+                    const allLabels = card.querySelectorAll('.option-label');
+                    allLabels.forEach(label => {
+                        label.classList.remove('correct-mc', 'incorrect-mc');
+                        label.querySelector('input').disabled = true;
+                    });
+                    
+                    if (selectedOption) {
+                        const userAnswer = selectedOption.value;
+                        if (userAnswer === item.answer) {
+                            score++;
+                            isCorrect = true;
+                            selectedOption.parentElement.classList.add('correct-mc');
+                            feedback.textContent = "Correct!";
+                            feedback.className = 'mt-3 text-md font-medium feedback-correct';
+                        } else {
+                            selectedOption.parentElement.classList.add('incorrect-mc');
+                            const correctLabel = Array.from(allLabels).find(label => label.querySelector('input').value === item.answer);
+                            if(correctLabel) correctLabel.classList.add('correct-mc');
+                            feedback.innerHTML = `Incorrect. The correct answer is: <strong class="underline">${item.answer}</strong>`;
+                            feedback.className = 'mt-3 text-md font-medium feedback-incorrect';
+                        }
+                    } else {
+                        feedback.innerHTML = `Not answered. The correct answer is: <strong class="underline">${item.answer}</strong>`;
+                        feedback.className = 'mt-3 text-md font-medium feedback-incorrect';
+                        const correctLabel = Array.from(allLabels).find(label => label.querySelector('input').value === item.answer);
+                        if(correctLabel) correctLabel.classList.add('correct-mc');
+                    }
+                } else if (item.type === 'cloze') {
+                    const inputElement = document.getElementById(`${questionId}-input`);
+                    inputElement.disabled = true;
+                    inputElement.classList.remove('correct-cloze', 'incorrect-cloze');
+                    const userAnswer = inputElement.value.trim().toUpperCase();
+                    const correctAnswer = item.answer.trim().toUpperCase();
+
+                    if (userAnswer === correctAnswer) {
+                        score++;
+                        isCorrect = true;
+                        inputElement.classList.add('correct-cloze');
+                        feedback.textContent = "Correct!";
+                        feedback.className = 'mt-3 text-md font-medium feedback-correct';
+                    } else {
+                        inputElement.classList.add('incorrect-cloze');
+                        feedback.innerHTML = `Incorrect. The correct answer is: <strong class="underline">${item.answer}</strong>`;
+                        feedback.className = 'mt-3 text-md font-medium feedback-incorrect';
+                    }
+                }
+
+                if (!isCorrect) {
+                    topicsToReview.push(item.topic);
+                }
+            });
+
+            scoreElement.textContent = score;
+
+            const resultData = {
+                studentName: currentStudentName,
+                score: score,
+                totalQuestions: selectedQuestionsData.length,
+                date: new Date()
+            };
+            console.log("Attempting to save result:", resultData);
+            console.log(`Using App ID: ${appId}`);
+
+            try {
+                const resultsCollection = collection(db, `/artifacts/${appId}/public/data/quizResults`);
+                await addDoc(resultsCollection, resultData);
+                console.log("Result saved successfully!");
+            } catch (e) {
+                console.error("Error adding document: ", e);
+            }
+            
+            quizActionBtn.textContent = "Take New Quiz";
+            quizActionBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+            quizActionBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+            
+            const uniqueTopics = [...new Set(topicsToReview)];
+            if (uniqueTopics.length > 0) {
+                let summaryHtml = '<p class="text-lg">Based on your answers, you might want to review the following topics:</p><ul class="list-disc list-inside mt-2 space-y-1">';
+                uniqueTopics.forEach(topic => {
+                    summaryHtml += `<li class="text-gray-700 font-semibold">${topic}</li>`;
+                });
+                summaryHtml += '</ul>';
+                reviewSummary.innerHTML = summaryHtml;
+            } else {
+                 reviewSummary.innerHTML = '<p class="text-lg font-semibold text-green-600">Excellent work! You answered all questions correctly.</p>';
+            }
+            summaryContainer.classList.remove('hidden');
+            window.scrollTo(0, 0);
+        }
+
+        function fetchResults() {
+             if (!auth.currentUser) {
+                console.log("Fetch results waiting for user authentication.");
+                return;
+            }
+            const resultsCollectionPath = `/artifacts/${appId}/public/data/quizResults`;
+            const resultsCollection = collection(db, resultsCollectionPath);
+            const q = query(resultsCollection); // REMOVED orderBy for more robust fetching
+            
+            console.log(`Setting up listener for results on path: ${resultsCollectionPath}`);
+            resultsBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-gray-500">Loading leaderboard...</td></tr>';
+
+            onSnapshot(q, (snapshot) => {
+                console.log(`Received snapshot. Has docs: ${!snapshot.empty}. Size: ${snapshot.size}`);
+                if (snapshot.empty) {
+                    resultsBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-gray-500">No results yet. Be the first!</td></tr>';
+                    return;
+                }
+                const results = [];
+                snapshot.forEach((doc) => {
+                    results.push(doc.data());
+                });
+                
+                // Sort results in the browser (client-side) for reliability
+                results.sort((a, b) => {
+                    const dateA = a.date?.toDate ? a.date.toDate() : 0;
+                    const dateB = b.date?.toDate ? b.date.toDate() : 0;
+                    return dateB - dateA; // Sort descending (newest first)
+                });
+
+                console.log("Fetched and sorted results:", results);
+
+                try {
+                    resultsBody.innerHTML = '';
+                    results.forEach(result => {
+                        const date = result.date && result.date.toDate ? result.date.toDate().toLocaleDateString('en-US', {
+                            year: 'numeric', month: 'long', day: 'numeric'
+                        }) : 'N/A';
+                        const scoreText = `${result.score} / ${result.totalQuestions}`;
+                        const row = `
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${result.studentName}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${scoreText}</td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+                            </tr>
+                        `;
+                        resultsBody.innerHTML += row;
+                    });
+                } catch (error) {
+                    console.error("Error processing and rendering results:", error);
+                    resultsBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-red-500">Error loading leaderboard data.</td></tr>';
+                }
+
+            }, (error) => {
+                console.error("Error fetching results via onSnapshot:", error);
+                 resultsBody.innerHTML = '<tr><td colspan="3" class="text-center p-4 text-red-500">Could not fetch leaderboard data. See console for details.</td></tr>';
+            });
+        }
+        
+        // Initial setup
+        authenticateUser();
+
+    </script>
+
+</body>
+</html>
+

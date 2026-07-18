@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Segmentation using DBSCAN</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; 
+        }
+        .control-panel {
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        input[type="range"]::-webkit-slider-runnable-track { background: #374151; }
+        input[type="range"]::-moz-range-track { background: #374151; }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; appearance: none;
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #3b82f6; cursor: pointer; margin-top: -4px;
+            transition: background 0.2s;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px; height: 16px; border-radius: 50%;
+            background: #3b82f6; cursor: pointer; border: none;
+        }
+        input[type="range"]:hover::-webkit-slider-thumb { background: #60a5fa; }
+        input[type="range"]:hover::-moz-range-thumb { background: #60a5fa; }
+        canvas { cursor: crosshair; }
+        .explanation-content {
+            list-style-position: inside; padding-left: 0.5rem;
+            max-height: 55vh; overflow-y: auto; padding-right: 0.5rem;
+        }
+        .explanation-content ul { list-style-position: inside; }
+        .explanation-content li { margin-bottom: 0.5rem; }
+        .explanation-content::-webkit-scrollbar { width: 8px; }
+        .explanation-content::-webkit-scrollbar-track { background: rgba(31, 41, 55, 0.5); border-radius: 10px; }
+        .explanation-content::-webkit-scrollbar-thumb { background-color: #4b5563; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 flex flex-col items-center justify-center h-screen w-screen p-4 overflow-hidden">
+
+    <div class="w-full h-full max-w-7xl max-h-[90vh] bg-gray-800 rounded-2xl shadow-2xl flex flex-col relative overflow-hidden">
+        <!-- Canvas for simulation -->
+        <canvas id="simulationCanvas" class="w-full h-full"></canvas>
+        
+        <!-- Explanation Panel -->
+        <div class="control-panel absolute top-16 left-4 w-full max-w-sm p-4 bg-gray-900 bg-opacity-80 rounded-xl shadow-lg border border-gray-700 text-sm">
+            <div class="flex justify-between items-center cursor-pointer" id="explanationHeader">
+                <h2 class="font-bold text-lg text-white">How This Works</h2>
+                <svg id="explanationToggleIcon" class="w-6 h-6 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+            <div id="explanationContent" class="mt-3 text-gray-300 space-y-3 explanation-content transition-all duration-300 hidden">
+                <p>DBSCAN finds dense groups of customers based on their behavior, marking outliers as anomalies.</p>
+                <ul>
+                    <li><strong>Similarity Radius (ε):</strong> How similar customers must be (distance on the chart) to be considered neighbors.</li>
+                    <li><strong>Minimum Segment Size (MinPts):</strong> The minimum number of neighbors required to form a core customer segment.</li>
+                </ul>
+                <p class="font-semibold">The Process:</p>
+                <ol class="list-decimal list-inside space-y-1">
+                    <li>It picks a customer to analyze (yellow).</li>
+                    <li>If they have enough neighbors within the radius, they become a <strong>core customer</strong>, starting a new segment. The algorithm then expands to find all connected customers.</li>
+                    <li>If not, they're marked as an <strong>anomaly</strong> (white), but could later be roped into a nearby segment.</li>
+                    <li>This repeats until all customers are analyzed.</li>
+                </ol>
+                 <div id="legend" class="mt-4">
+                    <p class="font-semibold pt-2">Initial Customer Types:</p>
+                     <!-- Legend will be populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls Panel (Parameters and Buttons) -->
+        <div class="control-panel absolute top-16 right-4 w-full max-w-xs p-4 bg-gray-900 bg-opacity-80 rounded-xl shadow-lg border border-gray-700 text-sm">
+            <h2 class="font-bold text-lg text-white mb-3">Controls</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="epsilon" class="text-sm font-medium">Similarity Radius (ε): <span id="epsilonValue" class="font-bold text-blue-400">30</span></label>
+                    <input id="epsilon" type="range" min="5" max="100" value="30" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                </div>
+                <div>
+                    <label for="minPts" class="text-sm font-medium">Min Segment Size: <span id="minPtsValue" class="font-bold text-blue-400">5</span></label>
+                    <input id="minPts" type="range" min="2" max="20" value="5" class="w-full h-2 rounded-lg appearance-none cursor-pointer">
+                </div>
+            </div>
+            
+            <hr class="border-gray-600 my-4">
+
+            <div class="flex flex-col gap-2">
+                <button id="generateBtn" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-white font-semibold transition-all shadow-md">Generate Customer Data</button>
+                <button id="runBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-white font-semibold transition-all shadow-md">Find Segments (Run DBSCAN)</button>
+                <button id="resetBtn" class="px-4 py-2 bg-gray-600 hover:bg-gray-500 rounded-lg text-white font-semibold transition-all shadow-md">Reset View</button>
+            </div>
+
+            <hr class="border-gray-600 my-4">
+
+            <div>
+                <p id="statusText" class="text-xs text-center text-gray-400 h-10 flex items-center justify-center">Welcome! Generate customer data to begin.</p>
+            </div>
+        </div>
+        
+         <!-- Title -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 p-2 px-4 bg-gray-900 bg-opacity-50 rounded-lg">
+             <h1 class="text-xl font-bold text-white tracking-wider">Customer Segmentation using DBSCAN</h1>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('simulationCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const epsilonSlider = document.getElementById('epsilon');
+            const minPtsSlider = document.getElementById('minPts');
+            const epsilonValueSpan = document.getElementById('epsilonValue');
+            const minPtsValueSpan = document.getElementById('minPtsValue');
+            const generateBtn = document.getElementById('generateBtn');
+            const runBtn = document.getElementById('runBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const statusText = document.getElementById('statusText');
+            const explanationHeader = document.getElementById('explanationHeader');
+            const explanationContent = document.getElementById('explanationContent');
+            const explanationToggleIcon = document.getElementById('explanationToggleIcon');
+            const legendDiv = document.getElementById('legend');
+
+            let points = [];
+            let isRunning = false;
+            
+            const POINT_RADIUS = 4;
+            const NOISE = -1;
+            const UNDEFINED = 0;
+            const AXIS_PADDING = 50;
+
+            const CLUSTER_COLORS = ['#16a34a', '#ea580c', '#db2777', '#6d28d9', '#ca8a04', '#2563eb', '#dc2626', '#0891b2'];
+            
+            const SEGMENT_DEFINITIONS = {
+                'High Value': { color: '#22c55e', params: { x_min: 0.65, x_max: 0.9, y_min: 0.65, y_max: 0.9 } },
+                'Frequent Visitors': { color: '#3b82f6', params: { x_min: 0.1, x_max: 0.4, y_min: 0.6, y_max: 0.9 } },
+                'Bargain Hunters': { color: '#f97316', params: { x_min: 0.1, x_max: 0.4, y_min: 0.1, y_max: 0.4 } },
+                'New / At Risk': { color: '#a855f7', params: { x_min: 0.4, x_max: 0.7, y_min: 0.2, y_max: 0.5 } }
+            };
+
+            function populateLegend() {
+                let legendHTML = '<ul class="list-none space-y-1">';
+                for(const [name, def] of Object.entries(SEGMENT_DEFINITIONS)) {
+                    legendHTML += `<li class="flex items-center"><span class="inline-block w-3 h-3 rounded-full mr-2" style="background-color: ${def.color};"></span>${name}</li>`;
+                }
+                legendHTML += `<li class="flex items-center"><span class="inline-block w-3 h-3 rounded-full mr-2 bg-gray-500"></span>Anomalous</li>`;
+                legendHTML += '</ul>';
+                legendDiv.innerHTML += legendHTML;
+            }
+
+            function resizeCanvas() {
+                const parent = canvas.parentElement;
+                canvas.width = parent.clientWidth;
+                canvas.height = parent.clientHeight;
+                draw();
+            }
+
+            function generateData() {
+                points = [];
+                const numSegments = Object.keys(SEGMENT_DEFINITIONS).length;
+                
+                for(const [name, def] of Object.entries(SEGMENT_DEFINITIONS)) {
+                    const numPoints = Math.floor(Math.random() * 60) + 40;
+                    const spread = Math.random() * 0.1 + 0.05;
+                    const clusterCenterX = (def.params.x_min + def.params.x_max) / 2;
+                    const clusterCenterY = (def.params.y_min + def.params.y_max) / 2;
+
+                    for (let j = 0; j < numPoints; j++) {
+                        const angle = Math.random() * 2 * Math.PI;
+                        const radius = Math.random() * spread;
+                        const x = clusterCenterX + Math.cos(angle) * radius;
+                        const y = clusterCenterY + Math.sin(angle) * radius;
+                        
+                        points.push({
+                            x: AXIS_PADDING + x * (canvas.width - AXIS_PADDING * 2),
+                            y: canvas.height - (AXIS_PADDING + y * (canvas.height - AXIS_PADDING * 2)),
+                            clusterId: UNDEFINED,
+                            segmentType: name,
+                        });
+                    }
+                }
+                
+                const numNoisePoints = Math.floor(Math.random() * 40) + 20;
+                for (let i = 0; i < numNoisePoints; i++) {
+                    points.push({
+                        x: AXIS_PADDING + Math.random() * (canvas.width - AXIS_PADDING * 2),
+                        y: AXIS_PADDING + Math.random() * (canvas.height - AXIS_PADDING * 2),
+                        clusterId: UNDEFINED,
+                        segmentType: 'Anomalous'
+                    });
+                }
+                statusText.textContent = `${points.length} customers generated. Ready to find segments.`;
+                draw();
+            }
+
+            function drawAxes() {
+                ctx.save();
+                ctx.strokeStyle = '#4b5563'; // gray-600
+                ctx.fillStyle = '#9ca3af'; // gray-400
+                ctx.lineWidth = 1;
+                ctx.font = '12px Inter';
+
+                // Y-Axis
+                ctx.beginPath();
+                ctx.moveTo(AXIS_PADDING, AXIS_PADDING);
+                ctx.lineTo(AXIS_PADDING, canvas.height - AXIS_PADDING);
+                ctx.stroke();
+                
+                // X-Axis
+                ctx.beginPath();
+                ctx.moveTo(AXIS_PADDING, canvas.height - AXIS_PADDING);
+                ctx.lineTo(canvas.width - AXIS_PADDING, canvas.height - AXIS_PADDING);
+                ctx.stroke();
+
+                // X-Axis Label
+                ctx.textAlign = 'center';
+                ctx.fillText('Average Spend ($) →', canvas.width / 2, canvas.height - 15);
+                
+                // Y-Axis Label
+                ctx.rotate(-Math.PI / 2);
+                ctx.fillText('Purchase Frequency →', -canvas.height / 2, 20);
+                
+                ctx.restore();
+            }
+
+            function draw(currentPointIndex = -1, neighbors = []) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawAxes();
+                
+                if(currentPointIndex !== -1 && points[currentPointIndex]) {
+                    const p = points[currentPointIndex];
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, parseInt(epsilonSlider.value), 0, 2 * Math.PI);
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)';
+                    ctx.strokeStyle = 'rgba(96, 165, 250, 0.5)';
+                    ctx.lineWidth = 1;
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                points.forEach((p, index) => {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, POINT_RADIUS, 0, 2 * Math.PI);
+                    
+                    if (p.clusterId === NOISE) {
+                        ctx.fillStyle = '#f9fafb';
+                    } else if (p.clusterId === UNDEFINED) {
+                        ctx.fillStyle = SEGMENT_DEFINITIONS[p.segmentType]?.color || '#6b7280'; // gray-500 for anomalous
+                    } else {
+                        ctx.fillStyle = CLUSTER_COLORS[(p.clusterId - 1) % CLUSTER_COLORS.length];
+                    }
+
+                    if (index === currentPointIndex) {
+                        ctx.fillStyle = '#facc15';
+                        ctx.arc(p.x, p.y, POINT_RADIUS + 3, 0, 2 * Math.PI);
+                    } else if (neighbors.includes(index)) {
+                         ctx.fillStyle = '#a78bfa';
+                    }
+
+                    ctx.fill();
+                });
+            }
+
+            function getDistance(p1, p2) {
+                return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+            }
+            
+            function rangeQuery(pointIndex, epsilon) {
+                return points.reduce((acc, _, i) => {
+                    if (i !== pointIndex && getDistance(points[pointIndex], points[i]) < epsilon) {
+                        acc.push(i);
+                    }
+                    return acc;
+                }, []);
+            }
+
+            async function runDbscan() {
+                if (isRunning || points.length === 0) return;
+                
+                isRunning = true;
+                setControlsDisabled(true);
+                resetClusters();
+
+                const epsilon = parseInt(epsilonSlider.value);
+                const minPts = parseInt(minPtsSlider.value);
+                let clusterId = 1;
+
+                for (let i = 0; i < points.length; i++) {
+                    if (points[i].clusterId !== UNDEFINED) continue;
+
+                    statusText.textContent = `Analyzing customer ${i + 1}/${points.length}...`;
+                    const neighbors = rangeQuery(i, epsilon);
+                    draw(i, neighbors);
+                    await sleep(50);
+
+                    if (neighbors.length < minPts - 1) {
+                        points[i].clusterId = NOISE;
+                        statusText.textContent = `Customer ${i + 1} is an anomaly.`;
+                        draw(i);
+                        await sleep(50);
+                        continue;
+                    }
+                    
+                    statusText.textContent = `Core customer found. Starting Segment ${clusterId}.`;
+                    points[i].clusterId = clusterId;
+                    
+                    const seedSet = [...neighbors];
+                    for (let j = 0; j < seedSet.length; j++) {
+                        const currentNeighborIndex = seedSet[j];
+                        
+                        if (points[currentNeighborIndex].clusterId === NOISE) {
+                            points[currentNeighborIndex].clusterId = clusterId;
+                        }
+
+                        if (points[currentNeighborIndex].clusterId !== UNDEFINED) continue;
+
+                        points[currentNeighborIndex].clusterId = clusterId;
+                        statusText.textContent = `Expanding Segment ${clusterId}...`;
+
+                        const newNeighbors = rangeQuery(currentNeighborIndex, epsilon);
+                        draw(currentNeighborIndex, newNeighbors);
+                        await sleep(50);
+
+                        if (newNeighbors.length >= minPts - 1) {
+                            seedSet.push(...newNeighbors.filter(n => !seedSet.includes(n) && points[n].clusterId === UNDEFINED));
+                        }
+                    }
+                    clusterId++;
+                }
+                
+                statusText.textContent = `Analysis complete. Found ${clusterId - 1} customer segments.`;
+                isRunning = false;
+                setControlsDisabled(false);
+                draw();
+            }
+            
+            function resetClusters() {
+                points.forEach(p => p.clusterId = UNDEFINED);
+                draw();
+            }
+
+            function setControlsDisabled(disabled) {
+                [epsilonSlider, minPtsSlider, generateBtn, runBtn].forEach(el => el.disabled = disabled);
+            }
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            // Event Listeners
+            epsilonSlider.addEventListener('input', (e) => {
+                epsilonValueSpan.textContent = e.target.value;
+                if (!isRunning) draw();
+            });
+
+            minPtsSlider.addEventListener('input', (e) => {
+                minPtsValueSpan.textContent = e.target.value;
+            });
+
+            generateBtn.addEventListener('click', () => !isRunning && generateData());
+            runBtn.addEventListener('click', runDbscan);
+            resetBtn.addEventListener('click', () => {
+                if (isRunning) return;
+                resetClusters();
+                statusText.textContent = 'View reset. Ready to run analysis again.';
+            });
+
+            explanationHeader.addEventListener('click', () => {
+                explanationContent.classList.toggle('hidden');
+                explanationToggleIcon.classList.toggle('rotate-180');
+            });
+
+            window.addEventListener('resize', resizeCanvas);
+
+            // Initial setup
+            resizeCanvas();
+            populateLegend();
+            generateData();
+        });
+    </script>
+</body>
+</html>
+
+

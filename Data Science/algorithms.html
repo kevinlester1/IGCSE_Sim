@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm & Flowchart Simulation</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Drawflow for the builder -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jerosoler/drawflow@0.0.59/dist/drawflow.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/jerosoler/drawflow@0.0.59/dist/drawflow.min.js"></script>
+    <style>
+        /* Custom styles for flowchart shapes */
+        .flow-shape {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            padding: 1rem;
+            border-width: 2px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        
+        /* Terminal: Oval */
+        .flow-terminal {
+            width: 180px;
+            background-color: #fecaca; /* red-200 */
+            border-color: #f87171; /* red-400 */
+            color: #b91c1c; /* red-700 */
+            border-radius: 9999px; /* rounded-full */
+        }
+
+        /* Process: Rectangle */
+        .flow-process {
+            width: 200px;
+            background-color: #bfdbfe; /* blue-200 */
+            border-color: #60a5fa; /* blue-400 */
+            color: #1d4ed8; /* blue-700 */
+            border-radius: 0.375rem; /* rounded-md */
+        }
+        
+        /* Decision: Rhombus (Diamond) */
+        .flow-decision {
+            width: 200px;
+            min-height: 120px;
+            background-color: #bbf7d0; /* green-200 */
+            border-color: #4ade80; /* green-400 */
+            color: #15803d; /* green-700 */
+            clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+
+        /* Input/Output: Parallelogram */
+        .flow-io {
+            width: 200px;
+            background-color: #fed7aa; /* orange-200 */
+            border-color: #fb923c; /* orange-400 */
+            color: #c2410c; /* orange-700 */
+            transform: skew(-20deg);
+        }
+        .flow-io > span {
+            display: inline-block;
+            transform: skew(20deg);
+        }
+
+        /* Sub-program: Rectangle with side lines */
+        .flow-subprogram {
+            width: 200px;
+            background-color: #e9d5ff; /* purple-200 */
+            border-color: #c084fc; /* purple-400 */
+            color: #7e22ce; /* purple-700 */
+            border-radius: 0.375rem; /* rounded-md */
+            position: relative;
+        }
+        .flow-subprogram::before,
+        .flow-subprogram::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            background-color: #c084fc; /* purple-400 */
+        }
+        .flow-subprogram::before {
+            left: 8px;
+        }
+        .flow-subprogram::after {
+            right: 8px;
+        }
+
+        /* Answer choice buttons */
+        .choice-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid #d1d5db; /* gray-300 */
+            border-radius: 0.5rem; /* rounded-lg */
+            background-color: #f9fafb; /* gray-50 */
+            transition: all 0.2s;
+        }
+        .choice-btn:hover {
+            background-color: #f3f4f6; /* gray-100 */
+            border-color: #9ca3af; /* gray-400 */
+        }
+        .choice-btn:disabled {
+            opacity: 0.7;
+        }
+        .choice-btn.correct {
+            background-color: #dcfce7; /* green-100 */
+            border-color: #22c55e; /* green-500 */
+            font-weight: 600;
+        }
+        .choice-btn.incorrect {
+            background-color: #fee2e2; /* red-100 */
+            border-color: #ef4444; /* red-500 */
+            font-weight: 600;
+        }
+        /* Drawflow custom node styles */
+        .drawflow-node .flow-shape {
+            margin-bottom: 0;
+            width: 100%;
+        }
+        .drawflow-node .flow-decision {
+            min-height: 120px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans leading-relaxed">
+
+    <div id="app-container" class="max-w-4xl mx-auto p-6 md:p-10 bg-white rounded-lg shadow-2xl my-10">
+        
+        <!-- Header -->
+        <header class="border-b-2 border-gray-200 pb-4 mb-6">
+            <h1 id="module-title" class="text-3xl font-bold text-gray-800">
+                Algorithm & Flowchart Simulation
+            </h1>
+        </header>
+        
+        <!-- Main Content Area -->
+        <main id="module-container" class="min-h-[450px] relative">
+            <!-- Content will be injected by JavaScript -->
+        </main>
+
+        <!-- Feedback Area -->
+        <div id="feedback-area" class="h-8 mt-4 text-lg font-medium text-center">
+            <!-- Feedback messages (e.g., "Correct!") will appear here -->
+        </div>
+
+        <!-- Navigation -->
+        <footer id="nav-container" class="flex justify-between items-center pt-6 border-t-2 border-gray-200 mt-6">
+            <button id="prev-btn" class="px-5 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-200 disabled:bg-gray-300">
+                Back
+            </button>
+            <div id="step-counter" class="text-sm text-gray-500"></div>
+            <button id="next-btn" class="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200 disabled:bg-gray-300">
+                Next
+            </button>
+            <button id="restart-btn" class="hidden px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition duration-200">
+                Restart Simulation
+            </button>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- STATE MANAGEMENT ---
+            let currentStep = 0;
+            const state = {
+                symbolQuiz: [
+                    {
+                        shape: '<div class="flow-shape flow-terminal">Start / Stop</div>',
+                        question: "What is this symbol called and what does it do?",
+                        choices: [
+                            { text: "Process: Used for calculations.", correct: false },
+                            { text: "Terminal: Used for the 'Start' and 'Stop' points.", correct: true },
+                            { text: "Decision: Asks a question.", correct: false }
+                        ]
+                    },
+                    {
+                        shape: '<div class="flow-shape flow-process">count ← count + 1</div>',
+                        question: "What is this symbol called and what does it do?",
+                        choices: [
+                            { text: "Process: Represents an instruction or calculation.", correct: true },
+                            { text: "Input/Output: Gets data from a user.", correct: false },
+                            { text: "Sub-program: Calls another function.", correct: false }
+                        ]
+                    },
+                    {
+                        shape: '<div class="flow-shape flow-decision">Is count < 1000?</div>',
+                        question: "What is this symbol called and what does it do?",
+                        choices: [
+                            { text: "Terminal: Stops the program.", correct: false },
+                            { text: "Process: Adds 1000 to the count.", correct: false },
+                            { text: "Decision: Asks a question to decide which path to take.", correct: true }
+                        ]
+                    },
+                    {
+                        shape: '<div class="flow-shape flow-io"><span>INPUT num1</span></div>',
+                        question: "What is this symbol called and what does it do?",
+                        choices: [
+                            { text: "Input/Output: Used for getting data (INPUT) or displaying data (OUTPUT).", correct: true },
+                            { text: "Process: Stores 'num1' in memory.", correct: false },
+                            { text: "Decision: Checks if 'num1' exists.", correct: false }
+                        ]
+                    },
+                    {
+                        shape: '<div class="flow-shape flow-subprogram">findVAT(total)</div>',
+                        question: "What is this symbol called and what does it do?",
+                        choices: [
+                            { text: "Process: Calculates VAT directly.", correct: false },
+                            { text: "Sub-program: Calls another procedure or function (like 'findVAT').", correct: true },
+                            { text: "Input: Gets the VAT from the user.", correct: false }
+                        ]
+                    }
+                ],
+                symbolQuizStep: 0,
+                drawflowEditor: null, // To hold the drawflow instance
+            };
+
+            // --- DOM ELEMENTS ---
+            const titleEl = document.getElementById('module-title');
+            const containerEl = document.getElementById('module-container');
+            const feedbackEl = document.getElementById('feedback-area');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const restartBtn = document.getElementById('restart-btn');
+            const stepCounterEl = document.getElementById('step-counter');
+
+            // --- DRAG/DROP FUNCTIONS FOR DRAWFLOW ---
+            window.drag = function(ev) {
+                // Set the data being dragged as the 'node-type'
+                ev.dataTransfer.setData("text/plain", ev.target.getAttribute('data-node-type'));
+            }
+
+            window.drop = function(ev) {
+                ev.preventDefault();
+                if (ev.type === "drop" && state.drawflowEditor) {
+                    const nodeType = ev.dataTransfer.getData("text/plain");
+                    
+                    // Prepare node data
+                    let nodeHtml = '';
+                    let inputs = 1;
+                    let outputs = 1;
+                    let nodeClass = '';
+
+                    switch (nodeType) {
+                        case 'terminal':
+                            nodeHtml = `<div class="flow-shape flow-terminal">Start / Stop</div>`;
+                            nodeClass = 'flow-terminal-node';
+                            break;
+                        case 'process':
+                            nodeHtml = `<div class="flow-shape flow-process">Process</div>`;
+                            nodeClass = 'flow-process-node';
+                            break;
+                        case 'decision':
+                            nodeHtml = `<div class="flow-shape flow-decision">Decision?</div>`;
+                            nodeClass = 'flow-decision-node';
+                            outputs = 2; // Decision has 2 outputs (e.g., Yes, No)
+                            break;
+                        case 'io':
+                            nodeHtml = `<div class="flow-shape flow-io"><span>Input / Output</span></div>`;
+                            nodeClass = 'flow-io-node';
+                            break;
+                        default:
+                            return; // Unknown node type
+                    }
+
+                    // Calculate drop position relative to the Drawflow canvas
+                    const canvasRect = state.drawflowEditor.precanvas.getBoundingClientRect();
+                    const pos_x = ev.clientX - canvasRect.left;
+                    const pos_y = ev.clientY - canvasRect.top;
+
+                    // Add the node to Drawflow
+                    // We adjust x/y to center the node on the cursor, but Drawflow's internal logic will handle it
+                    state.drawflowEditor.addNode(nodeType, inputs, outputs, pos_x, pos_y, nodeClass, {}, nodeHtml);
+                }
+            }
+
+            window.allowDrop = function(ev) {
+                ev.preventDefault();
+            }
+
+
+            // --- MODULE DEFINITIONS ---
+            const modules = [
+                // 0: Introduction
+                {
+                    title: "What is an Algorithm?",
+                    render: () => {
+                        containerEl.innerHTML = `
+                            <div class="space-y-4 text-lg text-gray-700">
+                                <p>Welcome to the simulation!</p>
+                                <p>An <strong class="text-blue-600">algorithm</strong> is a set of instructions for solving a problem or completing a task.</p>
+                                <p class="mt-2 text-gray-600">Think of it as a recipe for a computer. It must be precise and clear, with no steps missing.</p>
+                                <p>This task could be:</p>
+                                <ul class="list-disc list-inside pl-4 space-y-2">
+                                    <li>Making a chocolate cake</li>
+                                    <li>Building a Lego model</li>
+                                    <li>Summing the numbers from 1 to 1000</li>
+                                </ul>
+                                <p>One of the best ways to show how an algorithm works is to use a <strong class="text-blue-600">flowchart</strong>. A flowchart is a <strong class="text-gray-800">visual diagram</strong> that shows the sequence of steps and decisions in an algorithm. This simulation will guide you through understanding them.</p>
+                                <p>Click "Next" to learn about flowchart symbols.</p>
+                            </div>
+                        `;
+                    }
+                },
+
+                // 1: Symbol Matching Quiz
+                {
+                    title: "Module 1: Flowchart Symbols",
+                    render: () => {
+                        state.symbolQuizStep = 0;
+                        // Reset the quiz to the full version, in case it was changed by Module 6
+                        state.symbolQuiz = [
+                            {
+                                shape: '<div class="flow-shape flow-terminal">Start / Stop</div>',
+                                question: "What is this symbol called and what does it do?",
+                                choices: [
+                                    { text: "Process: Used for calculations.", correct: false },
+                                    { text: "Terminal: Used for the 'Start' and 'Stop' points.", correct: true },
+                                    { text: "Decision: Asks a question.", correct: false }
+                                ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-process">count ← count + 1</div>',
+                                question: "What is this symbol called and what does it do?",
+                                choices: [
+                                    { text: "Process: Represents an instruction or calculation.", correct: true },
+                                    { text: "Input/Output: Gets data from a user.", correct: false },
+                                    { text: "Sub-program: Calls another function.", correct: false }
+                                ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-decision">Is count < 1000?</div>',
+                                question: "What is this symbol called and what does it do?",
+                                choices: [
+                                    { text: "Terminal: Stops the program.", correct: false },
+                                    { text: "Process: Adds 1000 to the count.", correct: false },
+                                    { text: "Decision: Asks a question to decide which path to take.", correct: true }
+                                ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-io"><span>INPUT num1</span></div>',
+                                question: "What is this symbol called and what does it do?",
+                                choices: [
+                                    { text: "Input/Output: Used for getting data (INPUT) or displaying data (OUTPUT).", correct: true },
+                                    { text: "Process: Stores 'num1' in memory.", correct: false },
+                                    { text: "Decision: Checks if 'num1' exists.", correct: false }
+                                ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-subprogram">findVAT(total)</div>',
+                                question: "What is this symbol called and what does it do?",
+                                choices: [
+                                    { text: "Process: Calculates VAT directly.", correct: false },
+                                    { text: "Sub-program: Calls another procedure or function (like 'findVAT').", correct: true },
+                                    { text: "Input: Gets the VAT from the user.", correct: false }
+                                ]
+                            }
+                        ];
+                        
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Why Use Symbols?</h2>
+                            <p class="mb-6 text-lg text-gray-700">Flowcharts use a standard set of symbols. Using symbols makes the algorithm easy to read and understand, no matter what programming language you use. Each shape has a specific meaning. Let's learn them!</p>
+                            <div id="quiz-container"></div>
+                        `;
+                        renderSymbolQuiz(document.getElementById('quiz-container'));
+                    },
+                    onNext: () => {
+                        // This module has its own internal next logic
+                        return false; // Prevent default step increment
+                    }
+                },
+
+                // 2: Interpreting a Flowchart (Bread)
+                {
+                    title: "Module 2: Interpreting a Flowchart",
+                    render: () => {
+                        nextBtn.disabled = true;
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Case Study: Making Bread</h2>
+                            <p class="mb-4 text-lg text-gray-700">Now let's "interpret" (or read) a flowchart. This algorithm describes a real-world task. Pay close attention to how the "Decision" symbols create a <strong class="text-blue-600">loop</strong>.</p>
+                            <p class="mb-4 text-gray-700">A <strong class="text-blue-600">loop</strong> is a sequence of instructions that is continually repeated until a certain condition is met.</p>
+                            <ol class="list-decimal list-inside space-y-2 bg-gray-50 p-4 rounded-lg border">
+                                <li><strong>Start</strong></li>
+                                <li>Add flour to bowl</li>
+                                <li>Add water</li>
+                                <li>Mix</li>
+                                <li><strong>Decision:</strong> Too much flour?
+                                    <ul class="list-disc list-inside pl-6">
+                                        <li><strong>Yes:</strong> Add water (Go back to step 4: Mix)</li>
+                                        <li><strong>No:</strong> Continue to step 6</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Decision:</strong> Too much water?
+                                    <ul class="list-disc list-inside pl-6">
+                                        <li><strong>Yes:</strong> Add flour (Go back to step 4: Mix)</li>
+                                        <li><strong>No:</strong> Continue to step 7</li>
+                                    </ul>
+                                </li>
+                                <li>Knead dough</li>
+                                <li>Put in oven</li>
+                                <li><strong>Stop</strong></li>
+                            </ol>
+                            <div class="mt-6">
+                                <h3 class="font-semibold text-lg mb-2">Question:</h3>
+                                <p class="mb-4 text-gray-700">What is the purpose of the steps involving "Mix" and the two "Decision" blocks?</p>
+                                <p class="mb-2 text-sm text-gray-500">(This is a common pattern called a 'correction loop'. It repeats until the mixture is 'just right'.)</p>
+                                <button class="choice-btn" data-correct="false">To make the algorithm run faster.</button>
+                                <button class="choice-btn" data-correct="true">It's a correction loop to get the right dough consistency before kneading.</button>
+                                <button class="choice-btn" data-correct="false">It's a mistake; you should only check for too much flour.</button>
+                            </div>
+                        `;
+                        attachChoiceListeners(true); // true = enable next on correct
+                    }
+                },
+
+                // 3: Tracing Algorithm (Counting)
+                {
+                    title: "Module 3: Tracing an Algorithm (Counting)",
+                    render: () => {
+                        nextBtn.disabled = true;
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Case Study: The Counting Algorithm</h2>
+                            <p class="mb-4 text-lg text-gray-700">"Tracing" an algorithm is a critical skill. It means you follow the steps precisely, one by one, just like a computer would. The most important part of tracing is <strong class="text-blue-600">tracking the value of variables</strong>.</p>
+                            <p class="mb-4 text-gray-700">A <strong class="text-blue-600">variable</strong> is a placeholder for a value that can change. In this flowchart, <code class="bg-gray-200 px-1 rounded">count</code> is our variable. We will track its value as it changes.</p>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="flex-1 bg-gray-50 p-4 rounded-lg border">
+                                    <h3 class="font-semibold text-center mb-2">Flowchart</h3>
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <div class="flow-shape flow-terminal">Start</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-process">count ← 0</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-process" id="trace-step-1">count ← count + 1</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-io" id="trace-step-2"><span>OUTPUT count</span></div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-decision" id="trace-step-3">Is count < 1000?</div>
+                                        <div class="relative w-full h-12">
+                                            <div class="absolute left-0 top-0">↓ No</div>
+                                            <div class="absolute right-0 top-0">Yes ↓</div>
+                                            <div class="absolute right-0 top-6 border-l-2 border-b-2 border-gray-400 w-48 h-20 rounded-bl-lg"></div>
+                                        </div>
+                                        <div class="flow-shape flow-terminal">Stop</div>
+                                    </div>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-semibold mb-2">Simulation Trace:</h3>
+                                    <p class="text-sm text-gray-600 mb-2">Watch the trace log to see how the <code class="bg-gray-200 px-1 rounded">count</code> variable changes and what is output to the screen.</p>
+                                    <button id="run-trace-count" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 mb-4">
+                                        Run Simulation Trace
+                                    </button>
+                                    <div id="trace-log" class="h-64 bg-gray-900 text-white font-mono text-sm p-4 rounded-lg overflow-y-auto">
+                                        Click "Run" to start the trace...
+                                    </div>
+                                    <div id="trace-note" class="mt-4 p-3 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg hidden">
+                                        <strong>Learning Note:</strong> Pay close attention to the <strong class="text-gray-900">order of operations</strong>. The flowchart <strong class="text-gray-900">outputs the number *before*</strong> it checks if the count is < 1000. This is why it manages to output 1000. If the 'OUTPUT' and 'Decision' blocks were swapped, the result would be different!
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.getElementById('run-trace-count').addEventListener('click', runCountingTrace);
+                    }
+                },
+
+                // 4: Tracing Algorithm (Max)
+                {
+                    title: "Module 4: Tracing an Algorithm (Max)",
+                    render: () => {
+                        nextBtn.disabled = true;
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Case Study: Finding the Maximum</h2>
+                            <p class="mb-4 text-lg text-gray-700">This algorithm uses <strong class="text-blue-600">INPUT</strong> symbols to get data from the user. It then uses a <strong class="text-blue-600">DECISION</strong> symbol to create a "branch" in the logic.</p>
+                            <p class="mb-4 text-gray-700">The path the algorithm takes depends entirely on the answer to the question in the decision diamond. This is a fundamental concept in programming.</p>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <!-- Flowchart -->
+                                <div class="flex-1 bg-gray-50 p-4 rounded-lg border">
+                                    <h3 class="font-semibold text-center mb-2">Flowchart</h3>
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <div class="flow-shape flow-terminal" id="trace-max-start">Start</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-io" id="trace-max-in1"><span>INPUT num1</span></div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-io" id="trace-max-in2"><span>INPUT num2</span></div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-decision" id="trace-max-dec">num1 > num2?</div>
+                                        <div class="flex w-full justify-around">
+                                            <div>Yes ↓</div>
+                                            <div>↓ No</div>
+                                        </div>
+                                        <div class="flex w-full justify-around">
+                                            <div class="flow-shape flow-io" id="trace-max-out1"><span>OUTPUT num1</span></div>
+                                            <div class="flow-shape flow-io" id="trace-max-out2"><span>OUTPUT num2</span></div>
+                                        </div>
+                                        <div class="w-full border-t-2 border-gray-400 relative h-6">
+                                             <div class="absolute left-1/4 -top-2 w-0 h-4 border-l-2 border-gray-400"></div>
+                                             <div class="absolute right-1/4 -top-2 w-0 h-4 border-l-2 border-gray-400"></div>
+                                        </div>
+                                        <div class="flow-shape flow-terminal" id="trace-max-stop">Stop</div>
+                                    </div>
+                                </div>
+                                <!-- Interaction -->
+                                <div class="flex-1">
+                                    <h3 class="font-semibold mb-2">Simulation Trace:</h3>
+                                    <p class="text-sm text-gray-600 mb-2">Enter two different numbers to see how the path changes.</p>
+                                    <div class="flex gap-4 mb-4">
+                                        <div class="flex-1">
+                                            <label for="num1" class="block text-sm font-medium text-gray-700">Number 1</label>
+                                            <input type="number" id="num1" value="20" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                        <div class="flex-1">
+                                            <label for="num2" class="block text-sm font-medium text-gray-700">Number 2</label>
+                                            <input type="number" id="num2" value="10" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                                        </div>
+                                    </div>
+                                    <button id="run-trace-max" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 mb-4">
+                                        Run Simulation Trace
+                                    </button>
+                                    <div id="trace-log-max" class="h-64 bg-gray-900 text-white font-mono text-sm p-4 rounded-lg overflow-y-auto">
+                                        Enter two numbers and click "Run"...
+                                    </div>
+                                    <p class="text-center mt-4 text-gray-600">Try running with <code class="bg-gray-200 px-1 rounded">num1 = 20</code> / <code class="bg-gray-200 px-1 rounded">num2 = 10</code>. Then, swap them and run with <code class="bg-gray-200 px-1 rounded">num1 = 10</code> / <code class="bg-gray-200 px-1 rounded">num2 = 20</code> to see the logic work both ways.</p>
+                                </div>
+                            </div>
+                        `;
+                        
+                        document.getElementById('run-trace-max').addEventListener('click', runMaxTrace);
+                    }
+                },
+
+                // 5: Sub-programs
+                {
+                    title: "Module 5: Sub-Programs",
+                    render: () => {
+                        nextBtn.disabled = true;
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Understanding Sub-Programs</h2>
+                            <p class="mb-4 text-lg text-gray-700">Sub-programs (or subroutines) are like mini-algorithms within your main algorithm. Think of them as a "helper" you can call to do a specific, repeatable job.</p>
+                            <p class="mb-4 text-gray-700">This is powerful because it keeps your main flowchart simple and allows you to <strong class="text-blue-600">reuse code</strong>. For example, you could <code class="bg-gray-200 px-1 rounded">findVAT</code> many times in your program without writing the <code class="bg-gray-200 px-1 rounded">n * 0.2</code> logic every time.</p>
+                            <ul class="list-disc list-inside pl-4 space-y-2 mb-4 text-gray-700">
+                                <li>The main flow <strong class="text-gray-800">"passes"</strong> the <code class="bg-gray-200 px-1 rounded">total</code> value to the sub-program. This is called a <strong class="text-blue-600">parameter</strong>.</li>
+                                <li>The sub-program receives this value as its own variable, <code class="bg-gray-200 px-1 rounded">n</code>.</li>
+                                <li>It does its calculation and sends a value back. This is called a <strong class="text-blue-600">return value</strong>.</li>
+                            </ul>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <!-- Main Flowchart -->
+                                <div class="flex-1 bg-gray-50 p-4 rounded-lg border">
+                                    <h3 class="font-semibold text-center mb-2">Main Flowchart</h3>
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <div class="flow-shape flow-terminal">Start</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-io"><span>INPUT total</span></div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-subprogram">total ← total + findVAT(total)</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-io"><span>OUTPUT total</span></div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-terminal">Stop</div>
+                                    </div>
+                                </div>
+                                <!-- Sub-Program -->
+                                <div class="flex-1 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                                    <h3 class="font-semibold text-center mb-2">Sub-Program: findVAT</h3>
+                                    <div class="flex flex-col items-center space-y-2">
+                                        <div class="flow-shape flow-terminal bg-purple-100 border-purple-300">findVAT(n)</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-process bg-purple-100 border-purple-300">VAT ← n * 0.2</div>
+                                        <div>↓</div>
+                                        <div class="flow-shape flow-terminal bg-purple-100 border-purple-300">Return VAT</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-6">
+                                <h3 class="font-semibold text-lg mb-2">Question:</h3>
+                                <p class="mb-4 text-gray-700">When the main flow reaches the <strong class="text-purple-700">findVAT(total)</strong> block, what happens?</p>
+                                <button class="choice-btn" data-correct="false">The program stops and asks the user to enter the VAT.</button>
+                                <button class="choice-btn" data-correct="false">It multiplies the total by 0.2 directly in the main flow.</button>
+                                <button class="choice-btn" data-correct="true">It pauses, "jumps" to the 'findVAT' sub-program, gets the result, and then returns to the main flow.</button>
+                            </div>
+                        `;
+                        attachChoiceListeners(true);
+                    }
+                },
+
+                // 6: Flowchart Builder (NEW)
+                {
+                    title: "Module 7: Flowchart Builder",
+                    render: () => {
+                        nextBtn.disabled = false; // Can proceed whenever
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Practice: Build Your Own Flowchart</h2>
+                            <p class="mb-4 text-lg text-gray-700">Now it's your turn! Drag the symbols from the palette on the left onto the canvas on the right.</p>
+                            <p class="mb-6 text-gray-700">Once the symbols are on the canvas, you can <strong class="text-blue-600">click and drag from the small circles</strong> on their edges to connect them with arrows. You can also <strong class="text-blue-600">right-click</strong> a node (or press and hold on touch) to delete it.</p>
+                            <div class="flex flex-col md:flex-row gap-6 h-[600px] border rounded-lg p-4 bg-gray-50">
+                                <!-- Palette -->
+                                <div class="w-full md:w-1/4 bg-white p-4 rounded-lg border-2 border-dashed flex flex-col items-center space-y-4 overflow-y-auto">
+                                    <h3 class="font-semibold text-lg text-gray-700">Symbol Palette</h3>
+                                    
+                                    <div class="flow-shape flow-terminal cursor-grab" draggable="true" ondragstart="drag(event)" data-node-type="terminal">
+                                        Start / Stop
+                                    </div>
+                                    
+                                    <div class="flow-shape flow-process cursor-grab" draggable="true" ondragstart="drag(event)" data-node-type="process">
+                                        Process
+                                    </div>
+                                    
+                                    <div class="flow-shape flow-decision cursor-grab" draggable="true" ondragstart="drag(event)" data-node-type="decision">
+                                        Decision
+                                    </div>
+                                    
+                                    <div class="flow-shape flow-io cursor-grab" draggable="true" ondragstart="drag(event)" data-node-type="io">
+                                        <span>Input / Output</span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Canvas -->
+                                <div class="w-full md:w-3/4 h-full rounded-lg border bg-white relative overflow-hidden" id="drawflow-canvas" ondrop="drop(event)" ondragover="allowDrop(event)">
+                                    <!-- Drawflow will render here -->
+                                </div>
+                            </div>
+                        `;
+                        
+                        // Initialize Drawflow
+                        const canvas = document.getElementById('drawflow-canvas');
+                        state.drawflowEditor = new Drawflow(canvas);
+                        state.drawflowEditor.reroute = true; // Makes connections look nicer
+                        state.drawflowEditor.start();
+                        
+                        // Add some styling to the canvas
+                        canvas.style.backgroundImage = "radial-gradient(#cbd5e1 1px, transparent 1px)";
+                        canvas.style.backgroundSize = "20px 20px";
+                    },
+                    onNext: () => {
+                        // Clear the editor when moving away to save memory
+                        if (state.drawflowEditor) {
+                            state.drawflowEditor.clear();
+                            state.drawflowEditor = null;
+                        }
+                        return true;
+                    }
+                },
+
+                // 7: Final Review (Plenary) - (was 6)
+                {
+                    title: "Module 8: Final Review", // Renumbered
+                    render: () => {
+                        containerEl.innerHTML = `
+                            <h2 class="text-xl font-semibold mb-4 text-gray-800">Plenary: Final Review</h2>
+                            <p class="mb-4 text-lg text-gray-700">Let's do a quick final review to make sure you remember the main symbols.</p>
+                            <p class="mb-6 text-gray-700">Click the correct name for each symbol shown.</p>
+                            
+                            <!-- This will be rendered by renderSymbolQuiz -->
+                            <div id="quiz-container"></div>
+                        `;
+                        // Re-use the symbol quiz logic, but this time just ask for the name
+                        state.symbolQuiz = [
+                            {
+                                shape: '<div class="flow-shape flow-terminal">...</div>',
+                                question: "What is this symbol called?",
+                                choices: [ { text: "Terminal", correct: true }, { text: "Process", correct: false }, { text: "Decision", correct: false } ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-process">...</div>',
+                                question: "What is this symbol called?",
+                                choices: [ { text: "Input/Output", correct: false }, { text: "Process", correct: true }, { text: "Terminal", correct: false } ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-decision">...</div>',
+                                question: "What is this symbol called?",
+                                choices: [ { text: "Sub-program", correct: false }, { text: "Process", correct: false }, { text: "Decision", correct: true } ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-io"><span>...</span></div>',
+                                question: "What is this symbol called?",
+                                choices: [ { text: "Input/Output", correct: true }, { text: "Terminal", correct: false }, { text: "Process", correct: false } ]
+                            },
+                            {
+                                shape: '<div class="flow-shape flow-subprogram">...</div>',
+                                question: "What is this symbol called?",
+                                choices: [ { text: "Decision", correct: false }, { text: "Sub-program", correct: true }, { text: "Input/Output", correct: false } ]
+                            }
+                        ];
+                        state.symbolQuizStep = 0;
+                        renderSymbolQuiz(document.getElementById('quiz-container'));
+                    }
+                },
+
+                // 8: Completion - (was 7)
+                {
+                    title: "Simulation Complete!", // Renumbered
+                    render: () => {
+                        containerEl.innerHTML = `
+                            <div class="text-center space-y-4 py-16">
+                                <svg class="w-24 h-24 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <h2 class="text-3xl font-bold text-gray-800">Congratulations!</h2>
+                                <p class="text-xl text-gray-600">You have successfully completed the algorithm and flowchart simulation.</p>
+                                <p class="text-gray-600">You have learned and practiced:</p>
+                                <ul class="list-disc list-inside text-left max-w-md mx-auto text-gray-600 mt-4">
+                                    <li>What an <strong class="text-gray-800">Algorithm</strong> is.</li>
+                                <li>The 5 main <strong class="text-gray-800">Flowchart Symbols</strong>.</li>
+                                <li>How to <strong class="text-gray-800">Interpret</strong> a flowchart with loops (the bread example).</li>
+                                <li>How to <strong class="text-gray-800">Trace</strong> an algorithm by tracking variables (the counting example).</li>
+                                <li>How <strong class="text-gray-800">Decisions</strong> create branches in logic (the max number example).</li>
+                                <li>What <strong class="text-gray-800">Sub-Programs</strong> are and why they are useful.</li>
+                                <li>How to <strong class="text-gray-800">build your own flowchart</strong> using the drag-and-drop builder.</li>
+                            </ul>
+                            <p class="mt-8">Click "Restart" to go through the simulation again.</p>
+                            </div>
+                        `;
+                    }
+                }
+            ];
+
+            // --- QUIZ & TRACE LOGIC ---
+            
+            function renderSymbolQuiz(targetEl = containerEl) {
+                if (state.symbolQuizStep >= state.symbolQuiz.length) {
+                    // Quiz is over
+                    feedbackEl.textContent = "Module complete!";
+                    feedbackEl.className = "h-8 mt-4 text-lg font-medium text-center text-green-600";
+                    nextBtn.disabled = false;
+                    
+                    // If this was the *first* quiz, advance to the next main step
+                    if (currentStep === 1) {
+                        currentStep++;
+                        renderModule();
+                    } else if (currentStep === 7) { // Updated from 6 to 7
+                        // This was the final quiz, so just enable next
+                        nextBtn.disabled = false;
+                    }
+                    return;
+                }
+                
+                nextBtn.disabled = true;
+                const quiz = state.symbolQuiz[state.symbolQuizStep];
+                
+                targetEl.innerHTML = `
+                    <div class="flex flex-col items-center">
+                        ${quiz.shape}
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-lg mb-2">${quiz.question}</h3>
+                        ${quiz.choices.map(c => `<button class="choice-btn" data-correct="${c.correct}">${c.text}</button>`).join('')}
+                    </div>
+                `;
+                
+                attachChoiceListeners(false); // false = don't enable next, just advance quiz
+            }
+
+            function attachChoiceListeners(enableNextOnCorrect) {
+                const choices = containerEl.querySelectorAll('.choice-btn');
+                choices.forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const correct = e.target.dataset.correct === 'true';
+                        
+                        // Disable all buttons
+                        choices.forEach(b => b.disabled = true);
+                        
+                        if (correct) {
+                            e.target.classList.add('correct');
+                            feedbackEl.textContent = "Correct!";
+                            feedbackEl.className = "h-8 mt-4 text-lg font-medium text-center text-green-600";
+                            if (enableNextOnCorrect) {
+                                nextBtn.disabled = false;
+                            } else {
+                                // This is a multi-step quiz, advance to next question
+                                setTimeout(() => {
+                                    state.symbolQuizStep++;
+                                    renderSymbolQuiz(currentStep === 1 ? document.getElementById('quiz-container') : document.getElementById('quiz-container'));
+                                    feedbackEl.textContent = "";
+                                }, 1000);
+                            }
+                        } else {
+                            e.target.classList.add('incorrect');
+                            feedbackEl.textContent = "Not quite. Try thinking it through again.";
+                            feedbackEl.className = "h-8 mt-4 text-lg font-medium text-center text-red-600";
+                            
+                            // Re-enable buttons after a delay
+                            setTimeout(() => {
+                                choices.forEach(b => {
+                                    b.disabled = false;
+                                    b.classList.remove('incorrect');
+                                });
+                                feedbackEl.textContent = "";
+                            }, 1500);
+                        }
+                    });
+                });
+            }
+
+            function sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+            
+            async function runCountingTrace() {
+                const log = document.getElementById('trace-log');
+                const btn = document.getElementById('run-trace-count');
+                btn.disabled = true;
+                log.innerHTML = '';
+                
+                const steps = [
+                    '#trace-step-1', '#trace-step-2', '#trace-step-3'
+                ];
+                const highlight = (id) => {
+                    document.querySelectorAll('.flow-shape').forEach(el => el.classList.remove('ring-4', 'ring-blue-500'));
+                    if (id) document.getElementById(id).classList.add('ring-4', 'ring-blue-500');
+                };
+
+                log.innerHTML += '<p>> Simulation Start.</p>';
+                await sleep(500);
+                log.innerHTML += '<p>> count ← 0</p>';
+                let simCount = 0;
+                
+                for (let i = 1; i <= 3; i++) {
+                    await sleep(500);
+                    highlight('trace-step-1');
+                    simCount++;
+                    log.innerHTML += `<p>> count ← count + 1  (count is now ${simCount})</p>`;
+                    await sleep(500);
+                    
+                    highlight('trace-step-2');
+                    log.innerHTML += `<p class="text-yellow-300">> OUTPUT: ${simCount}</p>`;
+                    await sleep(500);
+                    
+                    highlight('trace-step-3');
+                    log.innerHTML += `<p>> Decision: Is ${simCount} < 1000? (Yes)</p>`;
+                    log.innerHTML += `<p>> Path: Yes. Loop back.</p>`;
+                }
+                
+                await sleep(500);
+                highlight(null);
+                log.innerHTML += `<p>> ...loop continues 996 more times...</p>`;
+                await sleep(1000);
+                
+                simCount = 999;
+                log.innerHTML += `<p>> -- Tracing final loop --</p>`;
+                log.innerHTML += `<p>> (count is 999)</p>`;
+                
+                await sleep(500);
+                highlight('trace-step-1');
+                simCount++; // simCount becomes 1000
+                log.innerHTML += `<p>> count ← count + 1  (count is now ${simCount})</p>`;
+                await sleep(500);
+                
+                highlight('trace-step-2');
+                log.innerHTML += `<p class="text-yellow-300">> OUTPUT: ${simCount}</p>`;
+                await sleep(500);
+                
+                highlight('trace-step-3');
+                log.innerHTML += `<p>> Decision: Is ${simCount} < 1000? (No)</p>`;
+                log.innerHTML += `<p>> Path: No. Continue to Stop.</p>`;
+                await sleep(500);
+
+                highlight(null);
+                log.innerHTML += `<p>> Simulation Stop.</p>`;
+                
+                document.getElementById('trace-note').classList.remove('hidden');
+                nextBtn.disabled = false;
+            }
+
+            async function runMaxTrace() {
+                const log = document.getElementById('trace-log-max');
+                const btn = document.getElementById('run-trace-max');
+                const n1 = parseInt(document.getElementById('num1').value);
+                const n2 = parseInt(document.getElementById('num2').value);
+
+                if (isNaN(n1) || isNaN(n2)) {
+                    log.innerHTML = '<p class="text-red-400">Please enter valid numbers in both fields.</p>';
+                    return;
+                }
+                
+                btn.disabled = true;
+                log.innerHTML = '';
+
+                const highlight = (id) => {
+                    document.querySelectorAll('.flow-shape').forEach(el => el.classList.remove('ring-4', 'ring-blue-500'));
+                    if (id) document.getElementById(id).classList.add('ring-4', 'ring-blue-500');
+                };
+
+                log.innerHTML += '<p>> Simulation Start.</p>';
+                highlight('trace-max-start');
+                await sleep(500);
+
+                highlight('trace-max-in1');
+                log.innerHTML += `<p>> INPUT num1 (Value: ${n1})</p>`;
+                await sleep(500);
+
+                highlight('trace-max-in2');
+                log.innerHTML += `<p>> INPUT num2 (Value: ${n2})</p>`;
+                await sleep(500);
+
+                highlight('trace-max-dec');
+                log.innerHTML += `<p>> Decision: Is ${n1} > ${n2}?`
+                await sleep(1000);
+
+                if (n1 > n2) {
+                    log.innerHTML += ' (Yes)</p>';
+                    log.innerHTML += '<p>> Path: Yes</p>';
+                    await sleep(500);
+                    highlight('trace-max-out1');
+                    log.innerHTML += `<p class="text-yellow-300">> OUTPUT: ${n1}</p>`;
+                } else {
+                    log.innerHTML += ' (No)</p>';
+                    log.innerHTML += '<p>> Path: No</p>';
+                    await sleep(500);
+                    highlight('trace-max-out2');
+                    log.innerHTML += `<p class="text-yellow-300">> OUTPUT: ${n2}</p>`;
+                }
+
+                await sleep(500);
+                highlight('trace-max-stop');
+                log.innerHTML += '<p>> Simulation Stop.</p>';
+                
+                highlight(null);
+                btn.disabled = false;
+                nextBtn.disabled = false;
+            }
+
+
+            // --- NAVIGATION LOGIC ---
+            function renderModule() {
+                const module = modules[currentStep];
+                
+                // Render content
+                titleEl.textContent = module.title;
+                module.render();
+                
+                // Clear feedback
+                feedbackEl.textContent = "";
+
+                // Update step counter
+                stepCounterEl.textContent = `Step ${currentStep + 1} of ${modules.length}`;
+                
+                // Update button visibility
+                prevBtn.disabled = (currentStep === 0);
+                restartBtn.classList.toggle('hidden', currentStep !== modules.length - 1);
+                nextBtn.classList.toggle('hidden', currentStep === modules.length - 1);
+
+                // Disable 'Next' by default on interactive steps
+                // Steps 0 (Intro) and 8 (Complete) are passive
+                if (currentStep > 0 && currentStep < modules.length - 1) {
+                    // Module 7 (builder) is special, 'Next' is enabled
+                    if (currentStep === 6) { // Module 7 is at index 6
+                        nextBtn.disabled = false;
+                    } else {
+                        nextBtn.disabled = true;
+                    }
+                } else {
+                    nextBtn.disabled = false;
+                }
+            }
+
+            function next() {
+                // Check for custom 'onNext' logic
+                const onNext = modules[currentStep].onNext;
+                let allowNext = true;
+                if (typeof onNext === 'function') {
+                    allowNext = onNext();
+                }
+
+                if (allowNext && currentStep < modules.length - 1) {
+                    currentStep++;
+                    renderModule();
+                }
+            }
+
+            function prev() {
+                if (currentStep > 0) {
+                    currentStep--;
+                    renderModule();
+                }
+            }
+
+            function restart() {
+                currentStep = 0;
+                renderModule();
+            }
+
+            // --- INITIALIZATION ---
+            nextBtn.addEventListener('click', next);
+            prevBtn.addEventListener('click', prev);
+            restartBtn.addEventListener('click', restart);
+            
+            // Initial render
+            renderModule();
+        });
+    </script>
+</body>
+</html>
+
+
+

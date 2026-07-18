@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB DP CS: Unit A.1 Systems Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .glow { box-shadow: 0 0 15px rgba(250, 204, 21, 0.6); }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .active-tab-btn { border-bottom: 4px solid #3b82f6; color: #1e3a8a; font-weight: bold; background-color: #f0fdfa; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-blue-900 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="flex items-center">
+                <i class="fas fa-microchip text-4xl mr-4 text-blue-300"></i>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight">Unit A.1: Computer Systems</h1>
+                    <p class="text-blue-200 text-sm mt-1">Task-Based Interactive Learning Guide (First Assessment 2027)</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="bg-white shadow-sm border-b border-slate-200 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <nav class="flex overflow-x-auto hide-scroll" aria-label="Tabs">
+                <button onclick="switchTab('tab1')" id="btn-tab1" class="active-tab-btn whitespace-nowrap py-4 px-6 border-b-4 border-transparent text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors flex items-center">
+                    <i class="fas fa-server mr-2"></i> Task 1: CPU Architect
+                </button>
+                <button onclick="switchTab('tab2')" id="btn-tab2" class="whitespace-nowrap py-4 px-6 border-b-4 border-transparent text-sm font-medium text-slate-500 hover:text-slate-700 hover:bg-slate-50 transition-colors flex items-center">
+                    <i class="fas fa-database mr-2"></i> Task 2: Storage & Cloud
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- ==========================================
+             TAB 1: CPU ARCHITECT
+             ========================================== -->
+        <div id="tab1" class="tab-content active">
+            
+            <!-- The Task -->
+            <div class="bg-orange-50 border-l-4 border-orange-500 rounded-r-xl p-6 mb-8 shadow-sm">
+                <div class="flex items-start">
+                    <input type="checkbox" class="w-6 h-6 mt-1 text-orange-600 rounded border-gray-300 focus:ring-orange-500 cursor-pointer">
+                    <div class="ml-4">
+                        <h2 class="text-2xl font-bold text-orange-900 mb-2">Task 1: System Simulation Project</h2>
+                        <p class="text-orange-800"><strong>Objective:</strong> Create a comprehensive simulation of the Von Neumann architecture and FDE cycle covering all aspects of A.1.</p>
+                        <ol class="list-decimal pl-5 mt-2 space-y-1 text-orange-800">
+                            <li>Design an interactive simulation (a physical model, animated presentation, role-play, or programmed app) demonstrating the Von Neumann architecture.</li>
+                            <li>Model the Fetch-Decode-Execute cycle in your simulation, showing exactly how data moves across all specific buses and registers.</li>
+                            <li>Incorporate advanced A.1 concepts into your model: demonstrate how <strong>Instruction Pipelining</strong> increases efficiency, show the interaction with different <strong>memory types (Cache, RAM, ROM)</strong>, and distinguish between single vs multi-core / CPU vs GPU execution.</li>
+                        </ol>
+                        <div class="mt-4 bg-orange-100 p-3 rounded-lg border border-orange-200">
+                            <h4 class="text-xs font-bold text-orange-900 mb-2 uppercase tracking-wide">Syllabus Coverage:</h4>
+                            <ul class="text-xs text-orange-800 space-y-1">
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.1 Outline the architecture of the central processing unit (CPU).</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.2 Describe the fetch–decode–execute cycle.</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.3 Identify the function of primary memory.</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.4 Describe the use of cache memory.</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.5 Describe the use of pipelining in the CPU.</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.6 Compare the function of CPUs and GPUs.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Simulation Checklist -->
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm mb-8 overflow-hidden">
+                <button onclick="toggleCollapse('checklistContent', 'checklistIcon')" class="w-full p-6 bg-slate-50 hover:bg-slate-100 transition-colors flex justify-between items-center text-left focus:outline-none">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-1"><i class="fas fa-clipboard-list text-blue-500 mr-2"></i>Detailed Simulation Checklist</h3>
+                        <p class="text-slate-600 text-sm mb-0">Make sure your simulation clearly covers and explains each of the following components to meet the syllabus requirements:</p>
+                    </div>
+                    <i id="checklistIcon" class="fas fa-chevron-up text-slate-400 text-xl ml-4 transition-transform"></i>
+                </button>
+                
+                <div id="checklistContent" class="p-6 pt-4 border-t border-slate-200 transition-all duration-300">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+                        <!-- Group 1 -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3 text-sm border-b-2 border-slate-100 pb-1">1. CPU Architecture (A.1.1)</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Registers:</strong> Clearly label and use all 5 key registers: PC, MAR, MDR, IR, and Accumulator.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Buses:</strong> Show the Address (one-way), Data (two-way), and Control buses connecting the CPU components to memory.</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- Group 2 -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3 text-sm border-b-2 border-slate-100 pb-1">2. Memory & Cache (A.1.3, A.1.4)</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>RAM vs ROM:</strong> Explain/show RAM holding active instructions and ROM holding non-volatile boot firmware.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Cache:</strong> Position cache memory between the CPU and RAM, explaining how it speeds up data access for frequently used instructions.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Group 3 -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3 text-sm border-b-2 border-slate-100 pb-1">3. The FDE Cycle (A.1.2)</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Fetch:</strong> Trace the address from PC to MAR, the read signal, and data moving from RAM to MDR to IR (along with PC incrementing).</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Decode:</strong> Show the Control Unit interpreting the fetched instruction.</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Execute:</strong> Show the ALU calculating the result and storing it temporarily in the Accumulator.</span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Group 4 -->
+                        <div>
+                            <h4 class="font-bold text-slate-700 mb-3 text-sm border-b-2 border-slate-100 pb-1">4. Advanced Execution (A.1.5, A.1.6)</h4>
+                            <ul class="space-y-3">
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>Pipelining:</strong> Demonstrate overlapping instructions (e.g., fetching Instruction 2 simultaneously while decoding Instruction 1).</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <input type="checkbox" class="mt-1 mr-3 w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300">
+                                    <span class="text-sm text-slate-600 leading-snug"><strong>CPU vs GPU:</strong> Include an explanation of why a CPU (few fast cores) differs functionally from a GPU (thousands of parallel cores).</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task 1 Rubric -->
+            <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden mb-8">
+                <button onclick="toggleCollapse('rubricContent', 'rubricIcon')" class="w-full bg-slate-800 p-4 hover:bg-slate-700 transition-colors flex justify-between items-center text-left focus:outline-none">
+                    <h3 class="text-lg font-bold text-white flex items-center"><i class="fas fa-balance-scale text-blue-400 mr-2"></i>Task 1 Assessment Rubric (7-Point Scale)</h3>
+                    <i id="rubricIcon" class="fas fa-chevron-up text-slate-400 text-xl ml-4 transition-transform"></i>
+                </button>
+                <div id="rubricContent" class="overflow-x-auto transition-all duration-300">
+                    <table class="w-full text-left border-collapse min-w-[800px]">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200">
+                                <th class="p-3 font-bold text-slate-700 w-1/4">Mark Band</th>
+                                <th class="p-3 font-bold text-slate-700 w-1/4 text-sm">Clarity of Understanding</th>
+                                <th class="p-3 font-bold text-slate-700 w-1/4 text-sm">Level of Detail</th>
+                                <th class="p-3 font-bold text-slate-700 w-1/4 text-sm">Communication of Concepts</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm">
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-3 border-r border-slate-100 align-top">
+                                    <div class="font-bold text-green-600 text-lg">7 (Excellent)</div>
+                                    <div class="text-xs text-slate-500 mt-1">Masterful execution</div>
+                                </td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Flawless understanding of all A.1 concepts. The FDE cycle, memory interactions, pipelining, and CPU/GPU distinctions are integrated seamlessly and accurately without misconceptions.</td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Simulation is meticulous. Every required register and bus is actively modeled. Data movement is shown step-by-step. Advanced concepts (e.g., pipelining overlap, specific cache levels) are rigorously detailed.</td>
+                                <td class="p-3 align-top text-slate-700">Exceptional presentation. The narrative is highly engaging, logical, and uses precise IB terminology continuously. Visual/interactive elements make complex architectural concepts instantly accessible to the audience.</td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-3 border-r border-slate-100 align-top">
+                                    <div class="font-bold text-blue-600 text-lg">5-6 (Proficient)</div>
+                                    <div class="text-xs text-slate-500 mt-1">Strong, consistent work</div>
+                                </td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Strong understanding of concepts. The architecture and FDE cycle are highly accurate, with perhaps only minor, non-critical misunderstandings in the advanced areas (like pipelining).</td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Simulation includes all key components. The FDE cycle is clear, though minor data movements might be generalized. Advanced concepts are present and modeled, but with slightly less rigorous depth than a level 7.</td>
+                                <td class="p-3 align-top text-slate-700">Clear and effective presentation. Good, consistent use of subject-specific terminology. The visual/interactive elements successfully support the explanation and are easy to follow.</td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-3 border-r border-slate-100 align-top">
+                                    <div class="font-bold text-orange-500 text-lg">3-4 (Adequate)</div>
+                                    <div class="text-xs text-slate-500 mt-1">Basic requirements met</div>
+                                </td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Adequate understanding, but with noticeable gaps or inaccuracies (e.g., confusing MAR/MDR functions, or misunderstanding how buses flow).</td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Includes basic CPU components but lacks depth. The FDE cycle is broadly outlined rather than fully simulated step-by-step. Advanced concepts are briefly mentioned but not actively modeled.</td>
+                                <td class="p-3 align-top text-slate-700">Presentation is understandable but may occasionally be disjointed. Basic terminology is used, sometimes incorrectly. Visuals are somewhat static and provide limited support to the narrative.</td>
+                            </tr>
+                            <tr class="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                <td class="p-3 border-r border-slate-100 align-top">
+                                    <div class="font-bold text-red-500 text-lg">1-2 (Basic)</div>
+                                    <div class="text-xs text-slate-500 mt-1">Significant gaps</div>
+                                </td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Limited understanding shown. Contains significant misconceptions about computer architecture and how the CPU processes instructions.</td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-700">Simulation is superficial or missing many required elements (e.g., missing specific registers or memory types entirely). Advanced concepts are completely omitted.</td>
+                                <td class="p-3 align-top text-slate-700">Presentation is difficult to follow. Shows a lack of appropriate IB terminology. Visuals are confusing, absent, or do not accurately reflect the system being described.</td>
+                            </tr>
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="p-3 border-r border-slate-100 align-top">
+                                    <div class="font-bold text-slate-400 text-lg">0</div>
+                                </td>
+                                <td class="p-3 border-r border-slate-100 align-top text-slate-500 italic" colspan="3">The work does not reach a standard described by the descriptors above.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Task 1 Resources Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Explanations & Vocab -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                        <h3 class="text-xl font-bold border-b pb-2 mb-4 text-blue-900"><i class="fas fa-book-open mr-2"></i>Hardware Explanations</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600">
+                            <li><strong>ALU & CU:</strong> ALU performs math/logic; CU directs operations and data flow.</li>
+                            <li><strong>Registers:</strong>
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>PC:</em> Holds address of next instruction.</li>
+                                    <li><em>MAR:</em> Holds address to fetch/write from memory.</li>
+                                    <li><em>MDR:</em> Holds actual data fetched/waiting to be written.</li>
+                                    <li><em>IR:</em> Holds current instruction being decoded.</li>
+                                    <li><em>Accumulator:</em> Stores intermediate arithmetic/logic results.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Buses:</strong>
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>Address Bus:</em> Carries the memory location to be read/written (Unidirectional).</li>
+                                    <li><em>Data Bus:</em> Carries actual data/instructions between CPU and memory (Bidirectional).</li>
+                                    <li><em>Control Bus:</em> Carries command signals like Read, Write, and Clock synchronization.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Cores & Processors:</strong> A core is an independent processing unit in a CPU.
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>CPU:</em> Few powerful cores optimized for sequential, general-purpose tasks.</li>
+                                    <li><em>GPU (Graphics Processing Unit):</em> Thousands of simpler cores designed for highly parallel processing (ideal for graphics and AI/Machine Learning).</li>
+                                </ul>
+                            </li>
+                            <li class="bg-blue-50 p-4 rounded-lg border border-blue-200 mt-4">
+                                <strong class="text-blue-900 text-lg block border-b border-blue-200 pb-2 mb-2"><i class="fas fa-stream mr-2"></i>Instruction Pipelining (Deep Dive)</strong>
+                                <p class="text-sm text-slate-700 mb-2"><strong>Sequential vs. Pipelined:</strong> In a basic (sequential) CPU, an instruction must go completely through the Fetch, Decode, and Execute stages before the next instruction can even begin. This leaves parts of the CPU idle.</p>
+                                <p class="text-sm text-slate-700 mb-3"><strong>How Pipelining Works:</strong> Instruction Pipelining overlaps the execution of multiple instructions to increase overall performance (throughput). It works like an assembly line. As soon as Instruction 1 finishes <em>Fetching</em> and moves to the <em>Decode</em> unit, the Fetch unit is immediately freed up to grab Instruction 2.</p>
+                                <p class="text-sm text-slate-700 mb-4">Once the pipeline is "full," the CPU completes one instruction every single clock cycle, drastically speeding up execution.</p>
+                                <div class="w-full mt-2">
+                                    <a href="https://www.youtube.com/watch?v=8Nh9QvemW3M" target="_blank" rel="noopener noreferrer" class="block relative group rounded-lg overflow-hidden shadow-md border border-slate-200">
+                                        <img src="https://img.youtube.com/vi/8Nh9QvemW3M/hqdefault.jpg" alt="Instruction Pipelining Explained" class="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-300">
+                                        <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center group-hover:bg-opacity-20 transition-all">
+                                            <i class="fab fa-youtube text-6xl text-red-600 drop-shadow-md group-hover:scale-110 transition-transform duration-300 rounded-full bg-white"></i>
+                                        </div>
+                                    </a>
+                                    <p class="text-xs text-center mt-2 text-slate-500 italic">Click image to watch the explanation on YouTube</p>
+                                </div>
+                            </li>
+                            <li class="mt-4"><strong>Memory Types:</strong>
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>RAM (Random Access Memory):</em> Volatile working memory storing currently active programs and data.</li>
+                                    <li><em>ROM (Read-Only Memory):</em> Non-volatile memory storing essential bootup instructions (BIOS).</li>
+                                    <li><em>Cache:</em> Small, ultra-fast memory near/on the CPU storing frequently used data. Divided into levels:
+                                        <ul class="list-disc pl-5 mt-1 text-xs space-y-1 text-slate-500">
+                                            <li><strong>L1 Cache:</strong> Smallest and fastest, located directly on the CPU core.</li>
+                                            <li><strong>L2 Cache:</strong> Larger but slightly slower, usually dedicated to a specific core.</li>
+                                            <li><strong>L3 Cache:</strong> Largest and slowest cache, typically shared across all cores.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                        <h3 class="text-xl font-bold border-b pb-2 mb-4 text-purple-900"><i class="fas fa-spell-check mr-2"></i>Task 1 Vocabulary</h3>
+                        <dl class="space-y-3 text-sm">
+                            <div><dt class="font-bold text-slate-800">Accumulator (AC)</dt><dd class="text-slate-600">A CPU register that temporarily stores results of ALU operations.</dd></div>
+                            <div><dt class="font-bold text-slate-800">Big-Endian / Little-Endian</dt><dd class="text-slate-600">Methods of organizing bytes in memory.</dd></div>
+                            <div><dt class="font-bold text-slate-800">Cache Hit / Miss</dt><dd class="text-slate-600">Finding needed data in fast cache (Hit) vs fetching from slower RAM (Miss).</dd></div>
+                            <div><dt class="font-bold text-slate-800">Pipelining</dt><dd class="text-slate-600">Overlapping the stages of the FDE cycle for multiple instructions to improve CPU throughput.</dd></div>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Simulation & Questions -->
+                <div class="space-y-6">
+                    <!-- FDE Cycle Simulator -->
+                    <div class="bg-blue-50 rounded-xl shadow-md p-6 border-t-4 border-blue-500 relative overflow-hidden">
+                        <h3 class="text-xl font-bold mb-4 text-blue-900"><i class="fas fa-sync-alt mr-2"></i>FDE Cycle Simulator</h3>
+                        
+                        <div class="flex justify-between space-x-2 mb-4 relative">
+                            <!-- CPU Box -->
+                            <div class="w-2/3 border-2 border-blue-300 rounded p-2 bg-white relative">
+                                <div class="absolute -top-3 left-2 bg-white px-1 text-[10px] font-bold text-blue-500">CPU</div>
+                                <div class="grid grid-cols-2 gap-1 text-[11px] font-mono">
+                                    <div class="bg-slate-100 p-1 rounded border" id="regPC">PC: <span class="font-bold">00</span></div>
+                                    <div class="bg-slate-100 p-1 rounded border" id="regMAR">MAR: <span class="font-bold">--</span></div>
+                                    <div class="bg-slate-100 p-1 rounded border" id="regMDR">MDR: <span class="font-bold">--</span></div>
+                                    <div class="bg-slate-100 p-1 rounded border" id="regIR">IR: <span class="font-bold">--</span></div>
+                                    <div class="bg-slate-100 p-1 rounded border col-span-2" id="regACC">ACC: <span class="font-bold">0</span></div>
+                                </div>
+                            </div>
+                            <!-- RAM Box -->
+                            <div class="w-1/3 border-2 border-green-300 rounded p-2 bg-white relative">
+                                <div class="absolute -top-3 left-1 bg-white px-1 text-[10px] font-bold text-green-500">RAM</div>
+                                <div class="text-[11px] font-mono space-y-1">
+                                    <div class="flex justify-between" id="ram00"><span>[00]</span><span>ADD 5</span></div>
+                                    <div class="flex justify-between text-slate-400" id="ram01"><span>[01]</span><span>SUB 2</span></div>
+                                    <div class="flex justify-between text-slate-400" id="ram02"><span>[02]</span><span>HLT</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-3 rounded shadow-inner min-h-[80px] flex items-center text-sm border border-slate-200 mb-4">
+                            <p id="fdeDescription" class="text-slate-700">Click "Start Cycle" to step through the execution.</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="stepFDE()" id="btnNextFDE" class="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-bold text-sm">Start Cycle</button>
+                            <button onclick="resetFDE()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 font-bold text-sm">Reset</button>
+                        </div>
+                    </div>
+
+                    <!-- Pipelining Simulator -->
+                    <div class="bg-indigo-50 rounded-xl shadow-md p-6 border-t-4 border-indigo-500 relative overflow-hidden">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-xl font-bold text-indigo-900"><i class="fas fa-stream mr-2"></i>Pipelining Visualizer</h3>
+                            <div class="bg-indigo-900 text-white px-3 py-1 rounded-full text-sm font-bold font-mono shadow-inner">
+                                Clock: <span id="pipeClockDisplay">0</span>
+                            </div>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4">Click "Tick Clock" to see how 3 instructions overlap across 5 CPU clock cycles.</p>
+
+                        <div class="bg-white rounded border border-slate-200 overflow-hidden mb-4 shadow-sm">
+                            <table class="w-full text-center text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 border-b">
+                                        <th class="p-2 border-r text-slate-500 font-semibold w-1/6">Instr.</th>
+                                        <th class="p-2 border-r text-slate-500 font-mono text-xs">T1</th>
+                                        <th class="p-2 border-r text-slate-500 font-mono text-xs">T2</th>
+                                        <th class="p-2 border-r text-slate-500 font-mono text-xs">T3</th>
+                                        <th class="p-2 border-r text-slate-500 font-mono text-xs">T4</th>
+                                        <th class="p-2 text-slate-500 font-mono text-xs">T5</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b">
+                                        <td class="p-2 font-bold border-r text-slate-700 text-xs">Inst 1</td>
+                                        <td id="i0c1" class="border-r h-8 transition-colors"></td>
+                                        <td id="i0c2" class="border-r h-8 transition-colors"></td>
+                                        <td id="i0c3" class="border-r h-8 transition-colors"></td>
+                                        <td id="i0c4" class="border-r h-8 transition-colors bg-slate-50"></td>
+                                        <td id="i0c5" class="h-8 transition-colors bg-slate-50"></td>
+                                    </tr>
+                                    <tr class="border-b">
+                                        <td class="p-2 font-bold border-r text-slate-700 text-xs">Inst 2</td>
+                                        <td id="i1c1" class="border-r h-8 transition-colors bg-slate-50"></td>
+                                        <td id="i1c2" class="border-r h-8 transition-colors"></td>
+                                        <td id="i1c3" class="border-r h-8 transition-colors"></td>
+                                        <td id="i1c4" class="border-r h-8 transition-colors"></td>
+                                        <td id="i1c5" class="h-8 transition-colors bg-slate-50"></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-bold border-r text-slate-700 text-xs">Inst 3</td>
+                                        <td id="i2c1" class="border-r h-8 transition-colors bg-slate-50"></td>
+                                        <td id="i2c2" class="border-r h-8 transition-colors bg-slate-50"></td>
+                                        <td id="i2c3" class="border-r h-8 transition-colors"></td>
+                                        <td id="i2c4" class="border-r h-8 transition-colors"></td>
+                                        <td id="i2c5" class="h-8 transition-colors"></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="flex space-x-2">
+                            <button onclick="stepPipeline()" id="btnPipe" class="flex-1 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 font-bold text-sm shadow-sm transition-colors">Tick Clock (+1)</button>
+                        </div>
+                    </div>
+
+                    <!-- Active Recall Q -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50" onclick="toggleAnswer('ans1', 'icon1')">
+                            <h3 class="font-semibold text-slate-800 text-sm"><span class="text-red-500 mr-1">Q1.</span>Outline the function of an accumulator. [2]</h3>
+                            <i id="icon1" class="fas fa-chevron-down text-slate-400"></i>
+                        </div>
+                        <div id="ans1" class="hidden px-4 pb-4 border-t border-slate-100 bg-red-50 text-sm">
+                            <p class="text-slate-700 mt-2 font-medium">Markscheme Guidance:</p>
+                            <ul class="list-disc pl-5 mt-1 text-slate-600">
+                                <li>To store intermediate arithmetic/logic results [1]</li>
+                                <li>Reduces main memory accesses during processing cycles [1]</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TAB 2: STORAGE & CLOUD
+             ========================================== -->
+        <div id="tab2" class="tab-content">
+            
+            <!-- The Task -->
+            <div class="bg-orange-50 border-l-4 border-orange-500 rounded-r-xl p-6 mb-8 shadow-sm">
+                <div class="flex items-start">
+                    <input type="checkbox" class="w-6 h-6 mt-1 text-orange-600 rounded border-gray-300 focus:ring-orange-500 cursor-pointer">
+                    <div class="ml-4">
+                        <h2 class="text-2xl font-bold text-orange-900 mb-2">Task 2: Storage & Cloud Consultant</h2>
+                        <p class="text-orange-800"><strong>Objective:</strong> Evaluate secondary storage, compression, and cloud services.</p>
+                        <ol class="list-decimal pl-5 mt-2 space-y-1 text-orange-800">
+                            <li>Compare the characteristics of Magnetic, Solid State, and Optical secondary storage.</li>
+                            <li>Explain the need for data compression and simulate how Run-Length Encoding (RLE) compresses a string of data.</li>
+                            <li>Evaluate IaaS, PaaS, and SaaS, and recommend a cloud service model for a startup with limited hardware budget.</li>
+                        </ol>
+                        <div class="mt-4 bg-orange-100 p-3 rounded-lg border border-orange-200">
+                            <h4 class="text-xs font-bold text-orange-900 mb-2 uppercase tracking-wide">Syllabus Coverage:</h4>
+                            <ul class="text-xs text-orange-800 space-y-1">
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.x Outline the use of secondary storage.</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.x Describe data compression (Lossy, Lossless, RLE).</li>
+                                <li class="flex items-start"><i class="fas fa-check-square text-orange-500 mt-0.5 mr-2"></i>A.1.10 Explain the characteristics of cloud computing (SaaS, PaaS, IaaS).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Explanations & Vocab -->
+                <div class="space-y-6">
+                    <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                        <h3 class="text-xl font-bold border-b pb-2 mb-4 text-blue-900"><i class="fas fa-book-open mr-2"></i>Storage & Cloud Explanations</h3>
+                        <ul class="list-disc pl-5 space-y-2 text-slate-600">
+                            <li><strong>Secondary Storage:</strong> Non-volatile, long-term storage.
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>Magnetic (HDD):</em> High capacity, low cost, uses moving mechanical parts.</li>
+                                    <li><em>Solid State (SSD):</em> Flash memory, no moving parts, faster, durable, higher cost.</li>
+                                    <li><em>Optical (CD/DVD):</em> Lasers read/write data on a disc. Very portable, low capacity.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Data Compression:</strong> Reducing file sizes to save storage space and transmission time.
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>Lossy:</em> Permanently removes non-essential data (e.g., JPEG, MP3).</li>
+                                    <li><em>Lossless:</em> Reduces size without losing any data; perfectly restorable (e.g., ZIP).</li>
+                                    <li><em>Run-Length Encoding (RLE):</em> A form of lossless compression that replaces sequences of identical data with a single count and the value (e.g., 'AAAA' becomes '4A').</li>
+                                </ul>
+                            </li>
+                            <li><strong>Cloud Computing Models:</strong>
+                                <ul class="list-[circle] pl-5 mt-1 space-y-1 text-sm text-slate-500">
+                                    <li><em>SaaS (Software as a Service):</em> Ready-to-use software accessed via browser (e.g., Google Workspace).</li>
+                                    <li><em>PaaS (Platform as a Service):</em> Provides development frameworks/tools for programmers without hardware management (e.g., Heroku).</li>
+                                    <li><em>IaaS (Infrastructure as a Service):</em> Raw virtualized hardware (servers, storage). You manage the OS and apps (e.g., AWS EC2).</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-md p-6 border border-slate-100">
+                        <h3 class="text-xl font-bold border-b pb-2 mb-4 text-purple-900"><i class="fas fa-spell-check mr-2"></i>Task 2 Vocabulary</h3>
+                        <dl class="space-y-3 text-sm">
+                            <div><dt class="font-bold text-slate-800">IaaS / PaaS / SaaS</dt><dd class="text-slate-600">Infrastructure, Platform, and Software delivered "as a service" over the internet.</dd></div>
+                            <div><dt class="font-bold text-slate-800">RLE (Run-Length Encoding)</dt><dd class="text-slate-600">A simple lossless compression technique checking for repeating consecutive characters.</dd></div>
+                            <div><dt class="font-bold text-slate-800">Solid State Drive (SSD)</dt><dd class="text-slate-600">Secondary storage using NAND flash memory chips.</dd></div>
+                        </dl>
+                    </div>
+                </div>
+
+                <!-- Simulation & Questions -->
+                <div class="space-y-6">
+                    <!-- RLE Simulator -->
+                    <div class="bg-indigo-50 rounded-xl shadow-md p-6 border-t-4 border-indigo-500 relative overflow-hidden">
+                        <h3 class="text-xl font-bold mb-4 text-indigo-900"><i class="fas fa-compress-arrows-alt mr-2"></i>RLE Compression Simulator</h3>
+                        <p class="text-sm text-slate-600 mb-4">Type a string of repeating characters below to see how Lossless Run-Length Encoding compresses it.</p>
+                        
+                        <input type="text" id="rleInput" oninput="calculateRLE()" value="AAAAABBBCCDAAA" class="w-full bg-white border border-slate-300 rounded p-3 text-lg font-mono mb-4 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase" placeholder="e.g. AAAAABBBCC">
+                        
+                        <div class="bg-indigo-900 text-white p-4 rounded-lg mb-4">
+                            <div class="text-sm text-indigo-200 mb-1">Compressed Output:</div>
+                            <div id="rleOutput" class="text-2xl font-mono font-bold tracking-wider break-all">5A3B2C1D3A</div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4 text-center">
+                            <div class="bg-white p-3 rounded border border-slate-200">
+                                <div class="text-xs text-slate-500 font-bold uppercase">Original Size</div>
+                                <div id="rleSizeIn" class="text-xl font-bold text-slate-800">14 chars</div>
+                            </div>
+                            <div class="bg-white p-3 rounded border border-slate-200">
+                                <div class="text-xs text-slate-500 font-bold uppercase">Compressed Size</div>
+                                <div id="rleSizeOut" class="text-xl font-bold text-green-600">10 chars</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Active Recall Q -->
+                    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div class="p-4 flex justify-between items-center cursor-pointer hover:bg-slate-50" onclick="toggleAnswer('ansCloud', 'iconCloud')">
+                            <h3 class="font-semibold text-slate-800 text-sm"><span class="text-red-500 mr-1">Q2.</span>Outline why PaaS is suitable for a team building applications. [2]</h3>
+                            <i id="iconCloud" class="fas fa-chevron-down text-slate-400"></i>
+                        </div>
+                        <div id="ansCloud" class="hidden px-4 pb-4 border-t border-slate-100 bg-red-50 text-sm">
+                            <p class="text-slate-700 mt-2 font-medium">Markscheme Guidance:</p>
+                            <ul class="list-disc pl-5 mt-1 text-slate-600">
+                                <li>Offers a range of pre-built components/libraries to accelerate development [1]</li>
+                                <li>Developers concentrate purely on coding rather than managing underlying infrastructure [1]</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center mt-auto">
+        <p>Interactive Task Guide generated for IB DP Computer Science (First Assessment 2027).</p>
+    </footer>
+
+    <!-- Interactive Scripts -->
+    <script>
+        // --- Tab Switching Logic ---
+        function switchTab(tabId) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Remove active styling from all buttons
+            const btns = document.querySelectorAll('[id^="btn-tab"]');
+            btns.forEach(btn => {
+                btn.classList.remove('active-tab-btn');
+                btn.classList.replace('text-slate-700', 'text-slate-500');
+            });
+
+            // Show selected tab
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active styling to clicked button
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.add('active-tab-btn');
+            activeBtn.classList.replace('text-slate-500', 'text-slate-700');
+        }
+
+        // --- RLE Simulator Logic (Tab 2) ---
+        function calculateRLE() {
+            const input = document.getElementById('rleInput').value.toUpperCase();
+            document.getElementById('rleInput').value = input; // Keep it uppercase
+            
+            let output = "";
+            let count = 1;
+
+            if (input.length === 0) {
+                output = "";
+            } else {
+                for (let i = 0; i < input.length; i++) {
+                    if (input[i] === input[i + 1]) {
+                        count++;
+                    } else {
+                        output += count + input[i];
+                        count = 1;
+                    }
+                }
+            }
+
+            document.getElementById('rleOutput').innerText = output || " ";
+            document.getElementById('rleSizeIn').innerText = input.length + " chars";
+            
+            const outSize = output.length;
+            const sizeOutEl = document.getElementById('rleSizeOut');
+            sizeOutEl.innerText = outSize + " chars";
+            
+            // Visual indicator to show if RLE actually saved space or made it worse
+            if (outSize < input.length) {
+                sizeOutEl.className = "text-xl font-bold text-green-600";
+            } else if (outSize > input.length) {
+                sizeOutEl.className = "text-xl font-bold text-red-600";
+            } else {
+                sizeOutEl.className = "text-xl font-bold text-slate-800";
+            }
+        }
+
+        // --- FDE Cycle Simulator Logic (Tab 1) ---
+        let fdeStep = 0;
+        
+        function updateReg(id, val, highlight=false) {
+            const el = document.getElementById(id);
+            el.innerHTML = id.replace('reg','') + ': <span class="font-bold">' + val + '</span>';
+            if(highlight) {
+                el.classList.add('bg-yellow-200', 'border-yellow-500');
+                setTimeout(() => el.classList.remove('bg-yellow-200', 'border-yellow-500'), 800);
+            }
+        }
+
+        function stepFDE() {
+            const btnFDE = document.getElementById('btnNextFDE');
+            const descFDE = document.getElementById('fdeDescription');
+            fdeStep++;
+            btnFDE.innerText = "Next Step";
+            document.getElementById('ram00').classList.remove('bg-yellow-100');
+            document.getElementById('ram01').classList.remove('bg-yellow-100');
+            document.getElementById('ram02').classList.remove('bg-yellow-100');
+
+            // Cycle 1: ADD 5
+            if (fdeStep === 1) {
+                descFDE.innerHTML = "<strong>FETCH 1:</strong> PC value (00) is copied to MAR via Address Bus.";
+                updateReg('regMAR', '00', true);
+            } 
+            else if (fdeStep === 2) {
+                descFDE.innerHTML = "<strong>FETCH 2:</strong> Data at RAM [00] is sent via Data Bus to MDR.";
+                document.getElementById('ram00').classList.add('bg-yellow-100');
+                updateReg('regMDR', 'ADD 5', true);
+            }
+            else if (fdeStep === 3) {
+                descFDE.innerHTML = "<strong>FETCH 3:</strong> MDR copied to IR. PC increments to 01.";
+                updateReg('regIR', 'ADD 5', true);
+                updateReg('regPC', '01', true);
+            }
+            else if (fdeStep === 4) {
+                descFDE.innerHTML = "<strong>DECODE:</strong> CU decodes IR. Wants to add 5 to ACC.";
+                document.getElementById('regIR').classList.add('bg-blue-200');
+                setTimeout(() => document.getElementById('regIR').classList.remove('bg-blue-200'), 800);
+            }
+            else if (fdeStep === 5) {
+                descFDE.innerHTML = "<strong>EXECUTE:</strong> ALU adds 5 to ACC. Cycle 1 complete.";
+                updateReg('regACC', '5', true);
+            }
+            // Cycle 2: SUB 2
+            else if (fdeStep === 6) {
+                descFDE.innerHTML = "<strong>FETCH 1:</strong> PC value (01) is copied to MAR via Address Bus.";
+                updateReg('regMAR', '01', true);
+            }
+            else if (fdeStep === 7) {
+                descFDE.innerHTML = "<strong>FETCH 2:</strong> Data at RAM [01] is sent via Data Bus to MDR.";
+                document.getElementById('ram01').classList.add('bg-yellow-100');
+                document.getElementById('ram01').classList.remove('text-slate-400');
+                updateReg('regMDR', 'SUB 2', true);
+            }
+            else if (fdeStep === 8) {
+                descFDE.innerHTML = "<strong>FETCH 3:</strong> MDR copied to IR. PC increments to 02.";
+                updateReg('regIR', 'SUB 2', true);
+                updateReg('regPC', '02', true);
+            }
+            else if (fdeStep === 9) {
+                descFDE.innerHTML = "<strong>DECODE:</strong> CU decodes IR. Wants to subtract 2 from ACC.";
+                document.getElementById('regIR').classList.add('bg-blue-200');
+                setTimeout(() => document.getElementById('regIR').classList.remove('bg-blue-200'), 800);
+            }
+            else if (fdeStep === 10) {
+                descFDE.innerHTML = "<strong>EXECUTE:</strong> ALU subtracts 2 from ACC (5-2=3). Cycle 2 complete.";
+                updateReg('regACC', '3', true);
+            }
+            // Cycle 3: HLT
+            else if (fdeStep === 11) {
+                descFDE.innerHTML = "<strong>FETCH 1:</strong> PC value (02) is copied to MAR via Address Bus.";
+                updateReg('regMAR', '02', true);
+            }
+            else if (fdeStep === 12) {
+                descFDE.innerHTML = "<strong>FETCH 2:</strong> Data at RAM [02] is sent to MDR.";
+                document.getElementById('ram02').classList.add('bg-yellow-100');
+                document.getElementById('ram02').classList.remove('text-slate-400');
+                updateReg('regMDR', 'HLT', true);
+            }
+            else if (fdeStep === 13) {
+                descFDE.innerHTML = "<strong>FETCH 3:</strong> MDR copied to IR. PC increments to 03.";
+                updateReg('regIR', 'HLT', true);
+                updateReg('regPC', '03', true);
+            }
+            else if (fdeStep === 14) {
+                descFDE.innerHTML = "<strong>DECODE:</strong> CU decodes IR. Understands this is the HALT instruction.";
+                document.getElementById('regIR').classList.add('bg-blue-200');
+                setTimeout(() => document.getElementById('regIR').classList.remove('bg-blue-200'), 800);
+            }
+            else if (fdeStep === 15) {
+                descFDE.innerHTML = "<strong>EXECUTE:</strong> CPU Halts. Program finished.";
+                btnFDE.innerText = "Restart Simulator";
+            }
+            else { resetFDE(); }
+        }
+
+        function resetFDE() {
+            fdeStep = 0;
+            updateReg('regPC', '00');
+            updateReg('regMAR', '--');
+            updateReg('regMDR', '--');
+            updateReg('regIR', '--');
+            updateReg('regACC', '0');
+            document.getElementById('ram00').classList.remove('bg-yellow-100');
+            document.getElementById('ram01').classList.remove('bg-yellow-100');
+            document.getElementById('ram02').classList.remove('bg-yellow-100');
+            document.getElementById('ram01').classList.add('text-slate-400');
+            document.getElementById('ram02').classList.add('text-slate-400');
+            document.getElementById('fdeDescription').innerHTML = "Click 'Start Cycle' to step through the execution.";
+            document.getElementById('btnNextFDE').innerText = "Start Cycle";
+        }
+
+        // --- Pipelining Visualizer Logic (Tab 1) ---
+        let pipeClock = 0;
+        function stepPipeline() {
+            pipeClock++;
+            const btn = document.getElementById('btnPipe');
+            
+            if (pipeClock > 5) {
+                resetPipeline();
+                return;
+            }
+
+            document.getElementById('pipeClockDisplay').innerText = pipeClock;
+            
+            // F = Fetch (Blue), D = Decode (Orange), E = Execute (Green)
+            const schedule = [
+                [1, 2, 3], // Inst 1: Fetch @ T1, Decode @ T2, Execute @ T3
+                [2, 3, 4], // Inst 2: Fetch @ T2, Decode @ T3, Execute @ T4
+                [3, 4, 5]  // Inst 3: Fetch @ T3, Decode @ T4, Execute @ T5
+            ];
+            
+            for (let i = 0; i < 3; i++) {
+                let fCell = document.getElementById(`i${i}c${schedule[i][0]}`);
+                let dCell = document.getElementById(`i${i}c${schedule[i][1]}`);
+                let eCell = document.getElementById(`i${i}c${schedule[i][2]}`);
+                
+                if (pipeClock === schedule[i][0] && fCell) { fCell.innerHTML = '<span class="bg-blue-500 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm inline-block w-full">Fetch</span>'; }
+                if (pipeClock === schedule[i][1] && dCell) { dCell.innerHTML = '<span class="bg-orange-500 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm inline-block w-full">Decode</span>'; }
+                if (pipeClock === schedule[i][2] && eCell) { eCell.innerHTML = '<span class="bg-green-500 text-white px-2 py-0.5 rounded text-xs font-bold shadow-sm inline-block w-full">Execute</span>'; }
+            }
+            
+            if (pipeClock === 5) {
+                btn.innerText = "Restart Simulation";
+                btn.classList.replace('bg-indigo-600', 'bg-slate-600');
+                btn.classList.replace('hover:bg-indigo-700', 'hover:bg-slate-700');
+            } else {
+                btn.innerText = "Tick Clock (+1)";
+            }
+        }
+
+        function resetPipeline() {
+            pipeClock = 0;
+            document.getElementById('pipeClockDisplay').innerText = "0";
+            const btn = document.getElementById('btnPipe');
+            btn.innerText = "Tick Clock (+1)";
+            btn.classList.replace('bg-slate-600', 'bg-indigo-600');
+            btn.classList.replace('hover:bg-slate-700', 'hover:bg-indigo-700');
+            
+            for(let i=0; i<3; i++) {
+                for(let c=1; c<=5; c++) {
+                    let cell = document.getElementById(`i${i}c${c}`);
+                    if(cell) cell.innerHTML = '';
+                }
+            }
+        }
+
+        // --- Generic Collapse Toggle (For Rubric & Checklist) ---
+        function toggleCollapse(contentId, iconId) {
+            const content = document.getElementById(contentId);
+            const icon = document.getElementById(iconId);
+            
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                content.classList.add('hidden');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+
+        // --- Active Recall Toggles ---
+        function toggleAnswer(ansId, iconId) {
+            const ansDiv = document.getElementById(ansId);
+            const icon = document.getElementById(iconId);
+            
+            if (ansDiv.classList.contains('hidden')) {
+                ansDiv.classList.remove('hidden');
+                icon.classList.replace('fa-chevron-down', 'fa-chevron-up');
+            } else {
+                ansDiv.classList.add('hidden');
+                icon.classList.replace('fa-chevron-up', 'fa-chevron-down');
+            }
+        }
+    </script>
+</body>
+</html>

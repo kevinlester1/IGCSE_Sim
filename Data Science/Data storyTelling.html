@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Storytelling & Visualization Functions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00d4ff;
+            --bg-dark: #0a0a0a;
+            --bg-card: #161616;
+            --text-main: #ffffff;
+            --text-dim: #a0a0a0;
+            --accent-blue: #005088;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Slide Management */
+        .presentation-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.5s ease, visibility 0.5s;
+            display: flex;
+            background-color: var(--bg-dark);
+            padding: 60px;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Typography */
+        h1, h2, h3 {
+            font-family: 'Urbanist', sans-serif;
+            line-height: 1.1;
+        }
+
+        .hero-title { font-size: 72px; margin-bottom: 20px; }
+        .section-title { font-size: 48px; margin-bottom: 30px; border-left: 6px solid var(--primary); padding-left: 20px; }
+        .accent { color: var(--primary); }
+        p { font-size: 22px; color: var(--text-dim); line-height: 1.6; }
+
+        /* Layouts */
+        .content-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .full-center {
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            width: 100%;
+        }
+
+        /* Components */
+        .framework-list { margin-top: 40px; }
+        .framework-item {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .framework-item h3 { font-size: 24px; margin-bottom: 8px; color: var(--primary); }
+        .framework-item p { font-size: 18px; }
+
+        .image-box {
+            width: 100%;
+            height: 500px;
+            background: #111;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .image-box img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+        .stat-card {
+            background: var(--bg-card);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .stat-card i { font-size: 40px; color: var(--primary); margin-bottom: 20px; }
+
+        /* Navigation */
+        .nav-controls {
+            position: fixed;
+            bottom: 30px;
+            right: 40px;
+            display: flex;
+            gap: 15px;
+            z-index: 100;
+        }
+        .nav-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-btn:hover { background: var(--primary); color: black; }
+        .progress-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background: var(--primary);
+            transition: width 0.3s ease;
+            z-index: 101;
+        }
+        .slide-counter {
+            position: fixed;
+            bottom: 45px;
+            left: 40px;
+            color: var(--text-dim);
+            font-size: 14px;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="presentation-container">
+    
+    <!-- Slide 1: Data Storytelling Intro -->
+    <section class="slide active" id="slide-1">
+        <div class="content-split">
+            <div>
+                <h1 class="hero-title">The Art of <br><span class="accent">Data Storytelling</span></h1>
+                <p>Turning complexity into clarity through narrative and design.</p>
+                <div class="framework-list">
+                    <div class="framework-item">
+                        <h3>Narrative Arc</h3>
+                        <p>Context, conflict (the insight), and resolution (the action).</p>
+                    </div>
+                    <div class="framework-item">
+                        <h3>Cognitive Visuals</h3>
+                        <p>Using design to focus attention and reduce mental effort.</p>
+                    </div>
+                    <div class="framework-item">
+                        <h3>Impactful Synthesis</h3>
+                        <p>Moving from "what happened" to "why it matters."</p>
+                    </div>
+                </div>
+            </div>
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/3316833506217532289" alt="Storytelling Intro">
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 2: Main Title -->
+    <section class="slide" id="slide-2">
+        <div class="full-center">
+            <h1 class="hero-title">Functions of <br><span class="accent">Data Visualisation</span></h1>
+            <p>Core Concepts, Trends, and Relationships</p>
+            <div style="margin-top: 40px; width: 80px; height: 4px; background: var(--primary);"></div>
+        </div>
+    </section>
+
+    <!-- Slide 3: Comparisons -->
+    <section class="slide" id="slide-3">
+        <div class="content-split">
+            <div>
+                <h2 class="section-title">Comparisons</h2>
+                <p>Showing the differences or similarities between values.</p>
+                <ul class="framework-list" style="list-style: none;">
+                    <li class="framework-item">Highlighting gaps in performance or magnitude.</li>
+                    <li class="framework-item">Using Bar and Column charts for categorical ranking.</li>
+                </ul>
+            </div>
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/478388997629428446" alt="Comparison Charts">
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 4: Distribution -->
+    <section class="slide" id="slide-4">
+        <div class="content-split">
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/11437108801889793479" alt="Distribution Curves">
+            </div>
+            <div>
+                <h2 class="section-title">Distribution</h2>
+                <p>Displaying frequency and how data is spread over an interval.</p>
+                <div class="framework-list">
+                    <div class="framework-item"><h3>Frequency</h3><p>How often a value occurs.</p></div>
+                    <div class="framework-item"><h3>Grouping</h3><p>Identifying clusters or "bins" of data points.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 5: Data Over Time -->
+    <section class="slide" id="slide-5">
+        <div class="full-center">
+            <h2 class="section-title">Data Over Time</h2>
+            <p>Visualizing trends or changes throughout specific periods.</p>
+            <div class="image-box" style="margin-top: 30px; height: 350px;">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/9855515899137372521" alt="Timeline Trends">
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 6: Relationships -->
+    <section class="slide" id="slide-6">
+        <div class="content-split">
+            <div>
+                <h2 class="section-title">Relationships</h2>
+                <p>Showing connections or correlations between variables.</p>
+                <p style="font-size: 18px; margin-top: 20px;">Mapping how one factor influences another, often using scatter plots or network diagrams.</p>
+            </div>
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/12224309751124751705" alt="Relationship Mapping">
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 7: Location & Range -->
+    <section class="slide" id="slide-7">
+        <h2 class="section-title" style="margin-bottom: 60px;">Location & Range</h2>
+        <div class="stat-grid">
+            <div class="stat-card">
+                <i class="fa-solid fa-map-location-dot"></i>
+                <h3>Location</h3>
+                <p>Geographical representation of data across regions.</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-arrows-left-right"></i>
+                <h3>Range</h3>
+                <p>The spread between upper and lower limits.</p>
+            </div>
+            <div class="stat-card">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <h3>Variations</h3>
+                <p>Measuring deviation on a standard scale.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 8: Real World Trends -->
+    <section class="slide" id="slide-8">
+        <div class="content-split">
+            <div>
+                <h2 class="section-title">Real World Trends</h2>
+                <p>Real-world data is messy. It rarely follows a perfect line.</p>
+                <ul class="framework-list">
+                    <li class="framework-item">Trends can be <strong>overall</strong> or <strong>segmental</strong>.</li>
+                    <li class="framework-item">Description: Increasing, Decreasing, Stable, or Volatile.</li>
+                </ul>
+            </div>
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/482811462" alt="Trend Analysis">
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 9: Correlation -->
+    <section class="slide" id="slide-9">
+        <div class="full-center">
+            <h2 class="section-title">The Mechanics of Correlation</h2>
+            <div class="stat-grid" style="margin-top: 40px;">
+                <div class="stat-card">
+                    <h3 class="accent">Positive</h3>
+                    <p>Both variables move together.</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="accent">Negative</h3>
+                    <p>One rises, the other falls.</p>
+                </div>
+                <div class="stat-card">
+                    <h3 class="accent">Zero</h3>
+                    <p>No discernible relationship.</p>
+                </div>
+            </div>
+            <p style="margin-top: 40px; font-weight: bold;">Measured on a scale of <span class="accent">-1 to 1</span>.</p>
+        </div>
+    </section>
+
+    <!-- Slide 10: Outliers -->
+    <section class="slide" id="slide-10">
+        <div class="content-split">
+            <div class="image-box">
+                <img src="http://googleusercontent.com/image_collection/image_retrieval/7323098301682837664" alt="Outliers Illustration">
+            </div>
+            <div>
+                <h2 class="section-title">Managing Outliers</h2>
+                <p>Observations that do not fit the established pattern.</p>
+                <div class="framework-list">
+                    <div class="framework-item"><h3>The Error</h3><p>Data entry mistakes (e.g., 50 vs 500).</p></div>
+                    <div class="framework-item"><h3>The Insight</h3><p>An indicator of unusual, significant real-world events.</p></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Slide 11: Conclusion -->
+    <section class="slide" id="slide-11">
+        <div class="full-center">
+            <h1 class="hero-title"><span class="accent">Conclusion</span></h1>
+            <p>Mastering these functions allows us to tell better stories with data.</p>
+            <p style="margin-top: 20px;">Questions?</p>
+        </div>
+    </section>
+
+</div>
+
+<div class="slide-counter" id="counter">1 / 11</div>
+<div class="progress-bar" id="progress"></div>
+
+<div class="nav-controls">
+    <button class="nav-btn" onclick="prevSlide()" id="prevBtn"><i class="fa-solid fa-chevron-left"></i></button>
+    <button class="nav-btn" onclick="nextSlide()" id="nextBtn"><i class="fa-solid fa-chevron-right"></i></button>
+</div>
+
+<script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const counter = document.getElementById('counter');
+    const progress = document.getElementById('progress');
+
+    function updateSlide() {
+        slides.forEach((slide, index) => {
+            slide.classList.remove('active');
+            if (index === currentSlide) {
+                slide.classList.add('active');
+            }
+        });
+        
+        // Update UI
+        counter.innerText = `${currentSlide + 1} / ${totalSlides}`;
+        progress.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+    }
+
+    function nextSlide() {
+        if (currentSlide < totalSlides - 1) {
+            currentSlide++;
+            updateSlide();
+        }
+    }
+
+    function prevSlide() {
+        if (currentSlide > 0) {
+            currentSlide--;
+            updateSlide();
+        }
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+        if (e.key === 'ArrowLeft') prevSlide();
+    });
+
+    // Initialize
+    updateSlide();
+</script>
+
+</body>
+</html>

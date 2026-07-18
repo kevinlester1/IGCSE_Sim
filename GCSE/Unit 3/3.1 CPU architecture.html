@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU Simulator & Learning Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(5px); }
+        }
+        .animate-bounce-subtle {
+            animation: bounce-subtle 1s infinite;
+        }
+        .register-active {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.4);
+            border-color: #3b82f6 !important;
+            background-color: #eff6ff !important;
+            z-index: 10;
+        }
+        .tab-active {
+            border-bottom: 3px solid #3b82f6;
+            color: #1d4ed8;
+            font-weight: 700;
+        }
+        
+        /* Flowchart Styling */
+        .flow-node {
+            transition: all 0.3s ease;
+            border-width: 2px;
+            opacity: 0.5;
+            filter: grayscale(1);
+        }
+        .flow-node.active {
+            opacity: 1;
+            filter: grayscale(0);
+            transform: scale(1.02);
+            border-color: #3b82f6;
+            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+            background-color: #eff6ff;
+        }
+        .flow-arrow {
+            transition: all 0.3s ease;
+            color: #e2e8f0;
+        }
+        .flow-arrow.active {
+            color: #3b82f6;
+            stroke-width: 3px;
+        }
+
+        /* Bus Styling */
+        .bus-line-horizontal {
+            height: 4px;
+            background: #cbd5e1;
+            position: relative;
+            margin: 10px 0;
+        }
+        .bus-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #64748b;
+            background: #f8fafc;
+            padding: 0 6px;
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+        }
+        .bus-arrow-right::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid #cbd5e1;
+        }
+        .bus-arrow-both::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: -4px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid #cbd5e1;
+        }
+        .bus-arrow-both::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: -4px;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-right: 10px solid #cbd5e1;
+        }
+
+        /* Drag and Drop Styles */
+        .drop-zone {
+            min-height: 40px;
+            border: 2px dashed #94a3b8;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            background: rgba(255, 255, 255, 0.5);
+            padding: 4px;
+        }
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: rgba(239, 246, 255, 0.8);
+        }
+        .draggable-item {
+            cursor: grab;
+            width: 100%;
+        }
+        .draggable-item:active {
+            cursor: grabbing;
+        }
+        .correct-drop {
+            border-color: #059669 !important;
+            background-color: #ecfdf5 !important;
+            border-style: solid !important;
+        }
+        .wrong-drop {
+            border-color: #ef4444 !important;
+            background-color: #fef2f2 !important;
+            border-style: solid !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen p-4 md:p-6">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-4">
+            <h1 class="text-2xl font-bold flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-600"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+                IGCSE CPU Architecture Lab
+            </h1>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex border-b border-slate-200 mb-6 overflow-x-auto bg-white/50 sticky top-0 z-20">
+            <button id="tabSimBtn" class="px-6 py-3 text-slate-500 hover:text-blue-600 transition-all tab-active whitespace-nowrap text-sm font-medium">
+                Simulation & Process Flow
+            </button>
+            <button id="tabBuildBtn" class="px-6 py-3 text-slate-500 hover:text-blue-600 transition-all whitespace-nowrap text-sm font-medium">
+                Build Your CPU (Drag & Drop)
+            </button>
+            <button id="tabTheoryBtn" class="px-6 py-3 text-slate-500 hover:text-blue-600 transition-all whitespace-nowrap text-sm font-medium">
+                Architecture Theory Guide
+            </button>
+            <button id="tabChallengeBtn" class="px-6 py-3 text-slate-500 hover:text-blue-600 transition-all whitespace-nowrap text-sm font-medium">
+                Mastery Challenges
+            </button>
+        </div>
+
+        <!-- TAB 1: INTEGRATED SIMULATION & FLOWCHART VIEW -->
+        <div id="simulationView" class="block space-y-6 animate-in fade-in duration-500">
+            <!-- Controls Bar -->
+            <div class="flex flex-col md:flex-row md:items-stretch gap-4">
+                <div id="statusContainer" class="flex-1 p-3 rounded-xl border-l-4 border-blue-500 bg-white shadow-sm flex items-center gap-4 transition-colors">
+                    <div id="statusIcon" class="p-2 rounded-full bg-blue-100 text-blue-600 shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                    </div>
+                    <div>
+                        <div class="text-[10px] font-bold uppercase text-slate-400">Current Task</div>
+                        <p id="statusMsg" class="text-sm font-semibold leading-tight text-slate-700">Ready to start. Click 'Next Step'.</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-slate-200 shadow-sm shrink-0">
+                    <button id="autoRunBtn" class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg text-sm font-semibold transition shadow-md">
+                        <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span id="autoRunText">Auto Run</span>
+                    </button>
+                    <button id="stepBtn" class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-semibold transition border border-slate-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                        Next Step
+                    </button>
+                    <button id="resetBtn" class="p-2 hover:bg-red-50 hover:text-red-600 rounded-lg text-slate-400 transition" title="Reset Simulation">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Flowchart -->
+                <div class="lg:col-span-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col items-center">
+                    <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4 w-full text-center">F-D-E Cycle</h2>
+                    <div class="flex flex-col items-center space-y-2 w-full">
+                        <div id="flow-FETCH_MAR" class="flow-node p-2 rounded-lg border border-slate-200 w-full text-center bg-white"><div class="font-bold text-[10px] uppercase text-blue-700">1. Fetch (PC → MAR, PC++)</div></div>
+                        <svg class="flow-arrow w-4 h-4" id="arrow-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <div id="flow-FETCH_MDR" class="flow-node p-2 rounded-lg border border-slate-200 w-full text-center bg-white"><div class="font-bold text-[10px] uppercase text-blue-700">2. Fetch (RAM → MDR → CIR)</div></div>
+                        <svg class="flow-arrow w-4 h-4" id="arrow-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <div id="flow-DECODE" class="flow-node p-2 rounded-lg border border-slate-200 w-full text-center bg-white"><div class="font-bold text-[10px] uppercase text-indigo-700">3. Decode (CU)</div></div>
+                        <svg class="flow-arrow w-4 h-4" id="arrow-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                        <div id="flow-EXECUTE" class="flow-node p-2 rounded-lg border border-slate-200 w-full text-center bg-white"><div class="font-bold text-[10px] uppercase text-orange-700">4. Execute (ALU/Buses)</div></div>
+                    </div>
+                </div>
+
+                <!-- Middle: CPU Components -->
+                <div class="lg:col-span-6 space-y-4">
+                    <div class="bg-white p-5 rounded-2xl border-4 border-slate-800 shadow-sm relative">
+                        <h2 class="absolute -top-3 left-6 bg-slate-800 text-white px-3 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">Central Processing Unit (CPU)</h2>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                            <div class="space-y-4">
+                                <div class="p-3 bg-indigo-50 rounded-xl border-2 border-indigo-100">
+                                    <h3 class="text-indigo-800 font-bold text-[10px] uppercase mb-2">Control Unit (CU)</h3>
+                                    <div class="space-y-2">
+                                        <div id="reg-pc" class="p-2 rounded-lg border-2 bg-white border-slate-200 transition-all duration-300">
+                                            <div class="text-[9px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">PC (Program Counter)</div>
+                                            <div class="text-lg font-mono text-indigo-700 font-bold val">0</div>
+                                        </div>
+                                        <div id="reg-cir" class="p-2 rounded-lg border-2 bg-white border-slate-200 transition-all duration-300">
+                                            <div class="text-[9px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">CIR (Current Instruction)</div>
+                                            <div class="text-lg font-mono text-slate-800 font-bold val">---</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-slate-50 rounded-xl border-2 border-slate-200">
+                                    <h3 class="text-slate-500 font-bold text-[10px] uppercase mb-2">Bus Interface Registers</h3>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div id="reg-mar" class="p-2 rounded-lg border-2 bg-white border-slate-200 transition-all duration-300">
+                                            <div class="text-[9px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">MAR</div>
+                                            <div class="text-lg font-mono text-slate-800 font-bold val">---</div>
+                                        </div>
+                                        <div id="reg-mdr" class="p-2 rounded-lg border-2 bg-white border-slate-200 transition-all duration-300">
+                                            <div class="text-[9px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">MDR</div>
+                                            <div class="text-lg font-mono text-slate-800 font-bold val">---</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-orange-50 rounded-xl border-2 border-orange-200">
+                                <h3 class="text-orange-800 font-bold text-[10px] uppercase mb-2">ALU & Accumulator</h3>
+                                <div class="space-y-3">
+                                    <div id="reg-acc" class="p-2 rounded-lg border-2 bg-white border-slate-200 transition-all duration-300">
+                                        <div class="text-[9px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Accumulator (ACC)</div>
+                                        <div class="text-lg font-mono text-orange-600 font-bold val">0</div>
+                                    </div>
+                                    <div class="flex flex-col items-center pt-2">
+                                        <div class="flex items-center gap-1.5 mb-1">
+                                            <div id="alu-l" class="w-10 h-8 bg-white border border-slate-200 rounded flex items-center justify-center font-mono text-xs shadow-inner font-bold">0</div>
+                                            <div class="text-sm font-bold text-slate-400">+</div>
+                                            <div id="alu-r" class="w-10 h-8 bg-white border border-slate-200 rounded flex items-center justify-center font-mono text-xs shadow-inner opacity-40 font-bold">?</div>
+                                        </div>
+                                        <div id="alu-out" class="w-full h-8 bg-slate-400 text-white rounded flex items-center justify-center font-mono text-xs font-bold shadow-md uppercase tracking-tighter transition-colors">ALU WAIT</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: RAM & Logs -->
+                <div class="lg:col-span-3 space-y-4">
+                    <div class="bg-emerald-50 p-4 rounded-2xl border-4 border-emerald-600 shadow-sm relative">
+                        <h2 class="absolute -top-3 left-6 bg-emerald-600 text-white px-3 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest">Main Memory (RAM)</h2>
+                        <div id="ramList" class="space-y-1 mt-2 overflow-y-auto max-h-[160px] pr-1"></div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <h2 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">System Log</h2>
+                        <div id="logs" class="space-y-1.5 min-h-[100px] text-[11px] font-mono"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: BUILD YOUR CPU -->
+        <div id="buildView" class="hidden animate-in fade-in slide-in-from-bottom-2 duration-500 pb-10">
+            <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                <!-- Toolbox Sidebar -->
+                <div class="xl:col-span-1">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm sticky top-24 max-h-[80vh] flex flex-col">
+                        <h3 class="font-bold text-sm text-slate-600 uppercase mb-4 border-b pb-2">Hardware Toolbox</h3>
+                        <div id="toolbox" class="space-y-2 overflow-y-auto flex-1 pb-4 pr-1">
+                            <!-- Items populated by JS -->
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-100 shrink-0">
+                            <button id="checkBuildBtn" class="w-full py-2 bg-emerald-600 text-white rounded-lg font-bold text-sm hover:bg-emerald-700 transition shadow-md">Check Knowledge</button>
+                            <button id="resetBuildBtn" class="w-full mt-2 py-2 text-slate-400 text-xs hover:text-slate-600 font-semibold transition">Reset Workspace</button>
+                            <div id="buildFeedback" class="hidden p-3 mt-3 rounded-lg text-xs font-bold leading-tight"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workspace Grid: Classic Von Neumann Diagram -->
+                <div class="xl:col-span-4">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm min-h-[800px] overflow-x-auto">
+                        <h3 class="text-lg font-bold mb-8 text-slate-400 text-center uppercase tracking-widest">IGCSE Von Neumann Architecture</h3>
+                        
+                        <!-- Fixed grid alignment to enforce exam-style block diagram -->
+                        <div class="min-w-[900px] max-w-5xl mx-auto grid grid-cols-[3fr_2fr_2fr] gap-0 relative mt-10">
+                            
+                            <!-- Background Shells -->
+                            <div class="col-start-1 col-end-2 row-start-1 row-end-6 border-4 border-slate-800 rounded-2xl bg-slate-50 m-2 relative shadow-sm">
+                                <div class="absolute -top-4 left-6 bg-slate-800 text-white px-4 py-1 rounded text-sm font-bold uppercase tracking-widest">Central Processing Unit (CPU)</div>
+                            </div>
+                            <div class="col-start-3 col-end-4 row-start-1 row-end-6 border-4 border-emerald-600 rounded-2xl bg-emerald-50 m-2 relative shadow-sm">
+                                <div class="absolute -top-4 left-6 bg-emerald-600 text-white px-4 py-1 rounded text-sm font-bold uppercase tracking-widest">Main Memory (RAM)</div>
+                            </div>
+
+                            <!-- ROW 1: PC, MAR, & Address Bus -->
+                            <div class="col-start-1 col-end-2 row-start-1 p-6 z-10 flex gap-4">
+                                <div class="w-1/2 flex flex-col gap-2">
+                                    <div id="slot-PC" class="drop-zone h-12 bg-white" data-type="component" data-correct="PC"><span class="text-[9px] font-bold text-slate-400">PC Slot</span></div>
+                                    <div id="slot-desc-PC" class="drop-zone h-14 bg-white" data-type="desc" data-correct="PC"><span class="text-[8px] italic text-slate-400 leading-tight text-center">Description</span></div>
+                                </div>
+                                <div class="w-1/2 flex flex-col gap-2">
+                                    <div id="slot-MAR" class="drop-zone h-12 bg-white" data-type="component" data-correct="MAR"><span class="text-[9px] font-bold text-slate-400">MAR Slot</span></div>
+                                    <div id="slot-desc-MAR" class="drop-zone h-14 bg-white" data-type="desc" data-correct="MAR"><span class="text-[8px] italic text-slate-400 leading-tight text-center">Description</span></div>
+                                </div>
+                            </div>
+                            <div class="col-start-2 col-end-3 row-start-1 flex items-center justify-center relative">
+                                <!-- Address Bus Line (Uni-directional right) -->
+                                <div class="absolute w-[calc(100%+2rem)] -left-4 h-4 bg-slate-300">
+                                    <div class="absolute right-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent border-l-[14px] border-l-slate-300"></div>
+                                </div>
+                                <div id="slot-BUS_ADDR" class="drop-zone w-36 h-12 bg-slate-100 shadow-md z-10 border-slate-300" data-type="component" data-correct="BUS_ADDR"><span class="text-[9px] font-bold text-slate-500">Address Bus</span></div>
+                            </div>
+
+                            <!-- ROW 2: CIR, MDR, & Data Bus -->
+                            <div class="col-start-1 col-end-2 row-start-2 p-6 pt-0 z-10 flex gap-4">
+                                <div class="w-1/2 flex flex-col gap-2">
+                                    <div id="slot-CIR" class="drop-zone h-12 bg-white" data-type="component" data-correct="CIR"><span class="text-[9px] font-bold text-slate-400">CIR Slot</span></div>
+                                    <div id="slot-desc-CIR" class="drop-zone h-14 bg-white" data-type="desc" data-correct="CIR"><span class="text-[8px] italic text-slate-400 leading-tight text-center">Description</span></div>
+                                </div>
+                                <div class="w-1/2 flex flex-col gap-2">
+                                    <div id="slot-MDR" class="drop-zone h-12 bg-white" data-type="component" data-correct="MDR"><span class="text-[9px] font-bold text-slate-400">MDR Slot</span></div>
+                                    <div id="slot-desc-MDR" class="drop-zone h-14 bg-white" data-type="desc" data-correct="MDR"><span class="text-[8px] italic text-slate-400 leading-tight text-center">Description</span></div>
+                                </div>
+                            </div>
+                            <div class="col-start-2 col-end-3 row-start-2 flex items-center justify-center relative">
+                                <!-- Data Bus Line (Bi-directional) -->
+                                <div class="absolute w-[calc(100%+2rem)] -left-4 h-4 bg-blue-400">
+                                    <div class="absolute right-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent border-l-[14px] border-l-blue-400"></div>
+                                    <div class="absolute left-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent border-r-[14px] border-r-blue-400"></div>
+                                </div>
+                                <div id="slot-BUS_DATA" class="drop-zone w-36 h-12 bg-blue-50 shadow-md z-10 border-blue-300" data-type="component" data-correct="BUS_DATA"><span class="text-[9px] font-bold text-blue-600">Data Bus</span></div>
+                            </div>
+
+                            <!-- ROW 3: ALU & ACC -->
+                            <div class="col-start-1 col-end-2 row-start-3 p-6 pt-0 z-10">
+                                <div class="p-3 border-2 border-orange-200 bg-orange-50 rounded-xl flex gap-4 shadow-inner">
+                                    <div class="w-1/2 flex flex-col gap-2">
+                                        <div id="slot-ALU" class="drop-zone h-12 bg-white" data-type="component" data-correct="ALU"><span class="text-[9px] font-bold text-orange-500">ALU Slot</span></div>
+                                        <div id="slot-desc-ALU" class="drop-zone h-14 bg-white" data-type="desc" data-correct="ALU"><span class="text-[8px] italic text-orange-500 leading-tight text-center">Description</span></div>
+                                    </div>
+                                    <div class="w-1/2 flex flex-col gap-2 border-l-2 border-dashed border-orange-300 pl-4">
+                                        <div id="slot-ACC" class="drop-zone h-12 bg-white" data-type="component" data-correct="ACC"><span class="text-[9px] font-bold text-orange-600">ACC Slot</span></div>
+                                        <div id="slot-desc-ACC" class="drop-zone h-14 bg-white" data-type="desc" data-correct="ACC"><span class="text-[8px] italic text-orange-600 leading-tight text-center">Description</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROW 4: CU & Control Bus -->
+                            <div class="col-start-1 col-end-2 row-start-4 p-6 pt-0 z-10">
+                                <div class="p-3 border-2 border-indigo-200 bg-indigo-50 rounded-xl flex gap-4 shadow-inner">
+                                    <div class="w-1/2">
+                                        <div id="slot-CU" class="drop-zone h-12 bg-white" data-type="component" data-correct="CU"><span class="text-[9px] font-bold text-indigo-500">Control Unit Slot</span></div>
+                                    </div>
+                                    <div class="w-1/2">
+                                        <div id="slot-desc-CU" class="drop-zone h-12 bg-white" data-type="desc" data-correct="CU"><span class="text-[8px] italic text-indigo-500 leading-tight text-center">Description</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-start-2 col-end-3 row-start-4 flex items-center justify-center relative pb-6">
+                                <!-- Control Bus Line (Uni-directional right) -->
+                                <div class="absolute w-[calc(100%+2rem)] -left-4 h-4 bg-emerald-400">
+                                    <div class="absolute right-[-14px] top-1/2 -translate-y-1/2 w-0 h-0 border-t-[10px] border-t-transparent border-b-[10px] border-b-transparent border-l-[14px] border-l-emerald-400"></div>
+                                </div>
+                                <div id="slot-BUS_CTRL" class="drop-zone w-36 h-12 bg-emerald-50 shadow-md z-10 border-emerald-300" data-type="component" data-correct="BUS_CTRL"><span class="text-[9px] font-bold text-emerald-700">Control Bus</span></div>
+                            </div>
+
+                            <!-- MEMORY COMPONENTS (Spanning Rows 1 to 4) -->
+                            <div class="col-start-3 col-end-4 row-start-1 row-end-5 p-8 z-10 flex flex-col justify-center gap-6">
+                                <div id="slot-RAM" class="drop-zone h-20 bg-white" data-type="component" data-correct="RAM"><span class="text-[10px] font-bold text-emerald-600">Memory Module</span></div>
+                                <div id="slot-desc-RAM" class="drop-zone h-24 bg-white" data-type="desc" data-correct="RAM"><span class="text-[9px] italic text-emerald-600 text-center px-2">Memory Description</span></div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: THEORY VIEW -->
+        <div id="theoryView" class="hidden animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-8">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2 space-y-8">
+                    <!-- Register Reference Guide -->
+                    <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+                        <h3 class="text-xl font-bold text-blue-600 border-b pb-4">Register Reference Guide</h3>
+                        <div class="grid grid-cols-1 gap-4">
+                            <div class="p-4 bg-indigo-50 rounded-xl flex gap-4 border border-indigo-100">
+                                <div class="w-10 h-10 bg-indigo-700 text-white rounded flex items-center justify-center font-bold shrink-0 text-xs shadow-sm">PC</div>
+                                <div><h4 class="font-bold text-indigo-900 text-sm">Program Counter</h4><p class="text-xs text-slate-600 mt-1">Holds the address of the <strong>NEXT</strong> instruction to be executed. Increments by 1 immediately after the fetch.</p></div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl flex gap-4 border border-slate-200">
+                                <div class="w-10 h-10 bg-slate-700 text-white rounded flex items-center justify-center font-bold shrink-0 text-xs shadow-sm">MAR</div>
+                                <div><h4 class="font-bold text-slate-900 text-sm">Memory Address Register</h4><p class="text-xs text-slate-600 mt-1">Holds the memory address of the <strong>CURRENT</strong> instruction, or the data it uses, so it can be fetched from RAM.</p></div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl flex gap-4 border border-slate-200">
+                                <div class="w-10 h-10 bg-slate-700 text-white rounded flex items-center justify-center font-bold shrink-0 text-xs shadow-sm">MDR</div>
+                                <div><h4 class="font-bold text-slate-900 text-sm">Memory Data Register</h4><p class="text-xs text-slate-600 mt-1">Holds the actual instruction or data that has just been fetched from RAM (or is waiting to be written to RAM).</p></div>
+                            </div>
+                            <div class="p-4 bg-indigo-50 rounded-xl flex gap-4 border border-indigo-100">
+                                <div class="w-10 h-10 bg-indigo-700 text-white rounded flex items-center justify-center font-bold shrink-0 text-xs shadow-sm">CIR</div>
+                                <div><h4 class="font-bold text-indigo-900 text-sm">Current Instruction Register</h4><p class="text-xs text-slate-600 mt-1">Holds the instruction <strong>CURRENTLY</strong> being decoded and executed by the Control Unit.</p></div>
+                            </div>
+                            <div class="p-4 bg-orange-50 rounded-xl flex gap-4 border border-orange-100">
+                                <div class="w-10 h-10 bg-orange-600 text-white rounded flex items-center justify-center font-bold shrink-0 text-xs shadow-sm">ACC</div>
+                                <div><h4 class="font-bold text-orange-900 text-sm">Accumulator</h4><p class="text-xs text-slate-600 mt-1">Holds the result of an arithmetic or logic instruction temporarily before it is transferred to memory.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theory Sidebars -->
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-900 border-b pb-2 mb-4 uppercase text-xs tracking-widest">The 3 Buses</h4>
+                        <div class="space-y-4 text-[11px] leading-relaxed">
+                            <p><strong class="text-slate-600 block uppercase mb-1">Address Bus (Uni-directional):</strong> Carries the "Where" information. Transmits memory addresses from the CPU (MAR) to RAM.</p>
+                            <p><strong class="text-blue-600 block uppercase mb-1">Data Bus (Bi-directional):</strong> Carries the "What" information. Moves actual data and instructions back and forth between CPU and RAM.</p>
+                            <p><strong class="text-emerald-600 block uppercase mb-1">Control Bus (Uni-directional):</strong> Carries the "Action" signal. Sends commands like "READ" or "WRITE" from the CU to hardware components.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                        <h4 class="font-bold text-slate-900 border-b pb-2 mb-4 uppercase text-xs tracking-widest">CPU Performance Factors</h4>
+                        <div class="space-y-3 text-[11px] leading-relaxed text-slate-600">
+                            <p><strong>Clock Speed:</strong> Measured in Hertz (Hz). Higher speed = more instructions processed per second.</p>
+                            <p><strong>Number of Cores:</strong> Duplicate processing units (dual-core, quad-core) allow simultaneous task execution.</p>
+                            <p><strong>Cache Size:</strong> Fast memory on the CPU. Stores frequently used data to avoid slow fetches from RAM.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: MASTERY CHALLENGES -->
+        <div id="challengeView" class="hidden animate-in fade-in slide-in-from-bottom-2 duration-500 space-y-6 pb-20">
+            <div class="max-w-4xl mx-auto space-y-8">
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold text-slate-800">CPU Mastery Challenges</h2>
+                    <p class="text-slate-500 mt-2">Apply your deep understanding to solve these logic puzzles.</p>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">1</div>
+                        <h3 class="font-bold text-slate-800">The "What's Next" Puzzle</h3>
+                    </div>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        A CPU has just completed the <strong>Fetch</strong> stage for an instruction at Address 4. 
+                        Before the <strong>Decode</strong> stage begins, what is the value currently held in the <strong>Program Counter (PC)</strong>?
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onclick="checkChallenge(1, 3)" class="p-3 border-2 border-slate-100 hover:border-blue-500 rounded-xl text-sm font-medium transition">Address 3</button>
+                        <button onclick="checkChallenge(1, 4)" class="p-3 border-2 border-slate-100 hover:border-blue-500 rounded-xl text-sm font-medium transition">Address 4</button>
+                        <button onclick="checkChallenge(1, 5)" class="p-3 border-2 border-slate-100 hover:border-blue-500 rounded-xl text-sm font-medium transition">Address 5</button>
+                    </div>
+                    <div id="feedback-1" class="hidden p-3 rounded-lg text-xs font-bold"></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm">2</div>
+                        <h3 class="font-bold text-slate-800">Mental Trace Challenge</h3>
+                    </div>
+                    <div class="bg-slate-50 p-4 rounded-xl font-mono text-[11px] border border-slate-100">
+                        Address 0: LOAD 5<br>
+                        Address 1: ADD 6<br>
+                        Address 2: STORE 7<br>
+                        ---<br>
+                        Address 5: [Value: 10]<br>
+                        Address 6: [Value: 25]
+                    </div>
+                    <p class="text-sm text-slate-600">
+                        If the Accumulator starts at 0, what value will be stored in <strong>Address 7</strong> after these three steps complete? (Hint: You can run this exact program in the Simulator tab!)
+                    </p>
+                    <div class="flex gap-2">
+                        <input type="number" id="input-2" placeholder="Enter value..." class="flex-1 p-2 border-2 border-slate-200 rounded-lg text-sm font-mono focus:outline-none focus:border-purple-500">
+                        <button onclick="checkChallenge(2, 35)" class="px-6 py-2 bg-slate-800 text-white rounded-lg font-bold text-sm hover:bg-slate-700 transition">Check</button>
+                    </div>
+                    <div id="feedback-2" class="hidden p-3 rounded-lg text-xs font-bold"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data & State (Modified to match Challenge 2 perfectly)
+        const INITIAL_RAM = [
+            { type: 'instr', value: 'LOAD 5', label: '0' },
+            { type: 'instr', value: 'ADD 6', label: '1' },
+            { type: 'instr', value: 'STORE 7', label: '2' },
+            { type: 'instr', value: 'HALT', label: '3' },
+            { type: 'data', value: 0, label: '4' },
+            { type: 'data', value: 10, label: '5' },
+            { type: 'data', value: 25, label: '6' },
+            { type: 'data', value: 0, label: '7' },
+        ];
+        
+        let ram = JSON.parse(JSON.stringify(INITIAL_RAM));
+        let pc = 0, accumulator = 0, cir = null, mar = null, mdr = null, aluLeft = 0, aluRight = null;
+        let cycleStep = 'FETCH_MAR', isRunning = false, isHalted = false, autoRunInterval = null, logData = [];
+
+        // Global safeguard against accidental drops triggering file loading
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+
+        // Comprehensive Build Data mapped exactly to IGCSE syllabus terminology
+        const BUILD_COMPONENTS = [
+            { id: 'ALU', label: 'ALU', type: 'component', color: 'bg-orange-700 text-white' },
+            { id: 'CU', label: 'Control Unit', type: 'component', color: 'bg-indigo-800 text-white' },
+            { id: 'RAM', label: 'Main Memory (RAM)', type: 'component', color: 'bg-emerald-700 text-white' },
+            { id: 'PC', label: 'Program Counter (PC)', type: 'component', color: 'bg-slate-800 text-white' },
+            { id: 'CIR', label: 'Current Instr. Reg (CIR)', type: 'component', color: 'bg-slate-800 text-white' },
+            { id: 'MAR', label: 'Mem Address Reg (MAR)', type: 'component', color: 'bg-slate-800 text-white' },
+            { id: 'MDR', label: 'Mem Data Reg (MDR)', type: 'component', color: 'bg-slate-800 text-white' },
+            { id: 'ACC', label: 'Accumulator (ACC)', type: 'component', color: 'bg-slate-800 text-white' },
+            { id: 'BUS_DATA', label: 'Data Bus', type: 'component', color: 'bg-blue-600 text-white' },
+            { id: 'BUS_ADDR', label: 'Address Bus', type: 'component', color: 'bg-slate-600 text-white' },
+            { id: 'BUS_CTRL', label: 'Control Bus', type: 'component', color: 'bg-emerald-600 text-white' },
+            
+            // IGCSE Verified Descriptions
+            { id: 'DESC_ALU', label: 'Performs arithmetic and logic operations', type: 'desc', color: 'bg-white border-2 border-orange-500 text-orange-950', correctId: 'ALU' },
+            { id: 'DESC_CU', label: 'Coordinates CPU activities & decodes instructions', type: 'desc', color: 'bg-white border-2 border-indigo-500 text-indigo-950', correctId: 'CU' },
+            { id: 'DESC_PC', label: 'Holds the address of the NEXT instruction', type: 'desc', color: 'bg-white border-2 border-slate-400 text-slate-900', correctId: 'PC' },
+            { id: 'DESC_MAR', label: 'Holds the memory address of the CURRENT instruction/data', type: 'desc', color: 'bg-white border-2 border-slate-400 text-slate-900', correctId: 'MAR' },
+            { id: 'DESC_MDR', label: 'Holds the instruction/data that has just been fetched', type: 'desc', color: 'bg-white border-2 border-slate-400 text-slate-900', correctId: 'MDR' },
+            { id: 'DESC_CIR', label: 'Holds the instruction CURRENTLY being executed/decoded', type: 'desc', color: 'bg-white border-2 border-slate-400 text-slate-900', correctId: 'CIR' },
+            { id: 'DESC_ACC', label: 'Holds the result of an instruction temporarily', type: 'desc', color: 'bg-white border-2 border-slate-400 text-slate-900', correctId: 'ACC' },
+            { id: 'DESC_RAM', label: 'Stores both program instructions and data', type: 'desc', color: 'bg-white border-2 border-emerald-500 text-emerald-950', correctId: 'RAM' }
+        ];
+
+        const elSimView = document.getElementById('simulationView');
+        const elBuildView = document.getElementById('buildView');
+        const elTheoryView = document.getElementById('theoryView');
+        const elChallengeView = document.getElementById('challengeView');
+        
+        const elTabSimBtn = document.getElementById('tabSimBtn');
+        const elTabBuildBtn = document.getElementById('tabBuildBtn');
+        const elTabTheoryBtn = document.getElementById('tabTheoryBtn');
+        const elTabChallengeBtn = document.getElementById('tabChallengeBtn');
+        
+        const elRamList = document.getElementById('ramList');
+        const elLogs = document.getElementById('logs');
+        const elStatusMsg = document.getElementById('statusMsg');
+        
+        const elAutoRunBtn = document.getElementById('autoRunBtn');
+        const elStepBtn = document.getElementById('stepBtn');
+        const elResetBtn = document.getElementById('resetBtn');
+
+        function showTab(v) {
+            [elSimView, elBuildView, elTheoryView, elChallengeView].forEach(e => e.classList.add('hidden'));
+            [elTabSimBtn, elTabBuildBtn, elTabTheoryBtn, elTabChallengeBtn].forEach(b => b.classList.remove('tab-active'));
+            
+            if (v==='sim'){ elSimView.classList.remove('hidden'); elTabSimBtn.classList.add('tab-active'); }
+            else if (v==='build'){ elBuildView.classList.remove('hidden'); elTabBuildBtn.classList.add('tab-active'); }
+            else if (v==='theory'){ elTheoryView.classList.remove('hidden'); elTabTheoryBtn.classList.add('tab-active'); }
+            else { elChallengeView.classList.remove('hidden'); elTabChallengeBtn.classList.add('tab-active'); }
+        }
+        
+        elTabSimBtn.addEventListener('click', () => showTab('sim'));
+        elTabBuildBtn.addEventListener('click', () => showTab('build'));
+        elTabTheoryBtn.addEventListener('click', () => showTab('theory'));
+        elTabChallengeBtn.addEventListener('click', () => showTab('challenge'));
+
+        function initBuildActivity() {
+            const tb = document.getElementById('toolbox'); 
+            tb.innerHTML = '';
+            
+            [...BUILD_COMPONENTS].sort(()=>Math.random()-0.5).forEach(item => {
+                const el = document.createElement('div'); 
+                el.draggable = true;
+                el.id = `item-${item.id}`; 
+                el.className = `draggable-item p-1.5 rounded border border-slate-300 font-bold text-[10px] shadow-sm text-center cursor-grab active:cursor-grabbing ${item.color}`;
+                el.textContent = item.label; 
+                el.dataset.id = item.id; 
+                el.dataset.type = item.type; 
+                el.dataset.correctId = item.correctId || '';
+                
+                el.addEventListener('dragstart', (e)=> { e.dataTransfer.setData('text', item.id); el.style.opacity='0.5'; });
+                el.addEventListener('dragend', ()=> el.style.opacity='1');
+                tb.appendChild(el);
+            });
+
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    z.classList.add('drag-over');
+                });
+                z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+                z.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    z.classList.remove('drag-over');
+                    const id = e.dataTransfer.getData('text'); 
+                    const d = document.getElementById(`item-${id}`);
+                    if (!d) return;
+                    
+                    // If a component is already here, send it back to toolbox
+                    if (z.children.length > 1 || (z.children.length === 1 && z.children[0].tagName === 'DIV')) {
+                        const existing = z.querySelector('.draggable-item'); 
+                        if (existing) tb.appendChild(existing);
+                    }
+                    
+                    const s = z.querySelector('span'); 
+                    if (s) s.style.display='none';
+                    z.appendChild(d);
+                });
+            });
+        }
+
+        document.getElementById('checkBuildBtn').addEventListener('click', () => {
+            let s = 0, t = 0, firstError = null;
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                t++; 
+                const i = z.querySelector('.draggable-item'); 
+                z.classList.remove('correct-drop', 'wrong-drop');
+                if (!i) { 
+                    z.classList.add('wrong-drop'); 
+                    if(!firstError) firstError = "Incomplete: Make sure all slots are filled.";
+                    return; 
+                }
+                const isC = z.dataset.type === 'component' ? i.dataset.id === z.dataset.correct : i.dataset.correctId === z.dataset.correct;
+                
+                if (isC) { 
+                    z.classList.add('correct-drop'); 
+                    s++; 
+                } else { 
+                    z.classList.add('wrong-drop');
+                    if(!firstError) {
+                        // IGCSE Specific targeted feedback hints
+                        if(z.dataset.type === 'desc') firstError = `Hint: Check the textbook definition for the ${z.dataset.correct}.`;
+                        else if(z.dataset.correct === 'PC' && i.dataset.id === 'MAR') firstError = "IGCSE Hint: PC holds NEXT address. MAR holds CURRENT address.";
+                        else if(z.dataset.correct === 'MAR' && i.dataset.id === 'PC') firstError = "IGCSE Hint: PC holds NEXT address. MAR holds CURRENT address.";
+                        else if(z.dataset.correct === 'MDR' && i.dataset.id === 'CIR') firstError = "IGCSE Hint: MDR holds fetched data directly from RAM. CIR holds the decoded instruction.";
+                        else if(z.dataset.correct === 'BUS_ADDR') firstError = "Hint: The Address bus is Uni-directional (MAR to Memory).";
+                        else if(z.dataset.correct === 'BUS_DATA') firstError = "Hint: The Data bus is Bi-directional (MDR to Memory).";
+                        else firstError = `Hint: Incorrect component mapped to the ${z.dataset.correct} slot.`;
+                    }
+                }
+            });
+            
+            const fb = document.getElementById('buildFeedback');
+            fb.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-700', 'bg-red-100', 'text-red-700');
+            if (s === t) {
+                fb.textContent = "Perfect! IGCSE Von Neumann Architecture Mastered!";
+                fb.classList.add('bg-emerald-100', 'text-emerald-700');
+            } else {
+                fb.textContent = `${s}/${t} correct. ${firstError || ''}`;
+                fb.classList.add('bg-red-100', 'text-red-700');
+            }
+        });
+
+        document.getElementById('resetBuildBtn').addEventListener('click', () => {
+            const tb = document.getElementById('toolbox');
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.classList.remove('correct-drop', 'wrong-drop');
+                const s = z.querySelector('span'); 
+                if (s) s.style.display='block';
+                const i = z.querySelector('.draggable-item'); 
+                if (i) tb.appendChild(i);
+            });
+            document.getElementById('buildFeedback').classList.add('hidden');
+        });
+
+        function checkChallenge(num, correct) {
+            const fb = document.getElementById(`feedback-${num}`);
+            fb.classList.remove('hidden', 'bg-red-100', 'text-red-700', 'bg-emerald-100', 'text-emerald-700');
+            
+            let isCorrect = false;
+            if (num === 1) isCorrect = (correct === 5); // PC increments instantly after fetch
+            if (num === 2) isCorrect = (parseInt(document.getElementById('input-2').value) === correct); // 35
+
+            if (isCorrect) {
+                fb.textContent = "Correct! Great job.";
+                fb.classList.add('bg-emerald-100', 'text-emerald-700');
+            } else {
+                fb.textContent = "Not quite. Try running it in the Simulator tab to trace it!";
+                fb.classList.add('bg-red-100', 'text-red-700');
+            }
+        }
+
+        function addLog(m) { 
+            logData.unshift(m); 
+            if(logData.length > 5) logData.pop(); 
+            elLogs.innerHTML = logData.map((l,i) => `<div><span class="text-slate-400">[${logData.length-i}]</span> ${l}</div>`).join(''); 
+        }
+
+        function renderRAM() { 
+            elRamList.innerHTML = ram.map((c,idx) => `<div class="flex items-center gap-2 p-1 rounded border ${mar===idx ? 'bg-indigo-50 border-indigo-200' : 'border-transparent'}"><div class="w-4 text-[9px] font-bold ${mar===idx ? 'text-indigo-600' : 'text-slate-400'}">${idx}</div><div class="flex-1 text-[10px] px-2 py-0.5 rounded border ${c.type==='instr' ? 'bg-blue-50 text-blue-700 font-bold border-blue-100' : 'bg-white text-slate-600 border-slate-200'}">${c.value}</div></div>`).join(''); 
+        }
+
+        function updateReg(id, v, isActive) { 
+            const e = document.getElementById(id); 
+            if(!e) return; 
+            e.querySelector('.val').textContent = v === null ? '---' : v; 
+            if(isActive) e.classList.add('register-active'); 
+            else e.classList.remove('register-active'); 
+        }
+
+        function updateFlow() { 
+            document.querySelectorAll('.flow-node').forEach(n => n.classList.remove('active')); 
+            document.querySelectorAll('.flow-arrow').forEach(a => a.classList.remove('active')); 
+            
+            const n = document.getElementById(`flow-${cycleStep}`); 
+            if(n) n.classList.add('active'); 
+            
+            const sequence = ['FETCH_MAR', 'FETCH_MDR', 'DECODE', 'EXECUTE']; 
+            const i = sequence.indexOf(cycleStep); 
+            if (i > 0) {
+                const arrow = document.getElementById(`arrow-${i}`);
+                if (arrow) arrow.classList.add('active');
+            }
+        }
+
+        function updateUI() { 
+            updateReg('reg-pc', pc, cycleStep === 'FETCH_MAR'); 
+            updateReg('reg-mar', mar, cycleStep === 'FETCH_MAR' || cycleStep === 'EXECUTE'); 
+            updateReg('reg-mdr', mdr, cycleStep === 'FETCH_MDR' || cycleStep === 'EXECUTE'); 
+            updateReg('reg-cir', cir, cycleStep === 'FETCH_MDR' || cycleStep === 'DECODE'); 
+            updateReg('reg-acc', accumulator, cycleStep === 'EXECUTE'); 
+            
+            document.getElementById('alu-l').textContent = aluLeft; 
+            const ar = document.getElementById('alu-r'); 
+            ar.textContent = aluRight === null ? '?' : aluRight; 
+            ar.style.opacity = aluRight === null ? '0.3' : '1'; 
+            
+            const ao = document.getElementById('alu-out'); 
+            if(aluRight !== null) { 
+                ao.textContent = aluLeft + aluRight; 
+                ao.classList.replace('bg-slate-400', 'bg-orange-600'); 
+            } else { 
+                ao.textContent = 'ALU WAIT'; 
+                ao.classList.replace('bg-orange-600', 'bg-slate-400');
+            } 
+            
+            renderRAM(); 
+            updateFlow(); 
+        }
+
+        function nextStep() { 
+            if(isHalted) return; 
+            
+            switch(cycleStep) { 
+                case 'FETCH_MAR': 
+                    mar = pc; 
+                    pc++; // IGCSE: PC increments immediately after passing to MAR
+                    elStatusMsg.textContent = `FETCH: Address ${mar} copied from PC to MAR. PC increments to ${pc}.`; 
+                    addLog(`PC→MAR. PC++`); 
+                    cycleStep = 'FETCH_MDR';
+                    break; 
+                case 'FETCH_MDR': 
+                    mdr = ram[mar].value; 
+                    cir = mdr; 
+                    elStatusMsg.textContent = `FETCH: Data at Address ${mar} fetched into MDR, then copied to CIR.`; 
+                    addLog(`RAM→MDR→CIR`); 
+                    cycleStep = 'DECODE';
+                    break; 
+                case 'DECODE': 
+                    elStatusMsg.textContent = `DECODE: Control Unit decodes instruction "${cir}".`; 
+                    addLog(`Decode: ${cir.split(' ')[0]}`);
+                    cycleStep = 'EXECUTE'; 
+                    break; 
+                case 'EXECUTE': 
+                    const parts = cir.split(' ');
+                    const op = parts[0];
+                    const addr = parts.length > 1 ? parseInt(parts[1]) : null;
+                    
+                    if(op === 'LOAD') { 
+                        mar = addr;
+                        mdr = ram[mar].value;
+                        accumulator = mdr; 
+                        elStatusMsg.textContent = `EXECUTE: Address ${addr} to MAR. Data ${mdr} loaded from RAM via MDR to ACC.`; 
+                        addLog(`LOAD ${addr}`);
+                    } else if(op === 'ADD') { 
+                        mar = addr;
+                        mdr = ram[mar].value;
+                        aluLeft = accumulator; 
+                        aluRight = mdr; 
+                        accumulator += aluRight; 
+                        elStatusMsg.textContent = `EXECUTE: Address ${addr} to MAR. Data ${mdr} fetched via MDR. ALU adds to ACC.`; 
+                        addLog(`ADD ${addr}`);
+                    } else if(op === 'STORE') { 
+                        mar = addr;
+                        mdr = accumulator;
+                        ram[mar].value = mdr; 
+                        elStatusMsg.textContent = `EXECUTE: ACC passes data to MDR. MAR selects Address ${addr}. Data saved to RAM.`; 
+                        addLog(`STORE ${addr}`);
+                    } else if(op === 'HALT') { 
+                        isHalted = true; 
+                        isRunning = false; 
+                        clearInterval(autoRunInterval); 
+                        elStatusMsg.textContent = "HALTED. Program execution complete."; 
+                        document.getElementById('autoRunText').textContent = 'Auto Run';
+                        document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+                        addLog("HALT"); 
+                        updateUI(); 
+                        return; 
+                    } 
+                    
+                    cycleStep = 'FETCH_MAR'; 
+                    aluLeft = 0; aluRight = null; // reset ALU visual
+                    break; 
+            } 
+            updateUI(); 
+        }
+
+        function reset() { 
+            ram = JSON.parse(JSON.stringify(INITIAL_RAM)); 
+            pc = 0; accumulator = 0; cir = mar = mdr = aluRight = null; aluLeft = 0; 
+            cycleStep = 'FETCH_MAR'; 
+            isRunning = isHalted = false; 
+            logData = []; 
+            if(autoRunInterval) clearInterval(autoRunInterval); 
+            document.getElementById('autoRunText').textContent = 'Auto Run';
+            document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+            elStatusMsg.textContent = "Ready to start. Click 'Next Step'.";
+            elLogs.innerHTML = ''; 
+            updateUI(); 
+        }
+
+        elStepBtn.addEventListener('click', nextStep); 
+        elResetBtn.addEventListener('click', reset);
+        
+        elAutoRunBtn.addEventListener('click', () => { 
+            if(isHalted) return; 
+            if(isRunning) { 
+                isRunning = false; 
+                clearInterval(autoRunInterval); 
+                document.getElementById('autoRunText').textContent = 'Auto Run';
+                document.getElementById('playIcon').innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+            } else { 
+                isRunning = true; 
+                autoRunInterval = setInterval(nextStep, 1500); // 1.5s for readability
+                document.getElementById('autoRunText').textContent = 'Pause';
+                document.getElementById('playIcon').innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+            } 
+        });
+        
+        // Initialize
+        initBuildActivity(); 
+        reset(); 
+    </script>
+</body>
+</html>

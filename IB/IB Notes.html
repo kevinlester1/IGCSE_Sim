@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS (2014) - Cornell Notes & Smart Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Kalam:wght@300;400&display=swap');
+
+        :root {
+            --paper-bg: #ffffff;
+            --line-color: #e2e8f0;
+            --margin-line: #ef4444;
+            --text-color: #1e293b;
+        }
+
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-color);
+        }
+
+        /* The A4 Page Look - Wider Width */
+        .page-container {
+            width: 260mm;
+            min-height: 297mm;
+            background: var(--paper-bg);
+            margin: 0 auto; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            page-break-after: always;
+        }
+
+        /* Editable Areas */
+        .editable {
+            outline: none;
+            min-height: 1.5em;
+        }
+        
+        .editable:empty:before {
+            content: attr(placeholder);
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        /* Image handling in editables */
+        .editable img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin: 8px 0;
+            display: block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .editable img:hover {
+            opacity: 0.9;
+            outline: 3px solid #ef4444;
+        }
+
+        /* Grid Layout for Cornell System */
+        .cornell-grid {
+            display: grid;
+            grid-template-columns: 30% 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 0;
+            border: 2px solid #000;
+            flex-grow: 1;
+        }
+
+        /* Sections */
+        .header-section {
+            grid-column: 1 / -1;
+            border-bottom: 2px solid #000;
+            padding: 1rem;
+            background: #f8fafc;
+        }
+
+        .cues-column {
+            border-right: 2px solid #000;
+            padding: 1rem;
+            background-color: #fdfdfd;
+        }
+
+        .notes-column {
+            padding: 1rem;
+            background-image: repeating-linear-gradient(transparent, transparent 31px, #e2e8f0 31px, #e2e8f0 32px);
+            line-height: 32px;
+            background-attachment: local;
+        }
+
+        .summary-section {
+            grid-column: 1 / -1;
+            border-top: 2px solid #000;
+            padding: 1rem;
+            background: #f8fafc;
+            min-height: 150px;
+        }
+
+        /* Checklist Styles */
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .status-btn {
+            flex-shrink: 0;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+        }
+        .status-btn:hover { background: #f1f5f9; }
+        
+        /* Status Colors */
+        .status-0 { color: #cbd5e1; } /* Empty */
+        .status-1 { color: #10b981; border-color: #10b981; background: #ecfdf5; } /* Check */
+        .status-2 { color: #f59e0b; border-color: #f59e0b; background: #fffbeb; } /* Question */
+        .status-3 { color: #ef4444; border-color: #ef4444; background: #fef2f2; } /* Cross */
+
+        /* Quiz Styles */
+        .tab-btn {
+            color: #e0e7ff;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+        }
+        .tab-btn:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .tab-btn.active {
+            background-color: #312e81; /* indigo-900 */
+            color: white;
+            border-bottom: 3px solid #fbbf24; /* amber-400 */
+        }
+        
+        /* Center the quiz content */
+        #quiz-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .quiz-question-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 2rem;
+            border-top: 4px solid #4f46e5;
+            display: flex;
+            flex-direction: column;
+        }
+        .quiz-textarea {
+            width: 100%;
+            min-height: 120px;
+            margin-top: 15px;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background-color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        .quiz-textarea:focus {
+            outline: none;
+            border-color: #6366f1;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .model-answer {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 0.375rem;
+            color: #064e3b;
+            font-size: 0.9rem;
+            display: none; /* Always hidden on screen by default */
+        }
+        
+        .show-answer-btn {
+            display: none; 
+        }
+
+        /* Essential Utility: Standard Hide */
+        .hidden { display: none; }
+
+        /* Print Styling */
+        @media print {
+            body {
+                background: none;
+                margin: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            /* Logic to hide non-active tabs during print */
+            body.print-mode-notes #tab-quiz { display: none !important; }
+            body.print-mode-quiz #tab-notes { display: none !important; }
+            
+            body.print-mode-quiz .page-container { box-shadow: none; margin: 0; width: 100%; }
+            body.print-mode-quiz .quiz-question-card { 
+                break-inside: avoid; 
+                border: 1px solid #ccc; 
+                box-shadow: none; 
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            
+            /* SHOW model answers ONLY when printing the quiz */
+            body.print-mode-quiz .model-answer { 
+                display: block !important; 
+                border: none;
+                background-color: transparent;
+                padding: 0;
+                margin-top: 5px;
+                font-weight: bold;
+                color: #047857; /* Darker green for print readability */
+            }
+            
+            #notebook {
+                gap: 0 !important;
+                padding-bottom: 0 !important;
+            }
+            .page-container {
+                width: 100%;
+                margin: 0;
+                box-shadow: none;
+                height: 100vh;
+                border: none;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+
+        .handwritten {
+            font-family: 'Kalam', cursive;
+            font-size: 1.2rem;
+        }
+        
+        .page-wrapper:hover .delete-btn {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="print-mode-notes"> <!-- Default print mode -->
+
+    <!-- Hidden File Inputs -->
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="handleImport(this)">
+
+    <!-- Header Navigation -->
+    <nav class="bg-indigo-800 text-white shadow-lg sticky top-0 z-50 no-print">
+        <div class="max-w-6xl mx-auto px-4">
+            <!-- Top Row: Title & Main Actions -->
+            <div class="flex flex-col sm:flex-row justify-between items-center py-3 gap-4">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-university text-yellow-400 text-2xl"></i>
+                    <div>
+                        <h1 class="text-xl font-bold leading-tight">IB Computer Science (2014)</h1>
+                        <span class="text-xs text-indigo-300">Study Companion</span>
+                    </div>
+                </div>
+                
+                <div class="flex gap-2">
+                    <button onclick="switchTab('notes')" id="btn-tab-notes" class="tab-btn px-4 py-2 font-semibold rounded-t-lg transition active hover:bg-indigo-700">
+                        <i class="fas fa-book-open mr-2"></i> Notes
+                    </button>
+                    <button onclick="switchTab('quiz')" id="btn-tab-quiz" class="tab-btn px-4 py-2 font-semibold rounded-t-lg transition hover:bg-indigo-700">
+                        <i class="fas fa-question-circle mr-2"></i> Quiz
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Sub-Toolbar (Context Sensitive) -->
+        <div id="toolbar-notes" class="bg-indigo-900 px-4 py-2 transition-all">
+            <div class="max-w-6xl mx-auto flex flex-wrap gap-2 justify-center sm:justify-end items-center">
+                 <!-- File Actions -->
+                 <div class="flex bg-indigo-800 rounded p-1 gap-1">
+                    <button onclick="exportData()" class="px-2 py-1 rounded hover:bg-indigo-700 text-xs flex items-center gap-1" title="Backup">
+                        <i class="fas fa-download text-green-400"></i> Save
+                    </button>
+                    <button onclick="importTrigger()" class="px-2 py-1 rounded hover:bg-indigo-700 text-xs flex items-center gap-1" title="Restore">
+                        <i class="fas fa-upload text-blue-400"></i> Open
+                    </button>
+                 </div>
+                 <!-- Edit Actions -->
+                 <button onclick="triggerImageUpload()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-image text-purple-300"></i> Image</button>
+                 <button onclick="addPage()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-plus text-emerald-300"></i> Page</button>
+                 <button onclick="toggleFont()" class="px-3 py-1 rounded hover:bg-indigo-700 text-sm"><i class="fas fa-pen-fancy text-pink-300"></i> Font</button>
+                 <button onclick="resetToDefault()" class="px-3 py-1 rounded hover:bg-red-900 text-sm text-red-300"><i class="fas fa-trash"></i> Reset</button>
+                 <!-- Print -->
+                 <button onclick="printPDF()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-bold shadow"><i class="fas fa-file-pdf"></i> PDF</button>
+            </div>
+        </div>
+
+        <div id="toolbar-quiz" class="bg-indigo-900 px-4 py-2 hidden transition-all">
+            <div class="max-w-6xl mx-auto flex flex-wrap gap-4 justify-center sm:justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm text-indigo-200">Topic:</label>
+                    <select id="unit-select" class="bg-indigo-800 text-white text-sm rounded px-2 py-1 border border-indigo-600 focus:outline-none focus:border-yellow-400 cursor-pointer">
+                        <option value="all">All Topics (1,2,3,5,6,7)</option>
+                        <option value="unsure">My "Unsure" Topics (❓)</option>
+                        <optgroup label="SL/HL Core">
+                            <option value="1">Topic 1: System Fundamentals</option>
+                            <option value="2">Topic 2: Computer Organization</option>
+                            <option value="3">Topic 3: Networks</option>
+                        </optgroup>
+                        <optgroup label="HL Extension">
+                            <option value="5">Topic 5: Abstract Data Structures</option>
+                            <option value="6">Topic 6: Resource Management</option>
+                            <option value="7">Topic 7: Control</option>
+                        </optgroup>
+                    </select>
+                    <button onclick="startQuiz()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-1 rounded text-sm font-bold shadow cursor-pointer">
+                        Start New Quiz
+                    </button>
+                </div>
+                <button onclick="printQuiz()" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm font-bold shadow cursor-pointer">
+                    <i class="fas fa-file-pdf"></i> Save Quiz PDF
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Workspace -->
+    <div class="flex justify-center bg-gray-100 min-h-screen pb-20 pt-8">
+        
+        <!-- NOTES TAB -->
+        <div id="tab-notes" class="w-full flex flex-col gap-8 items-center">
+            <div id="notebook" class="flex flex-col gap-8 items-center w-full">
+                <!-- Pages injected by JS -->
+            </div>
+        </div>
+
+        <!-- QUIZ TAB -->
+        <div id="tab-quiz" class="w-full px-4 hidden">
+            <div id="quiz-intro" class="text-center py-10">
+                <div class="bg-white p-8 rounded-xl shadow-lg inline-block max-w-lg">
+                    <i class="fas fa-clipboard-list text-6xl text-indigo-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Ready to test your knowledge?</h2>
+                    <p class="text-gray-600 mb-6">Select a topic from the toolbar above and click "Start New Quiz".</p>
+                    <div class="text-sm text-gray-500 bg-gray-100 p-3 rounded text-left">
+                        <p class="mb-1"><strong><i class="fas fa-star text-yellow-500"></i> Feature:</strong></p>
+                        <p>Select <strong>My "Unsure" Topics</strong> to generate a quiz focusing only on the IB syllabus points you marked with a question mark (❓) in your notes.</p>
+                        <p class="mt-2 text-xs">Based on the 2014 IB Computer Science Guide.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="quiz-container" class="hidden">
+                <div class="mb-8 flex justify-between items-end border-b-2 border-gray-300 pb-4 max-w-4xl mx-auto">
+                    <div>
+                        <h2 class="text-3xl font-bold text-gray-800">Knowledge Check</h2>
+                        <p class="text-gray-600 font-medium mt-1" id="quiz-subtitle">Random Selection</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm text-gray-500">Date: <span class="font-medium text-gray-800" id="quiz-date"></span></p>
+                    </div>
+                </div>
+                <div id="questions-list">
+                    <!-- Questions injected here -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-6 py-3 rounded shadow-lg transform translate-y-40 transition-transform duration-300 flex items-center gap-3 z-50">
+        <i class="fas fa-check-circle text-green-400"></i>
+        <span id="toastMsg">Saved</span>
+    </div>
+
+    <script>
+        const fieldClasses = ['field-topic', 'field-subject', 'field-date', 'field-cues', 'field-notes', 'field-summary', 'field-keywords'];
+        let autoSaveTimer;
+        let lastFocusedEditable = null;
+        // Updated Storage Key for IB content
+        const STORAGE_KEY = 'ib_cs_2014_notes_v1';
+
+        // --- PREFILLED SYLLABUS DATA (ADAPTED FOR IB 2014) ---
+        // ⭐ marks frequent past paper topics based on 2015-2023 analysis
+        const prefilledData = [
+            {
+                "field-topic": "Topic 1: System Fundamentals",
+                "field-subject": "IB Computer Science (SL/HL)",
+                "field-keywords": "Change Management, Legacy System, SaaS, Failover, Data Migration, Alpha/Beta Testing, User Documentation",
+                "checklist-data": [
+                    { status: 0, text: "1.1.1 Identify context for which a new system is planned." },
+                    { status: 0, text: "⭐ 1.1.3 Compatibility issues (legacy systems/mergers)." },
+                    { status: 0, text: "⭐ 1.1.5 Evaluate alternative installation processes (Parallel, Pilot, etc)." },
+                    { status: 0, text: "1.1.7 Suggest various types of testing (Alpha, Beta, Debugging)." },
+                    { status: 0, text: "⭐ 1.1.11 Identify a range of causes of data loss." },
+                    { status: 0, text: "1.2.1 Define hardware, software, peripheral, network, HR." },
+                    { status: 0, text: "1.2.7 Construct representations of requirements (Flowcharts, DFDs)." },
+                    { status: 0, text: "⭐ 1.2.12 Define the term usability & accessibility." }
+                ],
+                "field-notes": "<b>Change Management:</b><br>Issues often arise during company mergers (Topic 1.1.3). Key problems: Language differences (international mergers), software incompatibility, and workforce retraining.<br><br><b>Installation Methods (Topic 1.1.5):</b><br><u>Parallel Running:</u> Old and new systems run together. <i>Pro:</i> Safe (backup available). <i>Con:</i> Expensive (duplicate workload).<br><u>Direct Changeover:</u> Instant switch. <i>Pro:</i> Fast, cheapest. <i>Con:</i> High risk (no fallback if new system fails).<br><br><b>Usability vs Accessibility (Topic 1.2.12):</b><br><u>Usability:</u> Ease of use/Efficiency. Issues: Small screens, battery life.<br><u>Accessibility:</u> Access for those with disabilities. Solutions: Text-to-speech, Braille keyboards, Voice recognition."
+            },
+            {
+                "field-topic": "Topic 2: Computer Organization",
+                "field-subject": "IB Computer Science (SL/HL)",
+                "field-keywords": "CPU, ALU, CU, Registers, MAR, MDR, Cache, RAM, ROM, Persistent Storage, OS, Binary, Logic Gates",
+                "checklist-data": [
+                    { status: 0, text: "⭐ 2.1.1 Outline architecture of CPU (ALU, CU, Registers)." },
+                    { status: 0, text: "⭐ 2.1.3 Explain the use of cache memory." },
+                    { status: 0, text: "2.1.4 Explain the machine instruction cycle." },
+                    { status: 0, text: "2.1.6 Describe main functions of an Operating System." },
+                    { status: 0, text: "⭐ 2.1.9 Define bit, byte, binary, denary, hexadecimal." },
+                    { status: 0, text: "2.1.11 Define Boolean operators (AND, OR, NOT, NAND, NOR, XOR)." },
+                    { status: 0, text: "2.1.13 Construct logic diagrams." }
+                ],
+                "field-notes": "<b>CPU Registers (Topic 2.1.1):</b><br><u>MAR (Memory Address Register):</u> Holds the <i>address</i> of the data/instruction to be fetched.<br><u>MDR (Memory Data Register):</u> Holds the <i>actual data</i> fetched from memory.<br><br><b>Cache Memory (Topic 2.1.3):</b><br>Small, high-speed memory inside CPU. Holds frequently used data to prevent the CPU waiting for the slower RAM. Speed mismatch solution.<br><br><b>RAM vs ROM (Topic 2.1.2):</b><br>RAM: Volatile, R/W, stores running OS/Programs.<br>ROM: Non-volatile, Read-only, stores BIOS/Bootloader."
+            },
+            {
+                "field-topic": "Topic 3: Networks",
+                "field-subject": "IB Computer Science (SL/HL)",
+                "field-keywords": "LAN, WAN, VLAN, VPN, OSI Model, Protocol, Packet Switching, Compression, Wireless, Encryption",
+                "checklist-data": [
+                    { status: 0, text: "3.1.1 Identify different types of networks (LAN, WAN, VPN, PAN)." },
+                    { status: 0, text: "3.1.3 Describe layers of communication (OSI model awareness)." },
+                    { status: 0, text: "⭐ 3.1.5 Evaluate the use of a VPN." },
+                    { status: 0, text: "⭐ 3.1.6 Define protocol and data packet." },
+                    { status: 0, text: "⭐ 3.1.11 Explain packet switching." },
+                    { status: 0, text: "3.1.14 Describe characteristics of wireless networks." },
+                    { status: 0, text: "3.1.15 Describe network security (Encryption, MAC address)." }
+                ],
+                "field-notes": "<b>VPN (Virtual Private Network) (Topic 3.1.5):</b><br>Allows secure work from home (telecommuting).<br><u>Keywords:</u> <i>Tunneling</i> (hides data), <i>Encryption</i> (scrambles data), <i>Gateway</i> (entry point).<br><br><b>Packet Switching (Topic 3.1.11):</b><br>1. Data broken into packets.<br>2. Packets travel <i>independently</i> via different routes.<br>3. Reassembled at destination using sequence numbers.<br><i>Benefit:</i> Robust (if one line fails, packet reroutes)."
+            },
+            {
+                "field-topic": "Topic 5: Abstract Data Structures (HL)",
+                "field-subject": "IB Computer Science (HL Extension)",
+                "field-keywords": "Recursion, 2D Arrays, Stack, Queue, Linked List, Binary Tree, LIFO, FIFO, Dynamic Data Structure",
+                "checklist-data": [
+                    { status: 0, text: "⭐ 5.1.1 Identify situations requiring recursive thinking." },
+                    { status: 0, text: "5.1.4 Describe characteristics of 2D arrays." },
+                    { status: 0, text: "⭐ 5.1.6 Describe characteristics of a Stack (LIFO)." },
+                    { status: 0, text: "5.1.8 Describe characteristics of a Queue (FIFO)." },
+                    { status: 0, text: "⭐ 5.1.11 Describe features of dynamic data structures." },
+                    { status: 0, text: "5.1.12 Describe how linked lists operate logically." },
+                    { status: 0, text: "⭐ 5.1.17 Sketch binary trees." }
+                ],
+                "field-notes": "<b>Recursion (Topic 5.1.1):</b><br>A function calling itself. Good for tree traversals (In-order/Pre-order).<br><i>Risk:</i> <b>Stack Overflow</b> if too many calls are made (memory fills up).<br><br><b>Linked List vs Array (Topic 5.1.11):</b><br><u>Array:</u> Static size, faster access (index), contiguous memory.<br><u>Linked List:</u> Dynamic size, slower access (must traverse), uses extra memory for pointers.<br><br><b>Trees (Topic 5.1.17):</b><br><i>Child:</i> Node with a predecessor. <i>Leaf:</i> Node with no children."
+            },
+            {
+                "field-topic": "Topic 6: Resource Management (HL)",
+                "field-subject": "IB Computer Science (HL Extension)",
+                "field-keywords": "System Resources, Scheduling, Paging, Interrupt, Polling, Virtual Memory, Dedicated OS",
+                "checklist-data": [
+                    { status: 0, text: "6.1.1 Identify resources to be managed (RAM, Processor, Bandwidth)." },
+                    { status: 0, text: "6.1.3 Identify limitations of resources." },
+                    { status: 0, text: "⭐ 6.1.5 Explain OS role in resource management." },
+                    { status: 0, text: "⭐ 6.1.7 Outline scheduling, polling, interrupts, paging." },
+                    { status: 0, text: "6.1.9 Outline how OS hides hardware complexity." }
+                ],
+                "field-notes": "<b>Polling vs Interrupts (Topic 6.1.7):</b><br><u>Polling:</u> CPU wastes time actively checking if a device needs attention.<br><u>Interrupt:</u> Device sends a signal to CPU only when needed. CPU stops current task to handle it. Much more efficient.<br><br><b>Paging (Topic 6.1.7):</b><br>Mechanism for <b>Virtual Memory</b>. Fixed-size blocks of data (pages) are swapped between RAM and Hard Disk to allow programs larger than physical RAM to run."
+            },
+            {
+                "field-topic": "Topic 7: Control (HL)",
+                "field-subject": "IB Computer Science (HL Extension)",
+                "field-keywords": "Centralized, Distributed, Microprocessor, Sensor, Transducer, Feedback, Embedded System, Autonomous Agent",
+                "checklist-data": [
+                    { status: 0, text: "7.1.1 Discuss a range of control systems (e.g. GPS, Traffic lights)." },
+                    { status: 0, text: "⭐ 7.1.2 Outline uses of microprocessors and sensors." },
+                    { status: 0, text: "⭐ 7.1.4 Explain relationship: Sensor -> Processor -> Transducer." },
+                    { status: 0, text: "⭐ 7.1.5 Describe the role of feedback (Closed Loop)." },
+                    { status: 0, text: "7.1.7 Compare centralized vs distributed control systems." },
+                    { status: 0, text: "7.1.8 Outline role of autonomous agents." }
+                ],
+                "field-notes": "<b>The Control Loop (Topic 7.1.4):</b><br>1. <b>Sensor:</b> Reads analogue environment data.<br>2. <b>ADC:</b> Converts to Digital.<br>3. <b>Processor:</b> Compares reading to pre-set value.<br>4. <b>Transducer/Actuator:</b> Performs action (e.g., turns on heater).<br><br><b>Feedback (Topic 7.1.5):</b><br>Essential for a <b>Closed Loop</b> system. The output impacts the next input (e.g., Cruise Control maintains speed by monitoring current speed)."
+            }
+        ];
+
+        // --- QUESTION BANK (REAL QUESTIONS EXTRACTED FROM 2015-2023 PAPERS) ---
+        const questionBank = [
+            // TOPIC 1: System Fundamentals
+            { u: 1, q: "Define the term data migration.", ref: "M17 HL P1 Q12", tags: ['Past Paper'], a: "Data migration is the transfer of data from one system/storage device to another (e.g., importing the data/database from the old company to the new company system)." },
+            { u: 1, q: "Describe two aspects of change management that may arise from a company takeover, other than data migration.", ref: "M17 HL P1 Q12", tags: ['Past Paper'], a: "1. Workforce issues (redundancy/retraining).\n2. The time frame involved in merging the two systems.\n3. Costs involved in aligning systems.\n4. Changeover decisions (e.g., parallel running)." },
+            { u: 1, q: "Compare direct changeover with parallel running as a method of implementation.", ref: "N20 HL P1 Q4", tags: ['Past Paper'], a: "Direct changeover:\n- Benefits gained immediately.\n- No extra cost for running two systems.\n- Risky; if new system fails, no backup.\n\nParallel running:\n- Safe; old system is backup if new one fails.\n- Expensive; requires resources for both systems." },
+            { u: 1, q: "Describe one method by which systems requirements can be obtained from stakeholders.", ref: "M18 HL P1 Q1", tags: ['Past Paper'], a: "Interviews: Holding discussions with stakeholders to establish functions required.\nDirect Observation: Watching users work with the current system to gain insight." },
+            { u: 1, q: "Identify two causes of data loss.", ref: "M19 HL P1 Q13", tags: ['Past Paper'], a: "1. Malicious activities (hacking, viruses).\n2. Natural disasters (fire, flood).\n3. Human error (accidental deletion).\n4. Hardware failure." },
+            { u: 1, q: "State three potential usability issues with cell phones.", ref: "N16 HL P1 Q1", tags: ['Past Paper'], a: "1. Small screen size.\n2. Small buttons/keys (fat finger problem).\n3. Battery life/power consumption.\n4. Network coverage issues." },
+            { u: 1, q: "Identify two methods that could be used to improve the accessibility of a computer system.", ref: "N15 HL P1 Q1", tags: ['Past Paper'], a: "1. Voice recognition.\n2. Text-to-speech.\n3. Touch screens.\n4. Braille keyboards." },
+
+            // TOPIC 2: Computer Organization
+            { u: 2, q: "Outline the function of the memory address register (MAR) and memory data register (MDR).", ref: "N15 HL P1 Q8", tags: ['Past Paper'], a: "MAR: Holds the address of the next instruction/data to be fetched from RAM.\nMDR: Holds the data that has been most recently read from RAM or is about to be written to RAM." },
+            { u: 2, q: "State the purpose of cache memory.", ref: "N16 HL P1 Q2", tags: ['Past Paper'], a: "It is used to save time in accessing RAM by holding frequently used data/instructions closer to the CPU." },
+            { u: 2, q: "Calculate how many different colours can be represented using two hexadecimal characters.", ref: "M18 HL P1 Q3", tags: ['Past Paper'], a: "2 hex digits = 8 bits.\n2^8 = 256 colours." },
+            { u: 2, q: "State two differences between primary storage and secondary storage.", ref: "N21 HL P1 Q1", tags: ['Past Paper'], a: "1. Primary is volatile (loses data when power off), Secondary is non-volatile.\n2. Primary is directly accessed by CPU, Secondary is not.\n3. Primary is faster/more expensive per byte than Secondary." },
+            { u: 2, q: "Distinguish between random access memory (RAM) and read-only memory (ROM).", ref: "M23 HL P1 Q7", tags: ['Past Paper'], a: "RAM: Volatile, read/write, stores running programs.\nROM: Non-volatile, read-only, stores boot instructions (BIOS)." },
+            { u: 2, q: "Identify three functions of the control unit (CU) in the central processing unit (CPU).", ref: "N23 HL P1 Q3", tags: ['Past Paper'], a: "1. Fetches instructions.\n2. Decodes instructions.\n3. Controls data movement within CPU.\n4. Generates clock pulses." },
+
+            // TOPIC 3: Networks
+            { u: 3, q: "Explain how a virtual private network (VPN) allows a travelling salesperson to connect securely to their company's network.", ref: "N15 HL P1 Q2", tags: ['Past Paper'], a: "VPN uses tunneling protocols to encapsulate data, hiding it while traveling over the internet. It uses encryption so if hacked, data is unreadable. Gateways allow connection to the company server." },
+            { u: 3, q: "Outline one advantage and one disadvantage of wireless networks.", ref: "N16 HL P1 Q3", tags: ['Past Paper'], a: "Advantage: Ease of use for mobile users/work in different locations.\nDisadvantage: Security issues (transmissions easier to intercept) or reliability issues." },
+            { u: 3, q: "Identify two of the layers of the OSI model.", ref: "M17 HL P1 Q6", tags: ['Past Paper'], a: "Physical, Data Link, Network, Transport, Session, Presentation, Application." },
+            { u: 3, q: "Explain how the use of media access control (MAC) addresses can improve security.", ref: "M17 HL P1 Q8", tags: ['Past Paper'], a: "The MAC address identifies a specific device network card. A whitelist of approved MAC addresses can be created; if a device is not on the list, access is denied." },
+            { u: 3, q: "Explain how data is transmitted by packet switching.", ref: "N18 HL P1 Q5", tags: ['Past Paper'], a: "Data is broken into packets. Each packet contains destination address, sequence number, etc. Packets are routed independently via different paths by routers. They are reassembled at the destination." },
+            { u: 3, q: "Outline one reason why protocols are used in communications between computers.", ref: "M19 HL P1 Q10", tags: ['Past Paper'], a: "To provide a standard set of rules/procedures to enable different devices to understand each other and communicate successfully." },
+            { u: 3, q: "State three pieces of information that a data packet must contain.", ref: "N23 HL P1 Q4", tags: ['Past Paper'], a: "1. Sender IP address.\n2. Receiver IP address.\n3. Packet number/Sequence number.\n4. Payload/Data.\n5. Checksum/Error check." },
+
+            // TOPIC 5: Abstract Data Structures (HL)
+            { u: 5, q: "Compare a binary search tree (BST) and a linked list in terms of searching efficiency.", ref: "N15 HL P1 Q10", tags: ['Past Paper'], a: "BST: Binary search (O(log n)) is faster/more efficient as half the remaining nodes are ignored each step.\nLinked List: Linear search (O(n)) is slower as each element must be checked sequentially." },
+            { u: 5, q: "Compare the use of static and dynamic data structures.", ref: "N16 HL P1 Q11", tags: ['Past Paper'], a: "Static: Fixed size (predetermined), memory allocated at compile time, direct access (faster).\nDynamic: Flexible size (can grow/shrink), memory allocated at runtime, sequential access (slower), uses extra memory for pointers." },
+            { u: 5, q: "Identify the components of a node in a doubly linked list.", ref: "M17 HL P1 Q9", tags: ['Past Paper'], a: "1. Data field.\n2. Pointer to the previous node.\n3. Pointer to the next node." },
+            { u: 5, q: "Outline the reason why recursive solutions can be memory intensive.", ref: "M17 HL P1 Q10", tags: ['Past Paper'], a: "Each recursive call involves pushing data (return address, variables) onto the stack. If many calls are made, the stack can grow very large, potentially causing a stack overflow." },
+            { u: 5, q: "Identify one characteristic of a queue.", ref: "M18 HL P1 Q8", tags: ['Past Paper'], a: "FIFO (First In, First Out). Items are added at the rear/tail and removed from the front/head." },
+            { u: 5, q: "Define the term 'child' in relation to a binary tree.", ref: "M22 HL P1 Q10", tags: ['Past Paper'], a: "A child is a node that has a link from a predecessor (parent) node. It is a descendant node." },
+            { u: 5, q: "Identify the components of a node in a binary tree.", ref: "N22 HL P1 Q13", tags: ['Past Paper'], a: "1. Data field.\n2. Pointer to left child.\n3. Pointer to right child." },
+
+            // TOPIC 6: Resource Management (HL)
+            { u: 6, q: "Identify two functions of the operating system.", ref: "N15 HL P1 Q8", tags: ['Past Paper'], a: "1. Resource allocation (memory, CPU).\n2. Memory management.\n3. Interrupt handling.\n4. Peripheral management." },
+            { u: 6, q: "Outline the role of the operating system in a control system (e.g. greenhouse).", ref: "N16 HL P1 Q10", tags: ['Past Paper'], a: "It is a set of programs for a dedicated system responsible for reading input from sensors, sending signals to outputs, and reacting to data within predetermined time periods." },
+            { u: 6, q: "Explain the importance of the memory management function of an operating system.", ref: "M18 HL P1 Q4", tags: ['Past Paper'], a: "It allocates and de-allocates memory to programs, ensuring they have sufficient memory to run and preventing them from overwriting each other's data (system stability)." },
+            { u: 6, q: "Outline the use of paging in relation to virtual memory.", ref: "M17 HL P1 Q14", tags: ['Past Paper'], a: "Paging allows similar-sized sections of data (pages) to be swapped between RAM and secondary storage (virtual memory) to free up RAM for other processes." },
+            { u: 6, q: "Describe the difference between polling and interrupt.", ref: "N16 HL P1 Q10", tags: ['Past Paper'], a: "Polling: CPU actively checks each device periodically to see if it needs attention (wastes CPU time).\nInterrupt: Device sends a signal to CPU when it needs attention (CPU handles it immediately)." },
+            { u: 6, q: "Describe how an operating system uses paging when running a program.", ref: "N20 HL P1 Q3", tags: ['Past Paper'], a: "It uses secondary memory to increase primary memory. It transfers data blocks (pages) from secondary storage to main memory when required and returns them when not." },
+            { u: 6, q: "Explain how an operating system manages peripherals.", ref: "N21 HL P1 Q8", tags: ['Past Paper'], a: "OS keeps track of devices via I/O controller, decides which process gets the device, and uses device drivers to translate OS instructions into signals the device understands." },
+
+            // TOPIC 7: Control (HL)
+            { u: 7, q: "With reference to the role of sensors, outline the sequence of steps in a door control system.", ref: "N15 HL P1 Q9", tags: ['Past Paper'], a: "1. Sensors (proximity/pressure) detect presence.\n2. Signal sent to processor.\n3. Processor sends signal to actuator to open doors.\n4. If no input after time, signal sent to close doors." },
+            { u: 7, q: "Define the term analog data.", ref: "N16 HL P1 Q10", tags: ['Past Paper'], a: "Data represented by a continuous variable (not discrete/digital steps)." },
+            { u: 7, q: "Identify two features of an autonomous agent acting within a larger system.", ref: "M17 HL P1 Q11", tags: ['Past Paper'], a: "1. Has sensors to react to external stimuli.\n2. Makes its own decisions/acts independently without central control." },
+            { u: 7, q: "Describe the role of feedback in a control system.", ref: "M17 HL P1 Q16", tags: ['Past Paper'], a: "The output value is compared to the desired reference value. The difference (error) is used to modify the new input to the system to bring the output closer to the desired value." },
+            { u: 7, q: "Describe two hardware components essential for a garden light control system.", ref: "M18 HL P1 Q14", tags: ['Past Paper'], a: "1. Sensor (light sensor) to detect day/night.\n2. Microprocessor to process data.\n3. Actuator to switch lights on/off." },
+            { u: 7, q: "Explain the relationship between sensors, output transducers and processor in a pipeline monitoring system.", ref: "N22 HL P1 Q12", tags: ['Past Paper'], a: "Sensors detect physical data (flow/pressure). Processor compares readings to pre-set parameters. If outside range, processor sends signal to output transducer (alarm/valve) to take action." }
+        ];
+
+        // --- TAB LOGIC ---
+        function switchTab(tabName) {
+            const notesTab = document.getElementById('tab-notes');
+            const quizTab = document.getElementById('tab-quiz');
+            const notesToolbar = document.getElementById('toolbar-notes');
+            const quizToolbar = document.getElementById('toolbar-quiz');
+
+            if (tabName === 'notes') {
+                notesTab.style.display = 'flex';
+                quizTab.style.display = 'none';
+                notesToolbar.style.display = 'block';
+                quizToolbar.style.display = 'none';
+                
+                document.getElementById('btn-tab-notes').classList.add('active');
+                document.getElementById('btn-tab-quiz').classList.remove('active');
+                
+                document.body.className = 'print-mode-notes';
+            } else {
+                notesTab.style.display = 'none';
+                quizTab.style.display = 'block';
+                notesToolbar.style.display = 'none';
+                quizToolbar.style.display = 'flex';
+                
+                document.getElementById('btn-tab-quiz').classList.add('active');
+                document.getElementById('btn-tab-notes').classList.remove('active');
+                
+                document.body.className = 'print-mode-quiz';
+            }
+            
+            window.scrollTo(0,0);
+        }
+
+        // --- QUIZ LOGIC ---
+        function startQuiz() {
+            const unit = document.getElementById('unit-select').value;
+            let pool = [];
+            const subtitle = document.getElementById('quiz-subtitle');
+
+            if (unit === 'unsure') {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+                const unsureUnits = new Set();
+                let foundItemsCount = 0;
+
+                data.forEach(page => {
+                    if (page['checklist-data']) {
+                        page['checklist-data'].forEach(item => {
+                            if (item.status === 2) { 
+                                foundItemsCount++;
+                                // Match topic number from checklist item (e.g., "1.1.1")
+                                const match = item.text.trim().match(/^⭐?\s*(\d+)\./);
+                                if (match) {
+                                    unsureUnits.add(parseInt(match[1]));
+                                } else {
+                                    // Fallback to topic field
+                                    const pageTopic = page['field-topic'] || "";
+                                    const topicMatch = pageTopic.match(/Topic\s*(\d+)/i);
+                                    if(topicMatch) unsureUnits.add(parseInt(topicMatch[1]));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                if (foundItemsCount === 0) {
+                    alert("No topics marked as 'Unsure' (❓) found in your checklists! \n\nGo back to the Notes tab and click the checkbox twice to mark an item as Unsure.");
+                    return;
+                }
+
+                pool = questionBank.filter(q => unsureUnits.has(q.u));
+                subtitle.innerText = `Focus on Unsure Topics (Topics: ${Array.from(unsureUnits).join(', ')})`;
+
+            } else if (unit === 'all') {
+                pool = questionBank;
+                subtitle.innerText = "All Topics Challenge (1-7)";
+            } else {
+                pool = questionBank.filter(q => q.u == unit);
+                subtitle.innerText = `Topic ${unit} Focused Test`;
+            }
+
+            if (pool.length === 0) {
+                alert("No questions available for this selection.");
+                return;
+            }
+
+            const shuffled = pool.sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 10);
+
+            const container = document.getElementById('questions-list');
+            container.innerHTML = '';
+            document.getElementById('quiz-date').innerText = new Date().toLocaleDateString();
+
+            selected.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'quiz-question-card';
+                
+                let tagBadge = '';
+                if (item.tags && item.tags.includes('Past Paper')) {
+                    tagBadge = `<span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded border border-yellow-300 ml-2" title="Source: Past Exam Paper"><i class="fas fa-history mr-1"></i>Past Paper</span>`;
+                }
+
+                let refBadge = '';
+                if (item.ref) {
+                    refBadge = `<span class="text-xs text-gray-500 ml-2 italic">Ref: ${item.ref}</span>`;
+                }
+
+                card.innerHTML = `
+                    <div class="flex justify-between mb-2">
+                        <div class="flex items-center">
+                            <span class="font-bold text-indigo-600 text-lg mr-2">Q${index + 1}</span>
+                            ${tagBadge}
+                            ${refBadge}
+                        </div>
+                        <span class="text-xs font-semibold bg-gray-200 text-gray-600 px-2 py-1 rounded">Topic ${item.u}</span>
+                    </div>
+                    <p class="text-gray-800 font-medium text-lg mb-3">${item.q}</p>
+                    <textarea class="quiz-textarea" placeholder="Type your answer here..."></textarea>
+                    
+                    <div class="model-answer">
+                        <strong>Model Answer:</strong><br>
+                        ${item.a ? item.a.replace(/\n/g, '<br>') : 'Refer to syllabus notes.'}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.getElementById('quiz-intro').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+        }
+
+        function printQuiz() {
+            window.print();
+        }
+
+        // --- EXISTING NOTES LOGIC (UNCHANGED) ---
+        window.addEventListener('DOMContentLoaded', () => {
+            loadNotes();
+            
+            document.addEventListener('dblclick', function(e) {
+                if (e.target.tagName === 'IMG' && e.target.closest('.editable')) {
+                    if (confirm('Delete this image?')) {
+                        e.target.remove();
+                        saveNotes();
+                        showToast('Image Removed');
+                    }
+                }
+            });
+
+            // Initialize visible tab
+            switchTab('notes');
+        });
+
+        function toggleCheck(btn) {
+            const icons = {
+                0: '<i class="far fa-square"></i>',
+                1: '<i class="fas fa-check"></i>',
+                2: '<i class="fas fa-question"></i>',
+                3: '<i class="fas fa-times"></i>'
+            };
+            let current = parseInt(btn.dataset.status) || 0;
+            let next = (current + 1) % 4;
+            btn.dataset.status = next;
+            btn.className = `status-btn status-${next}`;
+            btn.innerHTML = icons[next];
+            saveNotes();
+        }
+
+        function addChecklistItem(btn) {
+            const container = btn.closest('.syllabus-checklist');
+            const item = document.createElement('div');
+            item.className = 'checklist-item';
+            item.innerHTML = `
+                <button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)"><i class="far fa-square"></i></button>
+                <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Item..."></div>
+                <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print"><i class="fas fa-minus-circle"></i></button>
+            `;
+            container.insertBefore(item, btn.parentElement);
+        }
+
+        function triggerImageUpload() {
+            if (!lastFocusedEditable) {
+                lastFocusedEditable = document.querySelector('.field-notes'); 
+                if(!lastFocusedEditable) return alert("Click in a notes box first.");
+            }
+            document.getElementById('imageInput').click();
+        }
+
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const maxWidth = 600;
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = height * (maxWidth / width);
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                    insertImageAtCursor(dataUrl);
+                    saveNotes();
+                }
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+            input.value = '';
+        }
+
+        function insertImageAtCursor(src) {
+            lastFocusedEditable.focus();
+            const img = document.createElement('img');
+            img.src = src;
+            img.title = "Double-click to remove";
+            
+            const sel = window.getSelection();
+            if (sel.rangeCount > 0 && sel.anchorNode && lastFocusedEditable.contains(sel.anchorNode)) {
+                const range = sel.getRangeAt(0);
+                range.deleteContents();
+                range.insertNode(img);
+                sel.removeAllRanges(); 
+            } else {
+                lastFocusedEditable.appendChild(img);
+            }
+        }
+
+        function createPageElement(data = {}) {
+            const pageId = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'page-wrapper relative group';
+            wrapper.dataset.pageId = pageId;
+
+            const getVal = (key) => data[key] || '';
+            const dateVal = data['field-date'] || new Date().toLocaleDateString();
+
+            if (!data['checklist-data'] || data['checklist-data'].length === 0) {
+                 const match = prefilledData.find(p => p['field-topic'] === data['field-topic']);
+                 if (match && match['checklist-data']) {
+                     data['checklist-data'] = JSON.parse(JSON.stringify(match['checklist-data']));
+                 }
+            }
+
+            let checklistHTML = '';
+            if (data['checklist-data'] && Array.isArray(data['checklist-data'])) {
+                const icons = { 0: '<i class="far fa-square"></i>', 1: '<i class="fas fa-check"></i>', 2: '<i class="fas fa-question"></i>', 3: '<i class="fas fa-times"></i>' };
+                data['checklist-data'].forEach(item => {
+                    checklistHTML += `
+                        <div class="checklist-item">
+                            <button class="status-btn status-${item.status}" data-status="${item.status}" onclick="toggleCheck(this)">${icons[item.status]}</button>
+                            <div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true">${item.text}</div>
+                            <button onclick="this.parentElement.remove(); saveNotes();" class="text-red-300 ml-2 no-print"><i class="fas fa-minus-circle"></i></button>
+                        </div>`;
+                });
+            } else {
+                 checklistHTML = `<div class="checklist-item"><button class="status-btn status-0" data-status="0" onclick="toggleCheck(this)"><i class="far fa-square"></i></button><div class="checklist-text editable text-sm border-b border-dashed border-gray-200 flex-grow" contenteditable="true" placeholder="Objective..."></div></div>`;
+            }
+
+            wrapper.innerHTML = `
+                <div class="absolute top-2 -right-12 h-full hidden xl:block no-print">
+                     <button onclick="deletePage(this)" class="delete-btn bg-red-500 text-white w-10 h-10 rounded-full shadow hover:bg-red-600 opacity-0 transition flex items-center justify-center" title="Remove Page"><i class="fas fa-trash"></i></button>
+                </div>
+                 <button onclick="deletePage(this)" class="xl:hidden absolute top-2 right-2 z-10 text-red-400 hover:text-red-600 no-print p-2"><i class="fas fa-trash"></i></button>
+
+                <div class="page-container">
+                    <div class="cornell-grid">
+                        <div class="header-section">
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div>
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Topic / Chapter</label>
+                                    <div class="field-topic editable font-bold text-lg border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-topic')}</div>
+                                </div>
+                                <div class="text-right">
+                                    <label class="text-xs font-bold text-slate-500 uppercase">Class / Subject</label>
+                                    <div class="field-subject editable font-medium border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-subject')}</div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4 mb-2">
+                                <div><div class="field-date editable text-sm text-slate-600" contenteditable="true">${dateVal}</div></div>
+                                <div class="text-right"><label class="text-xs font-bold text-slate-500 uppercase">Date</label></div>
+                            </div>
+                            <div class="mt-2 syllabus-checklist">
+                                <label class="text-xs font-bold text-slate-500 uppercase mb-1 block">Assessment Statements</label>
+                                ${checklistHTML}
+                                <div class="no-print mt-1"><button onclick="addChecklistItem(this)" class="text-xs text-indigo-600 font-medium flex items-center gap-1"><i class="fas fa-plus-circle"></i> Add Item</button></div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase">Key Words / Vocabulary</label>
+                                <div class="field-keywords editable text-sm border-b border-dashed border-gray-300 focus:border-blue-500" contenteditable="true">${getVal('field-keywords')}</div>
+                            </div>
+                        </div>
+                        <div class="cues-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Questions / Cues</label>
+                            <div class="field-cues editable h-full" contenteditable="true">${getVal('field-cues')}</div>
+                        </div>
+                        <div class="notes-column">
+                            <label class="text-xs font-bold text-slate-400 uppercase block mb-2">Main Notes</label>
+                            <div class="field-notes editable h-full" contenteditable="true">${getVal('field-notes')}</div>
+                        </div>
+                        <div class="summary-section">
+                            <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Summary</label>
+                            <div class="field-summary editable" contenteditable="true">${getVal('field-summary')}</div>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-2 right-4 text-xs text-slate-300 no-print">Page <span class="page-num"></span></div>
+                </div>
+            `;
+
+            const editables = wrapper.querySelectorAll('.editable');
+            editables.forEach(el => {
+                el.addEventListener('input', () => {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(saveNotes, 1000);
+                });
+                el.addEventListener('focus', () => lastFocusedEditable = el);
+            });
+            return wrapper;
+        }
+
+        function addPage(data = {}) {
+            const notebook = document.getElementById('notebook');
+            const newPage = createPageElement(data);
+            notebook.appendChild(newPage);
+            updatePageNumbers();
+            if (Object.keys(data).length === 0) {
+                newPage.scrollIntoView({ behavior: 'smooth' });
+                saveNotes();
+            }
+        }
+
+        function deletePage(btn) {
+            const notebook = document.getElementById('notebook');
+            if (notebook.children.length <= 1) {
+                if(confirm("Clear content instead?")) {
+                    const page = btn.closest('.page-wrapper');
+                    page.querySelectorAll('.editable').forEach(el => el.innerHTML = '');
+                    saveNotes();
+                }
+                return;
+            }
+            if (confirm('Delete this page?')) {
+                btn.closest('.page-wrapper').remove();
+                updatePageNumbers();
+                saveNotes();
+                showToast('Page removed');
+            }
+        }
+
+        function updatePageNumbers() {
+            document.querySelectorAll('.page-wrapper').forEach((page, index) => {
+                page.querySelector('.page-num').innerText = index + 1;
+            });
+        }
+
+        function saveNotes() {
+            const pages = document.querySelectorAll('.page-wrapper');
+            const data = [];
+            pages.forEach(page => {
+                const pageData = {};
+                fieldClasses.forEach(cls => {
+                    const el = page.querySelector(`.${cls}`);
+                    if (el) pageData[cls] = el.innerHTML;
+                });
+                const checklistItems = [];
+                page.querySelectorAll('.checklist-item').forEach(item => {
+                    const btn = item.querySelector('.status-btn');
+                    const textDiv = item.querySelector('.checklist-text');
+                    if (textDiv) {
+                        checklistItems.push({
+                            status: btn ? parseInt(btn.dataset.status) : 0,
+                            text: textDiv.innerHTML
+                        });
+                    }
+                });
+                pageData['checklist-data'] = checklistItems;
+                data.push(pageData);
+            });
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                showToast('Saved');
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') alert('Storage Limit Reached!');
+            }
+        }
+
+        function loadNotes() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            const notebook = document.getElementById('notebook');
+            notebook.innerHTML = '';
+            if (saved) {
+                const data = JSON.parse(saved);
+                if (Array.isArray(data) && data.length > 0) {
+                    data.forEach(pageData => addPage(pageData));
+                } else {
+                    prefilledData.forEach(pageData => addPage(pageData));
+                }
+            } else {
+                prefilledData.forEach(pageData => addPage(pageData));
+            }
+        }
+
+        function exportData() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) return alert("No data!");
+            const blob = new Blob([data], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const now = new Date();
+            const filename = `ib_cs_notes_backup_${now.toISOString().slice(0,10)}.json`;
+            
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            showToast('Backup Saved!');
+        }
+
+        function importTrigger() { document.getElementById('importInput').click(); }
+        
+        function handleImport(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                        loadNotes();
+                        showToast('Restored!');
+                    }
+                } catch(e){ alert('Error reading file'); }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        function printPDF() { window.print(); }
+        function toggleFont() { 
+            document.body.classList.toggle('font-handwritten-mode'); 
+            document.querySelectorAll('.page-container').forEach(p => p.classList.toggle('handwritten'));
+        }
+        function resetToDefault() { 
+            if(confirm("Reset all notes to syllabus defaults?")) {
+                localStorage.removeItem(STORAGE_KEY); 
+                loadNotes(); 
+                showToast('Reset Complete');
+            }
+        }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = msg;
+            t.classList.remove('translate-y-40');
+            setTimeout(() => t.classList.add('translate-y-40'), 2000);
+        }
+        document.addEventListener('keydown', e => {
+            if ((e.metaKey || e.ctrlKey) && e.keyCode == 83) { e.preventDefault(); saveNotes(); }
+        });
+    </script>
+</body>
+</html>

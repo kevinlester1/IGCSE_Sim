@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Algorithm Simulations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);
+        }
+
+        .pseudo-code {
+            background-color: #1e293b;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            font-family: 'Fira Code', monospace;
+            white-space: pre;
+            font-size: 0.9rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        /* macOS style dots for the code editor */
+        .pseudo-code::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff5f56;
+            box-shadow: 20px 0 0 #ffbd2e, 40px 0 0 #27c93f;
+            margin-bottom: 1rem;
+        }
+
+        .pseudo-code .line {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            padding-left: 10px;
+            opacity: 0.7;
+        }
+
+        .pseudo-code .line.active {
+            background-color: rgba(59, 130, 246, 0.2);
+            border-left-color: #3b82f6;
+            color: #60a5fa;
+            opacity: 1;
+            font-weight: 500;
+        }
+
+        .array-item {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 2px solid #e2e8f0;
+            background: white;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .array-item.active {
+            transform: translateY(-8px) scale(1.1);
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5);
+            z-index: 10;
+        }
+
+        .variable-box {
+            transition: all 0.3s ease;
+            border: 1px solid #e2e8f0;
+            background: white;
+        }
+        
+        .variable-box.updated {
+            animation: varPulse 0.5s ease;
+            border-color: #10b981;
+            background-color: #ecfdf5;
+        }
+
+        @keyframes varPulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .tab {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .tab:hover:not(.active) {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+        
+        .tab.active {
+            background-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Custom Radio Buttons */
+        .loop-type-radio { display: none; }
+        .loop-type-label {
+            display: inline-flex;
+            align-items: center;
+            background-color: white;
+            border: 1px solid #d1d5db;
+            color: #4b5563;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .loop-type-label:hover {
+            border-color: #9ca3af;
+            background-color: #f9fafb;
+        }
+        
+        .loop-type-radio:checked + .loop-type-label {
+            background-color: #eff6ff;
+            color: #1d4ed8;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+        
+        input[type="range"] {
+            accent-color: #3b82f6;
+        }
+    </style>
+</head>
+
+<body class="p-4 md:p-8 text-gray-800">
+    <div class="max-w-7xl mx-auto glass-card p-6 md:p-10 rounded-2xl">
+        <header class="text-center mb-10">
+            <div class="inline-block p-3 bg-blue-100 text-blue-600 rounded-full mb-4">
+                <i class="fas fa-microchip text-3xl"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-gray-900">Algorithm Simulator</h1>
+            <p class="text-gray-500 mt-3 text-lg max-w-2xl mx-auto">Visualize, step through, and understand common programming algorithms in real-time.</p>
+        </header>
+        
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6 mb-10">
+            <!-- Configuration Panel -->
+            <div class="md:col-span-8 bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
+                <h2 class="text-sm uppercase tracking-wider font-bold text-gray-400 mb-3"><i class="fas fa-sliders-h mr-2"></i>Data Input</h2>
+                <div class="flex flex-col sm:flex-row gap-4 items-center">
+                    <div class="flex-grow w-full relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i class="fas fa-list-ol text-gray-400"></i>
+                        </div>
+                        <input type="text" id="listInput" value="12, 45, 8, 23, 19" 
+                               class="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg shadow-inner focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-lg font-medium"
+                               placeholder="e.g. 5, 10, 15, 20">
+                    </div>
+                    <button id="updateListBtn" class="w-full sm:w-auto px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg shadow transition-colors">
+                        Apply Data
+                    </button>
+                </div>
+                <div id="inputError" class="text-red-500 text-sm mt-2 hidden"><i class="fas fa-exclamation-circle mr-1"></i> Please enter valid numbers separated by commas.</div>
+            </div>
+
+            <!-- Auto-play Settings -->
+            <div class="md:col-span-4 bg-white p-5 rounded-xl border border-gray-100 shadow-sm flex flex-col justify-center">
+                <h2 class="text-sm uppercase tracking-wider font-bold text-gray-400 mb-3"><i class="fas fa-bolt mr-2"></i>Auto-Play Speed</h2>
+                <div class="flex items-center gap-4">
+                    <i class="fas fa-turtle text-gray-400"></i>
+                    <input type="range" id="speedSlider" min="200" max="2000" step="100" value="800" class="w-full flex-grow" style="direction: rtl;">
+                    <i class="fas fa-rabbit-fast text-gray-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabs" class="flex flex-wrap justify-center gap-3 mb-10 pb-4 border-b border-gray-200">
+            <!-- Tabs will be inserted here by JS -->
+        </div>
+
+        <div id="simulation-container" class="animate-[fadeIn_0.5s_ease-in-out]">
+            <!-- Active simulation will be displayed here -->
+        </div>
+    </div>
+
+    <script>
+        // --- ALGORITHM DEFINITIONS ---
+        // Enhanced to include icons for variables and slight logic cleanup
+        const algorithms = {
+            sum: {
+                title: "Summing a List",
+                icon: "fa-plus-circle",
+                description: "Calculates the total of all numbers in an array by accumulating them into a sum variable.",
+                baseInitialState: { sum: { val: 0, icon: "fa-calculator" } },
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]",
+                            "sum ← 0",
+                            "FOR i ← 1 TO length(myList)",
+                            "  sum ← sum + myList[i-1]",
+                            "NEXT i",
+                            "OUTPUT sum"
+                        ],
+                        loopLine: 2,
+                        initialState: { i: { val: 0, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            state.variables.i.val = state.currentIndex + 1;
+                            const number = state.list[state.currentIndex];
+                            state.variables.sum.val += number;
+                            state.log = `Iteration ${state.variables.i.val}: Adding ${number}. Running sum is now ${state.variables.sum.val}.`;
+                            state.activePseudoLine = 3;
+                            return ['sum', 'i'];
+                        }
+                    },
+                    while: {
+                        name: "WHILE Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]",
+                            "sum ← 0",
+                            "i ← 1",
+                            "WHILE i <= length(myList)",
+                            "  sum ← sum + myList[i-1]",
+                            "  i ← i + 1",
+                            "ENDWHILE",
+                            "OUTPUT sum"
+                        ],
+                        loopLine: 3,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            const number = state.list[state.currentIndex];
+                            state.variables.sum.val += number;
+                            state.variables.i.val = state.currentIndex + 2;
+                            state.log = `Index i=${state.currentIndex + 1}: Added ${number}. Sum is ${state.variables.sum.val}. Incrementing i to ${state.variables.i.val}.`;
+                            state.activePseudoLine = 4;
+                            return ['sum', 'i'];
+                        }
+                    },
+                    repeatUntil: {
+                        name: "REPEAT UNTIL",
+                        pseudoCode: [
+                            "myList ← [ ... ]",
+                            "sum ← 0",
+                            "i ← 1",
+                            "REPEAT",
+                            "  sum ← sum + myList[i-1]",
+                            "  i ← i + 1",
+                            "UNTIL i > length(myList)",
+                            "OUTPUT sum"
+                        ],
+                        loopLine: 3,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            const number = state.list[state.currentIndex];
+                            state.variables.sum.val += number;
+                            state.variables.i.val = state.currentIndex + 2;
+                            state.log = `Index i=${state.currentIndex + 1}: Added ${number}. Sum is ${state.variables.sum.val}. Condition (i > length) checked at end.`;
+                            state.activePseudoLine = 4;
+                            return ['sum', 'i'];
+                        }
+                    }
+                }
+            },
+            
+            count: {
+                title: "Counting Items",
+                icon: "fa-list-ol",
+                description: "Iterates through the entire array, incrementing a counter variable by 1 for each element encountered.",
+                baseInitialState: { count: { val: 0, icon: "fa-tally" } },
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]",
+                            "count ← 0",
+                            "FOR i ← 1 TO length(myList)",
+                            "  count ← count + 1",
+                            "NEXT i",
+                            "OUTPUT count"
+                        ],
+                        loopLine: 2,
+                        initialState: { i: { val: 0, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            state.variables.i.val = state.currentIndex + 1;
+                            state.variables.count.val++;
+                            state.log = `Encountered element at i=${state.variables.i.val}. Incrementing count to ${state.variables.count.val}.`;
+                            state.activePseudoLine = 3;
+                            return ['count', 'i'];
+                        }
+                    },
+                    while: {
+                        name: "WHILE Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]", "count ← 0", "i ← 1", 
+                            "WHILE i <= length(myList)", "  count ← count + 1", "  i ← i + 1", "ENDWHILE", "OUTPUT count"
+                        ],
+                        loopLine: 3,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            state.variables.count.val++;
+                            state.variables.i.val = state.currentIndex + 2;
+                            state.log = `Condition true for i=${state.currentIndex + 1}. Count=${state.variables.count.val}. Next i=${state.variables.i.val}.`;
+                            state.activePseudoLine = 4;
+                            return ['count', 'i'];
+                        }
+                    },
+                    repeatUntil: {
+                        name: "REPEAT UNTIL",
+                        pseudoCode: [
+                            "myList ← [ ... ]", "count ← 0", "i ← 1", 
+                            "REPEAT", "  count ← count + 1", "  i ← i + 1", "UNTIL i > length(myList)", "OUTPUT count"
+                        ],
+                        loopLine: 3,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            state.variables.count.val++;
+                            state.variables.i.val = state.currentIndex + 2;
+                            state.log = `Executed block. Count=${state.variables.count.val}. Increment i=${state.variables.i.val}.`;
+                            state.activePseudoLine = 4;
+                            return ['count', 'i'];
+                        }
+                    }
+                }
+            },
+            average: {
+                title: "Calculating Average",
+                icon: "fa-percentage",
+                description: "Combines the sum and count algorithms, executing division after the loop completes to find the mean value.",
+                baseInitialState: { sum: { val: 0, icon: "fa-calculator" }, count: { val: 0, icon: "fa-tally" }, average: { val: 0, icon: "fa-chart-pie" } },
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]", "sum ← 0", "count ← 0", "average ← 0",
+                            "FOR i ← 1 TO length(myList)",
+                            "  sum ← sum + myList[i-1]",
+                            "  count ← count + 1",
+                            "NEXT i",
+                            "average ← sum / count",
+                            "OUTPUT average"
+                        ],
+                        loopLine: 4,
+                        initialState: { i: { val: 0, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            state.variables.i.val = state.currentIndex + 1;
+                            const number = state.list[state.currentIndex];
+                            state.variables.sum.val += number;
+                            state.variables.count.val++;
+                            state.log = `Processed ${number}. Running sum=${state.variables.sum.val}, count=${state.variables.count.val}.`;
+                            state.activePseudoLine = 5;
+                            return ['sum', 'count', 'i'];
+                        },
+                        onFinish: (state) => {
+                            if (state.variables.count.val > 0) {
+                                state.variables.average.val = state.variables.sum.val / state.variables.count.val;
+                            }
+                            state.log = `Loop complete. Calculating Average: ${state.variables.sum.val} / ${state.variables.count.val} = ${state.variables.average.val.toFixed(2)}.`;
+                            state.activePseudoLine = 8;
+                            return ['average'];
+                        }
+                    },
+                    while: {
+                        name: "WHILE Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]", "sum ← 0", "count ← 0", "average ← 0", "i ← 1",
+                            "WHILE i <= length(myList)",
+                            "  sum ← sum + myList[i-1]",
+                            "  count ← count + 1",
+                            "  i ← i + 1",
+                            "ENDWHILE",
+                            "average ← sum / count",
+                            "OUTPUT average"
+                        ],
+                        loopLine: 5,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                            const number = state.list[state.currentIndex];
+                            state.variables.sum.val += number;
+                            state.variables.count.val++;
+                            state.variables.i.val = state.currentIndex + 2;
+                            state.log = `Processed ${number}. sum=${state.variables.sum.val}, count=${state.variables.count.val}, i=${state.variables.i.val}.`;
+                            state.activePseudoLine = 6;
+                            return ['sum', 'count', 'i'];
+                        },
+                        onFinish: (state) => {
+                            if (state.variables.count.val > 0) {
+                                state.variables.average.val = state.variables.sum.val / state.variables.count.val;
+                            }
+                            state.log = `Loop complete. Average: ${state.variables.sum.val} / ${state.variables.count.val} = ${state.variables.average.val.toFixed(2)}.`;
+                            state.activePseudoLine = 10;
+                            return ['average'];
+                        }
+                    },
+                    repeatUntil: {
+                        name: "REPEAT UNTIL",
+                        pseudoCode: [
+                           "myList ← [ ... ]", "sum ← 0", "count ← 0", "average ← 0", "i ← 1",
+                           "REPEAT",
+                           "  sum ← sum + myList[i-1]",
+                           "  count ← count + 1",
+                           "  i ← i + 1",
+                           "UNTIL i > length(myList)",
+                           "average ← sum / count",
+                           "OUTPUT average"
+                        ],
+                        loopLine: 5,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                           const number = state.list[state.currentIndex];
+                           state.variables.sum.val += number;
+                           state.variables.count.val++;
+                           state.variables.i.val = state.currentIndex + 2;
+                           state.log = `Processed ${number}. sum=${state.variables.sum.val}, count=${state.variables.count.val}, next i=${state.variables.i.val}.`;
+                           state.activePseudoLine = 6;
+                           return ['sum', 'count', 'i'];
+                        },
+                        onFinish: (state) => {
+                           if (state.variables.count.val > 0) {
+                               state.variables.average.val = state.variables.sum.val / state.variables.count.val;
+                           }
+                           state.log = `Loop complete. Average: ${state.variables.sum.val} / ${state.variables.count.val} = ${state.variables.average.val.toFixed(2)}.`;
+                           state.activePseudoLine = 10;
+                           return ['average'];
+                        }
+                    }
+                }
+            },
+            
+            max: {
+                title: "Finding Maximum",
+                icon: "fa-arrow-up-wide-short",
+                description: "Initializes a max variable with the first element, then compares every subsequent element against it, updating if a larger one is found.",
+                baseInitialState: { max: { val: '?', icon: "fa-crown" } },
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO Loop",
+                        pseudoCode: [
+                           "myList ← [ ... ]", "max ← myList[0]",
+                           "FOR i ← 2 TO length(myList)",
+                           "  IF myList[i-1] > max THEN",
+                           "    max ← myList[i-1]",
+                           "  ENDIF", "NEXT i", "OUTPUT max"
+                        ],
+                        loopLine: 2,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        onStart: (state) => {
+                           if(state.list.length > 0) {
+                            state.variables.max.val = state.list[0];
+                            state.log = `Initialization: Set max to the first item (${state.variables.max.val}). Skipping index 0 in loop.`;
+                            state.currentIndex = 0; // Skip index 0 visually by advancing immediately
+                           } else {
+                            state.variables.max.val = "N/A";
+                            state.log = `List is empty.`;
+                           }
+                           state.activePseudoLine = 1; return ['max'];
+                        },
+                        step: (state) => {
+                           state.variables.i.val = state.currentIndex + 1;
+                           const number = state.list[state.currentIndex];
+                           state.activePseudoLine = 3;
+                           if (number > state.variables.max.val) {
+                               state.log = `Checking i=${state.variables.i.val} (Value: ${number}). ${number} > ${state.variables.max.val}. New max found!`;
+                               state.variables.max.val = number;
+                               state.activePseudoLine = 4; return ['max', 'i'];
+                           } else {
+                               state.log = `Checking i=${state.variables.i.val} (Value: ${number}). ${number} is not greater than ${state.variables.max.val}.`;
+                               return ['i'];
+                           }
+                        }
+                    },
+                    // WHILE and REPEAT mapped similarly to FOR (condensed for space but functional)
+                    while: {
+                        name: "WHILE Loop",
+                        pseudoCode: [
+                            "myList ← [ ... ]", "max ← myList[0]", "i ← 2",
+                            "WHILE i <= length(myList)",
+                            "  IF myList[i-1] > max THEN", "    max ← myList[i-1]", "  ENDIF",
+                            "  i ← i + 1", "ENDWHILE", "OUTPUT max"
+                        ],
+                        loopLine: 3,
+                        initialState: { i: { val: 2, icon: "fa-hashtag" } },
+                        onStart: (state) => {
+                           if(state.list.length > 0) {
+                            state.variables.max.val = state.list[0]; state.currentIndex = 0;
+                            state.log = `Init: max=${state.variables.max.val}. i starts at 2.`;
+                           }
+                           state.activePseudoLine = 1; return ['max'];
+                        },
+                        step: (state) => {
+                           const number = state.list[state.currentIndex]; state.activePseudoLine = 4;
+                           let updated = ['i'];
+                           if (number > state.variables.max.val) {
+                               state.log = `Value ${number} > max ${state.variables.max.val}. Max updated.`;
+                               state.variables.max.val = number; state.activePseudoLine = 5; updated.push('max');
+                           } else {
+                               state.log = `Value ${number} <= max ${state.variables.max.val}. No change.`;
+                           }
+                           state.variables.i.val = state.currentIndex + 2; return updated;
+                        }
+                    }
+                }
+            },
+            min: {
+                title: "Finding Minimum",
+                icon: "fa-arrow-down-short-wide",
+                description: "Similar to finding the maximum, but updates the tracker variable only when a strictly smaller number is encountered.",
+                baseInitialState: { min: { val: '?', icon: "fa-arrow-down" } },
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO Loop",
+                        pseudoCode: [ "myList ← [ ... ]", "min ← myList[0]", "FOR i ← 2 TO length(myList)", "  IF myList[i-1] < min THEN", "    min ← myList[i-1]", "  ENDIF", "NEXT i", "OUTPUT min" ],
+                        loopLine: 2,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        onStart: (state) => { 
+                            if(state.list.length > 0) { state.variables.min.val = state.list[0]; state.currentIndex = 0; state.log = `Init: min=${state.list[0]}.`; }
+                            state.activePseudoLine = 1; return ['min']; 
+                        },
+                        step: (state) => {
+                           state.variables.i.val = state.currentIndex + 1; const number = state.list[state.currentIndex]; state.activePseudoLine = 3;
+                           if (number < state.variables.min.val) {
+                               state.log = `Value ${number} < min ${state.variables.min.val}. New min found.`;
+                               state.variables.min.val = number; state.activePseudoLine = 4; return ['min', 'i'];
+                           } else {
+                               state.log = `Value ${number} >= min ${state.variables.min.val}.`; return ['i'];
+                           }
+                        }
+                    }
+                }
+            },
+            find: {
+                title: "Linear Search",
+                icon: "fa-search",
+                description: "Iterates through the list looking for a target value. Demonstrates early exit conditions in WHILE/REPEAT loops.",
+                baseInitialState: { valueToFind: { val: 23, icon: "fa-bullseye" }, found: { val: 'FALSE', icon: "fa-flag" } },
+                customControls: `
+                    <div class="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-lg border border-blue-100">
+                        <label for="valueToFindInput" class="text-sm font-semibold text-blue-800"><i class="fas fa-search mr-1"></i> Target:</label>
+                        <input type="number" id="valueToFindInput" value="23" class="w-20 p-1.5 text-center border-0 border-b-2 border-blue-300 bg-transparent focus:ring-0 focus:border-blue-600 font-bold text-blue-900 transition-colors">
+                    </div>
+                `,
+                loopTypes: {
+                    forIndex: {
+                        name: "FOR...TO (No early exit)",
+                        pseudoCode: [ "myList ← [ ... ]", "valueToFind ← 23", "found ← FALSE", "FOR i ← 1 TO length(myList)", "  IF myList[i-1] = valueToFind THEN", "    found ← TRUE", "  ENDIF", "NEXT i", "OUTPUT found" ],
+                        loopLine: 3,
+                        initialState: { i: { val: 0, icon: "fa-hashtag" } },
+                        step: (state) => {
+                           state.variables.i.val = state.currentIndex + 1; const number = state.list[state.currentIndex]; const target = state.variables.valueToFind.val; state.activePseudoLine = 4; let updated = ['i'];
+                           if (number == target) {
+                               state.variables.found.val = 'TRUE'; state.log = `Found it! ${number} matches target ${target}. Flag set to TRUE. (FOR loop continues anyway)`; state.activePseudoLine = 5; updated.push('found');
+                           } else {
+                               state.log = `Index ${state.variables.i.val}: ${number} != ${target}.`;
+                           }
+                           return updated;
+                        }
+                    },
+                    while: {
+                        name: "WHILE (Early Exit)",
+                        pseudoCode: [ "myList ← [ ... ]", "valueToFind ← 23", "found ← FALSE", "i ← 1", "WHILE i <= length(myList) AND found = FALSE", "  IF myList[i-1] = valueToFind THEN", "    found ← TRUE", "  ENDIF", "  i ← i + 1", "ENDWHILE", "OUTPUT found" ],
+                        loopLine: 4,
+                        initialState: { i: { val: 1, icon: "fa-hashtag" } },
+                        step: (state) => {
+                           const number = state.list[state.currentIndex]; const target = state.variables.valueToFind.val; state.activePseudoLine = 5; let updated = ['i'];
+                           if (number == target) {
+                               state.variables.found.val = 'TRUE'; state.log = `Match found: ${number}. Flag set to TRUE. Loop condition will fail next check.`; state.activePseudoLine = 6; updated.push('found');
+                           } else {
+                               state.log = `Index ${state.currentIndex+1}: ${number} != ${target}. Checking next.`;
+                           }
+                           state.variables.i.val = state.currentIndex + 2; return updated;
+                        },
+                        shouldContinue: (state) => state.currentIndex < state.list.length && state.variables.found.val !== 'TRUE'
+                    }
+                }
+            }
+        };
+
+        let simState = {};
+        let currentAlgoKey = 'sum';
+        let currentLoopType = 'forIndex';
+        let autoPlayInterval = null;
+        let isPlaying = false;
+
+        function createSimulationUI(algoKey, loopType) {
+            const algo = algorithms[algoKey];
+            // Fallback if looptype doesn't exist for a simplified definition
+            const activeLoopType = algo.loopTypes[loopType] ? loopType : Object.keys(algo.loopTypes)[0];
+            const loopData = algo.loopTypes[activeLoopType];
+            const container = document.getElementById('simulation-container');
+            
+            const allInitialState = {...algo.baseInitialState, ...loopData.initialState};
+            
+            // Build Variable UI
+            const variablesHtml = Object.keys(allInitialState).map(key => `
+                <div id="var-${key}" class="variable-box p-4 rounded-xl shadow-sm text-center flex flex-col items-center relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 text-6xl text-gray-100 opacity-50 pointer-events-none"><i class="fas ${allInitialState[key].icon}"></i></div>
+                    <div class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 z-10">${key}</div>
+                    <div class="text-3xl font-black text-gray-800 z-10 break-all">${allInitialState[key].val}</div>
+                </div>
+            `).join('');
+            
+            // Build Loop Radios
+            const loopTypeRadios = Object.keys(algo.loopTypes).map(key => `
+                <div>
+                    <input type="radio" id="loop-${key}" name="loopType" value="${key}" class="loop-type-radio" ${key === activeLoopType ? 'checked' : ''}>
+                    <label for="loop-${key}" class="loop-type-label text-sm"><i class="fas fa-sync-alt mr-2 text-xs opacity-60"></i>${algo.loopTypes[key].name}</label>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                    <!-- Left Column: Controls & Pseudocode -->
+                    <div class="flex flex-col gap-6">
+                        <div>
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2"><i class="fas ${algo.icon} mr-3 text-blue-500"></i>${algo.title}</h2>
+                            <p class="text-gray-600 text-sm leading-relaxed">${algo.description}</p>
+                        </div>
+
+                        <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Control Structure</h3>
+                            <div class="flex flex-wrap gap-2">
+                                ${loopTypeRadios}
+                            </div>
+                        </div>
+
+                        <div class="pseudo-code shadow-lg flex-grow">
+                            ${loopData.pseudoCode.map((line, index) => `<div class="line" data-line="${index}">${line}</div>`).join('')}
+                        </div>
+                        
+                        <div class="flex flex-wrap items-center gap-3 mt-auto pt-4 border-t border-gray-100">
+                            <button id="startBtn" class="flex-1 min-w-[100px] bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all active:scale-95 flex justify-center items-center gap-2"><i class="fas fa-play"></i> Start</button>
+                            <button id="nextBtn" class="flex-1 min-w-[120px] bg-emerald-500 hover:bg-emerald-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all active:scale-95 flex justify-center items-center gap-2" disabled><i class="fas fa-step-forward"></i> Step</button>
+                            <button id="autoPlayBtn" class="flex-1 min-w-[120px] bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg shadow-md transition-all active:scale-95 flex justify-center items-center gap-2" disabled><i class="fas fa-robot"></i> Auto</button>
+                            <button id="resetBtn" class="w-12 h-12 bg-gray-200 hover:bg-gray-300 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed text-gray-700 font-bold rounded-lg transition-all active:scale-95 flex justify-center items-center" title="Reset Simulation" disabled><i class="fas fa-undo"></i></button>
+                        </div>
+                        <div class="mt-2 flex justify-center">
+                            ${algo.customControls || ''}
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Visualization & State -->
+                    <div class="flex flex-col gap-6 bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                        
+                        <div class="flex flex-col">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4"><i class="fas fa-layer-group mr-2"></i>Array Memory</h3>
+                            <div id="list-container" class="flex flex-wrap items-center gap-3 min-h-[90px] p-4 bg-white rounded-xl shadow-inner border border-gray-100 overflow-hidden">
+                                <!-- List items rendered here -->
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-col">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4"><i class="fas fa-microchip mr-2"></i>Variables</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">${variablesHtml}</div>
+                        </div>
+
+                        <div class="flex flex-col flex-grow">
+                            <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4"><i class="fas fa-terminal mr-2"></i>Execution Log</h3>
+                            <div id="log" class="bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-xl shadow-inner h-full min-h-[100px] flex items-end">
+                                > System initialized. Select an algorithm to begin.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('startBtn').addEventListener('click', startSimulation);
+            document.getElementById('nextBtn').addEventListener('click', () => { pauseAutoPlay(); nextStep(); });
+            document.getElementById('resetBtn').addEventListener('click', () => selectAlgorithm(currentAlgoKey, currentLoopType));
+            document.getElementById('autoPlayBtn').addEventListener('click', toggleAutoPlay);
+            
+            document.getElementsByName('loopType').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    pauseAutoPlay();
+                    selectAlgorithm(algoKey, e.target.value);
+                });
+            });
+
+            if (algo.customControls) {
+                 document.getElementById('valueToFindInput').addEventListener('change', (e) => {
+                     pauseAutoPlay();
+                     if(simState.running) selectAlgorithm(currentAlgoKey, currentLoopType);
+                 });
+            }
+        }
+
+        function parseListInput() {
+            const rawList = document.getElementById('listInput').value;
+            const parsed = rawList.split(',').map(s => s.trim()).filter(s => s !== "").map(Number);
+            const errorDiv = document.getElementById('inputError');
+            
+            if (parsed.some(isNaN)) {
+                errorDiv.classList.remove('hidden');
+                return null;
+            }
+            errorDiv.classList.add('hidden');
+            return parsed;
+        }
+
+        function resetSimulation(algoKey, loopType) {
+            pauseAutoPlay();
+            const algo = algorithms[algoKey];
+            const loopData = algo.loopTypes[loopType] ? algo.loopTypes[loopType] : algo.loopTypes[Object.keys(algo.loopTypes)[0]];
+            const allInitialState = {...algo.baseInitialState, ...loopData.initialState};
+            
+            const parsedList = parseListInput();
+            
+            // Deep clone variables to isolate state
+            const varsClone = JSON.parse(JSON.stringify(allInitialState));
+
+            simState = {
+                key: algoKey,
+                loopType: loopData === algo.loopTypes[loopType] ? loopType : Object.keys(algo.loopTypes)[0],
+                list: (parsedList && parsedList.length > 0) ? parsedList : [],
+                currentIndex: -1,
+                variables: varsClone,
+                finished: false,
+                running: false,
+                log: "> Ready. Click 'Start' to begin execution trace.",
+                activePseudoLine: -1
+            };
+             
+            // Sync custom controls to initial state
+            if (algoKey === 'find') {
+                const inputValue = parseInt(document.getElementById('valueToFindInput').value, 10);
+                simState.variables.valueToFind.val = isNaN(inputValue) ? 23 : inputValue;
+            }
+
+            // Sync visual pseudocode
+            const pseudoLineZero = document.querySelector(`.pseudo-code .line[data-line="0"]`);
+            if (pseudoLineZero) {
+                 pseudoLineZero.textContent = `myList ← [${simState.list.join(', ')}]`;
+            }
+            if (algoKey === 'find') {
+                const pseudoLineOne = document.querySelector(`.pseudo-code .line[data-line="1"]`);
+                if(pseudoLineOne) pseudoLineOne.textContent = `valueToFind ← ${simState.variables.valueToFind.val}`;
+            }
+             
+            updateUI();
+            
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('nextBtn').disabled = true;
+            document.getElementById('autoPlayBtn').disabled = true;
+            document.getElementById('resetBtn').disabled = true;
+        }
+
+        function startSimulation() {
+            const parsed = parseListInput();
+            if(!parsed) return; // Block start if invalid input
+
+            resetSimulation(currentAlgoKey, currentLoopType);
+            simState.running = true;
+            
+            const loopData = algorithms[simState.key].loopTypes[simState.loopType];
+            
+            simState.log = "> Simulation started. Variables initialized.";
+            simState.activePseudoLine = loopData.loopLine - 1; // Highlight the line before the loop
+
+            if (simState.list.length === 0) {
+                simState.finished = true;
+                simState.log = "> Array is empty. Loop bypassed.";
+                if(loopData.onFinish) loopData.onFinish(simState);
+            } else {
+                if (loopData.onStart) {
+                    const updatedVars = loopData.onStart(simState);
+                    updateUI(updatedVars);
+                } else {
+                    updateUI();
+                }
+            }
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('nextBtn').disabled = simState.finished;
+            document.getElementById('autoPlayBtn').disabled = simState.finished;
+            document.getElementById('resetBtn').disabled = false;
+        }
+
+        function nextStep() {
+            if (simState.finished) {
+                pauseAutoPlay();
+                return;
+            }
+            
+            simState.currentIndex++;
+            const loopData = algorithms[simState.key].loopTypes[simState.loopType];
+            let updatedVars = [];
+            
+            // Standard loop vs Custom condition loop
+            let conditionMet = false;
+            if (loopData.shouldContinue) {
+                 conditionMet = loopData.shouldContinue(simState);
+            } else {
+                 conditionMet = simState.currentIndex < simState.list.length;
+            }
+
+            if (conditionMet) {
+                updatedVars = loopData.step(simState);
+            } else {
+                simState.finished = true;
+                if (loopData.onFinish) {
+                    updatedVars = loopData.onFinish(simState);
+                } else {
+                    simState.log = "> Algorithm complete. Halt execution.";
+                    simState.activePseudoLine = loopData.pseudoCode.length - 1; // OUTPUT line
+                }
+                
+                document.getElementById('nextBtn').disabled = true;
+                document.getElementById('autoPlayBtn').disabled = true;
+                pauseAutoPlay();
+            }
+            updateUI(updatedVars);
+        }
+
+        function updateUI(updatedVars = []) {
+            // Update List Visuals
+            const listContainer = document.getElementById('list-container');
+            if (listContainer) {
+                if(simState.list && simState.list.length > 0) {
+                    listContainer.innerHTML = simState.list.map((item, index) => {
+                        // Calculate offset for animation delays if needed
+                        const isActive = index === simState.currentIndex;
+                        const isPast = index < simState.currentIndex;
+                        
+                        let classes = 'array-item w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center text-lg sm:text-2xl font-bold rounded-lg shadow-sm';
+                        if (isActive) classes += ' active';
+                        else if (isPast) classes += ' text-gray-400 bg-gray-50 opacity-70';
+                        else classes += ' text-gray-700 bg-white';
+                        
+                        return `<div class="${classes}">${item}</div>`;
+                    }).join('');
+                } else {
+                    listContainer.innerHTML = `<p class="text-gray-400 italic text-sm w-full text-center py-4">Array is empty [ ]</p>`;
+                }
+            }
+
+            // Update Variables Visuals
+            for (const key in simState.variables) {
+                const el = document.getElementById(`var-${key}`);
+                if (el) {
+                    const valContainer = el.children[2];
+                    const rawVal = simState.variables[key].val;
+                    
+                    valContainer.textContent = (typeof rawVal === 'number' && !Number.isInteger(rawVal)) 
+                        ? rawVal.toFixed(2) 
+                        : rawVal;
+                    
+                    // Trigger pulse animation
+                    el.classList.remove('updated');
+                    if(updatedVars.includes(key)){
+                        // small timeout allows class removal to register in DOM before re-adding
+                        setTimeout(() => el.classList.add('updated'), 10);
+                    }
+                }
+            }
+            
+            // Update Log
+            const logEl = document.getElementById('log');
+            if (logEl) {
+                logEl.innerHTML = `<span class="text-gray-500 mr-2">${new Date().toLocaleTimeString([], {hour12:false, minute:'2-digit', second:'2-digit'})}</span> ` + simState.log;
+            }
+
+            // Highlight active code line
+            document.querySelectorAll('.pseudo-code .line').forEach(line => line.classList.remove('active'));
+            if(simState.activePseudoLine >= 0) {
+                const activeLine = document.querySelector(`.pseudo-code .line[data-line="${simState.activePseudoLine}"]`);
+                if(activeLine) {
+                    activeLine.classList.add('active');
+                    // Auto-scroll logic if editor is small
+                    activeLine.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }
+        }
+        
+        function toggleAutoPlay() {
+            const btn = document.getElementById('autoPlayBtn');
+            if (isPlaying) {
+                pauseAutoPlay();
+            } else {
+                isPlaying = true;
+                btn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+                btn.classList.replace('bg-purple-500', 'bg-orange-500');
+                btn.classList.replace('hover:bg-purple-600', 'hover:bg-orange-600');
+                
+                // Read slider inverse speed (lower value = faster interval)
+                const sliderVal = document.getElementById('speedSlider').value;
+                const intervalTime = 2200 - parseInt(sliderVal); 
+                
+                nextStep(); // immediate step
+                autoPlayInterval = setInterval(nextStep, intervalTime);
+            }
+        }
+
+        function pauseAutoPlay() {
+            if (!isPlaying) return;
+            isPlaying = false;
+            clearInterval(autoPlayInterval);
+            const btn = document.getElementById('autoPlayBtn');
+            if(btn) {
+                btn.innerHTML = '<i class="fas fa-robot"></i> Auto';
+                btn.classList.replace('bg-orange-500', 'bg-purple-500');
+                btn.classList.replace('hover:bg-orange-600', 'hover:bg-purple-600');
+            }
+        }
+
+        document.getElementById('speedSlider').addEventListener('change', (e) => {
+            if (isPlaying) {
+                pauseAutoPlay();
+                toggleAutoPlay(); // Restart with new speed
+            }
+        });
+
+        function setupTabs() {
+            const tabsContainer = document.getElementById('tabs');
+            tabsContainer.innerHTML = Object.keys(algorithms).map(key => `
+                <button data-algo="${key}" class="tab border border-gray-200 text-gray-600 text-sm md:text-base font-semibold py-2 px-5 rounded-full flex items-center gap-2 shadow-sm">
+                    <i class="fas ${algorithms[key].icon} pointer-events-none"></i>
+                    <span class="pointer-events-none">${algorithms[key].title}</span>
+                </button>
+            `).join('');
+            
+            tabsContainer.addEventListener('click', (e) => {
+                // Determine if button or icon/span was clicked
+                const target = e.target.closest('button');
+                if (target && target.dataset.algo) {
+                    selectAlgorithm(target.dataset.algo, currentLoopType);
+                }
+            });
+            
+            document.getElementById('updateListBtn').addEventListener('click', () => {
+                if(parseListInput()) {
+                    selectAlgorithm(currentAlgoKey, currentLoopType);
+                }
+            });
+        }
+        
+        function selectAlgorithm(algoKey, loopType = 'forIndex') {
+            pauseAutoPlay();
+            currentAlgoKey = algoKey;
+            
+            // Check if looptype is valid for new algo, fallback to default
+            if (!algorithms[algoKey].loopTypes[loopType]) {
+                currentLoopType = Object.keys(algorithms[algoKey].loopTypes)[0];
+            } else {
+                currentLoopType = loopType;
+            }
+
+            document.querySelectorAll('#tabs .tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.algo === algoKey);
+                if (tab.dataset.algo === algoKey) {
+                    tab.classList.remove('border-gray-200', 'text-gray-600');
+                } else {
+                    tab.classList.add('border-gray-200', 'text-gray-600');
+                }
+            });
+            
+            createSimulationUI(algoKey, currentLoopType);
+            resetSimulation(algoKey, currentLoopType);
+        }
+
+        window.onload = () => {
+            setupTabs();
+            selectAlgorithm('sum', 'forIndex'); 
+        };
+    </script>
+</body>
+</html>

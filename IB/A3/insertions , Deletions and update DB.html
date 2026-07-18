@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Database Anomaly Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .table-highlight-delete {
+            background-color: rgba(239, 68, 68, 0.15);
+            transition: all 0.3s ease-in-out;
+        }
+        .table-highlight-update {
+            background-color: rgba(234, 179, 8, 0.15);
+            transition: all 0.3s ease-in-out;
+        }
+         .table-highlight-update-done {
+            background-color: rgba(234, 179, 8, 0.2);
+            font-weight: 700;
+            color: #ca8a04; /* yellow-600 */
+        }
+        .btn {
+            @apply px-5 py-3 text-white font-semibold rounded-lg shadow-md transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 disabled:opacity-50 disabled:cursor-not-allowed;
+        }
+        .btn-primary {
+            @apply bg-cyan-600 hover:bg-cyan-700 focus:ring-cyan-500;
+        }
+        .btn-secondary {
+            @apply bg-gray-600 hover:bg-gray-700 focus:ring-gray-500;
+        }
+        .btn-solution {
+            @apply bg-green-600 hover:bg-green-700 focus:ring-green-500;
+        }
+        .btn-reset {
+             @apply bg-red-600 hover:bg-red-700 focus:ring-red-500;
+        }
+        .card {
+            @apply bg-white p-6 rounded-xl shadow-lg border border-gray-200;
+        }
+        .impact-card {
+             @apply bg-red-50 border border-red-200 p-4 mt-4 rounded-lg;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 sm:p-6 md:p-8">
+
+    <div id="app" class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-cyan-600">Interactive Database Anomalies Simulation</h1>
+            <p class="mt-2 text-lg text-gray-600">A guided tour to demonstrate the pitfalls of a poorly designed database.</p>
+        </header>
+
+        <!-- Main Display: Table and Explanation -->
+        <main class="grid lg:grid-cols-2 gap-8">
+            <div class="card">
+                <h2 class="text-xl font-bold mb-4 text-gray-900">The "One Big Table": `Employee_Project`</h2>
+                <div id="table-container" class="overflow-x-auto">
+                    <!-- Table will be rendered here by JS -->
+                </div>
+            </div>
+            <div id="explanation-box" class="card flex flex-col">
+                 <!-- Explanation text will be updated here -->
+            </div>
+        </main>
+        
+        <!-- Controls are now inside the explanation box -->
+
+        <!-- Solution Section (initially hidden) -->
+        <section id="solution-section" class="hidden mt-8">
+            <h2 class="text-2xl md:text-3xl font-bold text-green-600 text-center">✅ The Solution: Normalization</h2>
+            <p class="mt-2 text-lg text-gray-600 text-center mb-8">We split the big table into smaller, related ones to eliminate redundancy.</p>
+            <div class="grid md:grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="card">
+                    <h3 class="font-bold text-lg mb-2">1. Employees Table</h3>
+                    <div id="employees-table"></div>
+                </div>
+                <div class="card">
+                    <h3 class="font-bold text-lg mb-2">2. Projects Table</h3>
+                    <div id="projects-table"></div>
+                </div>
+                <div class="card">
+                    <h3 class="font-bold text-lg mb-2">3. Assignments Table</h3>
+                    <div id="assignments-table"></div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- DATA ---
+        const initialData = [
+            { EmpID: 101, EmpName: 'Alice', EmpDept: 'IT', ProjectID: 'P500', ProjectName: 'Database Migration', ProjectManager: 'David Lee' },
+            { EmpID: 102, EmpName: 'Bob', EmpDept: 'IT', ProjectID: 'P500', ProjectName: 'Database Migration', ProjectManager: 'David Lee' },
+            { EmpID: 103, EmpName: 'Carol', EmpDept: 'HR', ProjectID: 'P601', ProjectName: 'New Hire Onboarding', ProjectManager: 'Eve Chan' },
+            { EmpID: 101, EmpName: 'Alice', EmpDept: 'IT', ProjectID: 'P720', ProjectName: 'Website Redesign', ProjectManager: 'Frank Wu' },
+            { EmpID: 104, EmpName: 'Doug', EmpDept: 'Marketing', ProjectID: 'P720', ProjectName: 'Website Redesign', ProjectManager: 'Frank Wu' },
+        ];
+        let currentData = JSON.parse(JSON.stringify(initialData));
+        let simulationState = 'start'; // 'start', 'deletion', 'insertion', 'update', 'solution'
+
+        const solutionTables = {
+            employees: [
+                { EmpID: 101, EmpName: 'Alice', EmpDept: 'IT' }, { EmpID: 102, EmpName: 'Bob', EmpDept: 'IT' }, { EmpID: 103, EmpName: 'Carol', EmpDept: 'HR' }, { EmpID: 104, EmpName: 'Doug', EmpDept: 'Marketing' },
+            ],
+            projects: [
+                { ProjectID: 'P500', ProjectName: 'Database Migration', ProjectManager: 'David Lee' }, { ProjectID: 'P601', ProjectName: 'New Hire Onboarding', ProjectManager: 'Eve Chan' }, { ProjectID: 'P720', ProjectName: 'Website Redesign', ProjectManager: 'Frank Wu' },
+            ],
+            assignments: [
+                { EmpID: 101, ProjectID: 'P500' }, { EmpID: 102, ProjectID: 'P500' }, { EmpID: 103, ProjectID: 'P601' }, { EmpID: 101, ProjectID: 'P720' }, { EmpID: 104, ProjectID: 'P720' },
+            ]
+        };
+
+        // --- DOM ELEMENTS ---
+        const tableContainer = document.getElementById('table-container');
+        const explanationBox = document.getElementById('explanation-box');
+        const solutionSection = document.getElementById('solution-section');
+
+        // --- RENDER FUNCTIONS ---
+        function renderTable(data, container, highlightClass = '') {
+            if (!data || data.length === 0) {
+                container.innerHTML = '<p class="text-center p-4 text-gray-500">Table is empty.</p>';
+                return;
+            }
+            const headers = Object.keys(data[0]);
+            const headerHtml = headers.map(h => `<th class="p-3 text-sm font-semibold text-left tracking-wider">${h}</th>`).join('');
+            const bodyHtml = data.map(row => {
+                const isHighlighted = (highlightClass === 'table-highlight-delete' && row.EmpID === 103) ||
+                                      (highlightClass === 'table-highlight-update' && row.ProjectID === 'P720');
+                const rowClass = isHighlighted ? highlightClass : '';
+                const cellsHtml = headers.map(header => {
+                    let cellClass = 'p-3 text-sm';
+                     if (header === 'ProjectManager' && row.ProjectManager === 'Henry Lo') {
+                         cellClass += ' table-highlight-update-done';
+                    }
+                    return `<td class="${cellClass}">${row[header]}</td>`;
+                }).join('');
+                return `<tr class="border-b border-gray-200 ${rowClass}">${cellsHtml}</tr>`;
+            }).join('');
+
+            container.innerHTML = `
+                <table class="w-full">
+                    <thead class="bg-gray-50 text-gray-500 uppercase text-sm"><tr>${headerHtml}</tr></thead>
+                    <tbody class="bg-white">${bodyHtml}</tbody>
+                </table>
+            `;
+        }
+
+        function updateExplanation() {
+            let title, paragraphs, impact, buttons;
+
+            switch (simulationState) {
+                case 'start':
+                    title = 'Welcome to the Simulation!';
+                    paragraphs = ['This is our starting table. It contains redundant data (notice the repeated project info), which is a recipe for problems.', 'Click the button below to start the first simulation.'];
+                    buttons = `<button id="start-btn" class="btn btn-primary w-full">Start with Deletion Anomaly</button>`;
+                    break;
+
+                case 'deletion':
+                    title = '🚮 Simulation 1: Deletion Anomaly';
+                    paragraphs = ['**The Goal:** Delete employee Carol, who is leaving the company.', '**The Problem:** She is the *only* person assigned to the "New Hire Onboarding" project.', 'Click the button to see what happens when we delete her record.'];
+                    buttons = `<button id="run-delete-btn" class="btn btn-primary w-full">Delete Carol's Record</button>`;
+                    break;
+                
+                case 'deletion_done':
+                    title = '🚮 Deletion Anomaly';
+                    paragraphs = ['We deleted Carol\'s record. The table has been updated.'];
+                    impact = `
+                        <div class="impact-card">
+                            <h4 class="font-bold text-lg text-red-600 mb-2">💥 ANOMALY IMPACT</h4>
+                            <p class="text-red-700">By deleting one employee, we have **accidentally deleted all information about the "New Hire Onboarding" project.** The database no longer knows this project exists!</p>
+                        </div>
+                    `;
+                    buttons = `<button id="next-btn" class="btn btn-primary w-full mt-4">Next: Insertion Anomaly</button>`;
+                    break;
+
+                case 'insertion':
+                    title = '📥 Simulation 2: Insertion Anomaly';
+                    paragraphs = [
+                        '**The Goal:** Add a new project, "Q4 Marketing Blitz", managed by Grace Lam.',
+                        '**The Problem:** No employees have been assigned yet, but our table structure requires an `EmpID` for every row.',
+                    ];
+                     impact = `
+                        <div class="impact-card">
+                            <h4 class="font-bold text-lg text-red-600 mb-2">💥 ANOMALY IMPACT</h4>
+                            <p class="text-red-700">We **cannot add the new project.** We are blocked from adding valid data because other, unrelated data (an employee) is missing.</p>
+                        </div>
+                    `;
+                    buttons = `<button id="next-btn" class="btn btn-primary w-full mt-4">Next: Update Anomaly</button>`;
+                    break;
+                
+                case 'update':
+                     title = '🔄 Simulation 3: Update Anomaly';
+                     paragraphs = ['**The Goal:** The manager for "Website Redesign" is now Henry Lo.', '**The Problem:** Because the manager\'s name is repeated, we must update it in multiple places. What if we miss one?'];
+                     buttons = `<button id="run-update-btn" class="btn btn-primary w-full">Update Manager to Henry Lo (with an error)</button>`;
+                     break;
+
+                case 'update_done':
+                    title = '🔄 Update Anomaly';
+                    paragraphs = ['The update has been performed, but with an error—only one record was changed.'];
+                    impact = `
+                        <div class="impact-card">
+                            <h4 class="font-bold text-lg text-red-600 mb-2">💥 ANOMALY IMPACT</h4>
+                            <p class="text-red-700">The database is now **inconsistent**. Who manages the "Website Redesign" project? The data gives two different answers, making it unreliable.</p>
+                        </div>
+                    `;
+                    buttons = `<button id="next-btn" class="btn btn-solution w-full mt-4">✅ See The Solution</button>`;
+                    break;
+                
+                 case 'solution':
+                    title = '✅ The Solution: Normalization';
+                    paragraphs = ['By splitting the data into smaller, related tables, we eliminate redundancy.', 'Now, you can delete an employee without losing project info, add a new project without an employee, and update a manager\'s name in just **one single place**. The anomalies are solved!'];
+                    buttons = `<button id="reset-btn" class="btn btn-reset w-full">🔄 Restart Simulation</button>`;
+                    solutionSection.classList.remove('hidden');
+                    renderTable(solutionTables.employees, document.getElementById('employees-table'));
+                    renderTable(solutionTables.projects, document.getElementById('projects-table'));
+                    renderTable(solutionTables.assignments, document.getElementById('assignments-table'));
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    break;
+
+            }
+
+            const paragraphsHtml = paragraphs.map(p => `<p class="mb-3 text-gray-600">${p}</p>`).join('');
+            explanationBox.innerHTML = `
+                <div class="flex-grow">
+                    <h3 class="text-2xl font-bold mb-4 text-gray-900">${title}</h3>
+                    ${paragraphsHtml}
+                    ${impact || ''}
+                </div>
+                <div class="mt-auto pt-4">${buttons}</div>
+            `;
+            addEventListeners();
+        }
+        
+        // --- EVENT LISTENERS ---
+        function addEventListeners() {
+            const startBtn = document.getElementById('start-btn');
+            if(startBtn) startBtn.addEventListener('click', () => {
+                simulationState = 'deletion';
+                updateExplanation();
+            });
+
+            const runDeleteBtn = document.getElementById('run-delete-btn');
+            if (runDeleteBtn) runDeleteBtn.addEventListener('click', () => {
+                renderTable(currentData, tableContainer, 'table-highlight-delete');
+                setTimeout(() => {
+                    currentData = currentData.filter(row => row.EmpID !== 103);
+                    renderTable(currentData, tableContainer);
+                    simulationState = 'deletion_done';
+                    updateExplanation();
+                }, 1500);
+            });
+            
+            const runUpdateBtn = document.getElementById('run-update-btn');
+            if(runUpdateBtn) runUpdateBtn.addEventListener('click', () => {
+                renderTable(currentData, tableContainer, 'table-highlight-update');
+                setTimeout(() => {
+                     const firstRecordIndex = currentData.findIndex(row => row.ProjectID === 'P720');
+                     if (firstRecordIndex !== -1) {
+                        currentData[firstRecordIndex].ProjectManager = 'Henry Lo';
+                     }
+                     renderTable(currentData, tableContainer, 'table-highlight-update');
+                     simulationState = 'update_done';
+                     updateExplanation();
+                }, 1500);
+            });
+
+            const nextBtn = document.getElementById('next-btn');
+            if (nextBtn) nextBtn.addEventListener('click', () => {
+                switch(simulationState) {
+                    case 'deletion_done':
+                        simulationState = 'insertion';
+                        // Reset data for next sim
+                        currentData = JSON.parse(JSON.stringify(initialData));
+                        renderTable(currentData, tableContainer);
+                        break;
+                    case 'insertion':
+                        simulationState = 'update';
+                        break;
+                    case 'update_done':
+                        simulationState = 'solution';
+                        break;
+                }
+                updateExplanation();
+            });
+
+            const resetBtn = document.getElementById('reset-btn');
+            if (resetBtn) resetBtn.addEventListener('click', handleReset);
+        }
+
+        // --- INITIALIZATION ---
+        function handleReset() {
+            currentData = JSON.parse(JSON.stringify(initialData));
+            simulationState = 'start';
+            renderTable(currentData, tableContainer);
+            updateExplanation();
+            solutionSection.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initial render
+        handleReset();
+
+    </script>
+
+</body>
+</html>
+
+

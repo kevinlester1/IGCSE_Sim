@@ -1,0 +1,1278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karnaugh Map Interactive Lab</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for in-browser JSX compiling -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useMemo, useEffect, Fragment } = React;
+
+        // --- INLINE SVG ICONS (Replacing lucide-react) ---
+        const IconBase = ({ children, size = 24, className = "", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {children}
+            </svg>
+        );
+
+        const BookOpen = (p) => <IconBase {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconBase>;
+        const Play = (p) => <IconBase {...p} fill={p.fill || "none"}><polygon points="5 3 19 12 5 21 5 3"/></IconBase>;
+        const Info = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></IconBase>;
+        const RotateCcw = (p) => <IconBase {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconBase>;
+        const Zap = (p) => <IconBase {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></IconBase>;
+        const ArrowDown = (p) => <IconBase {...p}><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></IconBase>;
+        const Keyboard = (p) => <IconBase {...p}><rect width="20" height="16" x="2" y="4" rx="2" ry="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M8 12h.01"/><path d="M12 12h.01"/><path d="M16 12h.01"/><path d="M7 16h10"/></IconBase>;
+        const MoveHorizontal = (p) => <IconBase {...p}><polyline points="18 8 22 12 18 16"/><polyline points="6 8 2 12 6 16"/><line x1="2" x2="22" y1="12" y2="12"/></IconBase>;
+        const MoveVertical = (p) => <IconBase {...p}><polyline points="8 18 12 22 16 18"/><polyline points="8 6 12 2 16 6"/><line x1="12" x2="12" y1="2" y2="22"/></IconBase>;
+        const GraduationCap = (p) => <IconBase {...p}><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></IconBase>;
+        const ClipboardList = (p) => <IconBase {...p}><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></IconBase>;
+        const CheckCircle = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></IconBase>;
+        const ChevronDown = (p) => <IconBase {...p}><path d="m6 9 6 6 6-6"/></IconBase>;
+        const ChevronUp = (p) => <IconBase {...p}><path d="m18 15-6-6-6 6"/></IconBase>;
+
+        // --- K-MAP SOLVER LOGIC ---
+        const getGrayCode = (bits) => {
+            if (bits === 1) return ['0', '1'];
+            if (bits === 2) return ['00', '01', '11', '10'];
+            return [];
+        };
+
+        const SOLVER_COLORS = [
+            '#ef4444', '#3b82f6', '#10b981', '#f59e0b', 
+            '#8b5cf6', '#ec4899', '#14b8a6', '#f43f5e'
+        ];
+
+        function solveKMap(gridData, numVars) {
+            const H = gridData.length;
+            const W = gridData[0].length;
+            
+            const ones = [];
+            for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                if (gridData[r][c]) ones.push(`${r},${c}`);
+                }
+            }
+            
+            if (ones.length === 0) return [{ term: "0", cells: [] }];
+            if (ones.length === H * W) return [{ term: "1", cells: ones }];
+
+            let validSizes = [];
+            if (numVars === 4) validSizes = [[4,4],[4,2],[2,4],[4,1],[1,4],[2,2],[2,1],[1,2],[1,1]];
+            if (numVars === 3) validSizes = [[2,4],[2,2],[1,4],[2,1],[1,2],[1,1]];
+            if (numVars === 2) validSizes = [[2,2],[2,1],[1,2],[1,1]];
+
+            const implicants = [];
+
+            for (let [h, w] of validSizes) {
+                for (let r = 0; r < H; r++) {
+                    for (let c = 0; c < W; c++) {
+                        let groupCells = new Set();
+                        let allOnes = true;
+                        
+                        for (let i = 0; i < h; i++) {
+                        for (let j = 0; j < w; j++) {
+                            let rr = (r + i) % H;
+                            let cc = (c + j) % W;
+                            groupCells.add(`${rr},${cc}`);
+                            if (!gridData[rr][cc]) {
+                            allOnes = false;
+                            }
+                        }
+                        }
+                        
+                        if (allOnes) {
+                        let alreadyExists = implicants.some(imp => 
+                            imp.size === groupCells.size && [...imp].every(cell => groupCells.has(cell))
+                        );
+                        if (!alreadyExists) implicants.push(groupCells);
+                        }
+                    }
+                }
+            }
+
+            const primeImplicants = implicants.filter((imp1, idx1) => {
+                return !implicants.some((imp2, idx2) => {
+                if (idx1 === idx2) return false;
+                if (imp1.size >= imp2.size) return false;
+                return [...imp1].every(cell => imp2.has(cell));
+                });
+            });
+
+            function getMinCover(pis, targetCells) {
+                let bestCover = pis; 
+                const targetSet = new Set(targetCells);
+                const essentialPIs = [];
+                let remainingTarget = new Set(targetCells);
+                let remainingPIs = [...pis];
+
+                for (let cell of targetCells) {
+                let coveringPIs = remainingPIs.filter(pi => pi.has(cell));
+                if (coveringPIs.length === 1) {
+                    let epi = coveringPIs[0];
+                    if (!essentialPIs.includes(epi)) {
+                    essentialPIs.push(epi);
+                    epi.forEach(c => remainingTarget.delete(c));
+                    }
+                }
+                }
+
+                remainingPIs = remainingPIs.filter(pi => !essentialPIs.includes(pi));
+                let initialCovered = new Set();
+                essentialPIs.forEach(pi => pi.forEach(c => {
+                if (targetSet.has(c)) initialCovered.add(c);
+                }));
+
+                function search(idx, currentCover, coveredCells) {
+                if (coveredCells.size === targetSet.size) {
+                    if (currentCover.length < bestCover.length) {
+                    bestCover = [...currentCover];
+                    }
+                    return;
+                }
+                if (idx >= remainingPIs.length) return;
+                if (currentCover.length >= bestCover.length) return;
+
+                let newCovered = new Set(coveredCells);
+                let addedAny = false;
+                remainingPIs[idx].forEach(cell => {
+                    if (targetSet.has(cell) && !newCovered.has(cell)) {
+                    newCovered.add(cell);
+                    addedAny = true;
+                    }
+                });
+
+                if (addedAny) {
+                    search(idx + 1, [...currentCover, remainingPIs[idx]], newCovered);
+                }
+                search(idx + 1, currentCover, coveredCells);
+                }
+
+                bestCover = [...essentialPIs, ...remainingPIs];
+                search(0, essentialPIs, initialCovered);
+                return bestCover;
+            }
+
+            const solutionGroups = getMinCover(primeImplicants, ones);
+
+            return solutionGroups.map(groupSet => {
+                let rowGray = H === 4 ? getGrayCode(2) : getGrayCode(1);
+                let colGray = W === 4 ? getGrayCode(2) : (W === 2 ? getGrayCode(1) : getGrayCode(1));
+                let vars = numVars === 4 ? ['A','B','C','D'] : (numVars === 3 ? ['A','B','C'] : ['A','B']);
+
+                let bitStrings = [];
+                for (let cell of groupSet) {
+                let [r, c] = cell.split(',').map(Number);
+                bitStrings.push(rowGray[r] + colGray[c]);
+                }
+
+                let term = "";
+                for (let i = 0; i < numVars; i++) {
+                let firstBit = bitStrings[0][i];
+                let allSame = bitStrings.every(bits => bits[i] === firstBit);
+                if (allSame) {
+                    term += vars[i] + (firstBit === '0' ? "'" : "");
+                }
+                }
+                return { term: term || "1", cells: [...groupSet] };
+            });
+        }
+
+        // --- UI COMPONENTS ---
+        const MiniGridExample = ({ title, isValid, checkActive }) => (
+            <div className="flex flex-col items-center">
+                <span className={`text-[11px] uppercase tracking-wider font-bold mb-1 flex items-center gap-1 ${isValid ? 'text-emerald-600' : 'text-red-500'}`}>
+                {title}
+                </span>
+                <div className={`grid grid-cols-4 gap-0 border-2 w-24 h-24 bg-white ${isValid ? 'border-emerald-300' : 'border-red-300'}`}>
+                {Array.from({length: 16}).map((_, i) => {
+                    const r = Math.floor(i/4), c = i%4;
+                    const active = checkActive(r, c);
+                    return (
+                    <div key={i} className={`border flex items-center justify-center text-xs font-bold transition-all ${
+                        active 
+                        ? (isValid ? 'bg-emerald-100 text-emerald-700 border-emerald-300 z-10' : 'bg-red-100 text-red-700 border-red-300 z-10') 
+                        : 'text-slate-200 border-slate-50'
+                    }`}>
+                        {active ? '1' : '0'}
+                    </div>
+                    )
+                })}
+                </div>
+            </div>
+        );
+
+        const TheoryTab = () => (
+            <div className="space-y-6 text-slate-800 animate-fadeIn">
+                <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded shadow-sm">
+                <h2 className="text-2xl font-bold mb-3 flex items-center gap-2"><BookOpen className="text-blue-500" /> What is a Karnaugh Map?</h2>
+                <p className="mb-4 text-lg">
+                    A Karnaugh Map (K-map) is a visual method used to simplify Boolean algebra expressions. Instead of using complex algebraic rules, K-maps use pattern matching to find the simplest possible logic circuit.
+                </p>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 className="text-xl font-bold mb-3 text-slate-900">1. The Gray Code Grid</h3>
+                    <p className="text-slate-600 mb-3">
+                    Notice the column and row headers (e.g., 00, 01, 11, 10). This is called <strong>Gray Code</strong>. 
+                    </p>
+                    <p className="text-slate-600">
+                    Unlike standard binary (00, 01, 10, 11), Gray code ensures that <strong>only one bit changes</strong> between any adjacent columns or rows. This property is what makes the K-map visually cluster identical variables together!
+                    </p>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-emerald-100 relative overflow-hidden">
+                    <div className="absolute -right-10 -top-10 opacity-5 text-emerald-500 pointer-events-none">
+                    <RotateCcw size={200} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-4 text-slate-900">2. The Wrapping Rule (It's a Donut!)</h3>
+                    <div className="flex flex-col md:flex-row gap-8 items-center relative z-10">
+                    <div className="flex-1">
+                        <p className="text-slate-600 mb-3">
+                        A K-map is not a flat square; its edges conceptually wrap around to connect with the opposite side, like a <strong>torus (donut)</strong>. 
+                        </p>
+                        <ul className="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                        <li>The <strong>far-left column</strong> is directly adjacent to the <strong>far-right column</strong>.</li>
+                        <li>The <strong>top row</strong> is directly adjacent to the <strong>bottom row</strong>.</li>
+                        <li>Because of this, the <strong>four corners</strong> of a 4x4 map are all technically touching each other and form a valid group of 4!</li>
+                        </ul>
+                    </div>
+                    
+                    <div className="flex-none bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner relative mt-4 md:mt-0">
+                        
+                        <div className="absolute top-1/2 -left-4 -translate-y-1/2 bg-emerald-100 text-emerald-600 rounded-full p-1.5 shadow-md border border-emerald-200 z-10"><MoveHorizontal size={18}/></div>
+                        <div className="absolute top-1/2 -right-4 -translate-y-1/2 bg-emerald-100 text-emerald-600 rounded-full p-1.5 shadow-md border border-emerald-200 z-10"><MoveHorizontal size={18}/></div>
+                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-100 text-emerald-600 rounded-full p-1.5 shadow-md border border-emerald-200 z-10"><MoveVertical size={18}/></div>
+                        <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-emerald-100 text-emerald-600 rounded-full p-1.5 shadow-md border border-emerald-200 z-10"><MoveVertical size={18}/></div>
+
+                        <div className="absolute top-1/2 left-0 -translate-x-full w-4 border-b-2 border-dashed border-emerald-300"></div>
+                        <div className="absolute top-1/2 right-0 translate-x-full w-4 border-b-2 border-dashed border-emerald-300"></div>
+                        <div className="absolute top-0 left-1/2 -translate-y-full h-4 border-l-2 border-dashed border-emerald-300"></div>
+                        <div className="absolute bottom-0 left-1/2 translate-y-full h-4 border-l-2 border-dashed border-emerald-300"></div>
+
+                        <table className="border-collapse select-none bg-white shadow-sm relative z-0">
+                        <thead>
+                            <tr>
+                            <th className="w-10 h-10 bg-slate-100"></th>
+                            <th className="w-12 h-10 border-2 border-slate-300 bg-slate-100 text-xs font-bold text-slate-500">00</th>
+                            <th className="w-12 h-10 border-2 border-slate-300 bg-slate-100 text-xs font-bold text-slate-500">01</th>
+                            <th className="w-12 h-10 border-2 border-slate-300 bg-slate-100 text-xs font-bold text-slate-500">11</th>
+                            <th className="w-12 h-10 border-2 border-slate-300 bg-slate-100 text-xs font-bold text-slate-500">10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {[
+                            ['00', 1, 0, 0, 1],
+                            ['01', 0, 0, 0, 0],
+                            ['11', 0, 0, 0, 0],
+                            ['10', 1, 0, 0, 1]
+                            ].map((row, r) => (
+                            <tr key={r}>
+                                <th className="w-10 h-12 border-2 border-slate-300 bg-slate-100 text-xs font-bold text-slate-500">{row[0]}</th>
+                                {row.slice(1).map((val, c) => {
+                                const isCorner = val === 1;
+                                let shadow = '';
+                                if (r===0 && c===0) shadow = 'inset -4px 0 0 0 #10b981, inset 0 -4px 0 0 #10b981';
+                                else if (r===0 && c===3) shadow = 'inset 4px 0 0 0 #10b981, inset 0 -4px 0 0 #10b981';
+                                else if (r===3 && c===0) shadow = 'inset -4px 0 0 0 #10b981, inset 0 4px 0 0 #10b981';
+                                else if (r===3 && c===3) shadow = 'inset 4px 0 0 0 #10b981, inset 0 4px 0 0 #10b981';
+
+                                return (
+                                    <td 
+                                    key={c} 
+                                    className={`w-12 h-12 border-2 border-slate-300 text-center font-bold text-xl 
+                                        ${isCorner ? 'bg-emerald-100 text-emerald-700' : 'text-slate-300'}`}
+                                    style={{ boxShadow: shadow }}
+                                    >
+                                    {val}
+                                    </td>
+                                );
+                                })}
+                            </tr>
+                            ))}
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-100">
+                    <h3 className="text-xl font-bold mb-3 text-slate-900">3. How to Group</h3>
+                    <div className="flex flex-col md:flex-row gap-6">
+                    <div className="flex-1">
+                        <p className="text-slate-600 mb-2">To solve a K-map, you must encircle the 1s based on these strict rules:</p>
+                        <ul className="list-decimal pl-5 space-y-2 text-slate-600">
+                        <li>Groups must contain 2<sup>n</sup> cells (1, 2, 4, 8, 16). <em>(No groups of 3 or 5!)</em></li>
+                        <li>Groups must be rectangles or squares. <em>(No L-shapes or diagonals!)</em></li>
+                        <li>Make the groups <strong>as large as possible</strong>.</li>
+                        <li>Make <strong>as few groups as possible</strong> to cover all 1s.</li>
+                        <li>Groups can overlap if it helps cover a 1 that would otherwise need a smaller group.</li>
+                        </ul>
+                    </div>
+                    <div className="flex-1 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <p className="text-sm text-slate-700 font-semibold mb-3 text-center border-b border-slate-200 pb-2">Visual Grouping Rules</p>
+                        
+                        <div className="flex justify-around items-center mb-4">
+                        <MiniGridExample 
+                            title="Valid: Quad (4)" 
+                            isValid={true} 
+                            checkActive={(r,c) => (r===1 || r===2) && (c===1 || c===2)} 
+                        />
+                        <MiniGridExample 
+                            title="Valid: Octet wrap" 
+                            isValid={true} 
+                            checkActive={(r,c) => (c===0 || c===3)} 
+                        />
+                        </div>
+                        
+                        <div className="flex justify-around items-center">
+                        <MiniGridExample 
+                            title="Invalid: L-Shape" 
+                            isValid={false} 
+                            checkActive={(r,c) => (r===1 && c===1) || (r===1 && c===2) || (r===2 && c===1)} 
+                        />
+                        <MiniGridExample 
+                            title="Invalid: Diagonal" 
+                            isValid={false} 
+                            checkActive={(r,c) => (r===1 && c===1) || (r===2 && c===2) || (r===3 && c===3)} 
+                        />
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-blue-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Zap size={100} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-6 text-slate-900 flex items-center gap-2">
+                    <Play className="text-blue-500" size={20} fill="currentColor" /> 
+                    4. A Working Example
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-8 items-center">
+                    <div className="flex-1 space-y-4">
+                        <p className="text-slate-700"><strong>Goal:</strong> Simplify the unoptimized Boolean expression: <code className="bg-slate-100 px-2 py-1 rounded text-pink-600 font-mono font-bold">Y = A'B + AB</code></p>
+                        <ol className="list-decimal pl-5 space-y-3 text-slate-600">
+                        <li><strong>Plot the 1s:</strong> We place a 1 in the cell where <code className="text-xs bg-slate-100 px-1 rounded">A=0, B=1</code> (for A'B) and where <code className="text-xs bg-slate-100 px-1 rounded">A=1, B=1</code> (for AB). Fill the rest with 0s.</li>
+                        <li><strong>Group them:</strong> We can circle both 1s together because they form a valid, adjacent group of two (which is 2<sup>1</sup>).</li>
+                        <li><strong>Simplify:</strong> Look at the blue group. As we move between the cells, the variable <strong>A</strong> changes from 0 to 1, meaning it is irrelevant and cancels out. The variable <strong>B</strong> stays exactly 1 for the whole group.</li>
+                        </ol>
+                        <div className="mt-4 inline-flex items-center gap-4 bg-blue-50 border border-blue-200 px-5 py-3 rounded-lg shadow-sm">
+                        <span className="text-slate-700 font-semibold uppercase tracking-wide text-sm">Simplified Result:</span>
+                        <span className="text-3xl font-mono font-bold text-blue-600">Y = B</span>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-none bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                        <thead>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 p-1 text-xs relative">
+                                <div className="absolute top-1 right-2 text-slate-500 font-bold">B</div>
+                                <div className="absolute bottom-1 left-2 text-slate-500 font-bold">A</div>
+                                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-slate-300" />
+                                </svg>
+                            </th>
+                            <th className="w-16 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-lg">0</th>
+                            <th className="w-16 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-blue-600 text-lg">1</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <th className="w-14 h-16 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-lg">0</th>
+                            <td className="w-16 h-16 border-2 border-slate-800 text-center text-xl text-slate-300">0</td>
+                            <td className="w-16 h-16 border-2 border-slate-800 text-center text-2xl font-bold bg-blue-100 text-blue-700 shadow-[inset_0_4px_0_0_#3b82f6,inset_4px_0_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6]">1</td>
+                            </tr>
+                            <tr>
+                            <th className="w-14 h-16 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-lg">1</th>
+                            <td className="w-16 h-16 border-2 border-slate-800 text-center text-xl text-slate-300">0</td>
+                            <td className="w-16 h-16 border-2 border-slate-800 text-center text-2xl font-bold bg-blue-100 text-blue-700 shadow-[inset_0_-4px_0_0_#3b82f6,inset_4px_0_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6]">1</td>
+                            </tr>
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-purple-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <Zap size={100} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-6 text-slate-900 flex items-center gap-2">
+                    <Play className="text-purple-500" size={20} fill="currentColor" /> 
+                    5. Advanced Example: Overlapping Groups
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-8 items-center">
+                    <div className="flex-1 space-y-4">
+                        <p className="text-slate-700"><strong>Goal:</strong> Simplify the 3-variable expression: <code className="bg-slate-100 px-2 py-1 rounded text-pink-600 font-mono font-bold">Y = A'BC + ABC + AB'C</code></p>
+                        <ol className="list-decimal pl-5 space-y-3 text-slate-600">
+                        <li><strong>Plot the 1s:</strong> We map out the three terms on our 3-variable grid. Notice that the <code className="text-xs bg-slate-100 px-1 rounded">A=1, BC=11</code> cell is perfectly situated to help group the other two!</li>
+                        <li><strong>Group them:</strong> We can't group all three together (groups of 3 are invalid!). Instead, we make <strong>two pairs of two</strong>. The cell at <code className="text-xs bg-slate-100 px-1 rounded">1, 11</code> is shared by both groups. <em>(Overlapping is allowed and necessary to make the largest possible groups!)</em></li>
+                        <li><strong>Simplify:</strong> 
+                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li><span className="text-blue-600 font-semibold">Vertical Pair:</span> <strong>A</strong> changes (0 to 1) so it cancels. B and C stay 1. <span className="font-mono text-blue-600">→ BC</span></li>
+                            <li><span className="text-purple-600 font-semibold">Horizontal Pair:</span> <strong>B</strong> changes (0 to 1) so it cancels. A and C stay 1. <span className="font-mono text-purple-600">→ AC</span></li>
+                            </ul>
+                        </li>
+                        </ol>
+                        <div className="mt-4 inline-flex items-center gap-4 bg-purple-50 border border-purple-200 px-5 py-3 rounded-lg shadow-sm">
+                        <span className="text-slate-700 font-semibold uppercase tracking-wide text-sm">Simplified Result:</span>
+                        <span className="text-3xl font-mono font-bold text-purple-600">Y = BC + AC</span>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-none bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                        <thead>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 p-1 text-xs relative">
+                                <div className="absolute top-1 right-2 text-slate-500 font-bold">BC</div>
+                                <div className="absolute bottom-1 left-2 text-slate-500 font-bold">A</div>
+                                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-slate-300" />
+                                </svg>
+                            </th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">00</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">01</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">11</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">0</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-blue-100 text-blue-700 shadow-[inset_4px_0_0_0_#3b82f6,inset_0_4px_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6]">1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            </tr>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">1</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-purple-100 text-purple-700 shadow-[inset_4px_0_0_0_#a855f7,inset_0_4px_0_0_#a855f7,inset_0_-4px_0_0_#a855f7]">1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold text-slate-900 shadow-[inset_4px_0_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6,inset_0_4px_0_0_#a855f7,inset_-4px_0_0_0_#a855f7]" style={{ background: 'linear-gradient(135deg, #dbeafe 50%, #f3e8ff 50%)' }}>1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            </tr>
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-amber-100 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <RotateCcw size={100} />
+                    </div>
+                    <h3 className="text-xl font-bold mb-6 text-slate-900 flex items-center gap-2">
+                    <Play className="text-amber-500" size={20} fill="currentColor" /> 
+                    6. Advanced Example: Wrap-Around Grouping
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-8 items-center">
+                    <div className="flex-1 space-y-4">
+                        <p className="text-slate-700"><strong>Goal:</strong> Simplify the 3-variable expression: <code className="bg-slate-100 px-2 py-1 rounded text-pink-600 font-mono font-bold">Y = A'B'C' + A'BC'</code></p>
+                        <ol className="list-decimal pl-5 space-y-3 text-slate-600">
+                        <li><strong>Plot the 1s:</strong> We place our 1s at <code className="text-xs bg-slate-100 px-1 rounded">A=0, BC=00</code> and <code className="text-xs bg-slate-100 px-1 rounded">A=0, BC=10</code>. They appear to be stranded on opposite sides of the grid!</li>
+                        <li><strong>Group them:</strong> Remember the <strong>Donut Rule</strong>! The far-left edge connects continuously to the far-right edge. We can circle these two together to form a valid adjacent pair (2<sup>1</sup>).</li>
+                        <li><strong>Simplify:</strong> 
+                            <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong>A</strong> stays exactly 0 (A') for the whole group.</li>
+                            <li><strong>C</strong> stays exactly 0 (C') in both the 00 and 10 columns.</li>
+                            <li><strong>B</strong> changes from 0 to 1 across the jump, meaning it is irrelevant and cancels out!</li>
+                            </ul>
+                        </li>
+                        </ol>
+                        <div className="mt-4 inline-flex items-center gap-4 bg-amber-50 border border-amber-200 px-5 py-3 rounded-lg shadow-sm">
+                        <span className="text-slate-700 font-semibold uppercase tracking-wide text-sm">Simplified Result:</span>
+                        <span className="text-3xl font-mono font-bold text-amber-600">Y = A'C'</span>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-none bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                        <thead>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 p-1 text-xs relative">
+                                <div className="absolute top-1 right-2 text-slate-500 font-bold">BC</div>
+                                <div className="absolute bottom-1 left-2 text-slate-500 font-bold">A</div>
+                                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-slate-300" />
+                                </svg>
+                            </th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">00</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">01</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">11</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">0</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-amber-100 text-amber-700 shadow-[inset_0_4px_0_0_#f59e0b,inset_-4px_0_0_0_#f59e0b,inset_0_-4px_0_0_#f59e0b]">1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-amber-100 text-amber-700 shadow-[inset_0_4px_0_0_#f59e0b,inset_4px_0_0_0_#f59e0b,inset_0_-4px_0_0_#f59e0b]">1</td>
+                            </tr>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-sm">1</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            </tr>
+                        </tbody>
+                        </table>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        );
+
+        const WorkedExampleTab = () => (
+            <div className="space-y-6 text-slate-800 animate-fadeIn">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                    <GraduationCap className="text-indigo-600" /> 
+                    Real-World Application: Smart Home Lighting
+                </h2>
+                <p className="text-slate-600 mb-4 text-lg">
+                    A smart home system uses three sensors to control an outdoor porch light:
+                </p>
+                <div className="grid md:grid-cols-3 gap-4 mb-6">
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-inner">
+                    <p className="font-bold text-slate-800 mb-1">M (Motion)</p>
+                    <p className="text-sm text-slate-600"><span className="font-mono text-indigo-600 font-bold bg-indigo-50 px-1 rounded">1</span> = Motion detected<br/><span className="font-mono text-slate-500 font-bold bg-slate-100 px-1 rounded">0</span> = No motion</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-inner">
+                    <p className="font-bold text-slate-800 mb-1">D (Dark)</p>
+                    <p className="text-sm text-slate-600"><span className="font-mono text-indigo-600 font-bold bg-indigo-50 px-1 rounded">1</span> = Dark outside<br/><span className="font-mono text-slate-500 font-bold bg-slate-100 px-1 rounded">0</span> = Bright</p>
+                    </div>
+                    <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 shadow-inner">
+                    <p className="font-bold text-slate-800 mb-1">S (Security)</p>
+                    <p className="text-sm text-slate-600"><span className="font-mono text-indigo-600 font-bold bg-indigo-50 px-1 rounded">1</span> = System armed<br/><span className="font-mono text-slate-500 font-bold bg-slate-100 px-1 rounded">0</span> = Disarmed</p>
+                    </div>
+                </div>
+                
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 p-5 rounded shadow-sm">
+                    <p className="font-bold text-slate-800 mb-2">System Logic (When does the Light (L) turn on?)</p>
+                    <ul className="list-disc pl-5 space-y-1 text-slate-700">
+                    <li>Condition 1: If Motion is detected AND it is Dark outside. <code className="bg-white px-1.5 py-0.5 rounded text-indigo-600 font-bold ml-2 shadow-sm text-sm">D=1, M=1</code></li>
+                    <li>Condition 2: If the Security system is armed AND Motion is detected. <code className="bg-white px-1.5 py-0.5 rounded text-indigo-600 font-bold ml-2 shadow-sm text-sm">S=1, M=1</code></li>
+                    </ul>
+                </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-6">
+                
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 className="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
+                    <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">A</span> 
+                    Construct the Truth Table
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-4">
+                    We translate our logic into the 8 possible states. If either Condition 1 or Condition 2 is met, L becomes 1.
+                    </p>
+                    
+                    <div className="overflow-hidden border border-slate-200 rounded-lg shadow-sm">
+                    <table className="w-full text-center border-collapse">
+                        <thead>
+                        <tr className="bg-slate-100 text-slate-600">
+                            <th className="p-2 border-b border-r border-slate-200">S</th>
+                            <th className="p-2 border-b border-r border-slate-200">D</th>
+                            <th className="p-2 border-b border-r border-slate-200">M</th>
+                            <th className="p-2 border-b border-slate-200 text-indigo-600 font-bold">L</th>
+                        </tr>
+                        </thead>
+                        <tbody className="text-slate-600 font-mono">
+                        <tr><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-b border-slate-100 text-slate-400">0</td></tr>
+                        <tr><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">1</td><td className="p-1 border-b border-slate-100 text-slate-400">0</td></tr>
+                        <tr><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">1</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-b border-slate-100 text-slate-400">0</td></tr>
+                        <tr className="bg-blue-50"><td className="p-1 border-r border-b border-slate-100 font-bold text-slate-800">0</td><td className="p-1 border-r border-b border-slate-100 font-bold text-blue-600">1</td><td className="p-1 border-r border-b border-slate-100 font-bold text-blue-600">1</td><td className="p-1 border-b border-slate-100 font-bold text-blue-600">1</td></tr>
+                        <tr><td className="p-1 border-r border-b border-slate-100">1</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-b border-slate-100 text-slate-400">0</td></tr>
+                        <tr className="bg-emerald-50"><td className="p-1 border-r border-b border-slate-100 font-bold text-emerald-600">1</td><td className="p-1 border-r border-b border-slate-100 font-bold text-slate-800">0</td><td className="p-1 border-r border-b border-slate-100 font-bold text-emerald-600">1</td><td className="p-1 border-b border-slate-100 font-bold text-emerald-600">1</td></tr>
+                        <tr><td className="p-1 border-r border-b border-slate-100">1</td><td className="p-1 border-r border-b border-slate-100">1</td><td className="p-1 border-r border-b border-slate-100">0</td><td className="p-1 border-b border-slate-100 text-slate-400">0</td></tr>
+                        <tr style={{background: 'linear-gradient(90deg, #dbeafe 50%, #d1fae5 50%)'}}><td className="p-1 border-r border-b border-slate-100 font-bold text-emerald-700">1</td><td className="p-1 border-r border-b border-slate-100 font-bold text-blue-700">1</td><td className="p-1 border-r border-b border-slate-100 font-bold text-slate-800">1</td><td className="p-1 border-b border-slate-100 font-bold text-slate-900">1</td></tr>
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex-1">
+                    <h3 className="text-lg font-bold mb-4 text-slate-800 flex items-center gap-2">
+                        <span className="bg-slate-800 text-white w-6 h-6 rounded-full inline-flex items-center justify-center text-sm">B</span> 
+                        Map & Group
+                    </h3>
+                    <p className="text-sm text-slate-600 mb-6">
+                        We map the 1s onto a 3-variable grid. Notice how they form two distinct pairs of two that share an overlapping cell!
+                    </p>
+                    
+                    <div className="flex justify-center mb-6">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                        <thead>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 p-1 text-xs relative">
+                                <div className="absolute top-1 right-2 text-slate-500 font-bold">DM</div>
+                                <div className="absolute bottom-1 left-2 text-slate-500 font-bold">S</div>
+                                <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-slate-300" />
+                                </svg>
+                            </th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">00</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">01</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">11</th>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">10</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">0</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-blue-100 text-blue-700 shadow-[inset_0_4px_0_0_#3b82f6,inset_4px_0_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6]">1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            </tr>
+                            <tr>
+                            <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">1</th>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold bg-emerald-100 text-emerald-700 shadow-[inset_0_4px_0_0_#10b981,inset_0_-4px_0_0_#10b981,inset_4px_0_0_0_#10b981]">1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-xl font-bold text-slate-800 shadow-[inset_-4px_0_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6,inset_0_-4px_0_0_#10b981]" style={{ background: 'linear-gradient(135deg, #dbeafe 50%, #d1fae5 50%)' }}>1</td>
+                            <td className="w-14 h-14 border-2 border-slate-800 text-center text-lg text-slate-300">0</td>
+                            </tr>
+                        </tbody>
+                        </table>
+                    </div>
+
+                    <div className="space-y-2 text-sm text-slate-700 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <p><span className="inline-block w-3 h-3 bg-blue-500 rounded-sm mr-2"></span> <strong>Group 1 (Vertical):</strong> S changes (0 to 1) so it cancels out. D=1 and M=1 stay constant. <span className="font-mono font-bold text-blue-600">→ DM</span></p>
+                        <p><span className="inline-block w-3 h-3 bg-emerald-500 rounded-sm mr-2"></span> <strong>Group 2 (Horizontal):</strong> S=1 and M=1 stay constant. D changes (0 to 1) so it cancels out. <span className="font-mono font-bold text-emerald-600">→ SM</span></p>
+                    </div>
+                    </div>
+
+                    <div className="bg-slate-900 p-6 rounded-xl shadow-md border border-slate-800 text-center">
+                    <h3 className="text-sm text-slate-400 font-semibold mb-2 uppercase tracking-wider flex justify-center items-center gap-2">
+                        <span className="bg-slate-700 text-slate-300 w-5 h-5 rounded-full inline-flex items-center justify-center text-xs">C</span> 
+                        Final Simplified Expression
+                    </h3>
+                    <div className="text-3xl font-mono text-white mt-3 bg-slate-800/80 inline-block px-6 py-3 rounded-lg border border-slate-700 shadow-inner">
+                        L = <span className="text-blue-400">DM</span> + <span className="text-emerald-400">SM</span>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+        );
+
+        const PracticeTab = () => {
+            const [revealed, setRevealed] = useState({});
+            const toggle = (id) => setRevealed(prev => ({ ...prev, [id]: !prev[id] }));
+
+            const AnswerBox = ({ id, children }) => (
+                <div className="mt-4 border border-slate-200 rounded-lg overflow-hidden">
+                <button 
+                    onClick={() => toggle(id)} 
+                    className="w-full flex items-center justify-between bg-white p-4 font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                    <span className="flex items-center gap-2">
+                    <CheckCircle size={18} className={revealed[id] ? "text-emerald-500" : "text-slate-400"}/> 
+                    {revealed[id] ? 'Hide Answer' : 'Check Answer'}
+                    </span>
+                    {revealed[id] ? <ChevronUp size={18} className="text-slate-500"/> : <ChevronDown size={18} className="text-slate-500"/>}
+                </button>
+                {revealed[id] && (
+                    <div className="p-5 bg-emerald-50/50 border-t border-slate-200 text-slate-700 space-y-3 animate-fadeIn">
+                    {children}
+                    </div>
+                )}
+                </div>
+            );
+
+            return (
+                <div className="space-y-6 text-slate-800 animate-fadeIn">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 flex flex-col md:flex-row gap-4 justify-between items-center">
+                    <div>
+                    <h2 className="text-2xl font-bold mb-2 flex items-center gap-2 text-slate-900">
+                        <ClipboardList className="text-indigo-600" />
+                        Practice Tests & More Examples
+                    </h2>
+                    <p className="text-slate-600">Review how K-maps group variables together, and then test your knowledge with the practice questions below!</p>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 className="text-xl font-bold mb-6 text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+                    <BookOpen className="text-indigo-500" size={22} />
+                    Part 1: Additional Worked Examples
+                    </h2>
+                    
+                    <div className="mb-8 border-b border-slate-100 pb-8">
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Example 1: The "Wrap-Around" (3-Variable)</h3>
+                    <p className="text-slate-600 mb-4"><strong>The Problem:</strong> Simplify <code className="bg-slate-100 px-1.5 py-0.5 rounded text-pink-600 font-mono font-bold">Y = A'B'C' + A'B'C + AB'C' + AB'C</code></p>
+                    
+                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                        <div className="flex-none bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                            <thead>
+                            <tr>
+                                <th className="w-14 h-10 border-2 border-slate-800 bg-slate-100 p-1 text-xs text-slate-500">A \ BC</th>
+                                <th className="w-16 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">00 (B'C')</th>
+                                <th className="w-16 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">01 (B'C)</th>
+                                <th className="w-16 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">11 (BC)</th>
+                                <th className="w-16 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">10 (BC')</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">0 (A')</th>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-xl shadow-[inset_4px_0_0_0_#3b82f6,inset_0_4px_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6]">1</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-xl shadow-[inset_-4px_0_0_0_#3b82f6,inset_0_4px_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6]">1</td>
+                            </tr>
+                            <tr>
+                                <th className="w-14 h-14 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600 text-xs">1 (A)</th>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-xl shadow-[inset_4px_0_0_0_#3b82f6,inset_0_4px_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6]">1</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-16 h-14 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-xl shadow-[inset_-4px_0_0_0_#3b82f6,inset_0_4px_0_0_#3b82f6,inset_0_-4px_0_0_#3b82f6]">1</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div className="flex-1 space-y-3 text-sm text-slate-700">
+                        <p><strong>Step 2: Grouping</strong><br/>Instead of making two separate vertical pairs, we look at the edges. The two 1s on the far left wrap around and connect with the two 1s on the far right. Because 2<sup>2</sup> = 4, this forms a valid <strong>Group of 4 (Quad)</strong>.</p>
+                        <p><strong>Step 3: Simplification</strong><br/>- <strong>A</strong> changes from 0 to 1, so it cancels out.<br/>- <strong>C</strong> changes from 0 (left) to 1 (right), so it cancels out.<br/>- <strong>B</strong> stays exactly 0 for the entire group.</p>
+                        <div className="mt-2 inline-flex items-center gap-4 bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-lg shadow-sm">
+                            <span className="text-slate-700 font-semibold uppercase tracking-wide text-xs">Result:</span>
+                            <span className="text-2xl font-mono font-bold text-indigo-600">Y = B'</span>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+
+                    <div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Example 2: The 4-Variable Octet (Real-World)</h3>
+                    <p className="text-slate-600 mb-2"><strong>The Scenario:</strong> A server room fire alarm (Y) sounds if:</p>
+                    <ul className="list-decimal pl-5 text-slate-600 mb-4 text-sm">
+                        <li>The manual pull station is pulled (<strong>A=1</strong>).</li>
+                        <li>Smoke is detected (<strong>B=1</strong>) AND Heat is detected (<strong>C=1</strong>) AND the Door is closed (<strong>D=0</strong>).</li>
+                    </ul>
+                    
+                    <div className="flex flex-col md:flex-row gap-6 items-center">
+                        <div className="flex-none bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <table className="border-collapse select-none bg-white shadow-sm">
+                            <thead>
+                            <tr>
+                                <th className="w-12 h-10 border-2 border-slate-800 bg-slate-100 p-1 text-xs text-slate-500">AB \ CD</th>
+                                <th className="w-10 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">00</th>
+                                <th className="w-10 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">01</th>
+                                <th className="w-10 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">11</th>
+                                <th className="w-10 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">10</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <th className="w-12 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">00</th>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                            </tr>
+                            <tr>
+                                <th className="w-12 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">01</th>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center text-slate-300">0</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-emerald-100 text-emerald-700 text-lg shadow-[inset_0_4px_0_0_#10b981,inset_4px_0_0_0_#10b981,inset_-4px_0_0_0_#10b981]">1</td>
+                            </tr>
+                            <tr>
+                                <th className="w-12 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">11</th>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_4px_0_0_#3b82f6,inset_4px_0_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_4px_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_4px_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold text-slate-900 text-lg shadow-[inset_0_4px_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6,inset_4px_0_0_0_#10b981,inset_0_-4px_0_0_#10b981]" style={{ background: 'linear-gradient(135deg, #dbeafe 50%, #d1fae5 50%)' }}>1</td>
+                            </tr>
+                            <tr>
+                                <th className="w-12 h-10 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-600">10</th>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_-4px_0_0_#3b82f6,inset_4px_0_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_-4px_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_-4px_0_0_#3b82f6]">1</td>
+                                <td className="w-10 h-10 border-2 border-slate-800 text-center font-bold bg-blue-100 text-blue-700 text-lg shadow-[inset_0_-4px_0_0_#3b82f6,inset_-4px_0_0_0_#3b82f6]">1</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div className="flex-1 space-y-3 text-sm text-slate-700">
+                        <p><strong>Step 2: Grouping</strong><br/>- <span className="text-blue-600 font-bold">Group 1 (Octet)</span>: The massive block of eight 1s on the bottom (AB = 11 and 10).<br/>- <span className="text-emerald-600 font-bold">Group 2 (Pair)</span>: We pair the lone 1 at `01, 10` with the 1 directly below it. Overlapping is allowed!</p>
+                        <p><strong>Step 3: Simplification</strong><br/>- Group 1: Variables B, C, and D all change. Only A stays 1. Result = <strong>A</strong>.<br/>- Group 2: A changes. B stays 1, C stays 1, D stays 0. Result = <strong>BCD'</strong>.</p>
+                        <div className="mt-2 inline-flex items-center gap-4 bg-indigo-50 border border-indigo-200 px-4 py-2 rounded-lg shadow-sm">
+                            <span className="text-slate-700 font-semibold uppercase tracking-wide text-xs">Result:</span>
+                            <span className="text-2xl font-mono font-bold text-indigo-600">Y = A + BCD'</span>
+                        </div>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h2 className="text-xl font-bold mb-6 text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-4">
+                    <CheckCircle className="text-indigo-500" size={22} />
+                    Part 2: Test Yourself!
+                    </h2>
+
+                    <div className="space-y-6">
+                    <div className="p-5 border border-slate-200 rounded-xl bg-slate-50 shadow-sm">
+                        <h3 className="font-bold text-lg text-slate-800 mb-2">Question 1: The Basics (2-Variable)</h3>
+                        <p className="text-slate-700">Simplify the following unoptimized Boolean expression using a 2-variable K-map:</p>
+                        <p className="font-mono text-lg font-bold text-indigo-600 mt-2 bg-indigo-50 inline-block px-3 py-1.5 rounded border border-indigo-100 shadow-sm">Y = A'B + AB + AB'</p>
+                        
+                        <AnswerBox id="q1">
+                        <ul className="list-disc pl-5 space-y-2">
+                            <li><strong>The Map:</strong> You should have three 1s on your grid (only the cell A=0, B=0 is empty).</li>
+                            <li><strong>The Grouping:</strong> You can form two overlapping pairs. One vertical pair, and one horizontal pair.</li>
+                            <li><strong>The Result:</strong> The horizontal pair simplifies to <code>A</code>. The vertical pair simplifies to <code>B</code>.</li>
+                            <li><strong>Final Answer:</strong> <code className="bg-emerald-100 px-2 py-1 rounded font-bold text-emerald-900 border border-emerald-200">Y = A + B</code> (This is standard OR-gate logic!)</li>
+                        </ul>
+                        </AnswerBox>
+                    </div>
+
+                    <div className="p-5 border border-slate-200 rounded-xl bg-slate-50 shadow-sm">
+                        <h3 className="font-bold text-lg text-slate-800 mb-2">Question 2: Car Warning Chime (3-Variable)</h3>
+                        <p className="text-slate-700 mb-2">A car's warning chime (<strong>W</strong>) activates under the following conditions:</p>
+                        <ul className="list-disc pl-5 text-slate-600 mb-3 text-sm">
+                        <li><strong>K:</strong> Key is in the ignition (1 = yes)</li>
+                        <li><strong>D:</strong> Door is open (1 = yes)</li>
+                        <li><strong>S:</strong> Seatbelt is unbuckled (1 = yes)</li>
+                        </ul>
+                        <p className="text-slate-700 text-sm bg-blue-50 p-3 rounded border border-blue-100">
+                        <strong>Logic:</strong> The chime sounds if the key is in the ignition AND the door is open. It also sounds if the key is in the ignition AND the seatbelt is unbuckled. <br/>
+                        <em>Construct the truth table, map it, and find the simplified Boolean expression for <strong>W</strong>.</em>
+                        </p>
+                        
+                        <AnswerBox id="q2">
+                        <ul className="list-disc pl-5 space-y-2">
+                            <li><strong>The Truth Table:</strong> You should have 1s at: <code>K=1, D=1, S=0</code> | <code>K=1, D=1, S=1</code> | <code>K=1, D=0, S=1</code></li>
+                            <li><strong>The Map:</strong> On a 3-variable map, this creates three 1s situated next to each other on the K=1 row.</li>
+                            <li><strong>The Grouping:</strong> You must create two overlapping pairs of 2. (You cannot make a group of 3!).</li>
+                            <li><strong>The Result:</strong> Pair 1 simplifies to <code>KD</code>. Pair 2 simplifies to <code>KS</code>.</li>
+                            <li><strong>Final Answer:</strong> <code className="bg-emerald-100 px-2 py-1 rounded font-bold text-emerald-900 border border-emerald-200">W = KD + KS</code> <em>(Factored: W = K(D + S))</em></li>
+                        </ul>
+                        </AnswerBox>
+                    </div>
+
+                    <div className="p-5 border border-slate-200 rounded-xl bg-slate-50 shadow-sm">
+                        <h3 className="font-bold text-lg text-slate-800 mb-2">Question 3: The Four Corners (4-Variable)</h3>
+                        <p className="text-slate-700 mb-2">You are given a 4-variable K-map (A, B, C, D). You plot your truth table and find exactly four <code>1</code>s on the grid, located at the exact four corners of the map:</p>
+                        <ul className="list-disc pl-5 text-slate-600 mb-3 text-sm">
+                        <li>Row <code>00</code>, Column <code>00</code></li>
+                        <li>Row <code>00</code>, Column <code>10</code></li>
+                        <li>Row <code>10</code>, Column <code>00</code></li>
+                        <li>Row <code>10</code>, Column <code>10</code></li>
+                        </ul>
+                        <p className="text-slate-700 italic text-sm">Identify the grouping rule that applies here and write the final simplified expression.</p>
+                        
+                        <AnswerBox id="q3">
+                        <ul className="list-disc pl-5 space-y-2">
+                            <li><strong>The Rule:</strong> The "Wrapping Rule" applies to both axes simultaneously on a 4x4 map. The top edge wraps to the bottom, and the left edge wraps to the right. Therefore, all four corners are mathematically adjacent to each other! You can circle them all as a single <strong>Quad (Group of 4)</strong>.</li>
+                            <li><strong>The Simplification:</strong><br/>
+                                - Looking at the rows (<code>00</code> and <code>10</code>): A changes (0 to 1), but <strong>B stays 0</strong> (B').<br/>
+                                - Looking at the columns (<code>00</code> and <code>10</code>): C changes (0 to 1), but <strong>D stays 0</strong> (D').
+                            </li>
+                            <li><strong>Final Answer:</strong> <code className="bg-emerald-100 px-2 py-1 rounded font-bold text-emerald-900 border border-emerald-200">Y = B'D'</code></li>
+                        </ul>
+                        </AnswerBox>
+                    </div>
+
+                    </div>
+                </div>
+            </div>
+            );
+        };
+
+        const InteractiveLab = ({ numVars }) => {
+            const H = numVars === 4 ? 4 : 2;
+            const W = numVars === 2 ? 2 : 4;
+            
+            const [grid, setGrid] = useState(Array(H).fill().map(() => Array(W).fill(0)));
+            const [hoveredTermIndex, setHoveredTermIndex] = useState(null);
+            
+            const [exprInput, setExprInput] = useState('');
+            const [parseError, setParseError] = useState('');
+
+            const rowGray = useMemo(() => H === 4 ? getGrayCode(2) : getGrayCode(1), [H]);
+            const colGray = useMemo(() => W === 4 ? getGrayCode(2) : (W === 2 ? getGrayCode(1) : getGrayCode(2)), [W]);
+            const rowVarName = numVars === 4 ? "AB" : "A";
+            const colVarName = numVars === 4 ? "CD" : (numVars === 3 ? "BC" : "B");
+
+            useEffect(() => {
+                setGrid(Array(H).fill().map(() => Array(W).fill(0)));
+                setHoveredTermIndex(null);
+                setExprInput('');
+                setParseError('');
+            }, [numVars, H, W]);
+
+            const toggleCell = (r, c) => {
+                const newGrid = grid.map(row => [...row]);
+                newGrid[r][c] = newGrid[r][c] === 0 ? 1 : 0;
+                setGrid(newGrid);
+            };
+
+            const clearGrid = () => setGrid(Array(H).fill().map(() => Array(W).fill(0)));
+            const fillGrid = () => setGrid(Array(H).fill().map(() => Array(W).fill(1)));
+
+            const handleApplyExpression = () => {
+                setParseError('');
+                if (!exprInput.trim()) return;
+
+                const sanitized = exprInput.toUpperCase()
+                .replace(/\s+/g, '')     
+                .replace(/!/g, "'")       
+                .replace(/AND/g, '')      
+                .replace(/OR/g, '+')      
+                .replace(/[.*&]/g, '');   
+                
+                const maxChar = String.fromCharCode(64 + numVars);
+                const validRegex = new RegExp(`^[A-${maxChar}0-1+']+$`);
+                
+                if (!validRegex.test(sanitized)) {
+                setParseError(`Invalid syntax. Please use standard SoP format with variables A to ${maxChar}, 0, 1, +, and '`);
+                return;
+                }
+
+                const terms = sanitized.split('+').filter(t => t.length > 0);
+                const newGrid = Array(H).fill().map(() => Array(W).fill(0));
+                const vars = numVars === 4 ? ['A','B','C','D'] : (numVars === 3 ? ['A','B','C'] : ['A','B']);
+
+                for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                    let bitString = rowGray[r] + colGray[c];
+                    
+                    let valMap = {};
+                    for(let i = 0; i < numVars; i++) valMap[vars[i]] = bitString[i] === '1';
+
+                    let cellValue = 0;
+                    
+                    for (let term of terms) {
+                        if (term === '0') continue;
+                        if (term === '1') { cellValue = 1; break; }
+                        
+                        const tokenRegex = new RegExp(`[A-${maxChar}]'?`, 'g');
+                        const tokens = term.match(tokenRegex) || [];
+                        let termMatch = true;
+                        
+                        for (let token of tokens) {
+                        const v = token[0];
+                        const isNeg = token.length > 1;
+                        
+                        if (isNeg && valMap[v]) termMatch = false;
+                        if (!isNeg && !valMap[v]) termMatch = false;
+                        }
+                        
+                        if (termMatch && tokens.length > 0) {
+                        cellValue = 1;
+                        break;
+                        }
+                    }
+                    newGrid[r][c] = cellValue;
+                }
+                }
+                setGrid(newGrid);
+            };
+
+            const loadPreset = (type) => {
+                const newGrid = Array(H).fill().map(() => Array(W).fill(0));
+                if (numVars === 4) {
+                if (type === 'corners') {
+                    newGrid[0][0] = 1; newGrid[0][3] = 1;
+                    newGrid[3][0] = 1; newGrid[3][3] = 1;
+                } else if (type === 'checkerboard') {
+                    for(let r=0; r<4; r++) for(let c=0; c<4; c++) if((r+c)%2===0) newGrid[r][c] = 1;
+                } else if (type === 'donut') {
+                    newGrid[1][1] = 1; newGrid[1][2] = 1; newGrid[2][1] = 1; newGrid[2][2] = 1;
+                    newGrid[0][1] = 1; newGrid[0][2] = 1; newGrid[3][1] = 1; newGrid[3][2] = 1;
+                }
+                } else if (numVars === 3) {
+                if (type === 'edges') {
+                    newGrid[0][0] = 1; newGrid[0][3] = 1; newGrid[1][0] = 1; newGrid[1][3] = 1;
+                }
+                }
+                setGrid(newGrid);
+            };
+
+            const solution = useMemo(() => solveKMap(grid, numVars), [grid, numVars]);
+
+            const originalExpr = useMemo(() => {
+                let rowG = H === 4 ? getGrayCode(2) : getGrayCode(1);
+                let colG = W === 4 ? getGrayCode(2) : getGrayCode(1);
+                let vars = numVars === 4 ? ['A','B','C','D'] : (numVars === 3 ? ['A','B','C'] : ['A','B']);
+
+                let terms = [];
+                for (let r = 0; r < H; r++) {
+                for (let c = 0; c < W; c++) {
+                    if (grid[r][c] === 1) {
+                    let bitString = rowG[r] + colG[c];
+                    let term = "";
+                    for (let i = 0; i < numVars; i++) {
+                        term += vars[i] + (bitString[i] === '0' ? "'" : "");
+                    }
+                    terms.push(term);
+                    }
+                }
+                }
+                return terms.length > 0 ? terms.join(" + ") : "0";
+            }, [grid, numVars, H, W]);
+
+            return (
+                <div className="flex flex-col lg:flex-row gap-8 animate-fadeIn">
+                <div className="flex-1 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-bold text-slate-800">Grid Editor</h3>
+                    <div className="flex gap-2">
+                        <button onClick={clearGrid} className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1"><RotateCcw size={14}/> Clear</button>
+                        <button onClick={fillGrid} className="px-3 py-1 text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition flex items-center gap-1"><Zap size={14}/> Fill All</button>
+                    </div>
+                    </div>
+
+                    <div className="mb-6 p-4 bg-indigo-50/50 border border-indigo-100 rounded-lg shadow-inner">
+                    <div className="flex items-center gap-2 mb-2">
+                        <Keyboard size={18} className="text-indigo-500" />
+                        <h4 className="text-sm font-bold text-slate-800">Expression Emulator</h4>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-3">Type a Boolean expression (Sum of Products) to automatically draw its K-map.</p>
+                    <div className="flex gap-2">
+                        <input 
+                        type="text" 
+                        value={exprInput} 
+                        onChange={(e) => setExprInput(e.target.value.toUpperCase())}
+                        onKeyDown={(e) => e.key === 'Enter' && handleApplyExpression()}
+                        placeholder={`e.g. A'B + ${numVars > 2 ? 'AC' : 'AB'}`}
+                        className="flex-1 px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono text-sm placeholder-slate-400"
+                        />
+                        <button 
+                        onClick={handleApplyExpression}
+                        className="px-4 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 transition text-sm font-semibold whitespace-nowrap"
+                        >
+                        Draw Map
+                        </button>
+                    </div>
+                    {parseError && <p className="text-red-500 text-xs mt-2">{parseError}</p>}
+                    </div>
+
+                    <div className="flex gap-2 mb-6 flex-wrap">
+                    <span className="text-sm font-semibold text-slate-500 py-1">Examples:</span>
+                    {numVars === 4 && (
+                        <Fragment>
+                        <button onClick={() => loadPreset('corners')} className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition">Four Corners</button>
+                        <button onClick={() => loadPreset('donut')} className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition">Center Column Wrap</button>
+                        <button onClick={() => loadPreset('checkerboard')} className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition">XOR (Checkerboard)</button>
+                        </Fragment>
+                    )}
+                    {numVars === 3 && (
+                        <button onClick={() => loadPreset('edges')} className="px-3 py-1 text-sm bg-blue-50 text-blue-600 rounded-full hover:bg-blue-100 transition">Outer Edges Wrap</button>
+                    )}
+                    </div>
+
+                    <div className="overflow-x-auto flex justify-center pb-4">
+                    <table className="border-collapse select-none">
+                        <thead>
+                        <tr>
+                            <th className="relative w-16 h-16 border-2 border-slate-800 bg-slate-100 p-2 text-xs font-bold text-slate-600">
+                            <div className="absolute top-1 right-2">{colVarName}</div>
+                            <div className="absolute bottom-1 left-2">{rowVarName}</div>
+                            <svg className="absolute inset-0 w-full h-full" preserveAspectRatio="none">
+                                <line x1="0" y1="0" x2="100%" y2="100%" stroke="currentColor" strokeWidth="1" className="text-slate-300" />
+                            </svg>
+                            </th>
+                            {colGray.map((cCode, i) => (
+                            <th key={i} className="w-16 h-12 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-800 text-lg">
+                                {cCode}
+                            </th>
+                            ))}
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {grid.map((row, r) => (
+                            <tr key={r}>
+                            <th className="w-12 h-16 border-2 border-slate-800 bg-slate-100 text-center font-bold text-slate-800 text-lg">
+                                {rowGray[r]}
+                            </th>
+                            {row.map((val, c) => {
+                                const isHovered = hoveredTermIndex !== null && solution[hoveredTermIndex]?.cells.includes(`${r},${c}`);
+                                const groupColor = hoveredTermIndex !== null ? SOLVER_COLORS[hoveredTermIndex % SOLVER_COLORS.length] : null;
+
+                                return (
+                                <td 
+                                    key={c}
+                                    onClick={() => toggleCell(r, c)}
+                                    className={`w-16 h-16 border-2 border-slate-800 text-center text-2xl font-bold cursor-pointer transition-all duration-200 hover:brightness-95`}
+                                    style={{
+                                    backgroundColor: isHovered ? `${groupColor}40` : (val ? '#bfdbfe' : '#ffffff'),
+                                    color: isHovered ? groupColor : (val ? '#1e3a8a' : '#94a3b8'),
+                                    boxShadow: isHovered ? `inset 0 0 0 4px ${groupColor}` : 'none'
+                                    }}
+                                >
+                                    {val}
+                                </td>
+                                );
+                            })}
+                            </tr>
+                        ))}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+
+                <div className="flex-1 bg-slate-900 p-8 rounded-xl shadow-xl flex flex-col justify-center text-white relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
+                    <Zap size={120} />
+                    </div>
+                    
+                    <div className="relative z-10 flex flex-col h-full justify-center">
+                    <div className="mb-4">
+                        <h3 className="text-sm text-slate-400 font-semibold mb-2 uppercase tracking-wider">Original Expression (Unsimplified)</h3>
+                        <div className="bg-slate-800/80 p-4 rounded-lg border border-slate-700 max-h-32 overflow-y-auto">
+                        <div className="text-lg font-mono text-slate-300 break-words leading-relaxed">
+                            <span className="mr-2 text-slate-500">Y =</span>
+                            {originalExpr}
+                        </div>
+                        </div>
+                    </div>
+
+                    <div className="flex justify-center mb-4 relative">
+                        <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-slate-700"></div>
+                        </div>
+                        <div className="relative bg-slate-900 px-4 flex items-center justify-center">
+                        <div className="bg-slate-800 p-2 rounded-full border border-slate-600 shadow-sm">
+                            <ArrowDown className="text-slate-400" size={18} />
+                        </div>
+                        </div>
+                    </div>
+
+                    <h3 className="text-lg text-blue-400 font-bold mb-2 uppercase tracking-wider">Simplified Expression</h3>
+                    
+                    <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700 min-h-[120px] flex items-center justify-center mb-6">
+                        <div className="text-3xl font-mono flex flex-wrap justify-center gap-y-4">
+                        <span className="mr-4 text-white">Y =</span>
+                        {solution.length === 0 ? (
+                            <span className="text-slate-500">0</span>
+                        ) : (
+                            solution.map((group, idx) => (
+                            <Fragment key={idx}>
+                                <span 
+                                onMouseEnter={() => setHoveredTermIndex(idx)}
+                                onMouseLeave={() => setHoveredTermIndex(null)}
+                                className="px-3 py-1 rounded cursor-pointer transition-all hover:scale-110"
+                                style={{ 
+                                    color: SOLVER_COLORS[idx % SOLVER_COLORS.length],
+                                    backgroundColor: hoveredTermIndex === idx ? `${SOLVER_COLORS[idx % SOLVER_COLORS.length]}20` : 'transparent',
+                                    textShadow: hoveredTermIndex === idx ? `0 0 10px ${SOLVER_COLORS[idx % SOLVER_COLORS.length]}80` : 'none'
+                                }}
+                                >
+                                {group.term}
+                                </span>
+                                {idx < solution.length - 1 && <span className="text-slate-500 mx-2 flex items-center">+</span>}
+                            </Fragment>
+                            ))
+                        )}
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-900/30 border border-blue-500/30 p-4 rounded-lg flex items-start gap-3 mt-auto">
+                        <Info className="text-blue-400 shrink-0 mt-0.5" size={20} />
+                        <p className="text-sm text-blue-200">
+                        <strong>Interactive Guide:</strong> Hover over any colored term in the simplified equation above to see exactly which cells in the grid form that logical group.
+                        </p>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            );
+        };
+
+        function App() {
+            const [activeTab, setActiveTab] = useState('intro');
+
+            return (
+                <div className="min-h-screen bg-slate-50 font-sans p-4 md:p-8">
+                <div className="max-w-6xl mx-auto">
+                    <header className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-3">
+                        <div className="bg-blue-600 p-2 rounded-lg"><Play className="text-white" size={28}/></div>
+                        Karnaugh Map Lab
+                        </h1>
+                        <p className="text-slate-500 mt-2 text-lg">Interactive digital logic simplifier and tutorial.</p>
+                    </div>
+                    </header>
+
+                    <nav className="flex flex-wrap gap-2 mb-8 bg-white p-2 rounded-xl shadow-sm border border-slate-200">
+                    {[
+                        { id: 'intro', label: 'Theory & Rules', icon: BookOpen },
+                        { id: 'example', label: 'Worked Example', icon: GraduationCap },
+                        { id: 'practice', label: 'Practice Tests', icon: ClipboardList },
+                        { id: '2var', label: '2-Variable Map', icon: Zap },
+                        { id: '3var', label: '3-Variable Map', icon: Zap },
+                        { id: '4var', label: '4-Variable Map', icon: Zap }
+                    ].map(tab => {
+                        const Icon = tab.icon;
+                        const isActive = activeTab === tab.id;
+                        return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={`flex items-center gap-2 px-5 py-3 rounded-lg font-medium transition-all ${
+                            isActive 
+                                ? 'bg-blue-600 text-white shadow-md' 
+                                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                            }`}
+                        >
+                            <Icon size={18} className={isActive ? "text-blue-100" : "text-slate-400"} />
+                            {tab.label}
+                        </button>
+                        )
+                    })}
+                    </nav>
+
+                    <main>
+                    {activeTab === 'intro' && <TheoryTab />}
+                    {activeTab === 'example' && <WorkedExampleTab />}
+                    {activeTab === 'practice' && <PracticeTab />}
+                    {activeTab === '2var' && <InteractiveLab numVars={2} />}
+                    {activeTab === '3var' && <InteractiveLab numVars={3} />}
+                    {activeTab === '4var' && <InteractiveLab numVars={4} />}
+                    </main>
+                </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

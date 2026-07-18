@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Decision Tree Simulations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* General Styles */
+        .link { fill: none; stroke: #999; stroke-opacity: 0.6; stroke-width: 2px; }
+        .controls-card { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+        .highlighted-point { stroke: #fde047; stroke-width: 3px; r: 8px !important; }
+        .split-line { stroke-dasharray: 4; stroke-width: 2px; }
+        .test-point { fill: none; stroke-width: 3px; }
+        .evaluation-marker { font-size: 16px; text-anchor: middle; }
+        .dimmed { opacity: 0.3; transition: opacity 0.5s ease; }
+        .path-highlight { stroke: #facc15 !important; stroke-width: 4px !important; transition: all 0.5s ease; }
+        .node-highlight rect { stroke: #facc15 !important; stroke-width: 4px !important; }
+        .gini-calc { background-color: rgba(255, 255, 255, 0.05); border-left: 3px solid #818cf8; padding: 10px; border-radius: 5px; font-family: monospace; font-size: 13px; line-height: 1.6; }
+        .gini-calc span { font-weight: bold; color: #fde047; }
+        .gini-illustration-box { border: 2px dashed #4b5563; padding: 1rem; border-radius: 0.5rem; min-height: 120px; }
+        .formula-box { background-color: #1f2937; padding: 1rem; border-radius: 0.5rem; font-family: 'Courier New', Courier, monospace; color: #d1d5db; }
+        .experiment-box { background-color: #1f2937; border-left: 4px solid #fde047; padding: 1rem; border-radius: 0.5rem; }
+        .concept-box { background-color: #1f2937; border-left: 4px solid #a78bfa; padding: 1.5rem; border-radius: 0.5rem; }
+
+        /* Main Tab Styles */
+        .main-tab-btn { transition: all 0.3s ease; border-bottom: 3px solid transparent; }
+        .main-tab-btn.active { color: #818cf8; border-bottom-color: #818cf8; }
+        .main-tab-panel { display: none; }
+        .main-tab-panel.active { display: block; }
+        
+        /* Inner Tab Styles */
+        .inner-tab-btn { transition: all 0.3s ease; }
+        .inner-tab-btn.active { background-color: #4f46e5; color: white; }
+        .inner-tab-panel { display: none; }
+        .inner-tab-panel.active { display: grid; }
+        
+        /* Confusion Matrix */
+        .confusion-matrix table { width: 100%; border-collapse: collapse; }
+        .confusion-matrix th, .confusion-matrix td { border: 1px solid #4b5563; padding: 0.75rem; text-align: center; }
+        .confusion-matrix .label-col { background-color: #374151; font-weight: bold; }
+        .confusion-matrix .header-row { background-color: #374151; font-weight: bold; }
+        .confusion-matrix .correct { background-color: rgba(74, 222, 128, 0.2); } /* green-400 transparent */
+        .confusion-matrix .incorrect { background-color: rgba(248, 113, 113, 0.2); } /* red-400 transparent */
+        .confusion-matrix .value { font-size: 1.5rem; font-weight: bold; }
+        .confusion-matrix .desc { font-size: 0.75rem; color: #9ca3af; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 antialiased">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <!-- Main Tabs Navigation -->
+        <div class="mb-8 flex flex-wrap justify-center border-b border-gray-700">
+            <button id="main-tab-loan" class="main-tab-btn active text-xl font-semibold py-3 px-6 text-gray-400">Loan Approval</button>
+            <button id="main-tab-edu" class="main-tab-btn text-xl font-semibold py-3 px-6 text-gray-400">Student Pass/Fail</button>
+            <button id="main-tab-churn" class="main-tab-btn text-xl font-semibold py-3 px-6 text-gray-400">Customer Churn</button>
+            <button id="main-tab-concepts" class="main-tab-btn text-xl font-semibold py-3 px-6 text-gray-400">Key Concepts</button>
+            <button id="main-tab-uses" class="main-tab-btn text-xl font-semibold py-3 px-6 text-gray-400">Common Uses</button>
+        </div>
+
+        <!-- Main Tab Panels -->
+        <div id="main-panel-loan" class="main-tab-panel active">
+            <!-- LOAN SIMULATION CONTENT START -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Loan Approval Decision Tree</h1>
+                <p class="text-lg text-gray-400">Predicting loan outcomes based on income and credit scores.</p>
+            </header>
+            <div class="mb-8 flex justify-center border-b border-gray-700">
+                <button id="tab-sim-loan" class="inner-tab-btn active text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Simulation</button>
+                <button id="tab-gini-loan" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Gini Explained</button>
+                <button id="tab-improve-loan" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Model Improvement</button>
+            </div>
+            <div id="panel-sim-loan" class="inner-tab-panel active grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg-col-span-1 space-y-6">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">1. Load & Split Data</h2>
+                        <button id="load-sample-data-btn-loan" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-6">Load Sample Applicants</button>
+                        <div class="space-y-4 border-t border-gray-700 pt-4 mt-4">
+                            <div>
+                                <label for="split-slider-loan" class="block text-sm font-medium text-gray-300 mb-1">Training Data Percentage (<span id="split-value-loan">80</span>%)</label>
+                                <input id="split-slider-loan" type="range" min="10" max="90" value="80" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <button id="split-data-btn-loan" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Split Data</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">2. Train Model</h2>
+                        <div class="flex space-x-4">
+                            <button id="start-train-btn-loan" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>Start Training</button>
+                            <button id="next-step-btn-loan" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Next Step</button>
+                        </div>
+                         <div class="mt-4 flex items-center">
+                            <input type="checkbox" id="overfit-checkbox-loan" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="overfit-checkbox-loan" class="ml-2 block text-sm text-gray-300">Allow Overfitting (Unlimited Depth)</label>
+                        </div>
+                        <div id="gini-display-loan" class="mt-4 text-sm text-gray-400 gini-calc h-32"></div>
+                        <div id="training-status-loan" class="mt-2 text-sm text-cyan-300 h-10"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">3. Evaluate & Reset</h2>
+                        <div class="flex space-x-4">
+                            <button id="evaluate-btn-loan" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Evaluate Model</button>
+                            <button id="reset-btn-loan" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Reset All</button>
+                        </div>
+                        <div id="accuracy-display-loan" class="mt-4 text-lg text-center font-semibold text-white"></div>
+                         <div id="confusion-matrix-loan" class="mt-4 confusion-matrix"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Loan Application Data</h2>
+                        <div id="plot-subtitle-loan" class="text-center text-xs text-gray-400 mb-2"><span>Train Data: <span class="font-bold">Solid Circle</span></span> | <span>Test Data: <span class="font-bold">Hollow Circle</span></span></div>
+                        <div id="scatter-plot-container-loan" class="w-full h-full relative"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Learned Decision Model</h2>
+                        <div id="tree-container-loan" class="w-full h-full flex items-center justify-center"><p class="text-gray-500">Model will appear here after training begins.</p></div>
+                    </div>
+                </div>
+            </div>
+            <div id="panel-gini-loan" class="inner-tab-panel grid-cols-1">
+                 <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">How Gini Impurity is Calculated: A Loan Approval Example</h2>
+                    <p class="mb-6 text-lg text-center">Gini Impurity is a measure of how "mixed up" a group of items is. The goal of a decision tree is to find splits that make the groups as "pure" as possible. A lower Gini score means a purer group.</p>
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-semibold text-white mb-3">The Formula</h3>
+                        <div class="formula-box text-center text-lg">Gini = 1 - &Sigma; (P<sub>i</sub>)<sup>2</sup></div>
+                        <p class="mt-2 text-sm text-gray-400">Where <code class="bg-gray-700 px-1 rounded">P<sub>i</sub></code> is the probability of an item being in class <i>i</i>.</p>
+                    </div>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">An Example Step-by-Step</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 1: Calculate the Parent Gini</h4>
+                            <p class="mb-4">Imagine a group of 10 applicants. 6 are <span class="text-green-400 font-semibold">'Approved'</span> and 4 are <span class="text-red-400 font-semibold">'Rejected'</span>. This is our starting "parent" node.</p>
+                            <div class="gini-illustration-box flex items-center justify-center space-x-2">
+                                 <svg width="250" height="100">
+                                    <circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#4ade80"/><circle cx="95" cy="50" r="10" fill="#4ade80"/><circle cx="120" cy="50" r="10" fill="#4ade80"/><circle cx="145" cy="50" r="10" fill="#4ade80"/>
+                                    <circle cx="170" cy="50" r="10" fill="#f87171"/><circle cx="195" cy="50" r="10" fill="#f87171"/><circle cx="220" cy="50" r="10" fill="#f87171"/><circle cx="245" cy="50" r="10" fill="#f87171"/>
+                                </svg>
+                            </div>
+                            <div class="formula-box mt-4 text-sm">P(Approved) = 6/10 = 0.6<br>P(Rejected) = 4/10 = 0.4<br><br>Gini = 1 - (0.6<sup>2</sup> + 0.4<sup>2</sup>) = 1 - (0.36 + 0.16) = <span class="text-yellow-300 font-bold text-lg">0.480</span></div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 2: Propose a Split & Create Children</h4>
+                            <p class="mb-4">The algorithm tests a question, for example: <strong class="text-white">"Is Credit Score >= 700?"</strong>. This splits our 10 applicants into two "child" groups.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="text-center"><p class="mb-2 font-semibold">Left Child (Score < 700)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="150" height="100"><circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#f87171"/><circle cx="70" cy="50" r="10" fill="#f87171"/><circle cx="95" cy="50" r="10" fill="#f87171"/><circle cx="120" cy="50" r="10" fill="#f87171"/></svg></div><div class="formula-box mt-4 text-sm">P(A) = 1/5, P(R) = 4/5<br>Gini = 1 - (0.2<sup>2</sup> + 0.8<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.320</span></div></div>
+                                <div class="text-center"><p class="mb-2 font-semibold">Right Child (Score >= 700)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="150" height="100"><circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#4ade80"/><circle cx="95" cy="50" r="10" fill="#4ade80"/><circle cx="120" cy="50" r="10" fill="#4ade80"/></svg></div><div class="formula-box mt-4 text-sm">P(A) = 5/5, P(R) = 0/5<br>Gini = 1 - (1<sup>2</sup> + 0<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.000</span></div></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 3: Calculate Gini Gain</h4>
+                            <p class="mb-4">To see if this split was good, we calculate the <strong class="text-white">Gini Gain</strong>. First, we find the weighted average Gini of the children.</p>
+                             <div class="formula-box mt-4 text-sm">Weighted Gini = (5/10 * 0.320) + (5/10 * 0.000) = 0.160 + 0 = <span class="text-yellow-300 font-bold">0.160</span><br><br>Gini Gain = Parent Gini - Weighted Gini<br>Gini Gain = 0.480 - 0.160 = <span class="text-green-400 font-bold text-lg">0.320</span></div>
+                            <p class="mt-4">The algorithm does this for <strong class="text-white">every possible split</strong> and chooses the one with the highest Gini Gain.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div id="panel-improve-loan" class="inner-tab-panel grid-cols-1">
+                <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">Using Testing to Improve the Model</h2>
+                     <p class="mb-6 text-lg text-center">We can use the test set to diagnose problems like <strong class="text-white">underfitting</strong> and <strong class="text-white">overfitting</strong> and find a good balance.</p>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">Experiment: Finding the "Just Right" Model</h3>
+                    <p class="mb-4">Go back to the <strong class="text-indigo-400">Simulation</strong> tab to run this experiment.</p>
+                    <div class="space-y-6">
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 1: Train a Weak Model (Underfitting)</h4>
+                            <p class="mb-4">A model trained on too little data cannot learn the patterns and performs poorly. This is <strong class="text-white">underfitting</strong>.</p>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and move the slider to <strong class="text-white">20%</strong>.</li>
+                                <li>Split, train, and evaluate. <strong class="text-white">Note the low accuracy</strong>.</li>
+                            </ol>
+                        </div>
+                         <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 2: Train an Overfit Model</h4>
+                            <p class="mb-4">A model that is too complex learns the training data's noise, not the pattern. It's great on data it's seen, but poor on new data. This is <strong class="text-white">overfitting</strong>.</p>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and set the slider to <strong class="text-white">80%</strong>.</li>
+                                <li>In the 'Train Model' card, check the <strong class="text-white">"Allow Overfitting"</strong> box. This removes the tree depth limit.</li>
+                                <li>Split, train, and evaluate. Notice the complex tree and boundary lines. The test accuracy may be <strong class="text-white">worse</strong> than a balanced model because it learned noise.</li>
+                            </ol>
+                        </div>
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 3: Train a Balanced Model</h4>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong>, set slider to <strong class="text-white">80%</strong>, and <strong class="text-white">uncheck</strong> the "Allow Overfitting" box.</li>
+                                <li>Split, train, and evaluate. This is the "just right" model. It usually has the best test accuracy because it generalizes well without memorizing noise.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- LOAN SIMULATION CONTENT END -->
+        </div>
+
+        <div id="main-panel-edu" class="main-tab-panel">
+            <!-- EDUCATION SIMULATION CONTENT START -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Student Pass/Fail Decision Tree</h1>
+                <p class="text-lg text-gray-400">Predicting exam outcomes based on study hours and previous scores.</p>
+            </header>
+            <div class="mb-8 flex justify-center border-b border-gray-700">
+                <button id="tab-sim-edu" class="inner-tab-btn active text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Simulation</button>
+                <button id="tab-gini-edu" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Gini Explained</button>
+                 <button id="tab-improve-edu" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Model Improvement</button>
+            </div>
+            <div id="panel-sim-edu" class="inner-tab-panel active grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg-col-span-1 space-y-6">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">1. Load & Split Data</h2>
+                        <button id="load-sample-data-btn-edu" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-6">Load Sample Students</button>
+                        <div class="space-y-4 border-t border-gray-700 pt-4 mt-4">
+                            <div>
+                                <label for="split-slider-edu" class="block text-sm font-medium text-gray-300 mb-1">Training Data Percentage (<span id="split-value-edu">80</span>%)</label>
+                                <input id="split-slider-edu" type="range" min="10" max="90" value="80" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <button id="split-data-btn-edu" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Split Data</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">2. Train Model</h2>
+                        <div class="flex space-x-4">
+                            <button id="start-train-btn-edu" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>Start Training</button>
+                            <button id="next-step-btn-edu" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Next Step</button>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <input type="checkbox" id="overfit-checkbox-edu" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="overfit-checkbox-edu" class="ml-2 block text-sm text-gray-300">Allow Overfitting (Unlimited Depth)</label>
+                        </div>
+                        <div id="gini-display-edu" class="mt-4 text-sm text-gray-400 gini-calc h-32"></div>
+                        <div id="training-status-edu" class="mt-2 text-sm text-cyan-300 h-10"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">3. Evaluate & Reset</h2>
+                        <div class="flex space-x-4">
+                            <button id="evaluate-btn-edu" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Evaluate Model</button>
+                            <button id="reset-btn-edu" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Reset All</button>
+                        </div>
+                        <div id="accuracy-display-edu" class="mt-4 text-lg text-center font-semibold text-white"></div>
+                        <div id="confusion-matrix-edu" class="mt-4 confusion-matrix"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Student Performance Data</h2>
+                        <div id="plot-subtitle-edu" class="text-center text-xs text-gray-400 mb-2"><span>Train Data: <span class="font-bold">Solid Circle</span></span> | <span>Test Data: <span class="font-bold">Hollow Circle</span></span></div>
+                        <div id="scatter-plot-container-edu" class="w-full h-full relative"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Learned Decision Model</h2>
+                        <div id="tree-container-edu" class="w-full h-full flex items-center justify-center"><p class="text-gray-500">Model will appear here after training begins.</p></div>
+                    </div>
+                </div>
+            </div>
+             <div id="panel-gini-edu" class="inner-tab-panel grid-cols-1">
+                 <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">How Gini Impurity is Calculated: A Student Pass/Fail Example</h2>
+                    <p class="mb-6 text-lg text-center">Gini Impurity is a measure of how "mixed up" a group of items is. The goal of a decision tree is to find splits that make the groups as "pure" as possible. A lower Gini score means a purer group.</p>
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-semibold text-white mb-3">The Formula</h3>
+                        <div class="formula-box text-center text-lg">Gini = 1 - &Sigma; (P<sub>i</sub>)<sup>2</sup></div>
+                        <p class="mt-2 text-sm text-gray-400">Where <code class="bg-gray-700 px-1 rounded">P<sub>i</sub></code> is the probability of an item being in class <i>i</i>.</p>
+                    </div>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">An Example Step-by-Step</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 1: Calculate the Parent Gini</h4>
+                            <p class="mb-4">Imagine a group of 12 students. 7 of them <span class="text-green-400 font-semibold">'Passed'</span> and 5 <span class="text-red-400 font-semibold">'Failed'</span>.</p>
+                            <div class="gini-illustration-box flex items-center justify-center space-x-2">
+                                <svg width="300" height="100">
+                                    <circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#4ade80"/><circle cx="95" cy="50" r="10" fill="#4ade80"/><circle cx="120" cy="50" r="10" fill="#4ade80"/><circle cx="145" cy="50" r="10" fill="#4ade80"/><circle cx="170" cy="50" r="10" fill="#4ade80"/>
+                                    <circle cx="195" cy="50" r="10" fill="#f87171"/><circle cx="220" cy="50" r="10" fill="#f87171"/><circle cx="245" cy="50" r="10" fill="#f87171"/><circle cx="270" cy="50" r="10" fill="#f87171"/><circle cx="295" cy="50" r="10" fill="#f87171"/>
+                                </svg>
+                            </div>
+                            <div class="formula-box mt-4 text-sm">P(Pass) = 7/12 = 0.583<br>P(Fail) = 5/12 = 0.417<br><br>Gini = 1 - (0.583<sup>2</sup> + 0.417<sup>2</sup>) = 1 - (0.340 + 0.174) = <span class="text-yellow-300 font-bold text-lg">0.486</span></div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 2: Propose a Split & Create Children</h4>
+                            <p class="mb-4">The algorithm tests a question, for example: <strong class="text-white">"Did the student study >= 8 hours?"</strong>.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="text-center"><p class="mb-2 font-semibold">Left Child (Studied < 8 hours)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="170" height="100"><circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#f87171"/><circle cx="95" cy="50" r="10" fill="#f87171"/><circle cx="120" cy="50" r="10" fill="#f87171"/><circle cx="145" cy="50" r="10" fill="#f87171"/></svg></div><div class="formula-box mt-4 text-sm">P(P) = 2/6, P(F) = 4/6<br>Gini = 1 - (0.333<sup>2</sup> + 0.667<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.444</span></div></div>
+                                <div class="text-center"><p class="mb-2 font-semibold">Right Child (Studied >= 8 hours)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="170" height="100"><circle cx="20" cy="50" r="10" fill="#4ade80"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#4ade80"/><circle cx="95" cy="50" r="10" fill="#4ade80"/><circle cx="120" cy="50" r="10" fill="#4ade80"/><circle cx="145" cy="50" r="10" fill="#f87171"/></svg></div><div class="formula-box mt-4 text-sm">P(P) = 5/6, P(F) = 1/6<br>Gini = 1 - (0.833<sup>2</sup> + 0.167<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.278</span></div></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 3: Calculate Gini Gain</h4>
+                            <p class="mb-4">We find the weighted average Gini of the children to calculate the <strong class="text-white">Gini Gain</strong>.</p>
+                             <div class="formula-box mt-4 text-sm">Weighted Gini = (6/12 * 0.444) + (6/12 * 0.278) = 0.222 + 0.139 = <span class="text-yellow-300 font-bold">0.361</span><br><br>Gini Gain = Parent Gini - Weighted Gini<br>Gini Gain = 0.486 - 0.361 = <span class="text-green-400 font-bold text-lg">0.125</span></div>
+                            <p class="mt-4">The algorithm chooses the split with the highest Gini Gain.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div id="panel-improve-edu" class="inner-tab-panel grid-cols-1">
+                 <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">Using Testing to Improve the Model</h2>
+                     <p class="mb-6 text-lg text-center">We can use the test set to diagnose problems like <strong class="text-white">underfitting</strong> and <strong class="text-white">overfitting</strong> and find a good balance.</p>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">Experiment: Finding the "Just Right" Model</h3>
+                    <p class="mb-4">Go back to the <strong class="text-indigo-400">Simulation</strong> tab to run this experiment.</p>
+                    <div class="space-y-6">
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 1: Train a Weak Model (Underfitting)</h4>
+                            <p class="mb-4">A model trained on too little data cannot learn the patterns and performs poorly. This is <strong class="text-white">underfitting</strong>.</p>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and move the slider to <strong class="text-white">20%</strong>.</li>
+                                <li>Split, train, and evaluate. <strong class="text-white">Note the low accuracy</strong>.</li>
+                            </ol>
+                        </div>
+                         <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 2: Train an Overfit Model</h4>
+                            <p class="mb-4">A model that is too complex learns the training data's noise, not the pattern. It's great on data it's seen, but poor on new data. This is <strong class="text-white">overfitting</strong>.</p>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and set the slider to <strong class="text-white">80%</strong>.</li>
+                                <li>In the 'Train Model' card, check the <strong class="text-white">"Allow Overfitting"</strong> box. This removes the tree depth limit.</li>
+                                <li>Split, train, and evaluate. Notice the complex tree and boundary lines. The test accuracy may be <strong class="text-white">worse</strong> than a balanced model because it learned noise.</li>
+                            </ol>
+                        </div>
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 3: Train a Balanced Model</h4>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong>, set slider to <strong class="text-white">80%</strong>, and <strong class="text-white">uncheck</strong> the "Allow Overfitting" box.</li>
+                                <li>Split, train, and evaluate. This is the "just right" model. It usually has the best test accuracy because it generalizes well without memorizing noise.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- EDUCATION SIMULATION CONTENT END -->
+        </div>
+
+        <div id="main-panel-churn" class="main-tab-panel">
+            <!-- CHURN SIMULATION CONTENT START -->
+            <header class="text-center mb-8">
+                <h1 class="text-4xl md:text-5xl font-bold text-white mb-2">Customer Churn Decision Tree</h1>
+                <p class="text-lg text-gray-400">Predicting if a customer will leave based on usage and interactions (3 metrics).</p>
+            </header>
+            <div class="mb-8 flex justify-center border-b border-gray-700">
+                <button id="tab-sim-churn" class="inner-tab-btn active text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Simulation</button>
+                <button id="tab-gini-churn" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Gini Explained</button>
+                 <button id="tab-improve-churn" class="inner-tab-btn text-lg font-semibold py-3 px-6 text-gray-400 rounded-t-lg">Model Improvement</button>
+            </div>
+            <div id="panel-sim-churn" class="inner-tab-panel active grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg-col-span-1 space-y-6">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">1. Load & Split Data</h2>
+                        <button id="load-sample-data-btn-churn" class="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 mb-6">Load Sample Customers</button>
+                        <div class="space-y-4 border-t border-gray-700 pt-4 mt-4">
+                            <div>
+                                <label for="split-slider-churn" class="block text-sm font-medium text-gray-300 mb-1">Training Data Percentage (<span id="split-value-churn">80</span>%)</label>
+                                <input id="split-slider-churn" type="range" min="10" max="90" value="80" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                            <button id="split-data-btn-churn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Split Data</button>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">2. Train Model</h2>
+                        <div class="flex space-x-4">
+                            <button id="start-train-btn-churn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300" disabled>Start Training</button>
+                            <button id="next-step-btn-churn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Next Step</button>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <input type="checkbox" id="overfit-checkbox-churn" class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                            <label for="overfit-checkbox-churn" class="ml-2 block text-sm text-gray-300">Allow Overfitting (Unlimited Depth)</label>
+                        </div>
+                        <div id="gini-display-churn" class="mt-4 text-sm text-gray-400 gini-calc h-32"></div>
+                        <div id="training-status-churn" class="mt-2 text-sm text-cyan-300 h-10"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 controls-card">
+                        <h2 class="text-2xl font-semibold mb-4 text-white border-b border-gray-600 pb-2">3. Evaluate & Reset</h2>
+                        <div class="flex space-x-4">
+                            <button id="evaluate-btn-churn" class="flex-1 bg-yellow-600 hover:bg-yellow-700 text-black font-bold py-2 px-4 rounded-lg transition duration-300 hidden">Evaluate Model</button>
+                            <button id="reset-btn-churn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300">Reset All</button>
+                        </div>
+                        <div id="accuracy-display-churn" class="mt-4 text-lg text-center font-semibold text-white"></div>
+                        <div id="confusion-matrix-churn" class="mt-4 confusion-matrix"></div>
+                    </div>
+                </div>
+                <div class="lg:col-span-2 space-y-8">
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Customer Data</h2>
+                        <div id="plot-subtitle-churn" class="text-center text-xs text-gray-400 mb-2"><span>Train Data: <span class="font-bold">Solid Circle</span></span> | <span>Test Data: <span class="font-bold">Hollow Circle</span></span></div>
+                        <div id="scatter-plot-container-churn" class="w-full h-full relative"></div>
+                    </div>
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 min-h-[400px]">
+                        <h2 class="text-2xl font-semibold mb-2 text-white text-center">Learned Decision Model</h2>
+                        <div id="tree-container-churn" class="w-full h-full flex items-center justify-center"><p class="text-gray-500">Model will appear here after training begins.</p></div>
+                    </div>
+                </div>
+            </div>
+             <div id="panel-gini-churn" class="inner-tab-panel grid-cols-1">
+                 <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">How Gini Impurity is Calculated: A Customer Churn Example</h2>
+                    <p class="mb-6 text-lg text-center">This example uses 3 features to make decisions: Monthly Bill, Data Usage, and CS Calls. The calculation process remains the same.</p>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">An Example Step-by-Step</h3>
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 1: Calculate the Parent Gini</h4>
+                            <p class="mb-4">Imagine a group of 10 customers. 4 will <span class="text-red-400 font-semibold">'Churn'</span> and 6 will <span class="text-green-400 font-semibold">'Stay'</span>.</p>
+                            <div class="gini-illustration-box flex items-center justify-center space-x-2">
+                                <svg width="250" height="100">
+                                    <circle cx="20" cy="50" r="10" fill="#f87171"/><circle cx="45" cy="50" r="10" fill="#f87171"/><circle cx="70" cy="50" r="10" fill="#f87171"/><circle cx="95" cy="50" r="10" fill="#f87171"/>
+                                    <circle cx="120" cy="50" r="10" fill="#4ade80"/><circle cx="145" cy="50" r="10" fill="#4ade80"/><circle cx="170" cy="50" r="10" fill="#4ade80"/><circle cx="195" cy="50" r="10" fill="#4ade80"/><circle cx="220" cy="50" r="10" fill="#4ade80"/><circle cx="245" cy="50" r="10" fill="#4ade80"/>
+                                </svg>
+                            </div>
+                            <div class="formula-box mt-4 text-sm">P(Churn) = 4/10 = 0.4<br>P(Stay) = 6/10 = 0.6<br><br>Gini = 1 - (0.4<sup>2</sup> + 0.6<sup>2</sup>) = 1 - (0.16 + 0.36) = <span class="text-yellow-300 font-bold text-lg">0.480</span></div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 2: Propose a Split & Create Children</h4>
+                            <p class="mb-4">The algorithm tests all features. It finds the best split is on the third metric: <strong class="text-white">"Are Customer Service Calls >= 4?"</strong>.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="text-center"><p class="mb-2 font-semibold">Left Child (Calls < 4)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="170" height="100"><circle cx="20" cy="50" r="10" fill="#f87171"/><circle cx="45" cy="50" r="10" fill="#4ade80"/><circle cx="70" cy="50" r="10" fill="#4ade80"/><circle cx="95" cy="50" r="10" fill="#4ade80"/><circle cx="120" cy="50" r="10" fill="#4ade80"/><circle cx="145" cy="50" r="10" fill="#4ade80"/></svg></div><div class="formula-box mt-4 text-sm">P(C)=1/6, P(S)=5/6<br>Gini = 1 - (0.167<sup>2</sup> + 0.833<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.278</span></div></div>
+                                <div class="text-center"><p class="mb-2 font-semibold">Right Child (Calls >= 4)</p><div class="gini-illustration-box flex items-center justify-center space-x-2"><svg width="120" height="100"><circle cx="20" cy="50" r="10" fill="#f87171"/><circle cx="45" cy="50" r="10" fill="#f87171"/><circle cx="70" cy="50" r="10" fill="#f87171"/><circle cx="95" cy="50" r="10" fill="#4ade80"/></svg></div><div class="formula-box mt-4 text-sm">P(C)=3/4, P(S)=1/4<br>Gini = 1 - (0.75<sup>2</sup> + 0.25<sup>2</sup>) = <span class="text-yellow-300 font-bold">0.375</span></div></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 class="text-xl font-bold text-indigo-400 mb-2">Step 3: Calculate Gini Gain</h4>
+                            <p class="mb-4">The gain from this split is calculated. The algorithm would have also tested splits on Bill and Data Usage, but this split on Calls had the highest gain.</p>
+                             <div class="formula-box mt-4 text-sm">Weighted Gini = (6/10 * 0.278) + (4/10 * 0.375) = 0.167 + 0.150 = <span class="text-yellow-300 font-bold">0.317</span><br><br>Gini Gain = 0.480 - 0.317 = <span class="text-green-400 font-bold text-lg">0.163</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+             <div id="panel-improve-churn" class="inner-tab-panel grid-cols-1">
+                 <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                    <h2 class="text-3xl font-bold text-white mb-6 text-center">Using Testing to Improve the Model</h2>
+                     <p class="mb-6 text-lg text-center">We can use the test set to diagnose problems like <strong class="text-white">underfitting</strong> and <strong class="text-white">overfitting</strong> and find a good balance.</p>
+                    <hr class="border-gray-600 my-8">
+                    <h3 class="text-2xl font-semibold text-white mb-4">Experiment: Finding the "Just Right" Model</h3>
+                    <p class="mb-4">Go back to the <strong class="text-indigo-400">Simulation</strong> tab to run this experiment.</p>
+                    <div class="space-y-6">
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 1: Train a Weak Model (Underfitting)</h4>
+                            <p class="mb-4">A model trained on too little data cannot learn the patterns and performs poorly. This is <strong class="text-white">underfitting</strong>.</p>
+                            <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and move the slider to <strong class="text-white">20%</strong>.</li>
+                                <li>Split, train, and evaluate. <strong class="text-white">Note the low accuracy</strong>.</li>
+                            </ol>
+                        </div>
+                         <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 2: Train an Overfit Model</h4>
+                            <p class="mb-4">A model that is too complex learns the training data's noise, not the pattern. It's great on data it's seen, but poor on new data. This is <strong class="text-white">overfitting</strong>.</p>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong> and set the slider to <strong class="text-white">80%</strong>.</li>
+                                <li>In the 'Train Model' card, check the <strong class="text-white">"Allow Overfitting"</strong> box. This removes the tree depth limit.</li>
+                                <li>Split, train, and evaluate. Notice the complex tree and boundary lines. The test accuracy may be <strong class="text-white">worse</strong> than a balanced model because it learned noise.</li>
+                            </ol>
+                        </div>
+                        <div class="experiment-box">
+                            <h4 class="text-xl font-bold text-yellow-300 mb-2">Part 3: Train a Balanced Model</h4>
+                             <ol class="list-decimal list-inside space-y-2 text-sm">
+                                <li>Click <strong class="text-red-400">'Reset All'</strong>, set slider to <strong class="text-white">80%</strong>, and <strong class="text-white">uncheck</strong> the "Allow Overfitting" box.</li>
+                                <li>Split, train, and evaluate. This is the "just right" model. It usually has the best test accuracy because it generalizes well without memorizing noise.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- CHURN SIMULATION CONTENT END -->
+        </div>
+        
+        <div id="main-panel-concepts" class="main-tab-panel">
+             <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-white mb-6 text-center">Key Concepts in Decision Trees</h2>
+                <div class="space-y-8">
+                    
+                    <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">The Structure of a Tree</h3>
+                        <div class="space-y-4">
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Node</h4>
+                                <p>The fundamental building block of a decision tree. Each node represents a subset of the data.</p>
+                            </div>
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Root Node</h4>
+                                <p>The top-most node in the tree. It represents the entire dataset before any splits are made. It's the starting point of the decision-making process.</p>
+                            </div>
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Decision Node</h4>
+                                <p>An internal node that splits into two or more sub-nodes. It represents a "question" being asked about a specific feature (e.g., "Is Credit Score >= 700?").</p>
+                            </div>
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Leaf / Terminal Node</h4>
+                                <p>A node at the very bottom of a branch that does not split further. It represents the final outcome or classification for that path (e.g., "Approved," "Fail," "Churn").</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">Core Processes & Metrics</h3>
+                        <div class="space-y-4">
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Splitting</h4>
+                                <p>The process of dividing a node into two or more sub-nodes. The goal is to make the resulting groups more "pure" than the original group.</p>
+                            </div>
+                             <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Gini Impurity & Gini Gain</h4>
+                                <p>Gini Impurity measures how mixed the classes are in a node (0 = perfectly pure, 0.5 = max impurity). Gini Gain is the reduction in impurity achieved by a split. The algorithm always chooses the split with the <strong class="text-white">highest Gini Gain</strong>. You can see detailed calculations in the "Gini Explained" tab for each simulation.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">Model Evaluation & Pitfalls</h3>
+                        <div class="space-y-4">
+                             <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Overfitting vs. Underfitting</h4>
+                                <p><strong class="text-white">Underfitting</strong> occurs when a model is too simple to capture the underlying patterns in the data (e.g., training with too little data). <strong class="text-white">Overfitting</strong> occurs when the model learns the training data's noise instead of the pattern (e.g., letting the tree grow too deep). A good model finds a balance.</p>
+                            </div>
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Confusion Matrix</h4>
+                                <p>A table that visualizes the performance of a classification model. It shows what the model got right versus what it got wrong. Each simulation generates one when you click "Evaluate Model".</p>
+                                <ul class="list-disc list-inside mt-2 space-y-1 text-sm">
+                                    <li><strong class="text-white">True Positives (TP):</strong> Correctly predicted positive outcomes.</li>
+                                    <li><strong class="text-white">True Negatives (TN):</strong> Correctly predicted negative outcomes.</li>
+                                    <li><strong class="text-white">False Positives (FP):</strong> Incorrectly predicted positive (a "false alarm").</li>
+                                    <li><strong class="text-white">False Negatives (FN):</strong> Incorrectly predicted negative (a "miss").</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+        
+        <div id="main-panel-uses" class="main-tab-panel">
+            <div class="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 text-gray-300 max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-white mb-6 text-center">Common Uses for Decision Trees</h2>
+                <p class="mb-8 text-lg text-center">Decision trees are popular because they are easy to understand and interpret. Their flowchart-like structure makes them useful in many fields.</p>
+                <div class="space-y-8">
+                    
+                    <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">Finance & Banking</h3>
+                        <div class="space-y-4">
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Credit Risk Assessment</h4>
+                                <p>Just like our "Loan Approval" simulation, banks use decision trees to assess the risk of lending to an individual or business. Features can include income, credit score, age, loan amount, and existing debt.</p>
+                            </div>
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Fraud Detection</h4>
+                                <p>By analyzing transaction patterns (amount, location, time, frequency), a decision tree can learn to flag transactions that are likely to be fraudulent.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">Healthcare</h3>
+                        <div class="space-y-4">
+                            <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Medical Diagnosis</h4>
+                                <p>Decision trees can help doctors diagnose illnesses by asking a series of questions based on symptoms, patient history, and lab results to arrive at a probable diagnosis.</p>
+                            </div>
+                             <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Treatment Effectiveness</h4>
+                                <p>Analyzing data about patients, treatments, and outcomes, a tree can help predict which treatment path is most likely to be effective for a new patient with similar characteristics.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                     <div>
+                        <h3 class="text-2xl font-semibold text-white mb-4">Marketing & Sales</h3>
+                        <div class="space-y-4">
+                             <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Customer Churn Prediction</h4>
+                                <p>As seen in our simulation, companies use decision trees to identify customers who are likely to cancel their service. They can then offer targeted promotions to retain them.</p>
+                            </div>
+                             <div class="concept-box">
+                                <h4 class="text-xl font-bold text-indigo-400 mb-2">Customer Segmentation</h4>
+                                <p>Trees can group customers into segments based on their purchasing behavior, demographics, and browsing history, allowing for more targeted marketing campaigns.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+    // --- Main Tab Navigation ---
+    const mainTabs = [
+        { btn: document.getElementById('main-tab-loan'), panel: document.getElementById('main-panel-loan') },
+        { btn: document.getElementById('main-tab-edu'), panel: document.getElementById('main-panel-edu') },
+        { btn: document.getElementById('main-tab-churn'), panel: document.getElementById('main-panel-churn') },
+        { btn: document.getElementById('main-tab-concepts'), panel: document.getElementById('main-panel-concepts') },
+        { btn: document.getElementById('main-tab-uses'), panel: document.getElementById('main-panel-uses') }
+    ];
+
+    mainTabs.forEach(tab => {
+        tab.btn.addEventListener('click', () => {
+            mainTabs.forEach(t => {
+                t.btn.classList.remove('active');
+                t.panel.classList.remove('active');
+            });
+            tab.btn.classList.add('active');
+            tab.panel.classList.add('active');
+        });
+    });
+
+    // --- INNER TAB FACTORY ---
+    function setupInnerTabs(simPrefix) {
+        const tabSim = document.getElementById(`tab-sim-${simPrefix}`);
+        const tabGini = document.getElementById(`tab-gini-${simPrefix}`);
+        const tabImprove = document.getElementById(`tab-improve-${simPrefix}`);
+        const panelSim = document.getElementById(`panel-sim-${simPrefix}`);
+        const panelGini = document.getElementById(`panel-gini-${simPrefix}`);
+        const panelImprove = document.getElementById(`panel-improve-${simPrefix}`);
+        
+        const tabs = [tabSim, tabGini, tabImprove];
+        const panels = [panelSim, panelGini, panelImprove];
+
+        tabs.forEach((tab, index) => {
+            if (!tab) return;
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t && t.classList.remove('active'));
+                panels.forEach(p => p && p.classList.remove('active'));
+                tab.classList.add('active');
+                panels[index].classList.add('active');
+            });
+        });
+    }
+
+    setupInnerTabs('loan');
+    setupInnerTabs('edu');
+    setupInnerTabs('churn');
+
+    // --- SIMULATION FACTORY ---
+    function createSimulation(config) {
+        let dataset = [], trainingData = [], testingData = [], decisionTree = null, rootNode = null, trainingInProgress = false, isDataSplit = false, nodeQueue = [];
+        
+        const startTrainBtn = document.getElementById(`start-train-btn-${config.prefix}`), nextStepBtn = document.getElementById(`next-step-btn-${config.prefix}`), resetBtn = document.getElementById(`reset-btn-${config.prefix}`);
+        const splitDataBtn = document.getElementById(`split-data-btn-${config.prefix}`), evaluateBtn = document.getElementById(`evaluate-btn-${config.prefix}`), loadSampleDataBtn = document.getElementById(`load-sample-data-btn-${config.prefix}`);
+        const giniDisplay = document.getElementById(`gini-display-${config.prefix}`), trainingStatus = document.getElementById(`training-status-${config.prefix}`), accuracyDisplay = document.getElementById(`accuracy-display-${config.prefix}`);
+        const confusionMatrixContainer = document.getElementById(`confusion-matrix-${config.prefix}`);
+        const splitSlider = document.getElementById(`split-slider-${config.prefix}`), splitValue = document.getElementById(`split-value-${config.prefix}`);
+        const overfitCheckbox = document.getElementById(`overfit-checkbox-${config.prefix}`);
+        const treeMessage = d3.select(`#tree-container-${config.prefix} p`), plotSubtitle = document.getElementById(`plot-subtitle-${config.prefix}`);
+
+        const margin = { top: 20, right: 20, bottom: 40, left: 40 }, plotContainer = d3.select(`#scatter-plot-container-${config.prefix}`);
+        const plotSvg = plotContainer.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", "0 0 500 500").attr("preserveAspectRatio", "xMidYMid meet");
+        const width = 500 - margin.left - margin.right, height = 500 - margin.top - margin.bottom;
+        const g = plotSvg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+        const xScale = d3.scaleLinear().domain(config.xDomain).range([0, width]), yScale = d3.scaleLinear().domain(config.yDomain).range([height, 0]);
+        g.append("g").attr("transform", `translate(0,${height})`).call(d3.axisBottom(xScale)).selectAll("text").attr("fill", "#9ca3af");
+        g.append("text").attr("text-anchor", "middle").attr("x", width / 2).attr("y", height + margin.bottom - 5).attr("fill", "#d1d5db").text(config.xLabel);
+        g.append("g").call(d3.axisLeft(yScale)).selectAll("text").attr("fill", "#9ca3af");
+        g.append("text").attr("text-anchor", "middle").attr("transform", "rotate(-90)").attr("y", -margin.left + 15).attr("x", -height / 2).attr("fill", "#d1d5db").text(config.yLabel);
+        const decisionBoundaryGroup = g.append("g"), pointsGroup = g.append("g"), evaluationMarkersGroup = g.append("g"), pathBoundaryGroup = g.append("g");
+        
+        const treeContainer = d3.select(`#tree-container-${config.prefix}`), treeSvg = treeContainer.append("svg").attr("width", "100%").attr("height", "100%").attr("viewBox", "0 0 800 500").attr("preserveAspectRatio", "xMidYMid meet");
+        const treeG = treeSvg.append("g").attr("transform", "translate(40, 50)"), treeLayout = d3.tree().size([720, 380]);
+        
+        const fns = {
+            loadSampleData: () => { if (trainingInProgress || isDataSplit) return; dataset = config.sampleData.map(p => ({...p, id: crypto.randomUUID()})); fns.updateScatterPlot(); },
+            updateScatterPlot: () => { const allData = isDataSplit ? [...trainingData, ...testingData] : dataset; const points = pointsGroup.selectAll("circle").data(allData, d => d.id); points.enter().append("circle").merge(points).attr("cx", d => xScale(d.x)).attr("cy", d => yScale(d.y)).attr("r", 6).attr("stroke", d => config.CLASS_COLORS[d.class]).attr("fill", d => d.isTrain ? config.CLASS_COLORS[d.class] : 'none').attr("class", d => d.isTrain ? '' : 'test-point').on('click', null); points.exit().remove(); },
+            splitData: () => { if (dataset.length < 10) return; isDataSplit = true; d3.shuffle(dataset); const i = Math.floor(dataset.length * (splitSlider.value / 100)); trainingData = dataset.slice(0, i).map(d => ({...d, isTrain: true})); testingData = dataset.slice(i).map(d => ({...d, isTrain: false})); fns.updateScatterPlot(); loadSampleDataBtn.disabled = true; splitDataBtn.disabled = true; splitSlider.disabled = true; startTrainBtn.disabled = false; },
+            resetSimulation: () => { dataset = []; trainingData = []; testingData = []; decisionTree = null; rootNode = null; trainingInProgress = false; isDataSplit = false; nodeQueue = []; fns.updateScatterPlot(); treeG.selectAll('*').remove(); decisionBoundaryGroup.selectAll('*').remove(); evaluationMarkersGroup.selectAll('*').remove(); giniDisplay.innerHTML = ''; trainingStatus.textContent = ''; accuracyDisplay.textContent = ''; confusionMatrixContainer.innerHTML = ''; treeMessage.style("display", "block"); plotSubtitle.innerHTML = `<span>Train Data: <span class="font-bold">Solid Circle</span></span> | <span>Test Data: <span class="font-bold">Hollow Circle</span></span>`; loadSampleDataBtn.disabled = false; splitDataBtn.disabled = false; splitSlider.disabled = false; startTrainBtn.disabled = true; startTrainBtn.classList.remove('hidden'); nextStepBtn.classList.add('hidden'); evaluateBtn.classList.add('hidden'); },
+            startTraining: () => { trainingInProgress = true; treeG.selectAll('*').remove(); treeMessage.style("display", "none"); decisionTree = { samples: trainingData.length, gini: fns.calculateGini(trainingData), rows: trainingData, children: [] }; rootNode = d3.hierarchy(decisionTree); nodeQueue.push(rootNode); giniDisplay.innerHTML = `Calculating initial split...<br>Root Gini: <span>${decisionTree.gini.toFixed(3)}</span>`; trainingStatus.textContent = "Training started. Click 'Next Step'."; startTrainBtn.classList.add('hidden'); nextStepBtn.classList.remove('hidden'); fns.updateTreeVisualization(); },
+            trainingStep: () => {
+                if(nodeQueue.length === 0){
+                    trainingInProgress = false;
+                    trainingStatus.textContent = "Training complete! Ready for evaluation.";
+                    nextStepBtn.classList.add('hidden');
+                    evaluateBtn.classList.remove('hidden');
+                    fns.unhighlightPoints();
+                    if (config.features.length <= 2) {
+                        fns.drawDecisionBoundaries(rootNode, ...config.xDomain, ...config.yDomain);
+                    }
+                    fns.enablePointInteraction();
+                    return;
+                }
+                const cNode = nodeQueue.shift(), rows = cNode.data.rows;
+                fns.highlightPoints(rows);
+                const { bestGain, bestQuestion } = fns.findBestSplit(rows);
+                
+                const allowOverfit = overfitCheckbox.checked;
+                const depthLimit = allowOverfit ? 99 : 5;
+
+                if (bestGain === 0 || cNode.depth >= depthLimit) {
+                    const leafData = fns.toLeaf(rows);
+                    cNode.data.prediction = leafData.prediction;
+                    trainingStatus.textContent = `Created a leaf node. Prediction: ${config.CLASS_NAMES[leafData.prediction]}.`;
+                    giniDisplay.innerHTML = `No further gain possible.<br>Final Gini: <span>${cNode.data.gini.toFixed(3)}</span><br>Prediction: <span>${config.CLASS_NAMES[leafData.prediction]}</span>`;
+                } else {
+                    const { trueRows, falseRows } = fns.partition(rows, bestQuestion);
+                    const giniTrue = fns.calculateGini(trueRows), giniFalse = fns.calculateGini(falseRows);
+                    giniDisplay.innerHTML = `Parent Gini: <span>${cNode.data.gini.toFixed(3)}</span><br>Split Gini (L/R): <span>${giniFalse.toFixed(3)}</span> | <span>${giniTrue.toFixed(3)}</span><br>Gini Gain: <span style="color: #4ade80;">${bestGain.toFixed(3)}</span>`;
+                    cNode.data.question = bestQuestion;
+                    const trueChildData = { samples: trueRows.length, gini: giniTrue, rows: trueRows, children: [] };
+                    const falseChildData = { samples: falseRows.length, gini: giniFalse, rows: falseRows, children: [] };
+                    cNode.data.children = [falseChildData, trueChildData];
+                    const falseNode = d3.hierarchy(falseChildData), trueNode = d3.hierarchy(trueChildData);
+                    falseNode.parent = cNode; trueNode.parent = cNode;
+                    falseNode.depth = cNode.depth + 1; trueNode.depth = cNode.depth + 1;
+                    if (!cNode.children) cNode.children = [];
+                    cNode.children.push(falseNode, trueNode);
+                    nodeQueue.push(falseNode, trueNode);
+                    trainingStatus.textContent = `Split on ${config.getFeatureName(bestQuestion.feature)} >= ${bestQuestion.value}.`;
+                    fns.drawSplitLine(cNode);
+                }
+                delete cNode.data.rows;
+                fns.updateTreeVisualization();
+            },
+            evaluateModel: () => { if (!decisionTree || testingData.length === 0) return; let tp = 0, tn = 0, fp = 0, fn = 0; evaluationMarkersGroup.selectAll('*').remove(); testingData.forEach(p => { const { prediction } = fns.classifyPoint(p, rootNode); const isCorrect = prediction === p.class; if(prediction == config.POSITIVE_CLASS && p.class == config.POSITIVE_CLASS) tp++; else if(prediction == config.NEGATIVE_CLASS && p.class == config.NEGATIVE_CLASS) tn++; else if(prediction == config.POSITIVE_CLASS && p.class == config.NEGATIVE_CLASS) fp++; else if(prediction == config.NEGATIVE_CLASS && p.class == config.POSITIVE_CLASS) fn++; evaluationMarkersGroup.append('text').attr('x', xScale(p.x)).attr('y', yScale(p.y) + 5).attr('class', 'evaluation-marker').attr('fill', isCorrect ? '#4ade80' : '#f87171').text(isCorrect ? '✓' : '✗'); }); const total = testingData.length; const accuracy = (tp + tn) / total; accuracyDisplay.innerHTML = `Test Accuracy: <span class="${accuracy >= 0.75 ? 'text-green-400' : 'text-red-400'}">${(accuracy * 100).toFixed(1)}%</span>`; fns.renderConfusionMatrix(tp, tn, fp, fn); evaluateBtn.disabled = true; plotSubtitle.innerHTML = `<span class="text-yellow-300 font-semibold animate-pulse">Click any data point to see its decision path!</span>`; },
+            renderConfusionMatrix: (tp, tn, fp, fn) => { const matrixHTML = `
+                <table>
+                    <thead><tr class="header-row"><th colspan="2"></th><th colspan="2">Predicted Class</th></tr></thead>
+                    <tbody>
+                        <tr><td colspan="2"></td><td class="label-col">${config.CLASS_NAMES[config.POSITIVE_CLASS]}</td><td class="label-col">${config.CLASS_NAMES[config.NEGATIVE_CLASS]}</td></tr>
+                        <tr>
+                            <td rowspan="2" class="label-col" style="writing-mode: vertical-rl; text-orientation: mixed;">Actual Class</td>
+                            <td class="label-col">${config.CLASS_NAMES[config.POSITIVE_CLASS]}</td>
+                            <td class="correct"><div class="value">${tp}</div><div class="desc">True Positive</div></td>
+                            <td class="incorrect"><div class="value">${fn}</div><div class="desc">False Negative</div></td>
+                        </tr>
+                        <tr>
+                             <td class="label-col">${config.CLASS_NAMES[config.NEGATIVE_CLASS]}</td>
+                            <td class="incorrect"><div class="value">${fp}</div><div class="desc">False Positive</div></td>
+                            <td class="correct"><div class="value">${tn}</div><div class="desc">True Negative</div></td>
+                        </tr>
+                    </tbody>
+                </table>`;
+                confusionMatrixContainer.innerHTML = matrixHTML;
+            },
+            classifyPoint: (point, node) => { const path = [node]; let cNode = node; while(cNode.data.prediction === undefined) { const q = cNode.data.question; const branch = point[q.feature] >= q.value ? cNode.children[1] : cNode.children[0]; path.push(branch); cNode = branch; } return { prediction: cNode.data.prediction, path: path }; },
+            calculateGini: (rows) => { if(rows.length === 0) return 0; const counts = {}; rows.forEach(r => counts[r.class] = (counts[r.class] || 0) + 1); let impurity = 1; for (let l in counts) { impurity -= (counts[l] / rows.length) ** 2; } return impurity; },
+            findBestSplit: (rows) => { let bestGain = 0, bestQuestion = null; const currentGini = fns.calculateGini(rows); config.features.forEach(feature => { [...new Set(rows.map(r => r[feature]))].forEach(value => { const q = { feature, value }; const { trueRows, falseRows } = fns.partition(rows, q); if (trueRows.length === 0 || falseRows.length === 0) return; const p = trueRows.length / rows.length; const gain = currentGini - (p * fns.calculateGini(trueRows) + (1 - p) * fns.calculateGini(falseRows)); if (gain >= bestGain) { bestGain = gain; bestQuestion = q; } }); }); return { bestGain, bestQuestion }; },
+            partition: (rows, q) => { const trueRows = [], falseRows = []; rows.forEach(row => (row[q.feature] >= q.value ? trueRows : falseRows).push(row)); return { trueRows, falseRows }; },
+            toLeaf: (rows) => { const counts = {}; rows.forEach(r => counts[r.class] = (counts[r.class] || 0) + 1); let maxCount = 0, pClass = -1; for(let l in counts){ if(counts[l] > maxCount){ maxCount = counts[l]; pClass = l; } } return { prediction: +pClass, samples: rows.length, counts }; },
+            updateTreeVisualization: () => { treeLayout(rootNode); const nodes = rootNode.descendants(), links = rootNode.links(), nodeWidth = 180, nodeHeight = 80; treeG.selectAll(".link").data(links).join("path").attr("class", "link").transition().duration(300).attr("d", d3.linkVertical().x(d => d.x).y(d => d.y).source(d => ({x: d.source.x, y: d.source.y + nodeHeight / 2})).target(d => ({x: d.target.x, y: d.target.y - nodeHeight / 2}))); const node = treeG.selectAll(".node").data(nodes, d => d.data.id || (d.data.id = crypto.randomUUID())).join("g").attr("class", "node").attr("transform", d => `translate(${d.x},${d.y})`); node.selectAll("rect").data(d => [d]).join("rect").attr("x", -nodeWidth / 2).attr("y", -nodeHeight / 2).attr("width", nodeWidth).attr("height", nodeHeight).attr("rx", 10).transition().duration(300).attr("fill", d => d.data.prediction !== undefined ? config.CLASS_COLORS[d.data.prediction] : '#374151').attr("stroke", d => d.data.question ? "#a78bfa" : "#6b7280").attr("stroke-width", d => d.data.question ? 2 : 1); node.selectAll("text.label").data(d => [d]).join("text").attr("class", "label").attr("dy", "-0.6em").attr("fill", d => d.data.prediction !== undefined ? '#111827' : "#e5e7eb").style("font-size", "14px").style("font-weight", "bold").style("text-anchor", "middle").text(d => { if (d.data.prediction !== undefined) return config.CLASS_NAMES[d.data.prediction]; if (d.data.question) return `${config.getFeatureName(d.data.question.feature)} >= ${d.data.question.value}`; return 'Root Node'; }); node.selectAll("text.samples").data(d => [d]).join("text").attr("class", "samples").attr("dy", "1.6em").style("text-anchor", "middle").attr("fill", d => d.data.prediction !== undefined ? '#1f2937' : "#9ca3af").style("font-size", "12px").text(d => `(n=${d.data.samples})`); node.selectAll("text.gini").data(d => [d]).join("text").attr("class", "gini").attr("dy", "2.8em").style("text-anchor", "middle").attr("fill", "#a5b4fc").style("font-size", "11px").text(d => `Gini = ${d.data.gini.toFixed(3)}`); },
+            highlightPoints: (rows) => { fns.unhighlightPoints(); const rowIds = new Set(rows.map(r => r.id)); pointsGroup.selectAll('circle').filter(d => rowIds.has(d.id)).classed('highlighted-point', true); },
+            unhighlightPoints: () => pointsGroup.selectAll('.highlighted-point').classed('highlighted-point', false),
+            drawSplitLine: (node) => { const bounds = fns.findParentBounds(node), q = node.data.question; if (!['x', 'y'].includes(q.feature)) return; const line = decisionBoundaryGroup.append("line").attr("class", "split-line"); if (q.feature === 'x') { line.attr("x1", xScale(q.value)).attr("y1", yScale(bounds.yMax)).attr("x2", xScale(q.value)).attr("y2", yScale(bounds.yMin)).attr("stroke", "#fde047"); } else { line.attr("x1", xScale(bounds.xMin)).attr("y1", yScale(q.value)).attr("x2", xScale(bounds.xMax)).attr("y2", yScale(q.value)).attr("stroke", "#fde047"); }},
+            findParentBounds: (node) => { let bounds = { xMin: config.xDomain[0], xMax: config.xDomain[1], yMin: config.yDomain[0], yMax: config.yDomain[1] }; let current = node; while(current.parent) { const parent = current.parent, q = parent.data.question, isTrueBranch = parent.children[1] === current; if (q.feature === 'x') { if (isTrueBranch) bounds.xMin = Math.max(bounds.xMin, q.value); else bounds.xMax = Math.min(bounds.xMax, q.value); } else if (q.feature === 'y') { if (isTrueBranch) bounds.yMin = Math.max(bounds.yMin, q.value); else bounds.yMax = Math.min(bounds.yMax, q.value); } current = parent; } return bounds; },
+            drawDecisionBoundaries: (node, xMin, xMax, yMin, yMax) => { if (!node) return; if (node.data.prediction !== undefined) { decisionBoundaryGroup.append("rect").attr("x", xScale(xMin)).attr("y", yScale(yMax)).attr("width", xScale(xMax) - xScale(xMin)).attr("height", yScale(yMin) - yScale(yMax)).attr("fill", config.CLASS_COLORS[node.data.prediction]).attr("opacity", 0.2); return; } const q = node.data.question; if (q.feature === 'x') { fns.drawDecisionBoundaries(node.children[0], xMin, q.value, yMin, yMax); fns.drawDecisionBoundaries(node.children[1], q.value, xMax, yMin, yMax); } else if (q.feature === 'y'){ fns.drawDecisionBoundaries(node.children[0], xMin, xMax, yMin, q.value); fns.drawDecisionBoundaries(node.children[1], xMin, xMax, q.value, yMax); } else { fns.drawDecisionBoundaries(node.children[0], xMin, xMax, yMin, yMax); fns.drawDecisionBoundaries(node.children[1], xMin, xMax, yMin, yMax); }},
+            enablePointInteraction: () => pointsGroup.selectAll('circle').style('cursor', 'pointer').on('click', (event, d) => fns.visualizeDecisionPath(d)),
+            visualizeDecisionPath: (point) => { const { path } = fns.classifyPoint(point, rootNode); treeG.selectAll('.node, .link').classed('dimmed', true); pathBoundaryGroup.selectAll('*').remove(); fns.unhighlightPoints(); pointsGroup.selectAll('circle').filter(d => d.id === point.id).classed('highlighted-point', true); let bounds = { xMin: config.xDomain[0], xMax: config.xDomain[1], yMin: config.yDomain[0], yMax: config.yDomain[1] }; path.forEach((node, i) => { setTimeout(() => { treeG.selectAll('.node').filter(d => d.data.id === node.data.id).classed('dimmed', false).classed('node-highlight', true); if (i > 0) { const prevNode = path[i-1]; treeG.selectAll('.link').filter(d => d.source.data.id === prevNode.data.id && d.target.data.id === node.data.id).classed('dimmed', false).classed('path-highlight', true); const q = prevNode.data.question; if (['x', 'y'].includes(q.feature)) { const line = pathBoundaryGroup.append("line").attr("class", "split-line").attr("stroke", "#fde047"); if (q.feature === 'x') { line.attr("x1", xScale(q.value)).attr("y1", yScale(bounds.yMax)).attr("x2", xScale(q.value)).attr("y2", yScale(bounds.yMin)); if(point.x >= q.value) bounds.xMin = q.value; else bounds.xMax = q.value; } else { line.attr("x1", xScale(bounds.xMin)).attr("y1", yScale(q.value)).attr("x2", xScale(bounds.xMax)).attr("y2", yScale(q.value)); if(point.y >= q.value) bounds.yMin = q.value; else bounds.yMax = q.value; } } } if (i === path.length - 1) { setTimeout(() => { treeG.selectAll('.dimmed, .node-highlight').classed('dimmed node-highlight', false); treeG.selectAll('.path-highlight').classed('path-highlight', false); pathBoundaryGroup.selectAll('*').transition().duration(500).style('opacity', 0).remove(); fns.unhighlightPoints(); }, 2000); } }, i * 1000); }); }
+        };
+        
+        splitSlider.addEventListener('input', (e) => splitValue.textContent = e.target.value);
+        startTrainBtn.addEventListener('click', fns.startTraining); nextStepBtn.addEventListener('click', fns.trainingStep); resetBtn.addEventListener('click', fns.resetSimulation);
+        splitDataBtn.addEventListener('click', fns.splitData); evaluateBtn.addEventListener('click', fns.evaluateModel); loadSampleDataBtn.addEventListener('click', fns.loadSampleData);
+        fns.resetSimulation();
+    }
+
+    // --- LOAN SIMULATION CONFIG ---
+    createSimulation({
+        prefix: 'loan',
+        POSITIVE_CLASS: 1,
+        NEGATIVE_CLASS: 0,
+        CLASS_COLORS: { 1: '#4ade80', 0: '#f87171' },
+        CLASS_NAMES: { 1: 'Approved', 0: 'Rejected' },
+        sampleData: [ { x: 150, y: 780, class: 1 }, { x: 180, y: 820, class: 1 }, { x: 120, y: 750, class: 1 }, { x: 200, y: 700, class: 1 }, { x: 95, y: 800, class: 1 }, { x: 160, y: 680, class: 1 }, { x: 30, y: 450, class: 0 }, { x: 50, y: 550, class: 0 }, { x: 25, y: 600, class: 0 }, { x: 80, y: 400, class: 0 }, { x: 40, y: 650, class: 0 }, { x: 60, y: 350, class: 0 }, { x: 90, y: 680, class: 1 }, { x: 110, y: 640, class: 1 }, { x: 85, y: 620, class: 0 }, { x: 70, y: 700, class: 1 }, { x: 120, y: 600, class: 0 }, { x: 100, y: 580, class: 0 }, { x: 50, y: 710, class: 0 }, { x: 130, y: 660, class: 1 }, ],
+        features: ['x', 'y'],
+        getFeatureName: (f) => (f === 'x' ? 'Income ($k)' : 'Credit Score'),
+        xDomain: [10, 200], xLabel: "Annual Income ($1,000s)",
+        yDomain: [300, 850], yLabel: "Credit Score",
+    });
+    
+    // --- EDUCATION SIMULATION CONFIG ---
+    createSimulation({
+        prefix: 'edu',
+        POSITIVE_CLASS: 1,
+        NEGATIVE_CLASS: 0,
+        CLASS_COLORS: { 1: '#4ade80', 0: '#f87171' },
+        CLASS_NAMES: { 1: 'Pass', 0: 'Fail' },
+        sampleData: [ { x: 15, y: 85, class: 1 }, { x: 18, y: 92, class: 1 }, { x: 12, y: 80, class: 1 }, { x: 10, y: 95, class: 1 }, { x: 8, y: 75, class: 1 }, { x: 16, y: 88, class: 1 }, { x: 2, y: 40, class: 0 }, { x: 4, y: 55, class: 0 }, { x: 1, y: 60, class: 0 }, { x: 7, y: 45, class: 0 }, { x: 5, y: 65, class: 0 }, { x: 3, y: 30, class: 0 }, { x: 9, y: 70, class: 1 }, { x: 11, y: 68, class: 1 }, { x: 8, y: 62, class: 0 }, { x: 6, y: 78, class: 1 }, { x: 12, y: 58, class: 0 }, { x: 10, y: 55, class: 0 }, { x: 4, y: 72, class: 0 }, { x: 13, y: 74, class: 1 }, ],
+        features: ['x', 'y'],
+        getFeatureName: (f) => (f === 'x' ? 'Hours Studied' : 'Previous Score'),
+        xDomain: [0, 20], xLabel: "Hours Studied",
+        yDomain: [0, 100], yLabel: "Previous Score (%)",
+    });
+
+    // --- CHURN SIMULATION CONFIG ---
+    createSimulation({
+        prefix: 'churn',
+        POSITIVE_CLASS: 1,
+        NEGATIVE_CLASS: 0,
+        CLASS_COLORS: { 1: '#f87171', 0: '#4ade80' },
+        CLASS_NAMES: { 1: 'Churn', 0: 'Stay' },
+        sampleData: [ { x: 110, y: 150, z: 5, class: 1 }, { x: 95, y: 20, z: 6, class: 1 }, { x: 120, y: 180, z: 4, class: 1 }, { x: 80, y: 10, z: 7, class: 1 }, { x: 105, y: 50, z: 5, class: 1 }, { x: 45, y: 5, z: 8, class: 1 }, { x: 50, y: 60, z: 1, class: 0 }, { x: 70, y: 100, z: 0, class: 0 }, { x: 40, y: 30, z: 2, class: 0 }, { x: 80, y: 120, z: 1, class: 0 }, { x: 65, y: 80, z: 0, class: 0 }, { x: 30, y: 20, z: 1, class: 0 }, { x: 90, y: 160, z: 2, class: 0 }, { x: 55, y: 70, z: 0, class: 0 }, { x: 115, y: 170, z: 1, class: 0 }, ],
+        features: ['x', 'y', 'z'],
+        getFeatureName: (f) => (f === 'x' ? 'Monthly Bill' : (f === 'y' ? 'Data Usage' : 'CS Calls')),
+        xDomain: [20, 130], xLabel: "Monthly Bill ($)",
+        yDomain: [0, 200], yLabel: "Data Usage (GB)",
+    });
+
+    </script>
+</body>
+</html>
+

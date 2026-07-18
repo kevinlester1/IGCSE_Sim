@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Fix: Corrected charset typo from UTF-R-8 to UTF-8 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Forest Algorithm Simulation</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for canvas plots */
+        .plot-canvas {
+            background-color: #f9fafb; /* gray-50 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #e5e7eb; /* gray-200 */
+        }
+        .axis-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+            color: #4b5563; /* gray-600 */
+            font-weight: 500;
+        }
+        .main-axis-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: #374151; /* gray-700 */
+            font-weight: 600;
+        }
+    </style>
+    <!-- Import Inter font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 text-gray-800 p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto bg-white shadow-xl rounded-lg overflow-hidden">
+        <header class="bg-gray-800 text-white p-6">
+            <h1 class="text-3xl font-bold text-center">Interactive Random Forest Simulation</h1>
+        </header>
+
+        <main class="p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Left Column: Controls and Explanation -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Control Panel -->
+                <div class="bg-gray-50 p-6 rounded-lg shadow-inner">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">Controls</h2>
+                    <div class="flex space-x-4">
+                        <button id="next-step" class="flex-1 bg-blue-600 text-white font-medium py-3 px-4 rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-150">
+                            Next Step
+                        </button>
+                        <button id="reset-sim" class="flex-1 bg-gray-600 text-white font-medium py-3 px-4 rounded-lg shadow-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-all duration-150">
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Explanation Panel -->
+                <div class="bg-white p-6 rounded-lg shadow-lg h-96 overflow-y-auto border border-gray-200">
+                    <h2 class="text-xl font-semibold mb-3 text-gray-700">What's Happening?</h2>
+                    <div id="explanation-text" class="text-gray-600 space-y-3 leading-relaxed">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+                    <div id="tree-rules-display" class="mt-4 p-3 bg-gray-100 rounded-md text-sm text-gray-700 font-mono hidden">
+                        <!-- Tree rules will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Visualizations -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Main Visualization: Original Data / Final Forest -->
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+                    <h2 id="main-plot-title" class="text-xl font-semibold mb-4 text-center text-gray-700">Original Dataset</h2>
+                    <canvas id="main-plot" width="600" height="400" class="plot-canvas mx-auto"></canvas>
+                </div>
+
+                <!-- Sub-plots for Individual Trees -->
+                <div id="tree-plots-container" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Tree 1 -->
+                    <div id="tree-1-container" class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hidden">
+                        <h3 class="text-lg font-medium text-center text-gray-700 mb-2">Tree 1 (on Bag 1)</h3>
+                        <canvas id="tree-1-plot" width="200" height="200" class="plot-canvas mx-auto"></canvas>
+                    </div>
+                    <!-- Tree 2 -->
+                    <div id="tree-2-container" class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hidden">
+                        <h3 class="text-lg font-medium text-center text-gray-700 mb-2">Tree 2 (on Bag 2)</h3>
+                        <canvas id="tree-2-plot" width="200" height="200" class="plot-canvas mx-auto"></canvas>
+                    </div>
+                    <!-- Tree 3 -->
+                    <div id="tree-3-container" class="bg-white p-4 rounded-lg shadow-lg border border-gray-200 hidden">
+                        <h3 class="text-lg font-medium text-center text-gray-700 mb-2">Tree 3 (on Bag 3)</h3>
+                        <canvas id="tree-3-plot" width="200" height="200" class="plot-canvas mx-auto"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Prediction Summary -->
+                <div id="prediction-summary" class="bg-gray-50 p-6 rounded-lg shadow-inner hidden">
+                    <h2 class="text-xl font-semibold mb-4 text-center text-gray-700">Prediction Summary</h2>
+                    <div id="prediction-text" class="text-2xl font-bold text-center">
+                        <!-- Dynamic content -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // --- Constants & Config ---
+        const STEP_DESCRIPTIONS = [
+            // Step 0
+            "Welcome! This is our original dataset. We have two classes: **Benign (Class 0, blue)** and **Malignant (Class 1, red)**. Our features are **Patient Age** (y-axis) and **Tumor Size** (x-axis). Our goal is to build a model that can predict if a new tumor is malignant or benign.",
+            // Step 1
+            "Step 1: Bagging (Bootstrap Aggregating). A Random Forest is an 'ensemble' of many decision trees. Each tree is trained on a slightly different dataset, called a 'bootstrap sample' or 'bag'.",
+            // Step 2 (NEW ANIMATED STEP)
+            "Step 2: Zoom-in on Sampling. Let's create Bag 1. We will randomly sample 60 points from the *original* dataset *with replacement*. Watch as points are picked (highlighted yellow) and added to the 'Tree 1' plot.",
+            // Step 3 (Old Step 2)
+            "Here is the completed Bag 1. Notice that some original points are missing, and some are duplicated (represented by larger circles). This is the result of sampling 'with replacement'.",
+            // Step 4 (Old Step 3)
+            "Step 3: Build Tree 1. Now we build a single decision tree using only the data in Bag 1. At each split, the tree also randomly selects a *subset of features* (e.g., at one step it might only be allowed to split on 'Patient Age', and at another, only on 'Tumor Size').",
+            // Step 5 (Old Step 4)
+            "Tree 1 is now fully grown. It has learned a set of rules (decision boundaries) to classify the data it saw in Bag 1. Notice how it tries to separate the Malignant and Benign tumors.",
+            // Step 6 (Old Step 5)
+            "Step 4: Repeat for Tree 2. We create a new bootstrap sample, Bag 2. Again, it's randomly sampled with replacement from the *original* dataset.",
+            // Step 7 (Old Step 6)
+            "We build Tree 2 on Bag 2. Because it's trained on different data (and uses random features at each split), it learns a *different* set of decision boundaries than Tree 1.",
+            // Step 8 (Old Step 7)
+            "Step 5: Repeat for Tree 3. We create our third and final bootstrap sample, Bag 3.",
+            // Step 9 (Old Step 8)
+            "We build Tree 3 on Bag 3. It learns yet another unique set of rules to classify its data.",
+            // Step 10 (Old Step 9)
+            "Step 6: Make a Prediction. Our forest of 3 trees is built! Now, let's see how it classifies a new, unseen data point (the black circle). This represents a new patient's tumor. We will ask each tree to 'vote' on the new tumor's class.",
+            // Step 11 (Old Step 10)
+            "Tree 1's Vote: We pass the new point through Tree 1. Based on its learned boundaries, Tree 1 classifies the tumor as **'Malignant'**.",
+            // Step 12 (Old Step 11)
+            "Tree 2's Vote: Tree 2, using its different rules, classifies the same tumor as **'Benign'**.",
+            // Step 13 (Old Step 12)
+            "Tree 3's Vote: Tree 3 classifies the tumor as **'Malignant'**.",
+            // Step 14 (Old Step 13)
+            "Step 7: Majority Vote! We tally the votes: 2 for **'Malignant'** and 1 for **'Benign'**. The Random Forest's final prediction is the majority vote. Therefore, the new tumor is classified as **'Malignant'**.",
+            // Step 15 (Old Step 14)
+            "This is the final decision boundary of the *entire forest*. By combining the 'weak' predictions of many different trees, the Random Forest creates a much more robust and accurate model than any single tree. Press 'Reset' to start over."
+        ];
+
+        const POINT_RADIUS = 5;
+        const COLORS = {
+            class0: 'rgba(59, 130, 246, 0.8)', // blue-500 (Benign)
+            class1: 'rgba(239, 68, 68, 0.8)', // red-500 (Malignant)
+            newPoint: 'rgba(17, 24, 39, 1)', // gray-900
+            boundary0: 'rgba(59, 130, 246, 0.1)', // blue-500 w/ 10% opacity
+            boundary1: 'rgba(239, 68, 68, 0.1)', // red-500 w/ 10% opacity
+        };
+
+        // --- DOM Elements ---
+        const nextButton = document.getElementById('next-step');
+        const resetButton = document.getElementById('reset-sim');
+        const explanationText = document.getElementById('explanation-text');
+        
+        const mainPlotCanvas = document.getElementById('main-plot');
+        const mainPlotCtx = mainPlotCanvas.getContext('2d');
+        const mainPlotTitle = document.getElementById('main-plot-title');
+        
+        const treePlotsContainer = document.getElementById('tree-plots-container');
+        const treeCanvases = [
+            { container: document.getElementById('tree-1-container'), canvas: document.getElementById('tree-1-plot'), ctx: document.getElementById('tree-1-plot').getContext('2d') },
+            { container: document.getElementById('tree-2-container'), canvas: document.getElementById('tree-2-plot'), ctx: document.getElementById('tree-2-plot').getContext('2d') },
+            { container: document.getElementById('tree-3-container'), canvas: document.getElementById('tree-3-plot'), ctx: document.getElementById('tree-3-plot').getContext('2d') }
+        ];
+
+        const predictionSummary = document.getElementById('prediction-summary');
+        const predictionText = document.getElementById('prediction-text');
+        const treeRulesDisplay = document.getElementById('tree-rules-display');
+
+        // --- State ---
+        let currentStep = 0;
+        let originalData = [];
+        let bags = [];
+        let trees = [];
+        let newPoint = { x: 350, y: 250, class: null };
+        let predictions = [];
+        let samplingInterval = null; // For the sampling animation
+
+        // --- Utility Functions ---
+
+        /**
+         * Simple Pseudo-Random Number Generator (PRNG) for deterministic results
+         * This ensures the simulation is the same every time.
+         */
+        let seed = 0.5;
+        function random() {
+            let x = Math.sin(seed++) * 10000;
+            return x - Math.floor(x);
+        }
+
+        /**
+         * Clears a canvas
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {HTMLCanvasElement} canvas - The canvas element
+         */
+        function clearCanvas(ctx, canvas) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        /**
+         * Draws a single data point
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {object} point - The point object {x, y, class}
+         * @param {number} [radius=POINT_RADIUS] - The radius of the point
+         * @param {string} [customFill=null] - Optional fill color for highlighting
+         */
+        function drawPoint(ctx, point, radius = POINT_RADIUS, customFill = null) {
+            ctx.beginPath();
+            ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI, false);
+            
+            if (customFill) {
+                ctx.fillStyle = customFill;
+            } else if (point.class === 0) {
+                ctx.fillStyle = COLORS.class0;
+            } else if (point.class === 1) {
+                ctx.fillStyle = COLORS.class1;
+            } else if (point.class === 'new') {
+                ctx.fillStyle = COLORS.newPoint;
+            } else if (point.class === 'prediction_malignant') {
+                ctx.fillStyle = COLORS.class1;
+            } else if (point.class === 'prediction_benign') {
+                ctx.fillStyle = COLORS.class0;
+            }
+            ctx.fill();
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+            ctx.stroke();
+        }
+
+        /**
+         * Draws axis labels on a canvas
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {HTMLCanvasElement} canvas - The canvas element
+         * @param {boolean} isMain - Flag for main plot styling
+         */
+        function drawAxisLabels(ctx, canvas, isMain) {
+            ctx.save();
+            const labelClass = isMain ? 'main-axis-label' : 'axis-label';
+            const fontSize = isMain ? 14 : 12;
+            const color = isMain ? '#374151' : '#4b5563';
+            
+            ctx.font = `600 ${fontSize}px Inter`;
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+
+            // X-Axis Label
+            ctx.fillText("Tumor Size (mm)", canvas.width / 2, canvas.height - 10);
+
+            // Y-Axis Label
+            ctx.translate(15, canvas.height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText("Patient Age", 0, 0);
+            
+            ctx.restore();
+        }
+
+        /**
+         * Draws a dataset on a canvas
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {HTMLCanvasElement} canvas - The canvas element
+         * @param {Array} data - Array of point objects
+         */
+        function drawData(ctx, canvas, data) {
+            clearCanvas(ctx, canvas);
+            drawAxisLabels(ctx, canvas, canvas.id === 'main-plot');
+            data.forEach(p => drawPoint(ctx, p));
+        }
+
+        /**
+         * Draws a bootstrap sample (bag), showing duplicates as larger points
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {HTMLCanvasElement} canvas - The canvas element
+         * @param {Array} bag - Array of point objects
+         */
+        function drawBag(ctx, canvas, bag) {
+            clearCanvas(ctx, canvas);
+            drawAxisLabels(ctx, canvas, false);
+            
+            // Count occurrences
+            const counts = {};
+            bag.forEach(p => {
+                const key = `${p.x},${p.y}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+
+            // Draw points with radius based on count
+            const drawn = new Set();
+            bag.forEach(p => {
+                const key = `${p.x},${p.y}`;
+                if (!drawn.has(key)) {
+                    const radius = POINT_RADIUS + (counts[key] - 1) * 2;
+                    drawPoint(ctx, p, radius);
+                    drawn.add(key);
+                }
+            });
+        }
+        
+        // --- Decision Tree "Simulation" ---
+        // We don't need a real, complex tree builder. We just need to
+        // generate plausible-looking decision boundaries.
+        
+        /**
+         * Generates a "fake" decision tree (a set of split rules)
+         * @param {Array} bag - The data to train on
+         * @returns {object} A tree structure
+         */
+        function buildFakeTree(bag) {
+            // This recursively generates a simple tree
+            function build(depth, bounds) {
+                if (depth > 2 || bounds.xMax - bounds.xMin < 50 || bounds.yMax - bounds.yMin < 50) {
+                    // Base case: create a leaf
+                    const pointsInBounds = bag.filter(p => 
+                        p.x >= bounds.xMin && p.x < bounds.xMax && p.y >= bounds.yMin && p.y < bounds.yMax
+                    );
+                    const class0Count = pointsInBounds.filter(p => p.class === 0).length;
+                    const class1Count = pointsInBounds.filter(p => p.class === 1).length;
+                    return { leaf: true, class: class1Count > class0Count ? 1 : 0 };
+                }
+
+                // Recursive step: create a split node
+                const splitFeature = random() > 0.5 ? 'x' : 'y'; // Randomly pick feature
+                let splitValue;
+                let newBoundsLeft, newBoundsRight;
+                
+                if (splitFeature === 'x') {
+                    splitValue = bounds.xMin + (bounds.xMax - bounds.xMin) * (0.3 + random() * 0.4);
+                    newBoundsLeft = { ...bounds, xMax: splitValue };
+                    newBoundsRight = { ...bounds, xMin: splitValue };
+                } else {
+                    splitValue = bounds.yMin + (bounds.yMax - bounds.yMin) * (0.3 + random() * 0.4);
+                    newBoundsLeft = { ...bounds, yMax: splitValue };
+                    newBoundsRight = { ...bounds, yMin: splitValue };
+                }
+
+                return {
+                    leaf: false,
+                    feature: splitFeature,
+                    value: splitValue,
+                    left: build(depth + 1, newBoundsLeft),
+                    right: build(depth + 1, newBoundsRight)
+                };
+            }
+            return build(0, { xMin: 0, xMax: 600, yMin: 0, yMax: 400 });
+        }
+
+        /**
+         * Draws the decision boundaries of a tree
+         * @param {CanvasRenderingContext2D} ctx - The canvas context
+         * @param {object} node - The current tree node
+         * @param {object} bounds - The current drawing bounds
+         */
+        function drawTreeBoundaries(ctx, node, bounds) {
+            if (node.leaf) {
+                ctx.fillStyle = node.class === 0 ? COLORS.boundary0 : COLORS.boundary1;
+                ctx.fillRect(bounds.xMin, bounds.yMin, bounds.xMax - bounds.xMin, bounds.yMax - bounds.yMin);
+                return;
+            }
+
+            let newBoundsLeft, newBoundsRight;
+            if (node.feature === 'x') {
+                newBoundsLeft = { ...bounds, xMax: node.value };
+                newBoundsRight = { ...bounds, xMin: node.value };
+            } else {
+                newBoundsLeft = { ...bounds, yMax: node.value };
+                newBoundsRight = { ...bounds, yMin: node.value };
+            }
+            drawTreeBoundaries(ctx, node.left, newBoundsLeft);
+            drawTreeBoundaries(ctx, node.right, newBoundsRight);
+        }
+
+        /**
+         * Generates an HTML string representing the tree's rules
+         * @param {object} node - The current tree node
+         * @param {number} depth - The current depth for indentation
+         * @returns {string} HTML string
+         */
+        function generateTreeRules(node, depth = 0) {
+            const indent = '&nbsp;'.repeat(depth * 4);
+            if (node.leaf) {
+                const decision = node.class === 1 ? 'Malignant' : 'Benign';
+                return `${indent}<span class="font-bold">VOTE: ${decision}</span><br>`;
+            }
+
+            const feature = node.feature === 'x' ? 'Tumor Size' : 'Patient Age';
+            // Use toFixed(0) for cleaner rule values
+            const value = node.feature === 'x' ? `${node.value.toFixed(0)}mm` : `${node.value.toFixed(0)}`;
+            
+            let rules = `${indent}<b>if</b> ${feature} &lt; ${value}:<br>`;
+            rules += generateTreeRules(node.left, depth + 1);
+            rules += `${indent}<b>else</b>:<br>`;
+            rules += generateTreeRules(node.right, depth + 1);
+            return rules;
+        }
+
+        /**
+         * Predicts the class of a point using a tree
+         * @param {object} node - The tree root
+         * @param {object} point - The point to classify
+         * @returns {number} The predicted class (0 or 1)
+         */
+        function predict(node, point) {
+            if (node.leaf) {
+                return node.class;
+            }
+            if (node.feature === 'x') {
+                return predict(point.x < node.value ? node.left : node.right, point);
+            } else {
+                return predict(point.y < node.value ? node.left : node.right, point);
+            }
+        }
+        
+        /**
+         * Draws the combined decision boundary for the entire forest
+         * (by checking many points)
+         */
+        function drawForestBoundary(ctx) {
+            const step = 10;
+            for (let x = 0; x < mainPlotCanvas.width; x += step) {
+                for (let y = 0; y < mainPlotCanvas.height; y += step) {
+                    const testPoint = { x: x + step/2, y: y + step/2 };
+                    const votes = trees.map(tree => predict(tree, testPoint));
+                    const class0Votes = votes.filter(v => v === 0).length;
+                    const class1Votes = votes.filter(v => v === 1).length;
+                    const finalClass = class1Votes > class0Votes ? 1 : 0;
+                    
+                    ctx.fillStyle = finalClass === 0 ? COLORS.boundary0 : COLORS.boundary1;
+                    ctx.fillRect(x, y, step, step);
+                }
+            }
+        }
+
+        // --- Simulation Logic ---
+
+        /**
+         * Generates the initial dataset
+         */
+        function createData() {
+            originalData = [];
+            // Class 0 (Blue) - top-left cluster
+            for (let i = 0; i < 30; i++) {
+                originalData.push({
+                    x: 100 + random() * 150,
+                    y: 100 + random() * 150,
+                    class: 0
+                });
+            }
+            // Class 1 (Red) - bottom-right cluster
+            for (let i = 0; i < 30; i++) {
+                originalData.push({
+                    x: 350 + random() * 150,
+                    y: 250 + random() * 100,
+                    class: 1
+                });
+            }
+        }
+
+        /**
+         * Creates a bootstrap sample from the original data
+         * @returns {Array} A bag of data
+         */
+        function createBag() {
+            let bag = [];
+            for (let i = 0; i < originalData.length; i++) {
+                bag.push(originalData[Math.floor(random() * originalData.length)]);
+            }
+            return bag;
+        }
+
+        /**
+         * Resets the entire simulation to its initial state
+         */
+        function resetSimulation() {
+            currentStep = 0;
+            seed = 0.5; // Reset the PRNG
+            
+            if (samplingInterval) clearInterval(samplingInterval); // Stop any running animation
+            samplingInterval = null;
+
+            createData();
+            bags = [];
+            trees = [];
+            predictions = [];
+            
+            // Clear all canvases
+            clearCanvas(mainPlotCtx, mainPlotCanvas);
+            drawData(mainPlotCtx, mainPlotCanvas, originalData);
+            
+            treeCanvases.forEach(tc => {
+                clearCanvas(tc.ctx, tc.canvas);
+                tc.container.classList.add('hidden');
+            });
+            
+            // Reset UI elements
+            mainPlotTitle.textContent = "Original Dataset";
+            predictionSummary.classList.add('hidden');
+            predictionText.textContent = "";
+            treeRulesDisplay.innerHTML = "";
+            treeRulesDisplay.classList.add('hidden');
+            nextButton.disabled = false;
+            
+            updateExplanation();
+        }
+
+        /**
+         * Updates the explanation text based on the current step
+         */
+        function updateExplanation() {
+            explanationText.innerHTML = STEP_DESCRIPTIONS[currentStep];
+        }
+        
+        /**
+         * Highlights a prediction on a specific tree plot
+         */
+        function highlightPrediction(treeIndex, prediction) {
+            const { ctx, canvas } = treeCanvases[treeIndex];
+            
+            // Redraw bag and boundaries
+            drawTreeBoundaries(ctx, trees[treeIndex], { xMin: 0, xMax: canvas.width, yMax: canvas.height, yMin: 0 });
+            drawAxisLabels(ctx, canvas, false);
+            drawBag(ctx, canvas, bags[treeIndex]);
+            
+            // Draw new point
+            const scaledPoint = { 
+                x: newPoint.x * (canvas.width / mainPlotCanvas.width), 
+                y: newPoint.y * (canvas.height / mainPlotCanvas.height),
+                class: 'new'
+            };
+            drawPoint(ctx, scaledPoint, POINT_RADIUS + 2);
+
+            // Add text
+            ctx.fillStyle = prediction === 1 ? COLORS.class1 : COLORS.class0;
+            ctx.font = 'bold 24px Inter';
+            ctx.textAlign = 'center';
+            const voteText = `VOTE: ${prediction === 1 ? 'Malignant' : 'Benign'}`;
+            ctx.fillText(voteText, canvas.width / 2, canvas.height / 2);
+        }
+
+        /**
+         * The main simulation step function
+         */
+        function handleNextStep() {
+            currentStep++;
+            updateExplanation();
+            
+            // Stop any sampling animation if user clicks "Next" mid-animation
+            if (samplingInterval && currentStep !== 2) { 
+                 clearInterval(samplingInterval);
+                 samplingInterval = null;
+                 nextButton.disabled = false;
+                 // Ensure bag is fully drawn if animation is skipped
+                 if(bags[0]) drawBag(treeCanvases[0].ctx, treeCanvases[0].canvas, bags[0]);
+            }
+
+            // Default: hide tree rules unless a tree is being shown
+            treeRulesDisplay.classList.add('hidden');
+
+            switch (currentStep) {
+                case 1: // Intro to Bagging
+                    // No visual change yet
+                    break;
+                case 2: // (NEW) Animate sampling for Bag 1
+                    nextButton.disabled = true; // Disable button during animation
+                    bags.push([]); // Add an empty bag
+                    treeCanvases[0].container.classList.remove('hidden');
+                    
+                    let sampleCount = 0;
+                    const { ctx, canvas } = treeCanvases[0];
+                    clearCanvas(ctx, canvas);
+                    drawAxisLabels(ctx, canvas, false); // Draw empty axis
+
+                    if (samplingInterval) clearInterval(samplingInterval);
+                    samplingInterval = setInterval(() => {
+                        if (sampleCount >= originalData.length) {
+                            clearInterval(samplingInterval);
+                            samplingInterval = null;
+                            nextButton.disabled = false;
+                            // Clear final highlight
+                            drawData(mainPlotCtx, mainPlotCanvas, originalData);
+                            // Ensure final bag is drawn perfectly
+                            drawBag(ctx, canvas, bags[0]);
+                            return;
+                        }
+
+                        // Pick a random point
+                        let sampleIndex = Math.floor(random() * originalData.length);
+                        let sampledPoint = originalData[sampleIndex];
+                        bags[0].push(sampledPoint);
+                        
+                        // Redraw main plot with highlight
+                        drawData(mainPlotCtx, mainPlotCanvas, originalData);
+                        drawPoint(mainPlotCtx, sampledPoint, POINT_RADIUS + 2, 'rgba(253, 224, 71, 1)'); // yellow-400 highlight
+
+                        // Redraw bag with new point
+                        drawBag(ctx, canvas, bags[0]);
+                        
+                        sampleCount++;
+                    }, 50); // 50ms per sample
+                    break;
+                case 3: // (Old Step 2) Show completed Bag 1
+                    // This step is now just for explanation. 
+                    // The animation in case 2 built the bag.
+                    // We just ensure the final state is clean.
+                    drawData(mainPlotCtx, mainPlotCanvas, originalData); // Clear highlight
+                    drawBag(treeCanvases[0].ctx, treeCanvases[0].canvas, bags[0]);
+                    break;
+                case 4: // (Old Step 3) Intro to Building Tree 1
+                    // No visual change yet
+                    break;
+                case 5: // (Old Step 4) Show Tree 1 boundaries
+                    trees.push(buildFakeTree(bags[0]));
+                    const { ctx: ctx1, canvas: canvas1 } = treeCanvases[0];
+                    drawTreeBoundaries(ctx1, trees[0], { xMin: 0, xMax: canvas1.width, yMax: canvas1.height, yMin: 0 });
+                    drawAxisLabels(ctx1, canvas1, false);
+                    drawBag(ctx1, canvas1, bags[0]); // Redraw points on top
+
+                    // --- Tree Rules Display ---
+                    treeRulesDisplay.innerHTML = `
+                        <h4 class="font-bold text-gray-800 mb-2">Tree 1 Rules:</h4>
+                        ${generateTreeRules(trees[0])}
+                    `;
+                    treeRulesDisplay.classList.remove('hidden');
+                    break;
+                case 6: // (Old Step 5) Show Bag 2
+                    bags.push(createBag());
+                    treeCanvases[1].container.classList.remove('hidden');
+                    drawBag(treeCanvases[1].ctx, treeCanvases[1].canvas, bags[1]);
+                    break;
+                case 7: // (Old Step 6) Show Tree 2
+                    trees.push(buildFakeTree(bags[1]));
+                    const { ctx: ctx2, canvas: canvas2 } = treeCanvases[1];
+                    drawTreeBoundaries(ctx2, trees[1], { xMin: 0, xMax: canvas2.width, yMax: canvas2.height, yMin: 0 });
+                    drawAxisLabels(ctx2, canvas2, false);
+                    drawBag(ctx2, canvas2, bags[1]);
+
+                    // --- Tree Rules Display ---
+                    treeRulesDisplay.innerHTML = `
+                        <h4 class="font-bold text-gray-800 mb-2">Tree 2 Rules:</h4>
+                        ${generateTreeRules(trees[1])}
+                    `;
+                    treeRulesDisplay.classList.remove('hidden');
+                    break;
+                case 8: // (Old Step 7) Show Bag 3
+                    bags.push(createBag());
+                    treeCanvases[2].container.classList.remove('hidden');
+                    drawBag(treeCanvases[2].ctx, treeCanvases[2].canvas, bags[2]);
+                    break;
+                case 9: // (Old Step 8) Show Tree 3
+                    trees.push(buildFakeTree(bags[2]));
+                    const { ctx: ctx3, canvas: canvas3 } = treeCanvases[2];
+                    drawTreeBoundaries(ctx3, trees[2], { xMin: 0, xMax: canvas3.width, yMax: canvas3.height, yMin: 0 });
+                    drawAxisLabels(ctx3, canvas3, false);
+                    drawBag(ctx3, canvas3, bags[2]);
+
+                    // --- Tree Rules Display ---
+                    treeRulesDisplay.innerHTML = `
+                        <h4 class="font-bold text-gray-800 mb-2">Tree 3 Rules:</h4>
+                        ${generateTreeRules(trees[2])}
+                    `;
+                    treeRulesDisplay.classList.remove('hidden');
+                    break;
+                case 10: // (Old Step 9) Introduce new point
+                    mainPlotTitle.textContent = "Making a Prediction";
+                    drawData(mainPlotCtx, mainPlotCanvas, originalData);
+                    drawPoint(mainPlotCtx, { ...newPoint, class: 'new' }, POINT_RADIUS + 2);
+                    break;
+                case 11: // (Old Step 10) Tree 1 Vote
+                    predictions.push(predict(trees[0], newPoint));
+                    highlightPrediction(0, predictions[0]);
+                    break;
+                case 12: // (Old Step 11) Tree 2 Vote
+                    predictions.push(predict(trees[1], newPoint));
+                    highlightPrediction(1, predictions[1]);
+                    break;
+                case 13: // (Old Step 12) Tree 3 Vote
+                    predictions.push(predict(trees[2], newPoint));
+                    highlightPrediction(2, predictions[2]);
+                    break;
+                case 14: // (Old Step 13) Show Majority Vote
+                    const class0Votes = predictions.filter(v => v === 0).length;
+                    const class1Votes = predictions.filter(v => v === 1).length;
+                    const finalClass = class1Votes > class0Votes ? 1 : 0;
+                    const finalText = finalClass === 1 ? 'Malignant' : 'Benign';
+                    
+                    predictionSummary.classList.remove('hidden');
+                    predictionText.innerHTML = `
+                        Votes: &nbsp; <span class="text-red-600">Malignant (${class1Votes})</span>
+                        &nbsp; | &nbsp; <span class="text-blue-600">Benign (${class0Votes})</span>
+                        <br>
+                        <span class="mt-2 block ${finalClass === 1 ? 'text-red-600' : 'text-blue-600'}">
+                            Final Prediction: ${finalText}
+                        </span>
+                    `;
+                    
+                    // Show final prediction on main plot
+                    drawData(mainPlotCtx, mainPlotCanvas, originalData);
+                    const predictionClass = finalClass === 1 ? 'prediction_malignant' : 'prediction_benign';
+                    drawPoint(mainPlotCtx, { ...newPoint, class: predictionClass }, POINT_RADIUS + 2);
+                    break;
+                case 15: // (Old Step 14) Show Final Forest Boundary
+                    mainPlotTitle.textContent = "Final Forest Decision Boundary";
+                    predictionSummary.classList.add('hidden');
+                    drawForestBoundary(mainPlotCtx);
+                    drawAxisLabels(mainPlotCtx, mainPlotCanvas, true);
+                    drawData(mainPlotCtx, mainPlotCanvas, originalData); // Redraw points
+                    nextButton.disabled = true; // End of sim
+                    break;
+            }
+        }
+
+        // --- Event Listeners ---
+        nextButton.addEventListener('click', handleNextStep);
+        resetButton.addEventListener('click', resetSimulation);
+
+        // --- Initial Load ---
+        window.onload = resetSimulation;
+
+    </script>
+<!-- Fix: Added missing closing body and html tags -->
+</body>
+</html>
+
+
+

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Knowledge Graph: IB CS A4 Machine Learning</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f2f5;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            text-align: center;
+            padding: 1rem 0;
+            background-color: #ffffff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.75rem;
+            color: #0d47a1; /* Dark Blue theme for ML */
+        }
+        
+        .header p {
+            margin: 0.25rem 0 0;
+            color: #555;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 85px);
+            max-width: 100%;
+        }
+
+        #graph-container {
+            flex-grow: 1;
+            position: relative;
+        }
+        
+        svg {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        #info-panel {
+            width: 380px;
+            flex-shrink: 0;
+            background-color: #ffffff;
+            border-left: 1px solid #e0e0e0;
+            padding: 1.5rem;
+            box-sizing: border-box;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.05);
+        }
+
+        #info-panel h2 {
+            margin-top: 0;
+            color: #0d47a1;
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 0.5rem;
+        }
+        
+        #info-panel p {
+            line-height: 1.6;
+        }
+        
+        #info-panel strong {
+            color: #1976d2;
+        }
+        
+        #info-panel code {
+            background-color: #e0e0e0;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .links line {
+            stroke: #999;
+            stroke-opacity: 0.6;
+        }
+
+        .nodes circle {
+            stroke: #fff;
+            stroke-width: 1.5px;
+            cursor: pointer;
+            transition: r 0.15s ease-in-out;
+        }
+
+        .nodes circle.selected {
+            stroke: #ffab40; /* Amber color for selection */
+            stroke-width: 3px;
+        }
+
+        .labels text {
+            pointer-events: none;
+            font-size: 12px;
+            font-weight: 500;
+            text-anchor: middle;
+            paint-order: stroke;
+            stroke: white;
+            stroke-width: 2.5px;
+            stroke-linecap: butt;
+            stroke-linejoin: round;
+        }
+
+        .link-labels text {
+            pointer-events: none;
+            font-size: 10px;
+            fill: #555;
+            text-anchor: middle;
+        }
+
+        #info-panel > * {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>IB Computer Science</h1>
+        <p>A4 Machine Learning Concepts</p>
+    </div>
+
+    <div class="container">
+        <div id="graph-container"></div>
+        <div id="info-panel">
+            <h2>Welcome!</h2>
+            <p>This is an interactive knowledge graph based on the concepts from your <strong>IB CS A4 Machine Learning</strong> syllabus.</p>
+            <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>
+        </div>
+    </div>
+
+    <script>
+        const graphData = {
+            nodes: [
+                // A4.1 Machine Learning Fundamentals
+                { id: "Types of ML", group: 1, radius: 28, description: "Machine learning algorithms are categorized based on how they learn from data. The main types are Supervised, Unsupervised, Reinforcement, Deep, and Transfer Learning, each suited for different tasks. <br><br><strong>Common Misconception:</strong> That 'AI' and 'Machine Learning' are interchangeable terms. Machine learning is a specific subset of Artificial Intelligence (AI) that focuses on algorithms learning from data. <br><br><strong>Sample Question:</strong> Describe two types of machine learning. <br><br><strong>Model Answer:</strong> 1. Supervised learning trains a model on a labeled dataset, where the correct output is known for each input. Its goal is to predict outcomes for new data, such as in email spam filtering. 2. Unsupervised learning trains on an unlabeled dataset to find hidden patterns. Its goal is to discover groupings, like segmenting customers based on purchasing behavior.", link: "https://www.geeksforgeeks.org/types-of-machine-learning/" },
+                { id: "Supervised Learning", group: 1, radius: 22, description: "Training an algorithm on a labeled dataset, where the correct output is known. <br><br><strong>Real-world Example:</strong> Medical imaging diagnostics, where a model is trained on thousands of scans labeled 'cancerous' or 'benign' to learn how to classify new scans. <br><br><strong>Common Misconception:</strong> That it can learn from any data. Supervised learning strictly requires high-quality, accurately labeled data, which can be expensive and time-consuming to create. <br><br><strong>Sample Question:</strong> Describe an application of supervised learning. <br><br><strong>Model Answer:</strong> In medical imaging, a supervised learning model can be trained on a large dataset of X-rays that have been labeled by radiologists. The model learns the features associated with diseases, enabling it to assist doctors by classifying new, unseen X-rays.", link: "https://www.geeksforgeeks.org/supervised-machine-learning/" },
+                { id: "Unsupervised Learning", group: 1, radius: 22, description: "Training an algorithm on an unlabeled dataset to find hidden patterns. <br><br><strong>Real-world Example:</strong> Market basket analysis, where an e-commerce site analyzes purchase data to discover items frequently bought together (e.g., bread and butter) to create product recommendations. <br><br><strong>Common Misconception:</strong> That it automatically finds meaningful insights. The patterns and clusters it discovers still require human interpretation and domain expertise to determine their actual significance and value. <br><br><strong>Sample Question:</strong> Describe an application of unsupervised learning. <br><br><strong>Model Answer:</strong> Unsupervised learning is used for market basket analysis. By analyzing transaction data without any pre-existing labels, the algorithm can identify associations between products, which a retailer can use for store layout design and promotional strategies.", link: "https://www.geeksforgeeks.org/unsupervised-machine-learning/" },
+                { id: "Reinforcement Learning", group: 1, radius: 22, description: "An algorithm learns by interacting with an environment, receiving rewards or penalties. <br><br><strong>Real-world Example:</strong> Robotics navigation, where a robot learns to navigate a maze by being rewarded for moving towards the exit and penalized for hitting walls. <br><br><strong>Common Misconception:</strong> That it's suitable for any learning task. RL is most effective for sequential decision-making problems where a clear reward signal can be defined and often requires a simulated environment to learn safely and efficiently. <br><br><strong>Sample Question:</strong> Describe an application of reinforcement learning. <br><br><strong>Model Answer:</strong> Reinforcement learning is used to train self-driving cars. The AI agent learns to drive by taking actions (steering, accelerating) in a simulated environment and receives rewards for safe and efficient driving and penalties for accidents, gradually learning an optimal driving policy.", link: "https://www.geeksforgeeks.org/what-is-reinforcement-learning/" },
+                { id: "Deep Learning", group: 1, radius: 22, description: "A subset of ML using multi-layered Artificial Neural Networks (ANNs) to learn from vast amounts of data. <br><br><strong>Real-world Example:</strong> Natural language processing (NLP) tasks like language translation, where deep learning models like transformers capture complex grammar and context. <br><br><strong>Common Misconception:</strong> That 'deeper' (more layers) is always better. While depth allows for learning complex patterns, excessively deep networks can be difficult to train, prone to overfitting, and computationally expensive. <br><br><strong>Sample Question:</strong> Describe an application of deep learning. <br><br><strong>Model Answer:</strong> Deep learning is applied in voice assistants like Siri or Alexa. These systems use deep neural networks to process raw audio signals, recognize speech patterns, understand the user's intent, and generate an appropriate response, all of which are complex pattern recognition tasks.", link: "https://www.geeksforgeeks.org/introduction-deep-learning/" },
+                { id: "Transfer Learning", group: 1, radius: 22, description: "Reusing a pre-trained model on a new, related problem to speed up development and improve performance, especially with limited data. <br><br><strong>Real-world Example:</strong> Using a model pre-trained to recognize general objects (cats, dogs, cars) as a starting point for a new model that identifies specific car models. <br><br><strong>Common Misconception:</strong> That any pre-trained model can be used for any new task. Transfer learning is only effective when the original and new tasks are related and share some underlying patterns. <br><br><strong>Sample Question:</strong> Describe an application of transfer learning. <br><br><strong>Model Answer:</strong> In medical imaging, a model pre-trained on a vast dataset of general images (like ImageNet) can be fine-tuned on a smaller, specific dataset of medical scans. This leverages the pre-trained model's ability to recognize basic features like edges and textures, accelerating the training process for the medical diagnosis task.", link: "https://www.geeksforgeeks.org/transfer-learning-in-machine-learning/" },
+                { id: "ML Hardware", group: 1, radius: 26, description: "The hardware required for ML ranges from standard laptops for simple models to advanced infrastructure for complex tasks, involving specialized processors and scalable platforms. <br><br><strong>Real-world Example:</strong> Training a large language model like GPT-4 requires a high-performance computing (HPC) center with thousands of interconnected GPUs or TPUs. Running a simple object detection model on a smartphone uses an efficient on-device processor (edge device). <br><br><strong>Common Misconception:</strong> That you always need a supercomputer or expensive GPUs to do machine learning. Many valuable and practical ML models can be developed and trained effectively on a standard laptop. <br><br><strong>Sample Question:</strong> Describe the hardware requirements for training a large-scale deep learning model versus deploying it on an edge device. <br><br><strong>Model Answer:</strong> Training a large deep learning model requires immense computational power, typically found in HPC centers or cloud platforms using hundreds of GPUs or TPUs for parallel processing and large amounts of RAM and storage. In contrast, deploying a model on an edge device (like a smartphone) requires a specialized, power-efficient processor like an ASIC or a mobile GPU, as the model must run with limited battery and computational resources.", link: "https://www.geeksforgeeks.org/hardware-accelerators-for-machine-learning/" },
+
+                // A4.2 Data Preprocessing (HL)
+                { id: "Data Preprocessing (HL)", group: 2, radius: 30, description: "The crucial step of cleaning and preparing raw data to make it suitable for a machine learning model. <br><br><strong>Common Misconception:</strong> That this is a quick, automated step. In reality, it is often the most time-consuming and labor-intensive part of a machine learning project, requiring significant domain knowledge. <br><br><strong>Sample Question:</strong> Describe the significance of data cleaning. <br><br><strong>Model Answer:</strong> Data cleaning is significant because real-world data is often noisy, inconsistent, and contains errors or missing values. Cleaning improves data quality by handling these issues through techniques like imputation for missing data and removal of duplicates. High-quality data is essential for training accurate and reliable machine learning models, following the 'garbage in, garbage out' principle.", link: "https://www.geeksforgeeks.org/data-preprocessing-in-data-mining/" },
+                { id: "Feature Selection (HL)", group: 2, radius: 24, description: "The process of identifying and selecting the most relevant features (variables) to use in a model. <br><br><strong>Real-world Example:</strong> When predicting customer churn, selecting features like 'recent activity' and 'subscription tier' while ignoring irrelevant ones like 'user ID'. <br><br><strong>Common Misconception:</strong> That more data features are always better. Including irrelevant or redundant features (noise) can confuse the model, leading to worse performance and overfitting. <br><br><strong>Sample Question:</strong> Describe the role of feature selection. <br><br><strong>Model Answer:</strong> The role of feature selection is to reduce the number of input variables by selecting only the most informative ones. This improves model performance by preventing overfitting, reduces training time and computational cost, and makes the resulting model easier to interpret and understand.", link: "https://www.geeksforgeeks.org/feature-selection-techniques-in-machine-learning/" },
+                { id: "Dimensionality Reduction (HL)", group: 2, radius: 24, description: "The process of reducing the number of features in a dataset while trying to preserve important information, often by creating new, combined features. <br><br><strong>Real-world Example:</strong> In facial recognition, an image with thousands of pixel features can be reduced to a smaller set of principal components that represent the face's key structures. <br><br><strong>Common Misconception:</strong> That it is the same as feature selection. Feature selection picks a subset of the original features, whereas dimensionality reduction transforms the data into a new, smaller set of features that are combinations of the old ones. <br><br><strong>Sample Question:</strong> Describe the importance of dimensionality reduction. <br><br><strong>Model Answer:</strong> Dimensionality reduction is important for mitigating the 'curse of dimensionality,' where models perform poorly in high-dimensional spaces. By reducing the number of features, it lowers computational complexity, reduces memory usage, and can help prevent overfitting, leading to better model generalization on unseen data.", link: "https://www.geeksforgeeks.org/dimensionality-reduction/" },
+                
+                // A4.3 ML Approaches (HL)
+                { id: "Linear Regression (HL)", group: 3, radius: 20, description: "A supervised learning algorithm used to predict a continuous outcome by finding the best-fit linear relationship. <br><br><strong>Common Misconception:</strong> That if two variables have a strong correlation, one must cause the other. Linear regression can show correlation, but it cannot prove causation. <br><br><strong>Sample Question:</strong> Explain how linear regression is used to predict continuous outcomes. <br><br><strong>Model Answer:</strong> Linear regression models the relationship between a dependent variable (e.g., house price) and independent variables (e.g., size, location) by fitting a linear equation to the data. The algorithm determines the optimal slope and intercept for this line to minimize the error between the predicted and actual values, allowing it to predict a continuous outcome for new data.", link: "https://www.geeksforgeeks.org/linear-regression-machine-learning/" },
+                { id: "Classification (HL)", group: 3, radius: 20, description: "A supervised learning task to predict a discrete, categorical label. <br><br><strong>Common Misconception:</strong> That high accuracy is always the best measure of a classifier's performance. In datasets with imbalanced classes (e.g., fraud detection), a model can have high accuracy by simply predicting the majority class, making metrics like precision, recall, and F1-score more informative. <br><br><strong>Sample Question:</strong> Explain how K-Nearest Neighbours (K-NN) is used for classification. <br><br><strong>Model Answer:</strong> K-NN classifies a new data point based on the majority class of its 'k' nearest neighbors in the feature space. It calculates the distance to all training points, identifies the k-closest ones, and assigns the new point the most common class among those neighbors. It's a simple yet effective instance-based learning algorithm.", link: "https://www.geeksforgeeks.org/classification-in-machine-learning/" },
+                { id: "Hyperparameter Tuning (HL)", group: 3, radius: 22, description: "The process of finding the optimal hyperparameters (e.g., 'k' in K-NN) for a model to improve performance metrics like accuracy or F1 score. <br><br><strong>Common Misconception:</strong> That this can be done effectively through manual trial and error. For complex models, the process should be systematic, using methods like Grid Search or Random Search to explore the hyperparameter space efficiently. <br><br><strong>Sample Question:</strong> Explain the role of hyperparameter tuning in preventing overfitting. <br><br><strong>Model Answer:</strong> Hyperparameter tuning is crucial for finding the right model complexity. Overfitting occurs when a model is too complex and learns the training data's noise. By systematically tuning hyperparameters (e.g., the depth of a decision tree), we can find a balance where the model generalizes well to new, unseen data without being overly simplistic (underfitting) or overly complex (overfitting).", link: "https://www.geeksforgeeks.org/hyperparameter-tuning/" },
+                { id: "Clustering (HL)", group: 3, radius: 20, description: "An unsupervised technique to group similar data points together based on their features. <br><br><strong>Common Misconception:</strong> That the algorithm automatically finds the 'correct' number of clusters. The number of clusters (k) is a hyperparameter that must be chosen by the user, often with the help of evaluation methods like the elbow method. <br><br><strong>Sample Question:</strong> Describe how clustering techniques are used to group data. <br><br><strong>Model Answer:</strong> Clustering algorithms partition a dataset into groups (clusters) where data points within a cluster are more similar to each other than to those in other clusters. This is done by measuring similarity (or distance) between data points in the feature space, allowing the algorithm to discover natural groupings in unlabeled data.", link: "https://www.geeksforgeeks.org/clustering-in-machine-learning/" },
+                { id: "Association Rule (HL)", group: 3, radius: 22, description: "An unsupervised technique to uncover relationships between attributes in large datasets. <br><br><strong>Common Misconception:</strong> That a strong association implies causation. For example, finding that customers who buy diapers also buy beer does not mean buying diapers causes them to buy beer; there might be a hidden factor (e.g., new parents). <br><br><strong>Sample Question:</strong> Describe how association rule mining could be used in crime analysis. <br><br><strong>Model Answer:</strong> In crime analysis, association rule mining could analyze a large dataset of incidents. It might uncover a rule like '{high vandalism, late night} -> {theft}', indicating that areas with high vandalism rates at night also tend to have thefts. This helps law enforcement in predictive policing and strategic resource allocation.", link: "https://www.geeksforgeeks.org/association-rule-mining/" },
+                { id: "RL Agent (HL)", group: 3, radius: 22, description: "In reinforcement learning, an agent learns to make decisions by taking actions in an environment to maximize a cumulative reward. <br><br><strong>Common Misconception:</strong> That the agent 'understands' its environment or goal. The agent is simply learning a mathematical policy that maps states to actions in order to maximize a numerical reward signal, without any deeper consciousness or understanding. <br><br><strong>Sample Question:</strong> Describe the exploration vs. exploitation trade-off for an RL agent. <br><br><strong>Model Answer:</strong> The exploration vs. exploitation trade-off is a core challenge in RL. The agent must balance 'exploitation'—using its current knowledge to take actions that yield the highest known reward—with 'exploration'—trying new, random actions to discover potentially better rewards for the future. An effective agent must explore enough to find optimal strategies but exploit its knowledge to perform well.", link: "https://www.geeksforgeeks.org/reinforcement-learning-an-introduction/" },
+                { id: "Genetic Algorithms (HL)", group: 3, radius: 22, description: "Optimization algorithms inspired by natural selection, using concepts like population, selection, crossover, and mutation. <br><br><strong>Common Misconception:</strong> That they are guaranteed to find the absolute best (globally optimal) solution. They are heuristics that are very good at finding near-optimal solutions, but they do not guarantee finding the single best one. <br><br><strong>Sample Question:</strong> Describe how a genetic algorithm could solve the 'travelling salesperson problem'. <br><br><strong>Model Answer:</strong> To solve the TSP, a genetic algorithm starts with a population of random routes (chromosomes). Each route is assigned a fitness score (e.g., inverse of total distance). The fittest routes are selected to 'reproduce' through crossover (combining parts of two routes) and mutation (randomly swapping two cities in a route). This process is repeated for many generations, evolving towards an optimal or near-optimal shortest route.", link: "https://www.geeksforgeeks.org/genetic-algorithms/" },
+                { id: "ANNs & CNNs (HL)", group: 3, radius: 24, description: "Artificial/Convolutional Neural Networks are complex models for pattern recognition. ANNs are general-purpose, while CNNs are specialized for spatial data like images. <br><br><strong>Common Misconception:</strong> That they are complete 'black boxes' that cannot be interpreted. While they are complex, various techniques (like SHAP or LIME) are being developed to help understand and explain their predictions. <br><br><strong>Sample Question:</strong> Outline the structure of a multi-layer perceptron (MLP). <br><br><strong>Model Answer:</strong> An MLP is a type of ANN with an input layer, one or more hidden layers, and an output layer. Neurons in each layer are connected to neurons in the next, with each connection having a weight. Data flows from the input layer, through the hidden layers where non-linear transformations occur via activation functions, to the output layer which produces the final prediction.", link: "https://www.geeksforgeeks.org/artificial-neural-network/" },
+                { id: "Model Selection (HL)", group: 3, radius: 22, description: "The process of choosing the best algorithm for a specific problem, considering data characteristics, complexity, and desired outcome. <br><br><strong>Common Misconception:</strong> That you can pick the best model by evaluating it on your training data. The best model must be selected based on its performance on a separate, unseen test set to ensure it can generalize well to new data. <br><br><strong>Sample Question:</strong> Explain why model selection is important in machine learning. <br><br><strong>Model Answer:</strong> Model selection is important because there is no single best algorithm for all problems (the 'No Free Lunch' theorem). The performance of an algorithm depends heavily on the data's characteristics. For instance, linear regression works well for linear data, while a decision tree might be better for data with complex, non-linear interactions. Proper model selection ensures the chosen approach is well-suited to the problem, leading to better and more reliable results.", link: "https://www.geeksforgeeks.org/model-selection-in-machine-learning/" },
+                
+                // A4.4 Ethical Considerations
+                { id: "Ethical Implications", group: 4, radius: 28, description: "The study of moral issues raised by ML, including algorithmic bias, privacy, accountability, and societal impact. <br><br><strong>Common Misconception:</strong> That ethics is an optional step or someone else's responsibility. Integrating ethical considerations is a core responsibility for everyone involved in building ML systems, from data collection to deployment. <br><br><strong>Sample Question:</strong> Discuss the ethical challenges posed by biases in training data. <br><br><strong>Model Answer:</strong> Biases in training data present a major ethical challenge because an ML model will learn and often amplify these biases. For example, a hiring algorithm trained on historical data from a male-dominated industry may learn to unfairly penalize female candidates. This leads to automated discrimination, perpetuating societal inequalities and raising serious concerns about algorithmic fairness and accountability.", link: "https://www.geeksforgeeks.org/ethics-in-machine-learning/" },
+                { id: "Tech Integration Ethics", group: 4, radius: 24, description: "Continually reassessing ethical guidelines as new technologies like AI, VR, and quantum computing become integrated into daily life. <br><br><strong>Common Misconception:</strong> That ethical problems can be solved by better technology alone. Many ethical challenges are deeply rooted social issues that require changes in policy, law, and public discourse, not just a technical fix. <br><br><strong>Sample Question:</strong> Discuss one ethical aspect of integrating AI into daily life. <br><br><strong>Model Answer:</strong> One key ethical aspect is privacy. The pervasive use of AI in devices like smart speakers and facial recognition systems leads to the continuous collection of personal data. This raises concerns about consent, how this data is used and secured, and the potential for surveillance. It requires a constant reassessment of privacy laws and ethical guidelines to protect individual rights in an increasingly automated world.", link: "https://www.geeksforgeeks.org/ethics-and-impact-of-digital-technology-on-society/" }
+            ],
+            links: [
+                { source: "Types of ML", target: "Supervised Learning", label: "includes" },
+                { source: "Types of ML", target: "Unsupervised Learning", label: "includes" },
+                { source: "Types of ML", target: "Reinforcement Learning", label: "includes" },
+                { source: "Types of ML", target: "Deep Learning", label: "includes" },
+                { source: "Types of ML", target: "Transfer Learning", label: "includes" },
+                { source: "Types of ML", target: "ML Hardware", label: "requires" },
+                { source: "Supervised Learning", target: "Classification (HL)", label: "is for" },
+                { source: "Supervised Learning", target: "Linear Regression (HL)", label: "is for" },
+                { source: "Unsupervised Learning", target: "Clustering (HL)", label: "is for" },
+                { source: "Unsupervised Learning", target: "Association Rule (HL)", label: "is for" },
+                { source: "Reinforcement Learning", target: "RL Agent (HL)", label: "uses an" },
+                { source: "Deep Learning", target: "ANNs & CNNs (HL)", label: "uses" },
+                { source: "Data Preprocessing (HL)", target: "Feature Selection (HL)", label: "includes" },
+                { source: "Data Preprocessing (HL)", target: "Dimensionality Reduction (HL)", label: "includes" },
+                { source: "Classification (HL)", target: "Hyperparameter Tuning (HL)", label: "needs" },
+                { source: "Types of ML", target: "Data Preprocessing (HL)", label: "requires" },
+                { source: "Types of ML", target: "Model Selection (HL)", label: "requires" },
+                { source: "Types of ML", target: "Ethical Implications", label: "has" },
+                { source: "Ethical Implications", target: "Tech Integration Ethics", label: "involves" }
+            ]
+        };
+
+        const width = document.getElementById('graph-container').offsetWidth;
+        const height = document.getElementById('graph-container').offsetHeight;
+
+        const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+        const simulation = d3.forceSimulation(graphData.nodes)
+            .force("link", d3.forceLink(graphData.links).id(d => d.id).distance(160))
+            .force("charge", d3.forceManyBody().strength(-550))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("x", d3.forceX())
+            .force("y", d3.forceY());
+
+        const svg = d3.select("#graph-container").append("svg")
+            .attr("viewBox", [0, 0, width, height])
+            .on("click", backgroundClicked);
+
+        const container = svg.append("g");
+        
+        const link = container.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(graphData.links)
+            .enter().append("line")
+            .attr("stroke-width", 2);
+
+        const linkLabel = container.append("g")
+            .attr("class", "link-labels")
+            .selectAll("text")
+            .data(graphData.links)
+            .enter().append("text")
+            .text(d => d.label);
+
+        const node = container.append("g")
+            .attr("class", "nodes")
+            .selectAll("circle")
+            .data(graphData.nodes)
+            .enter().append("circle")
+            .attr("r", d => d.radius)
+            .attr("fill", d => color(d.group))
+            .call(drag(simulation))
+            .on("click", nodeClicked)
+            .on("mouseover", mouseover)
+            .on("mouseout", mouseout);
+            
+        const label = container.append("g")
+            .attr("class", "labels")
+            .selectAll("text")
+            .data(graphData.nodes)
+            .enter().append("text")
+            .text(d => d.id)
+            .attr("dx", 0)
+            .attr("dy", ".35em");
+            
+        node.append("title")
+            .text(d => d.id);
+
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+            
+            linkLabel
+                .attr("x", d => (d.source.x + d.target.x) / 2)
+                .attr("y", d => (d.source.y + d.target.y) / 2);
+
+            node
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+            
+            label
+                .attr("x", d => d.x)
+                .attr("y", d => d.y);
+        });
+        
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            return d3.drag().on("start", dragstarted).on("drag", dragged).on("end", dragended);
+        }
+
+        function mouseover(event, d) {
+            d3.select(this).attr("r", d.radius * 1.2);
+        }
+
+        function mouseout(event, d) {
+            if (!d3.select(this).classed("selected")) {
+                d3.select(this).attr("r", d.radius);
+            }
+        }
+
+        function nodeClicked(event, d) {
+            event.stopPropagation();
+            node.classed('selected', false).attr("r", n => n.radius);
+            d3.select(this).classed('selected', true).attr("r", d.radius * 1.2);
+            const infoPanel = d3.select("#info-panel");
+            const description = d.description + "<br><br><strong>Further Reading:</strong> <a href='" + d.link + "' target='_blank'>GeeksforGeeks Article</a>";
+            infoPanel.html(`<h2>${d.id}</h2><p>${description}</p>`);
+        }
+
+        function backgroundClicked() {
+            node.classed('selected', false).attr("r", d => d.radius);
+            const infoPanel = d3.select("#info-panel");
+            infoPanel.html(`
+                <h2>Welcome!</h2>
+                <p>This is an interactive knowledge graph based on the concepts from your <strong>IB CS A4 Machine Learning</strong> syllabus.</p>
+                <p>Click on any node (circle) to learn about a concept. Drag nodes to rearrange the graph and explore their connections.</p>`);
+        }
+        
+        const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", (event) => {
+            container.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+
+        window.addEventListener('resize', () => {
+            const newWidth = document.getElementById('graph-container').offsetWidth;
+            const newHeight = document.getElementById('graph-container').offsetHeight;
+            svg.attr("viewBox", [0, 0, newWidth, newHeight]);
+            simulation.force("center", d3.forceCenter(newWidth / 2, newHeight / 2)).restart();
+        });
+    </script>
+</body>
+</html>
+

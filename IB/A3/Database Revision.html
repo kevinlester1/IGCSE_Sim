@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS Planner 2027</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <!-- Babel for JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @media print {
+            @page { size: A3 landscape; margin: 10mm; }
+            body { 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+                background: white !important; 
+            }
+            .no-print { display: none !important; }
+            .print-page-break { page-break-after: always; break-after: page; }
+            .print-container { height: auto !important; min-height: 0 !important; overflow: visible !important; border: none !important; box-shadow: none !important; }
+            .print-scroll { overflow: visible !important; }
+        }
+        
+        .bg-holiday {
+            background-color: #f1f5f9 !important;
+            background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 0px, rgba(0,0,0,0.05) 10px, transparent 10px, transparent 20px) !important;
+        }
+
+        .bg-cycle-shade {
+            background-color: rgba(79, 70, 229, 0.04);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { height: 12px; width: 12px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-top: 1px solid #e2e8f0; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 6px; border: 3px solid #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background-color: #94a3b8; }
+        
+        .no-scrollbar-y::-webkit-scrollbar-track { background: transparent; }
+        .no-scrollbar-y::-webkit-scrollbar-thumb { border: 3px solid white; }
+
+        .group-header {
+            background-color: #f8fafc;
+            font-size: 0.65rem;
+            font-weight: 900;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            text-transform: uppercase;
+            border-bottom: 1px solid #e2e8f0;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            padding: 0 12px;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- Icons ---
+        const IconBase = ({ children, className = "", ...props }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} {...props}>
+                {children}
+            </svg>
+        );
+        const Calendar = (props) => <IconBase {...props}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></IconBase>;
+        const Settings = (props) => <IconBase {...props}><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></IconBase>;
+        const Trash2 = (props) => <IconBase {...props}><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></IconBase>;
+        const Download = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></IconBase>;
+        const Upload = (props) => <IconBase {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></IconBase>;
+        const Printer = (props) => <IconBase {...props}><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></IconBase>;
+        const Minus = (props) => <IconBase {...props}><line x1="5" y1="12" x2="19" y2="12"></line></IconBase>;
+        const Plus = (props) => <IconBase {...props}><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></IconBase>;
+        const XIcon = (props) => <IconBase {...props}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></IconBase>;
+        const AlertTriangle = (props) => <IconBase {...props}><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></IconBase>;
+        const CheckCircle2 = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></IconBase>;
+        const Clock = (props) => <IconBase {...props}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></IconBase>;
+
+        // --- Data Definitions ---
+        const TOPICS = [
+            // Standard Level A
+            { id: 'A1', title: 'Computer fundamentals (Core)', category: 'A SL', hours: 11, level: 'SL', deps: [], igcse: true, color: 'bg-indigo-100 border-indigo-400 text-indigo-900', details: ['Architecture of the central processing unit (CPU)', 'Primary memory and Secondary memory', 'Operating systems and application software', 'Binary and hexadecimal representation', 'Boolean operators (AND, OR, NOT, NAND, NOR, XOR)', 'Truth tables and logic diagrams'], tok: 'Binary vs Reality?', linkingQuestions: ['Hardware abstraction?'], ibLearnerProfile: 'Thinkers, Knowledgeable' },
+            { id: 'A2', title: 'Networks (Core)', category: 'A SL', hours: 11, level: 'SL', deps: ['A1'], igcse: true, color: 'bg-blue-100 border-blue-400 text-blue-900', details: ['Network types (LAN, VLAN, WAN, SAN, WLAN, VPN, PAN, P2P)', 'Network standards and protocols', 'OSI model and TCP/IP', 'Data packet switching', 'Wireless networking and security', 'Transmission media'], tok: 'Internet reliability?', linkingQuestions: ['Communication standards?'], ibLearnerProfile: 'Communicators, Principled' },
+            { id: 'A3', title: 'Databases (Core)', category: 'A SL', hours: 11, level: 'SL', deps: ['A1'], igcse: true, color: 'bg-sky-100 border-sky-400 text-sky-900', details: ['Database management systems (DBMS)', 'Relational databases and entity-relationship modeling', 'Primary keys, foreign keys, and data validation', 'SQL queries (SELECT, FROM, WHERE, ORDER BY, JOIN)'], tok: 'Categorizing humans as data?', linkingQuestions: ['Structure vs information?'], ibLearnerProfile: 'Thinkers, Balanced' },
+            { id: 'A4', title: 'Machine learning (Core)', category: 'A SL', hours: 5, level: 'SL', deps: ['A1', 'B2'], color: 'bg-cyan-100 border-cyan-400 text-cyan-900', details: ['Supervised vs unsupervised learning', 'Neural networks concepts', 'Datasets (training vs testing)', 'Bias in data and ethical implications of AI/ML'], tok: 'Can machines possess knowledge?', ibLearnerProfile: 'Principled, Open-minded' },
+            
+            // B Coding Standard Level
+            { id: 'B1', title: 'Computational thinking', category: 'B SL', hours: 5, level: 'SL', deps: [], igcse: true, color: 'bg-emerald-100 border-emerald-400 text-emerald-900', details: ['Thinking procedurally, logically, and abstractly', 'Abstraction and decomposition', 'Pattern recognition', 'Algorithm design, flowcharts, and pseudocode'], tok: 'Thinking vs Intuition?', ibLearnerProfile: 'Thinkers, Inquirers' },
+            { id: 'B2', title: 'Programming (Core)', category: 'B SL', hours: 40, level: 'SL', deps: ['B1'], igcse: true, color: 'bg-green-100 border-green-400 text-green-900', details: ['Variables, constants, data types, and operators', 'Control structures: sequence, selection, iteration', '1D arrays and collections', 'Sub-programmes/functions and parameter passing'], tok: 'Is code a language?', ibLearnerProfile: 'Risk-takers, Thinkers' },
+            { id: 'B3', title: 'Object-oriented programming (Core)', category: 'B SL', hours: 7, level: 'SL', deps: ['B2'], color: 'bg-lime-100 border-lime-400 text-lime-900', details: ['Objects, classes, and instantiation', 'UML class diagrams', 'Encapsulation, attributes, and methods/behaviors', 'Constructors'], tok: 'Fluid reality vs classes?', ibLearnerProfile: 'Thinkers, Communicators' },
+
+            // B Coding Higher Level
+            { id: 'B2-HL', title: 'Programming (HL)', category: 'B HL', hours: 2, level: 'HL', deps: ['B2'], igcse: true, color: 'bg-green-700 border-green-900 text-white', details: ['2D arrays and matrices', 'File handling (reading/writing to text/binary files)'], tok: 'Persistence vs Memory?', linkingQuestions: ['Storage benefits?'], ibLearnerProfile: 'Knowledgeable, Thinkers' },
+            { id: 'B3-HL', title: 'Object-oriented programming (HL)', category: 'B HL', hours: 16, level: 'HL', deps: ['B3'], color: 'bg-lime-700 border-lime-900 text-white', details: ['Inheritance and method overriding', 'Polymorphism', 'Superclasses, subclasses, and abstract classes', 'Advanced UML diagrams'], tok: 'Hierarchy vs Biological reality?', linkingQuestions: ['Code reuse?'], ibLearnerProfile: 'Thinkers, Knowledgeable' },
+            { id: 'B4-HL', title: 'Abstract data types (HL)', category: 'B HL', hours: 23, level: 'HL', deps: ['B2', 'B3-HL'], color: 'bg-yellow-600 border-yellow-800 text-white', details: ['Static vs dynamic data structures', 'Stacks and Queues', 'Linked Lists and Binary Trees', 'Tree traversals (in-order, pre-order, post-order)', 'Recursive algorithms'], tok: 'Discovered or invented?', linkingQuestions: ['Efficiency?'], ibLearnerProfile: 'Inquirers, Thinkers' },
+
+            // Higher Level A
+            { id: 'A1-HL', title: 'Computer fundamentals (HL)', category: 'A HL', hours: 7, level: 'HL', deps: ['A1'], igcse: true, color: 'bg-indigo-700 border-indigo-900 text-white', details: ['Resource management and scheduling', 'Paging and virtual memory', 'Interrupts and polling'], tok: 'OS models vs physical reality?', linkingQuestions: ['Hiding complexity?'], ibLearnerProfile: 'Knowledgeable, Thinkers' },
+            { id: 'A2-HL', title: 'Networks (HL)', category: 'A HL', hours: 7, level: 'HL', deps: ['A2'], color: 'bg-blue-700 border-blue-900 text-white', details: ['VPN requirements and protocol configurations', 'Data compression (lossy vs lossless)', 'Transmission speeds and packet structures'], tok: 'Is a protocol a language?', linkingQuestions: ['Separation of concerns?'], ibLearnerProfile: 'Communicators, Knowledgeable' },
+            { id: 'A3-HL', title: 'Databases (HL)', category: 'A HL', hours: 7, level: 'HL', deps: ['A3'], color: 'bg-sky-700 border-sky-900 text-white', details: ['Database normalization (1NF, 2NF, 3NF)', 'ACID properties and transaction management', 'Data dictionaries and distributed databases'], tok: 'Objective truth or design choice?', linkingQuestions: ['Reducing anomalies?'], ibLearnerProfile: 'Thinkers, Balanced' },
+            { id: 'A4-HL', title: 'Machine learning (HL)', category: 'A HL', hours: 13, level: 'HL', deps: ['A4'], color: 'bg-cyan-700 border-cyan-900 text-white', details: ['Deep learning concepts', 'Structure of Artificial Neural Networks (ANN)', 'Weights, biases, and activation functions', 'Backpropagation'], tok: 'Trusting unexplainable reasoning?', linkingQuestions: ['Function approximation?'], ibLearnerProfile: 'Principled, Reflective' },
+
+            // Assessment
+            { id: 'CS', title: 'Case study (Core)', category: 'Assessment', hours: 15, level: 'SL', deps: ['A1'], color: 'bg-orange-100 border-orange-400 text-orange-900', details: ['Analysis of the annual pre-released material', 'Technological contexts', 'Social and ethical impacts', 'Stakeholder analysis'], tok: 'Context vs validity?', linkingQuestions: ['Stakeholder impacts?'], ibLearnerProfile: 'Open-minded, Caring, Inquirers' },
+            { id: 'CS-HL', title: 'Case study (HL)', category: 'Assessment', hours: 15, level: 'HL', deps: ['CS'], color: 'bg-orange-700 border-orange-900 text-white', details: ['Extended technical research', 'Deep analysis of underlying technologies in the scenario'], tok: 'Predictability of tech future?', linkingQuestions: ['Technical drivers?'], ibLearnerProfile: 'Open-minded, Caring, Inquirers' },
+            { id: 'IA', title: 'Internal assessment', category: 'Assessment', hours: 35, level: 'SL', deps: ['B2'], color: 'bg-red-100 border-red-400 text-red-900', details: ['Planning and system requirements', 'Solution design', 'Development and coding', 'Testing, evaluation, and video documentation'], tok: 'Is client satisfaction ultimate truth?', linkingQuestions: ['Iterative design benefits?'], ibLearnerProfile: 'Reflective, Risk-takers, Communicators' }
+        ];
+
+        const CATEGORY_LABELS = { 
+            'A SL': 'Standard Level A (Theory)', 
+            'B SL': 'B Coding Standard Level', 
+            'B HL': 'B Coding Higher Level', 
+            'A HL': 'Higher Level A Extensions', 
+            'Assessment': 'Assessment & Case Study' 
+        };
+
+        const PX_PER_WEEK = 48;
+        const PX_PER_HOLIDAY = 24;
+
+        function App() {
+            const [level, setLevel] = useState('HL');
+            const [viewYear, setViewYear] = useState(1); 
+            const [schedule, setSchedule] = useState({});
+            const [customHours, setCustomHours] = useState({});
+            const [loadOverrides, setLoadOverrides] = useState({}); 
+            const [draggingId, setDraggingId] = useState(null);
+            const [dragPayload, setDragPayload] = useState(null); 
+            const [activeTab, setActiveTab] = useState('timeline');
+            const [toast, setToast] = useState(null);
+
+            const timelineRef = useRef(null);
+            const topHeaderRef = useRef(null);
+
+            const [startDate, setStartDate] = useState('2027-08-30');
+            const [year2StartDate, setYear2StartDate] = useState('');
+            const [blackoutDates, setBlackoutDates] = useState([]);
+            const [showSettings, setShowSettings] = useState(false);
+
+            // Sync Horizontal Scrolling between Header and Timeline
+            useEffect(() => {
+                const t = timelineRef.current; 
+                const h = topHeaderRef.current;
+                if (!t || !h || activeTab !== 'timeline') return;
+                
+                const syncH = () => { if(h.scrollLeft !== t.scrollLeft) h.scrollLeft = t.scrollLeft; };
+                const syncT = () => { if(t.scrollLeft !== h.scrollLeft) t.scrollLeft = h.scrollLeft; };
+                
+                t.addEventListener('scroll', syncH);
+                h.addEventListener('scroll', syncT);
+                
+                return () => { 
+                    t.removeEventListener('scroll', syncH); 
+                    h.removeEventListener('scroll', syncT);
+                };
+            }, [activeTab]);
+
+            const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 3000); };
+            
+            const getTopicHours = (topic) => customHours[topic.id] !== undefined ? customHours[topic.id] : topic.hours;
+            const getTopicLoad = (topic) => schedule[topic.id] ? schedule[topic.id].unitLessonsPerFortnight : (loadOverrides[topic.id] || (topic.level === 'HL' ? 2 : 5));
+
+            // Generate Timeline Data (Global Absolute Timeline)
+            const fullTimeline = useMemo(() => {
+                const items = [];
+                const y2StartStr = year2StartDate || (startDate ? (() => { const d = new Date(startDate); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })() : '');
+                let absWeekCounter = 0;
+                [1, 2].forEach(year => {
+                    const baseStart = year === 1 ? startDate : y2StartStr;
+                    if (!baseStart) { for(let i=1; i<=40; i++) items.push({ type: 'week', year, weekNum: i, absWeek: absWeekCounter++, dateStr: 'N/A', holidays: [] }); return; }
+                    let current = new Date(baseStart); current.setHours(0,0,0,0); let weekCount = 0;
+                    while (weekCount < 40) {
+                        let hFound = blackoutDates.find(b => b.start && b.end && current >= new Date(b.start).setHours(0,0,0,0) && current <= new Date(b.end).setHours(23,59,59,999));
+                        if (hFound) { 
+                            items.push({ type: 'holiday', name: hFound.name, date: new Date(current), year }); 
+                            current = new Date(hFound.end); current.setDate(current.getDate() + 1); current.setHours(0,0,0,0); 
+                        }
+                        else {
+                            weekCount++; let weekStart = new Date(current); let activeDays = 0; let innerHolidays = [];
+                            while (activeDays < 7) {
+                                let innerH = blackoutDates.find(b => b.start && b.end && current >= new Date(b.start).setHours(0,0,0,0) && current <= new Date(b.end).setHours(23,59,59,999));
+                                if (innerH) { if (!innerHolidays.includes(innerH.name)) innerHolidays.push(innerH.name); } else activeDays++;
+                                current.setDate(current.getDate() + 1);
+                            }
+                            items.push({ type: 'week', year, weekNum: weekCount, absWeek: absWeekCounter++, dateStr: weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), holidays: innerHolidays });
+                        }
+                    }
+                });
+                return items;
+            }, [startDate, year2StartDate, blackoutDates]);
+
+            const viewTimeline = useMemo(() => fullTimeline.filter(t => t.year === viewYear), [fullTimeline, viewYear]);
+            const timelineTotalWidth = useMemo(() => viewTimeline.reduce((acc, item) => acc + (item.type === 'holiday' ? PX_PER_HOLIDAY : PX_PER_WEEK), 0), [viewTimeline]);
+
+            // Calculation Helpers
+            const calculateScheduledHours = (spanWeeks, topicLessons) => {
+                let hrs = 0; for (let i = 1; i <= spanWeeks; i++) hrs += (i % 2 !== 0) ? Math.ceil(topicLessons / 2) : Math.floor(topicLessons / 2);
+                return hrs;
+            };
+
+            const calculateRequiredWeeks = (targetHours, topicLessons) => {
+                let wks = 0; let hrs = 0; if (topicLessons <= 0) return 1;
+                while (hrs < targetHours) { wks++; hrs += (wks % 2 !== 0) ? Math.ceil(topicLessons / 2) : Math.floor(topicLessons / 2); }
+                return Math.max(1, wks);
+            };
+
+            const totalTargetHours = level === 'HL' ? 240 : 150;
+            const totalScheduledHours = Object.keys(schedule).reduce((acc, id) => {
+                const t = TOPICS.find(tp => tp.id === id); if (!t || (level === 'SL' && t.level === 'HL')) return acc;
+                const s = schedule[id]; return acc + calculateScheduledHours(s.spanWeeks, s.unitLessonsPerFortnight);
+            }, 0);
+
+            const getPxDimensions = (startAbsWeek, spanWeeks) => {
+                let left = 0, width = 0, started = false, weeksCounted = 0;
+                
+                // Determine if block started in the past (e.g. spanning from Y1 to Y2)
+                const firstWeekCol = viewTimeline.find(c => c.type === 'week');
+                if (firstWeekCol && startAbsWeek <= firstWeekCol.absWeek) {
+                    started = true;
+                    weeksCounted = firstWeekCol.absWeek - startAbsWeek; 
+                }
+
+                for (let i = 0; i < viewTimeline.length; i++) {
+                    const col = viewTimeline[i];
+
+                    if (!started) {
+                        if (col.type === 'week' && col.absWeek === startAbsWeek) {
+                            started = true;
+                            width += PX_PER_WEEK;
+                            weeksCounted++;
+                        } else {
+                            left += col.type === 'week' ? PX_PER_WEEK : PX_PER_HOLIDAY;
+                        }
+                    } else {
+                        if (weeksCounted < spanWeeks) {
+                            width += col.type === 'week' ? PX_PER_WEEK : PX_PER_HOLIDAY;
+                            if (col.type === 'week') weeksCounted++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                return { left, width };
+            };
+
+            const getWarnings = (id) => {
+                const t = TOPICS.find(tp => tp.id === id); const s = schedule[id]; if (!t || !s || !t.deps) return [];
+                const unmet = t.deps.filter(did => {
+                    const depS = schedule[did]; if (!depS) return true; 
+                    return s.startAbsWeek <= (depS.startAbsWeek + depS.spanWeeks - 1); 
+                });
+                return unmet.map(d => `Requires ${d} first`);
+            };
+
+            // Interactions
+            const handleDragStart = (e, topicId, action = 'move') => {
+                e.stopPropagation();
+                e.dataTransfer.effectAllowed = 'move';
+                const payload = { type: 'gantt', topicId, action, origStart: schedule[topicId]?.startAbsWeek };
+                e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                setDragPayload(payload);
+                // Set dragging ID slightly later to allow the browser to grab the ghost image
+                setTimeout(() => setDraggingId(topicId), 0); 
+            };
+
+            const handleDragEnd = () => { 
+                setDraggingId(null); 
+                setDragPayload(null); 
+            };
+
+            const handleDropOnCell = (e, rowTopicId, targetAbsWeek) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('bg-indigo-100/60');
+                
+                let payload = dragPayload; 
+                if (!payload) {
+                    try { const data = e.dataTransfer.getData('application/json'); if (data) payload = JSON.parse(data); } catch(err) {}
+                }
+                if (!payload || payload.type !== 'gantt' || payload.topicId !== rowTopicId) {
+                    setDraggingId(null);
+                    return;
+                }
+
+                const { topicId, action, origStart } = payload;
+                setSchedule(prev => {
+                    const existing = prev[topicId]; if (!existing) return prev;
+                    if (action === 'move') return { ...prev, [topicId]: { ...existing, startAbsWeek: targetAbsWeek } };
+                    if (action === 'resize') { let newSpan = targetAbsWeek - origStart + 1; return { ...prev, [topicId]: { ...existing, spanWeeks: Math.max(1, newSpan) } }; }
+                    return prev;
+                });
+                setDraggingId(null);
+            };
+
+            const handleCellClick = (topicId, absWeek) => {
+                if (schedule[topicId]) return; 
+                const topic = TOPICS.find(t => t.id === topicId);
+                const load = getTopicLoad(topic);
+                const span = calculateRequiredWeeks(getTopicHours(topic), load);
+                setSchedule(prev => ({ ...prev, [topicId]: { startAbsWeek: absWeek, spanWeeks: span, unitLessonsPerFortnight: load } }));
+            };
+
+            const removeUnit = (e, topicId) => { 
+                e.stopPropagation(); 
+                e.preventDefault(); 
+                setSchedule(prev => { 
+                    const ns = {...prev}; 
+                    delete ns[topicId]; 
+                    return ns; 
+                }); 
+            };
+
+            const adjustHours = (topicId, delta) => {
+                const t = TOPICS.find(tp => tp.id === topicId); const cur = customHours[topicId] !== undefined ? customHours[topicId] : t.hours;
+                const upd = Math.max(1, cur + delta); setCustomHours(prev => ({ ...prev, [topicId]: upd }));
+                if (schedule[topicId]) setSchedule(prev => {
+                    const s = prev[topicId]; const ns = calculateRequiredWeeks(upd, s.unitLessonsPerFortnight);
+                    return { ...prev, [topicId]: { ...s, spanWeeks: ns } };
+                });
+            };
+
+            const updateUnitLessons = (topicId, lessons) => {
+                const lc = Math.max(1, lessons);
+                if (schedule[topicId]) setSchedule(prev => {
+                    const s = prev[topicId]; const t = TOPICS.find(tp => tp.id === topicId);
+                    const ns = calculateRequiredWeeks(getTopicHours(t), lc);
+                    return { ...prev, [topicId]: { ...s, unitLessonsPerFortnight: lc, spanWeeks: ns } };
+                });
+                else setLoadOverrides(prev => ({ ...prev, [topicId]: lc }));
+            };
+
+            const handleExport = () => {
+                const data = JSON.stringify({ level, schedule, customHours, loadOverrides, startDate, year2StartDate, blackoutDates }, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = `ib-cs-plan-${level}.json`;
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                showToast("Plan exported!");
+            };
+
+            const handleImport = (e) => {
+                const file = e.target.files[0]; if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        if (data.level) setLevel(data.level);
+                        if (data.schedule) setSchedule(data.schedule);
+                        if (data.customHours) setCustomHours(data.customHours);
+                        if (data.loadOverrides) setLoadOverrides(data.loadOverrides);
+                        if (data.blackoutDates) setBlackoutDates(data.blackoutDates);
+                        showToast("Plan imported!");
+                    } catch (err) { showToast("Import error."); }
+                };
+                reader.readAsText(file); e.target.value = '';
+            };
+
+            const availableTopicsFiltered = useMemo(() => TOPICS.filter(t => t.hours > 0 && (level === 'HL' || t.level === 'SL')), [level]);
+            
+            const groupedUnits = useMemo(() => {
+                const categories = ['A SL', 'B SL', 'B HL', 'A HL', 'Assessment'];
+                return categories.map(cat => ({
+                    id: cat,
+                    label: CATEGORY_LABELS[cat],
+                    units: availableTopicsFiltered.filter(t => t.category === cat)
+                })).filter(g => g.units.length > 0);
+            }, [availableTopicsFiltered]);
+
+            return (
+                <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 overflow-hidden relative">
+                    
+                    {toast && (
+                        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-6 py-3 rounded-full z-[300] shadow-2xl flex items-center gap-3 animate-pulse">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-400" /> {toast}
+                        </div>
+                    )}
+
+                    {showSettings && (
+                        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
+                            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden flex flex-col">
+                                <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+                                    <h2 className="text-lg font-bold flex items-center"><Settings className="w-5 h-5 mr-2 text-indigo-500" /> Settings</h2>
+                                    <button onClick={() => setShowSettings(false)} className="p-1 hover:bg-slate-200 rounded text-slate-500"><XIcon className="w-5 h-5" /></button>
+                                </div>
+                                <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div><label className="text-sm font-bold block mb-1">Year 12 Start</label><input type="date" value={startDate} onChange={e=>setStartDate(e.target.value)} className="border rounded p-2 w-full outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                        <div><label className="text-sm font-bold block mb-1">Year 13 Start</label><input type="date" value={year2StartDate} onChange={e=>setYear2StartDate(e.target.value)} className="border rounded p-2 w-full outline-none focus:ring-2 focus:ring-indigo-500" /></div>
+                                    </div>
+                                    <hr />
+                                    <div>
+                                        <label className="text-sm font-bold block mb-2">Holidays</label>
+                                        <div className="space-y-2">
+                                            {blackoutDates.map(b => (
+                                                <div key={b.id} className="flex gap-2 items-center bg-slate-50 p-2 rounded border">
+                                                    <input value={b.name} onChange={e => { const nb = [...blackoutDates]; nb[nb.findIndex(x=>x.id===b.id)].name = e.target.value; setBlackoutDates(nb); }} className="flex-1 border p-1.5 rounded text-sm" placeholder="Holiday Name" />
+                                                    <input type="date" value={b.start} onChange={e => { const nb = [...blackoutDates]; nb[nb.findIndex(x=>x.id===b.id)].start = e.target.value; setBlackoutDates(nb); }} className="border p-1.5 rounded text-sm" />
+                                                    <input type="date" value={b.end} onChange={e => { const nb = [...blackoutDates]; nb[nb.findIndex(x=>x.id===b.id)].end = e.target.value; setBlackoutDates(nb); }} className="border p-1.5 rounded text-sm" />
+                                                    <button onClick={() => setBlackoutDates(blackoutDates.filter(x=>x.id!==b.id))} className="p-1.5 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded transition-colors"><Trash2 className="w-4 h-4" /></button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => setBlackoutDates([...blackoutDates, { id: Date.now(), name: '', start: '', end: '' }])} className="text-indigo-600 text-sm font-bold mt-2">+ Add Holiday</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="p-4 border-t bg-slate-50 flex justify-end"><button onClick={() => {setShowSettings(false); showToast("Settings updated!");}} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded font-bold shadow-sm transition-colors">Save & Close</button></div>
+                            </div>
+                        </div>
+                    )}
+
+                    <header className="bg-white border-b px-6 py-4 flex items-center justify-between z-[100] no-print shrink-0 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-indigo-600 text-white p-2 rounded-lg shadow-sm"><Calendar className="w-6 h-6" /></div>
+                            <div><h1 className="text-xl font-bold leading-tight">IB CS Planner 2027</h1><p className="text-xs text-slate-500">Unit Engine</p></div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="flex border rounded overflow-hidden shadow-sm">
+                                <button onClick={() => setLevel('SL')} className={`px-4 py-1.5 text-sm font-bold transition-colors ${level==='SL'?'bg-indigo-600 text-white':'bg-white text-slate-600 hover:bg-slate-50'}`}>SL</button>
+                                <button onClick={() => setLevel('HL')} className={`px-4 py-1.5 text-sm font-bold transition-colors ${level==='HL'?'bg-indigo-600 text-white':'bg-white text-slate-600 hover:bg-slate-50'}`}>HL</button>
+                            </div>
+                            <div className="flex items-center border-l pl-4 gap-1">
+                                <button onClick={() => setShowSettings(true)} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Settings"><Settings className="w-5 h-5" /></button>
+                                <button onClick={() => window.print()} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Print"><Printer className="w-5 h-5" /></button>
+                                <button onClick={handleExport} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors" title="Export Plan"><Download className="w-5 h-5" /></button>
+                                <label className="p-2 text-slate-500 hover:bg-slate-100 hover:text-indigo-600 rounded-lg transition-colors cursor-pointer" title="Import Plan"><Upload className="w-5 h-5" /><input type="file" accept=".json" className="hidden" onChange={handleImport} /></label>
+                            </div>
+                            <div className="text-right pl-4 border-l border-slate-200">
+                                <div className="text-xs font-bold text-slate-600">{totalScheduledHours} / {totalTargetHours}h Scheduled</div>
+                                <div className="w-24 h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden"><div className="h-full bg-indigo-500 transition-all" style={{width:`${Math.min(100, (totalScheduledHours/totalTargetHours)*100)}%`}} /></div>
+                            </div>
+                        </div>
+                    </header>
+
+                    <div className="bg-white border-b px-6 flex gap-6 z-[90] no-print shrink-0">
+                        <button onClick={() => setActiveTab('timeline')} className={`py-3 text-sm font-bold border-b-2 transition-colors ${activeTab==='timeline'?'border-indigo-600 text-indigo-700':'border-transparent text-slate-400 hover:text-slate-600'}`}>Gantt Timeline</button>
+                        <button onClick={() => setActiveTab('details')} className={`py-3 text-sm font-bold border-b-2 transition-colors ${activeTab==='details'?'border-indigo-600 text-indigo-700':'border-transparent text-slate-400 hover:text-slate-600'}`}>Unit Details</button>
+                    </div>
+
+                    {activeTab === 'timeline' && (
+                        <div className="flex-1 flex flex-col overflow-hidden bg-white relative">
+                            
+                            {/* Toolbar */}
+                            <div className="bg-slate-100 border-b p-2 flex items-center justify-between px-4 z-[85] shadow-sm shrink-0">
+                                <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Drag & Drop • Grouped Hierarchy</span>
+                                <div className="flex gap-1 bg-white p-1 rounded border shadow-sm">
+                                    {[1, 2].map(y => (
+                                        <button key={y} onClick={() => setViewYear(y)} className={`px-4 py-1 text-xs font-bold rounded transition-colors ${viewYear===y?'bg-indigo-600 text-white':'text-slate-500 hover:bg-slate-100'}`}>
+                                            Year {y === 1 ? '12' : '13'}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* TOP LOCKED NAVIGATION AREA */}
+                            <div className="flex flex-col shrink-0 border-b bg-white z-[80] shadow-sm">
+                                <div className="flex">
+                                    <div className="w-[340px] shrink-0 border-r-2 border-slate-300 bg-slate-200 flex items-center justify-between px-4 font-black text-[10px] uppercase h-14 text-slate-600">
+                                        <span>Unit Header</span>
+                                        <span>Load (L)</span>
+                                        <span>Target</span>
+                                    </div>
+                                    <div ref={topHeaderRef} className="flex-1 overflow-x-auto custom-scrollbar no-scrollbar-y">
+                                        <div className="h-14 flex items-center" style={{ width: `${timelineTotalWidth}px` }}>
+                                            {viewTimeline.map((item, i) => {
+                                                const isCycleOdd = item.type === 'week' ? Math.floor((item.weekNum - 1) / 2) % 2 === 1 : false;
+                                                return (
+                                                    <div key={i} className={`shrink-0 flex flex-col items-center justify-center border-r border-slate-200/60 h-full ${item.type==='holiday' ? `w-[${PX_PER_HOLIDAY}px] bg-holiday` : `w-[${PX_PER_WEEK}px] ${isCycleOdd ? 'bg-cycle-shade' : 'bg-slate-50'}`}`}>
+                                                        {item.type === 'week' ? (<><span className="text-[10px] font-bold text-slate-600">W{item.weekNum}</span><span className="text-[8px] text-slate-400 font-medium">{item.dateStr}</span><span className="text-[7px] text-indigo-400 font-bold">Y{item.year === 1 ? '12' : '13'}</span></>) : <span className="rotate-90 text-[7px] font-black text-slate-400 uppercase">HOLIDAY</span>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* MAIN SCROLLABLE CONTENT */}
+                            <div ref={timelineRef} className="flex-1 overflow-auto custom-scrollbar relative">
+                                <div className="flex w-max min-h-full">
+                                    
+                                    {/* LEFT COLUMN: UNIT LIST */}
+                                    <div className="w-[340px] shrink-0 border-r-2 border-slate-300 bg-white sticky left-0 z-[70] shadow-[4px_0_15px_-3px_rgba(0,0,0,0.05)]">
+                                        {groupedUnits.map(group => (
+                                            <React.Fragment key={group.id}>
+                                                <div className="group-header w-full">{group.label}</div>
+                                                {group.units.map(topic => {
+                                                    const s = schedule[topic.id]; const load = getTopicLoad(topic); const sh = s ? calculateScheduledHours(s.spanWeeks, s.unitLessonsPerFortnight) : 0; const th = getTopicHours(topic);
+                                                    return (
+                                                        <div key={topic.id} className={`flex items-center justify-between px-3 h-14 border-b border-slate-200 w-[340px] shrink-0 ${!s ? 'bg-slate-50 opacity-60' : 'bg-white'}`}>
+                                                            <div className="flex flex-col truncate pr-2 w-full">
+                                                                <div className="flex items-center justify-between">
+                                                                    <span className="font-bold text-xs truncate mr-2" title={topic.title}>{topic.id}</span>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <div className="flex items-center bg-slate-100 rounded border border-slate-200 px-1 py-0.5" title="Lessons per fortnight">
+                                                                            <input type="number" value={load} onChange={(e) => updateUnitLessons(topic.id, parseInt(e.target.value)||1)} className="w-8 bg-transparent text-[10px] font-black text-center outline-none" />
+                                                                            <span className="text-[8px] text-slate-400 font-bold">L</span>
+                                                                        </div>
+                                                                        <div className="flex items-center gap-1">
+                                                                            <button onClick={() => adjustHours(topic.id, -1)} className="p-0.5 border border-slate-300 rounded hover:bg-slate-200 transition-colors"><Minus className="w-2.5 h-2.5"/></button>
+                                                                            <span className={`text-[10px] font-black w-8 text-right ${sh>=th?'text-emerald-600':'text-amber-600'}`}>{sh}/{th}h</span>
+                                                                            <button onClick={() => adjustHours(topic.id, 1)} className="p-0.5 border border-slate-300 rounded hover:bg-slate-200 transition-colors"><Plus className="w-2.5 h-2.5"/></button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                                {s && <div className="w-full h-1 bg-slate-100 rounded-full mt-1.5 overflow-hidden"><div className={`h-full ${sh>=th?'bg-emerald-500':'bg-amber-400'}`} style={{width:`${Math.min(100,(sh/th)*100)}%`}}/></div>}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+                                    
+                                    {/* RIGHT COLUMN: GANTT GRID */}
+                                    <div className="relative bg-white">
+                                        {groupedUnits.map(group => (
+                                            <React.Fragment key={`grid-g-${group.id}`}>
+                                                <div className="h-6 bg-slate-50 border-b border-slate-200" style={{ width: `${timelineTotalWidth}px` }} />
+                                                {group.units.map(topic => {
+                                                    const s = schedule[topic.id]; 
+                                                    const warnings = getWarnings(topic.id);
+                                                    let blockStyles = {}; 
+                                                    let isVisible = false;
+                                                    let blockScheduledHours = 0;
+
+                                                    if (s) {
+                                                        const dims = getPxDimensions(s.startAbsWeek, s.spanWeeks); 
+                                                        blockStyles = { left: `${dims.left + 2}px`, width: `${dims.width - 4}px` };
+                                                        
+                                                        // Ensure block is visible in the current view
+                                                        const start = s.startAbsWeek;
+                                                        const end = start + s.spanWeeks - 1; 
+                                                        const bnd = viewYear===1 ? [0,39] : [40,79]; 
+                                                        if (end >= bnd[0] && start <= bnd[1]) {
+                                                            isVisible = true; 
+                                                            
+                                                            // Calculate hours specifically for the visible portion of this block in the current year
+                                                            const visibleStart = Math.max(start, bnd[0]);
+                                                            const visibleEnd = Math.min(end, bnd[1]);
+                                                            const visibleSpan = visibleEnd - visibleStart + 1;
+                                                            
+                                                            // Estimate hours for this chunk. If it crosses the year boundary, it's roughly half the load per week
+                                                            let hrs = 0; 
+                                                            for (let i = 1; i <= visibleSpan; i++) {
+                                                                // Account for the odd/even week distribution based on the absolute week
+                                                                const isWeekOdd = (visibleStart + i - 1) % 2 !== 0;
+                                                                hrs += isWeekOdd ? Math.ceil(s.unitLessonsPerFortnight / 2) : Math.floor(s.unitLessonsPerFortnight / 2);
+                                                            }
+                                                            blockScheduledHours = hrs;
+                                                        }
+                                                    }
+                                                    return (
+                                                        <div key={`grid-row-${topic.id}`} className="relative h-14 border-b border-slate-200 flex group/row">
+                                                            
+                                                            {/* Background Grid Cells */}
+                                                            {viewTimeline.map((item, i) => {
+                                                                const isCycleOdd = item.type === 'week' ? Math.floor((item.weekNum - 1) / 2) % 2 === 1 : false;
+                                                                return (<div key={i} className={`shrink-0 h-full border-r border-slate-100 ${item.type==='holiday' ? `w-[${PX_PER_HOLIDAY}px] bg-holiday` : `w-[${PX_PER_WEEK}px] cursor-pointer hover:bg-indigo-100/40 ${isCycleOdd?'bg-cycle-shade':''}`}`}
+                                                                    onDragOver={e => { e.preventDefault(); e.currentTarget.classList.add('bg-indigo-200/50'); }} 
+                                                                    onDragLeave={e => e.currentTarget.classList.remove('bg-indigo-200/50')} 
+                                                                    onDrop={e => handleDropOnCell(e, topic.id, item.absWeek)} 
+                                                                    onClick={() => !s && handleCellClick(topic.id, item.absWeek)} />);
+                                                            })}
+
+                                                            {/* Scheduled Block */}
+                                                            {s && isVisible && (
+                                                                <div draggable onDragStart={(e) => handleDragStart(e, topic.id, 'move')} onDragEnd={handleDragEnd}
+                                                                    className={`absolute top-1.5 bottom-1.5 rounded shadow-sm border-2 flex items-center pl-2 pr-8 overflow-hidden cursor-grab active:cursor-grabbing transition-opacity group/block ${topic.color} ${draggingId===topic.id?'opacity-50 pointer-events-none':'opacity-95 pointer-events-auto'}`}
+                                                                    style={blockStyles}>
+                                                                    
+                                                                    <div className="flex items-center gap-1.5 overflow-hidden flex-1 pointer-events-none">
+                                                                        <span className="font-bold text-[10px] truncate leading-tight">{topic.id} - {topic.title}</span>
+                                                                        <span className="flex items-center text-[9px] font-bold px-1.5 py-[1px] bg-black/10 rounded-[4px] whitespace-nowrap shrink-0" title={`${blockScheduledHours} hours in this view`}>
+                                                                            <Clock className="w-2.5 h-2.5 mr-0.5 opacity-70" />
+                                                                            {blockScheduledHours}h
+                                                                        </span>
+                                                                        {warnings.length > 0 && <AlertTriangle className="w-3 h-3 text-red-600 shrink-0" />}
+                                                                    </div>
+                                                                    
+                                                                    {/* Delete Button */}
+                                                                    <button onClick={(e) => removeUnit(e, topic.id)} className="absolute right-3 opacity-0 group-hover/block:opacity-100 p-0.5 hover:bg-white/80 rounded transition-opacity shadow-sm pointer-events-auto z-50">
+                                                                        <XIcon className="w-3 h-3"/>
+                                                                    </button>
+
+                                                                    {/* Resize Handle */}
+                                                                    <div draggable onDragStart={(e) => handleDragStart(e, topic.id, 'resize')} onDragEnd={handleDragEnd}
+                                                                        className="absolute right-0 top-0 bottom-0 w-3 cursor-ew-resize hover:bg-black/10 flex items-center justify-center border-l border-black/5 pointer-events-auto">
+                                                                        <span className="text-black/30 font-black text-[8px]">⋮</span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DETAILS TAB */}
+                    {activeTab === 'details' && (
+                        <div className="p-6 overflow-y-auto h-full pb-20">
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                {availableTopicsFiltered.map(topic => (
+                                    <div key={topic.id} className={`p-5 rounded-2xl border-2 shadow-sm bg-white flex flex-col ${topic.color}`}>
+                                        <div className="font-black text-xl mb-3 flex items-center justify-between">
+                                            <span className="pr-4">{topic.id}: {topic.title}</span>
+                                            {topic.igcse && <span className="bg-white/60 text-[10px] px-2 py-0.5 rounded border border-black/10 font-black uppercase shrink-0 tracking-wider">IGCSE</span>}
+                                        </div>
+                                        <ul className="pl-5 list-disc text-sm space-y-1 mb-5 flex-1 opacity-90">
+                                            {topic.details.map((d, i) => <li key={i}>{d}</li>)}
+                                        </ul>
+                                        <div className="mt-auto space-y-3 pt-4 border-t border-black/10">
+                                            {topic.ibLearnerProfile && (
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase opacity-60 tracking-wider block mb-0.5">Learner Profile</span>
+                                                    <span className="text-xs font-bold bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200">{topic.ibLearnerProfile}</span>
+                                                </div>
+                                            )}
+                                            {topic.tok && (
+                                                <div className="p-2.5 bg-white/40 rounded-lg border border-black/5">
+                                                    <span className="text-[10px] font-black uppercase text-indigo-900/60 tracking-wider block mb-0.5">TOK Connection</span>
+                                                    <p className="text-xs italic leading-tight">{topic.tok}</p>
+                                                </div>
+                                            )}
+                                            {topic.linkingQuestions && (
+                                                <div>
+                                                    <span className="text-[10px] font-black uppercase opacity-60 tracking-wider">Linking Questions</span>
+                                                    <ul className="text-xs space-y-1 mt-1 pl-2 border-l-2 border-black/10 italic font-medium">
+                                                        {topic.linkingQuestions.map((q, i) => <li key={i}>"{q}"</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

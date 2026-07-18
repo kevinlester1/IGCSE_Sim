@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Reinforcement Learning Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+        }
+        .prose {
+            max-width: 80ch;
+        }
+        .prose h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2em;
+            margin-bottom: 1em;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        .prose h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1.5em;
+            margin-bottom: 0.75em;
+        }
+        .prose p, .prose li {
+            color: #4a5568;
+        }
+        .prose strong {
+            color: #2d3748;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #4a5568;
+        }
+        .q-table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+        }
+        .q-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            text-align: center;
+        }
+        .q-table th, .q-table td {
+            padding: 0.5rem 0.25rem;
+            border: 1px solid #e2e8f0;
+        }
+        .q-table th {
+            background-color: #f7fafc;
+            position: sticky;
+            top: 0;
+        }
+        .q-table-cell {
+            position: relative;
+        }
+        .q-value {
+            display: block;
+        }
+        .best-action-indicator {
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            font-size: 0.6rem;
+            color: #38a169;
+        }
+        .q-cell-updated {
+            animation: flash 1s ease-out;
+        }
+        @keyframes flash {
+            0% {
+                outline: 2px solid #F6E05E;
+                outline-offset: -2px;
+            }
+            100% {
+                outline: 2px solid transparent;
+                outline-offset: -2px;
+            }
+        }
+        .calc-value {
+            transition: all 0.3s ease-in-out;
+            display: inline-block;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        .anim-highlight {
+            animation: highlight-anim 0.7s ease-in-out forwards;
+        }
+
+        @keyframes highlight-anim {
+            0% { background-color: transparent; transform: scale(1); }
+            50% { background-color: #f6e05e; transform: scale(1.15); }
+            100% { background-color: transparent; transform: scale(1); }
+        }
+
+        .anim-reveal {
+            animation: reveal-anim 0.5s ease-out forwards;
+        }
+
+        @keyframes reveal-anim {
+            0% { opacity: 0; transform: translateY(10px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .app-illustration {
+            float: left;
+            margin-right: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #4299e1;
+        }
+        .optimal-path-row {
+            background-color: #dbeafe; /* Light blue */
+            font-weight: 600;
+        }
+        .hidden-param {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">Interactive Reinforcement Learning Simulation</h1>
+            <p class="mt-2 text-lg text-gray-600">Understanding Q-Learning in a Grid World</p>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="mb-4 border-b border-gray-200">
+            <nav class="flex -mb-px flex-wrap" aria-label="Tabs">
+                <button id="simTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-blue-600 border-blue-600">
+                    Simulation
+                </button>
+                <button id="instrTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Instructions
+                </button>
+                 <button id="conceptsTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Core Concepts
+                </button>
+                 <button id="explorationTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Exploration Methods
+                </button>
+                 <button id="bellmanTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Bellman Example
+                </button>
+                 <button id="appsTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Applications
+                </button>
+                <button id="gridTab" class="whitespace-nowrap py-4 px-6 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300 border-transparent">
+                    Customize Grid
+                </button>
+            </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div id="simulationContent">
+             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Left Column: Simulation -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Simulation Environment</h2>
+                    
+                    <div class="flex justify-center mb-4">
+                        <canvas id="gridCanvas" width="330" height="330" class="border-2 border-gray-300 rounded-lg"></canvas>
+                    </div>
+                    
+                    <div class="text-xs text-gray-500 grid grid-cols-2 gap-x-4 gap-y-1 mb-6">
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>Agent (A)</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-lg bg-green-500 mr-2"></div>Goal (G: +100)</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-lg bg-red-500 mr-2"></div>Hole (H: -100)</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-lg bg-gray-100 border mr-2"></div>Safe (F: -1)</div>
+                        <div class="flex items-center"><div class="w-3 h-3 rounded-lg bg-yellow-300 mr-2"></div>Start (S: -1)</div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="startBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Start Training</button>
+                            <button id="stopBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Pause</button>
+                        </div>
+                         <div class="grid grid-cols-2 gap-2">
+                            <button id="resetBtn" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Reset All</button>
+                             <button id="stepBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Step</button>
+                        </div>
+                        <div class="grid grid-cols-1">
+                            <button id="showPolicyBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">Show Policy</button>
+                        </div>
+                    </div>
+
+                    <!-- Bellman Equation Display -->
+                    <div id="bellmanCalculation" class="mt-6 text-sm bg-gray-100 p-4 rounded-lg border border-gray-200">
+                        <h4 class="font-semibold text-center mb-2 text-gray-700">Bellman Equation Calculation</h4>
+                        <p class="text-center text-gray-500">Press Start or Step to see the calculation.</p>
+                    </div>
+
+                    <div class="mt-6 text-center bg-gray-100 p-4 rounded-lg">
+                        <p class="text-sm text-gray-600">Episode: <strong id="episodeCount" class="text-gray-900">0</strong></p>
+                        <p class="text-sm text-gray-600">Steps: <strong id="stepCount" class="text-gray-900">0</strong></p>
+                        <p class="text-sm text-gray-600">Status: <strong id="status" class="text-gray-900">Idle</strong></p>
+                    </div>
+
+                    <div class="mt-6 space-y-4">
+                        <h3 class="text-lg font-semibold text-center">Learning Parameters</h3>
+                        <div>
+                            <div class="slider-label">
+                                <label for="learningRate">Learning Rate (α)</label>
+                                <span id="learningRateValue">0.1</span>
+                            </div>
+                            <input type="range" id="learningRate" min="0.01" max="1" step="0.01" value="0.1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Controls how much new information overwrites old information. A high value makes the agent learn faster, but can cause <strong>unstable learning</strong>, where Q-values fluctuate wildly and never settle on the best path. A low value ensures more stable, gradual learning.</p>
+                        </div>
+                        <div>
+                            <div class="slider-label">
+                               <label for="discountFactor">Discount Factor (γ)</label>
+                               <span id="discountFactorValue">0.9</span>
+                            </div>
+                            <input type="range" id="discountFactor" min="0" max="1" step="0.01" value="0.9" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Determines the importance of future rewards. High values make the agent "farsighted" (valuing long-term goals), while low values make it "shortsighted."</p>
+                        </div>
+                         <div>
+                            <label for="explorationMethod" class="text-sm font-medium text-gray-700">Exploration Method</label>
+                            <select id="explorationMethod" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md">
+                                <option value="epsilon">ε-Greedy</option>
+                                <option value="softmax">Softmax (Boltzmann)</option>
+                                <option value="ucb">Upper Confidence Bound (UCB)</option>
+                            </select>
+                        </div>
+
+                        <div id="epsilon-param" class="exploration-param">
+                            <div class="slider-label">
+                                <label for="epsilon">Exploration Rate (ε)</label>
+                                 <span id="epsilonValue">0.9</span>
+                            </div>
+                            <input type="range" id="epsilon" min="0" max="1" step="0.01" value="0.9" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Balances random exploration vs. using the best-known path. A high value encourages finding new routes; this is typically lowered as the agent learns.</p>
+                        </div>
+
+                        <div id="softmax-param" class="exploration-param hidden-param">
+                            <div class="slider-label">
+                                <label for="temperature">Temperature (τ)</label>
+                                 <span id="temperatureValue">0.5</span>
+                            </div>
+                            <input type="range" id="temperature" min="0.01" max="5" step="0.01" value="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Controls randomness. High temp makes all actions nearly equal probability (explore). Low temp makes high-Q actions much more likely (exploit).</p>
+                        </div>
+
+                        <div id="ucb-param" class="exploration-param hidden-param">
+                            <div class="slider-label">
+                                <label for="ucbC">Exploration Constant (C)</label>
+                                 <span id="ucbCValue">2.0</span>
+                            </div>
+                            <input type="range" id="ucbC" min="0.1" max="10" step="0.1" value="2.0" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Controls the "optimism". A higher C encourages exploring actions that have been tried less frequently.</p>
+                        </div>
+
+                         <div>
+                            <div class="slider-label">
+                                <label for="speed">Simulation Speed</label>
+                                 <span id="speedValue">50ms</span>
+                            </div>
+                            <input type="range" id="speed" min="1" max="500" step="1" value="50" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                            <p class="text-xs text-gray-500 mt-1">Controls the visual delay between each step the agent takes. Faster speeds help see long-term learning more quickly.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: Q-Table -->
+                <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-200">
+                    <h2 class="text-2xl font-bold mb-4 text-center">The Q-Table: The Agent's Brain</h2>
+                    <div class="q-table-container" style="max-height: 80vh;">
+                        <table class="q-table" id="qTable">
+                            <!-- Q-Table will be dynamically generated here -->
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="instructionsContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                <h2>What is Reinforcement Learning?</h2>
+                <p>Reinforcement Learning (RL) is a type of machine learning where an intelligent <strong>agent</strong> learns to make decisions by performing <strong>actions</strong> in an <strong>environment</strong> to maximize a cumulative <strong>reward</strong>. It's like teaching a pet a new trick: you reward it for good behavior and don't for bad behavior. Over time, the pet learns which actions lead to a treat.</p>
+                
+                <h3>The Core Components</h3>
+                <ul>
+                    <li><strong>Agent:</strong> The learner and decision-maker. In our simulation, it's the blue circle trying to find the best path.</li>
+                    <li><strong>Environment:</strong> The world the agent interacts with. Here, it's the grid with a start, a goal, holes, and safe spaces.</li>
+                    <li><strong>State:</strong> A snapshot of the environment. The agent's state is simply its current position (grid cell).</li>
+                    <li><strong>Action:</strong> A possible move the agent can make (Up, Down, Left, Right).</li>
+                    <li><strong>Reward:</strong> Feedback from the environment. The agent gets a large positive reward for reaching the goal, a large negative reward for falling into a hole, and a small negative reward for each step to encourage efficiency.</li>
+                </ul>
+
+                <h2>How the Agent Learns</h2>
+                <p>The agent uses a <strong>Q-Table</strong> (shown on the left) as its "brain". The "Q" stands for "Quality." For every state (each grid cell), the Q-table stores a value for every possible action (Up, Down, Left, Right). This <strong>Q-value</strong> represents the <em>estimated future reward</em> of taking that action from that state. A higher Q-value means the action is predicted to be a better choice.</p>
+                <p>As the simulation runs, watch the Q-Table. You'll see the values change as the agent explores the grid and learns which actions lead to rewards. Green values are good, red values are bad. <strong>The specific cell being updated on each step will flash with a yellow outline, showing the learning process in action.</strong></p>
+                
+                <h3>How Q-Values Are Updated</h3>
+                <p>The agent updates the Q-table using the <strong>Bellman Equation</strong>. It might look complex, but the idea is simple:</p>
+                <p><code>New Q(s, a) = Current Q(s, a) + α * [Reward + γ * max Q(s') - Current Q(s, a)]</code></p>
+                <ul>
+                    <li>The new Q-value for a state (s) and action (a) is a mix of the old value and a "learned value".</li>
+                    <li><strong>Learned Value:</strong> This is the <em>reward</em> it just received plus the <em>discounted (γ) maximum Q-value</em> it can get from the next state (s'). This teaches the agent to think ahead!</li>
+                    <li><strong>Learning Rate (α):</strong> Controls how much the agent accepts the new value over the old one. A low α means it learns slowly; a high α means it changes its mind quickly.</li>
+                    <li><strong>Discount Factor (γ):</strong> Determines the importance of future rewards. A value close to 1 makes the agent farsighted (values long-term rewards), while a value close to 0 makes it shortsighted (only cares about immediate rewards).</li>
+                </ul>
+                
+                <div class="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="font-bold text-blue-800">In Simple Terms...</h4>
+                    <p class="text-blue-700">Imagine you're at a crossroads (a 'state'). The Bellman Equation helps you evaluate a choice (an 'action') by thinking:</p>
+                    <p class="mt-2 font-mono text-center bg-white rounded p-2 text-sm"><code>Value of Choice = Reward Now + (Importance of Future * Best Possible Future Reward)</code></p>
+                    <ul class="mt-2 list-disc pl-5">
+                         <li><strong>Reward Now:</strong> What do I get immediately for taking this step?</li>
+                         <li><strong>Importance of Future (γ):</strong> How much do I care about rewards I'll get later on?</li>
+                         <li><strong>Best Possible Future Reward:</strong> From my new position, what is the best outcome I can expect from that point forward?</li>
+                    </ul>
+                    <p class="mt-2 text-blue-700">The agent uses this to learn which choices lead to the best long-term outcomes, not just the best immediate ones.</p>
+                </div>
+
+                <h2>The Policy: The Final Strategy</h2>
+                <p>After many episodes of training, the Q-Table becomes a reliable guide. The agent's final strategy for navigating the environment is called the <strong>Policy</strong>. The optimal policy is to always choose the action with the highest Q-value in any given state. Click the "Show Policy" button after training to see the best path the agent has learned from the start to the goal.</p>
+            </div>
+        </div>
+
+        <div id="conceptsContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                <h2>The Exploration vs. Exploitation Trade-off</h2>
+                <p>One of the most interesting challenges in Reinforcement Learning is the trade-off between exploring the environment and exploiting known information. It's a fundamental dilemma the agent must constantly solve.</p>
+                
+                <h3>The Core Dilemma: The Restaurant Analogy</h3>
+                <p>Imagine you're in a new city for a week and want to find the best restaurant.</p>
+                <ul>
+                    <li><strong>Day 1:</strong> You know nothing, so you pick a restaurant at random. This is <strong>pure exploration</strong>.</li>
+                    <li><strong>Day 2:</strong> The restaurant from Day 1 was pretty good. Should you go back to guarantee a decent meal (<strong>exploit</strong> your current knowledge), or should you try a new, random restaurant that could be amazing... or terrible? (<strong>explore</strong>).</li>
+                </ul>
+                <p>This simulation allows you to experiment with different strategies for balancing this trade-off. See the <strong>Exploration Methods</strong> tab for a detailed breakdown of each approach.</p>
+            </div>
+        </div>
+        
+        <div id="explorationContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                 <h2>Methods for Balancing Exploration & Exploitation</h2>
+                <p>There are many ways to manage the trade-off between exploring new actions and exploiting known good ones. This simulation implements three common strategies.</p>
+               
+                <h3>1. ε-Greedy (Epsilon-Greedy)</h3>
+                <p>This is the simplest and most common method. It works by having the agent be "greedy" most of the time, but occasionally take a random action to explore.</p>
+                <ul>
+                    <li><strong>How it works:</strong> With probability <strong>ε (epsilon)</strong>, the agent chooses a completely random action. With probability <strong>1-ε</strong>, it chooses the action with the highest Q-value (it exploits).</li>
+                    <li><strong>The ε Parameter:</strong> Controls the exploration rate. A high ε means more exploration. This value is typically started high and then slowly decreased (decayed) over time as the agent becomes more confident.</li>
+                    <li><strong>Analogy:</strong> Most of the time, you go to your favorite restaurant. But 10% of the time (if ε=0.1), you close your eyes and pick a random one from the phone book.</li>
+                </ul>
+
+                <h3>2. Softmax (Boltzmann) Exploration</h3>
+                <p>Instead of making a purely random choice, Softmax makes a "weighted" random choice. Actions that are known to be better are more likely to be picked, but no action has zero chance.</p>
+                <ul>
+                    <li><strong>How it works:</strong> It converts the Q-values of all possible actions into a probability distribution. Actions with higher Q-values get a higher probability.</li>
+                    <li><strong>The Temperature (τ) Parameter:</strong> Controls the randomness. A <strong>high temperature</strong> makes the probabilities of all actions nearly equal (more exploration). A <strong>low temperature</strong> makes the probability of the best action much higher than the others (more exploitation).</li>
+                    <li><strong>Analogy:</strong> You look at your three favorite restaurants, rated 9/10, 7/10, and 6/10. You're much more likely to choose the 9/10, but there's still a chance you'll pick the others. You'd almost never pick a 1/10 place.</li>
+                </ul>
+
+                <h3>3. Upper Confidence Bound (UCB)</h3>
+                <p>UCB is a more "optimistic" strategy. It encourages the agent to try actions that it hasn't tried very often, based on the principle that "if I don't know much about an action, it could be the best one!"</p>
+                <ul>
+                    <li><strong>How it works:</strong> The agent chooses the action that maximizes this formula: <code>Q(s,a) + C * sqrt(ln(N) / n(a))</code> where `N` is the total number of steps, `n(a)` is how many times action `a` has been tried, and `C` is a constant. The second part of the formula is an "uncertainty bonus" that is large for actions that have been tried infrequently.</li>
+                    <li><strong>The C Parameter:</strong> The exploration constant. A higher `C` makes the agent more optimistic and encourages it to explore less-tried actions more aggressively.</li>
+                    <li><strong>Analogy:</strong> You have a restaurant you know is a solid 7/10. There's another restaurant you've never been to. UCB says, "Be optimistic! This untried restaurant could be a 10/10." It gives it a bonus for being unknown, pushing you to try it. Once you try it and find out it's a 4/10, its uncertainty bonus shrinks and you're less likely to go back.</li>
+                </ul>
+
+            </div>
+        </div>
+
+        <div id="bellmanContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                <h2>A Step-by-Step Bellman Equation Example</h2>
+                <p>Let's walk through a single, concrete calculation to see how a Q-value is updated. This example shows how the agent learns that the square next to the goal is extremely valuable.</p>
+
+                <h3>The Scenario</h3>
+                <p>Imagine the agent has explored a bit and is now at <strong>State (s) = (4, 5)</strong>, which is the safe square right next to the Goal.</p>
+                <p>The agent decides to take the <strong>Action (a) = 'Right' (→)</strong>.</p>
+                <p>This action moves it to the <strong>Next State (s') = (5, 5)</strong>, which is the Goal tile.</p>
+                
+                <h3>The Pieces of the Puzzle</h3>
+                <p>Before the calculation, we have the following information:</p>
+                <ul class="list-disc pl-5">
+                    <li><strong>Current Q-value for Q( (4,5), 'Right' )</strong>: Let's assume the agent has never tried this before, so the value is <strong>0</strong>.</li>
+                    <li><strong>Learning Rate (α)</strong>: We'll use the default, <strong>0.1</strong>.</li>
+                    <li><strong>Discount Factor (γ)</strong>: We'll use the default, <strong>0.9</strong>.</li>
+                    <li><strong>Reward (R)</strong>: For landing on the Goal at (5,5), the reward is <strong>+100</strong>.</li>
+                    <li><strong>Maximum Q-value of the Next State (max Q(s'))</strong>: The next state is (5,5), the goal. Since this is a terminal state (the episode ends), there are no future actions. Therefore, the future reward from this state is <strong>0</strong>.</li>
+                </ul>
+
+                <h3>The Calculation</h3>
+                <p>Now, we plug these values into the Bellman Equation:</p>
+                <p><code>New Q(s, a) = Current Q(s, a) + α * [R + γ * max Q(s') - Current Q(s, a)]</code></p>
+                
+                <div class="bg-gray-100 p-4 rounded-lg my-4 text-sm font-mono">
+                    <p>New Q = 0.0 + 0.1 * [ 100 + 0.9 * 0 - 0.0 ]</p>
+                    <p>New Q = 0.0 + 0.1 * [ 100 + 0 - 0.0 ]</p>
+                    <p>New Q = 0.0 + 0.1 * [ 100 ]</p>
+                    <p>New Q = 0.0 + 10.0</p>
+                    <p class="font-bold text-lg">New Q = 10.0</p>
+                </div>
+
+                <h3>The Result</h3>
+                <p>The Q-table for the state <strong>(4, 5)</strong> and action <strong>'Right'</strong> is updated from <strong>0.0</strong> to <strong>10.0</strong>.</p>
+                <p>This single step has taught the agent that taking the 'Right' action from square (4,5) is a good idea. If it finds itself in that situation again, it will be more likely to make the same choice. Over many episodes, this value will continue to increase and propagate to neighboring squares, creating a "value gradient" that leads the agent to the goal.</p>
+            </div>
+        </div>
+        
+        <div id="applicationsContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                <h2>Real-World Applications of Reinforcement Learning</h2>
+                <p>Reinforcement Learning is not just for games; it's a powerful tool used to solve complex, real-world problems across many industries.</p>
+
+                <div class="mt-8 clear-both">
+                    <div class="app-illustration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect x="4" y="12" width="16" height="8" rx="2"/><path d="M2 12h20"/><path d="M17.5 12a5.5 5.5 0 1 0-11 0"/></svg>
+                    </div>
+                    <h3>1. Robotics and Automation</h3>
+                    <p>RL teaches robots to perform tasks through trial and error, just like humans. Instead of being explicitly programmed for every possible movement, a robot can learn to walk, grasp objects, or assemble products by being rewarded for successful actions. This makes them more adaptable to changing environments.</p>
+                </div>
+
+                <div class="mt-8 clear-both">
+                    <div class="app-illustration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 18-6-6 6-6"/><path d="m6 12h12"/></svg>
+                    </div>
+                    <h3>2. Game Playing and Strategy</h3>
+                    <p>RL agents have achieved superhuman performance in complex games like Go (AlphaGo), chess, and video games. They learn by playing against themselves millions of times, discovering strategies and tactics that human players had never considered, ultimately maximizing their probability of winning.</p>
+                </div>
+                
+                <div class="mt-8 clear-both">
+                    <div class="app-illustration">
+                         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1 .4-1 1v7c0 .6.4 1 1 1h2"/><path d="M14 17c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C12.7 10.6 10 10 10 10s-1.3-1.4-2.2-2.3C7.4 7.3 6.8 7 6 7H5"/><path d="M7 17v-5"/><path d="M12 17v-4"/><path d="M17 17v-2"/></svg>
+                    </div>
+                    <h3>3. Autonomous Vehicles</h3>
+                    <p>Self-driving cars use RL to learn optimal driving policies. By simulating millions of miles in virtual environments, the agent can learn how to handle complex situations like merging in traffic, navigating intersections, or reacting to unexpected events, all while prioritizing safety and efficiency (the rewards).</p>
+                </div>
+                
+                <div class="mt-8 clear-both">
+                    <div class="app-illustration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/><path d="M12 18a.5.5 0 0 0 .5-.5v-4a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.5v4a.5.5 0 0 0 .5.5Z"/><path d="M8 12v-2a4 4 0 1 1 8 0v2"/></svg>
+                    </div>
+                    <h3>4. Resource Management</h3>
+                    <p>Large-scale systems, such as data centers or power grids, use RL to optimize resource allocation. For example, Google uses RL to manage the cooling systems in its data centers, rewarding the agent for reducing energy consumption while maintaining safe operating temperatures, resulting in significant cost savings.</p>
+                </div>
+                
+                <div class="mt-8 clear-both">
+                     <div class="app-illustration">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+                    </div>
+                    <h3>5. Personalized Recommendations</h3>
+                    <p>Recommendation engines (e.g., for news, products, or videos) can use RL to learn a user's preferences over time. The agent is rewarded when a user engages with a recommended item (clicks, purchases). This allows the system to adapt its recommendations dynamically, going beyond static suggestions to create a more engaging user experience.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="gridContent" class="hidden">
+            <div class="prose bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200 mx-auto">
+                <h2>Customize Grid Environment</h2>
+                <p>Create your own challenges for the agent. Adjust the grid size and the number of holes, then apply your changes to generate a new, random environment. The simulation will automatically reset with the new layout.</p>
+                
+                <div class="mt-6 space-y-6 bg-gray-50 p-6 rounded-lg">
+                    <div>
+                        <div class="slider-label">
+                            <label for="gridSizeSlider">Grid Size</label>
+                            <span id="gridSizeValue">6x6</span>
+                        </div>
+                        <input type="range" id="gridSizeSlider" min="4" max="12" step="1" value="6" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="slider-label">
+                            <label for="holeCountSlider">Number of Holes</label>
+                            <span id="holeCountValue">5</span>
+                        </div>
+                        <input type="range" id="holeCountSlider" min="0" max="20" step="1" value="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                     <div class="grid grid-cols-2 gap-4">
+                        <button id="applyGridChangesBtn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Apply Changes</button>
+                        <button id="randomizeGridBtn" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">Randomize Current</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const canvas = document.getElementById('gridCanvas');
+        const ctx = canvas.getContext('2d');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const showPolicyBtn = document.getElementById('showPolicyBtn');
+        const stepBtn = document.getElementById('stepBtn');
+        const episodeCountEl = document.getElementById('episodeCount');
+        const stepCountEl = document.getElementById('stepCount');
+        const statusEl = document.getElementById('status');
+        const qTableEl = document.getElementById('qTable');
+        const bellmanEl = document.getElementById('bellmanCalculation');
+
+        // Tab Elements
+        const simTab = document.getElementById('simTab');
+        const instrTab = document.getElementById('instrTab');
+        const conceptsTab = document.getElementById('conceptsTab');
+        const explorationTab = document.getElementById('explorationTab');
+        const bellmanTab = document.getElementById('bellmanTab');
+        const appsTab = document.getElementById('appsTab');
+        const gridTab = document.getElementById('gridTab');
+        const simulationContent = document.getElementById('simulationContent');
+        const instructionsContent = document.getElementById('instructionsContent');
+        const conceptsContent = document.getElementById('conceptsContent');
+        const explorationContent = document.getElementById('explorationContent');
+        const bellmanContent = document.getElementById('bellmanContent');
+        const applicationsContent = document.getElementById('applicationsContent');
+        const gridContent = document.getElementById('gridContent');
+        
+        // Grid Customization Elements
+        const gridSizeSlider = document.getElementById('gridSizeSlider');
+        const gridSizeValue = document.getElementById('gridSizeValue');
+        const holeCountSlider = document.getElementById('holeCountSlider');
+        const holeCountValue = document.getElementById('holeCountValue');
+        const applyGridChangesBtn = document.getElementById('applyGridChangesBtn');
+        const randomizeGridBtn = document.getElementById('randomizeGridBtn');
+
+        // --- Sliders and Value Displays ---
+        const learningRateSlider = document.getElementById('learningRate');
+        const discountFactorSlider = document.getElementById('discountFactor');
+        const explorationMethodSelect = document.getElementById('explorationMethod');
+        const epsilonSlider = document.getElementById('epsilon');
+        const temperatureSlider = document.getElementById('temperature');
+        const ucbCSlider = document.getElementById('ucbC');
+        const speedSlider = document.getElementById('speed');
+        const learningRateValueEl = document.getElementById('learningRateValue');
+        const discountFactorValueEl = document.getElementById('discountFactorValue');
+        const epsilonValueEl = document.getElementById('epsilonValue');
+        const temperatureValueEl = document.getElementById('temperatureValue');
+        const ucbCValueEl = document.getElementById('ucbCValue');
+        const speedValueEl = document.getElementById('speedValue');
+
+        // --- Simulation Parameters ---
+        let GRID_SIZE = 6;
+        const HEADER_SIZE = 30;
+        let CELL_SIZE = (canvas.width - HEADER_SIZE) / GRID_SIZE;
+        const ACTIONS = { UP: 0, DOWN: 1, LEFT: 2, RIGHT: 3 };
+        const ACTION_MAP = { 0: '↑', 1: '↓', 2: '←', 3: '→' };
+        
+        // Environment Layout
+        let environmentLayout = [];
+        let holeCount = 5;
+
+        // Rewards
+        const REWARDS = {
+            G: 100, // Goal
+            H: -100, // Hole
+            F: -1,   // Frozen/Safe
+            S: -1    // Start
+        };
+        
+        // --- State Variables ---
+        let qTable = {};
+        let actionCounts = {}; // For UCB
+        let agentPos = { x: 0, y: 0 };
+        let startPos = { x: 0, y: 0 };
+        let episode = 0;
+        let totalSteps = 0;
+        let isRunning = false;
+        let simulationInterval;
+        let showPolicy = false;
+        let optimalPathStates = [];
+        let lastUpdateInfo = null;
+        let lastBellmanCalc = null;
+        
+        // --- Hyperparameters ---
+        let learningRate = 0.1;
+        let discountFactor = 0.9;
+        let explorationMethod = 'epsilon';
+        let epsilon = 0.9;
+        let epsilonDecay = 0.999;
+        let minEpsilon = 0.01;
+        let temperature = 0.5;
+        let ucbC = 2.0;
+        let simulationSpeed = 50;
+
+        // --- Grid Generation ---
+        function generateGrid() {
+            const totalCells = GRID_SIZE * GRID_SIZE;
+            environmentLayout = Array(totalCells).fill('F');
+            
+            const startIdx = 0;
+            const goalIdx = totalCells - 1;
+            environmentLayout[startIdx] = 'S';
+            environmentLayout[goalIdx] = 'G';
+
+            let placedHoles = 0;
+            while (placedHoles < holeCount) {
+                const randIdx = Math.floor(Math.random() * totalCells);
+                if (randIdx !== startIdx && randIdx !== goalIdx && environmentLayout[randIdx] === 'F') {
+                    environmentLayout[randIdx] = 'H';
+                    placedHoles++;
+                }
+            }
+        }
+
+        // --- Helper Functions ---
+        const getStateKey = (x, y) => `${x},${y}`;
+        const getCellType = (x, y) => environmentLayout[y * GRID_SIZE + x];
+
+        // --- Initialization ---
+        function initialize(newGrid = true) {
+            isRunning = false;
+            clearTimeout(simulationInterval);
+
+            if (newGrid) {
+                 CELL_SIZE = (canvas.width - HEADER_SIZE) / GRID_SIZE;
+                generateGrid();
+            }
+
+            qTable = {};
+            actionCounts = {};
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const state = getStateKey(x, y);
+                    qTable[state] = [0, 0, 0, 0];
+                    actionCounts[state] = [0, 0, 0, 0]; // For UCB
+                    if (getCellType(x, y) === 'S') {
+                        startPos = { x, y };
+                        agentPos = { ...startPos };
+                    }
+                }
+            }
+            episode = 0;
+            totalSteps = 0;
+            epsilon = parseFloat(epsilonSlider.value);
+            showPolicy = false;
+            optimalPathStates = [];
+            lastBellmanCalc = null;
+            stepBtn.disabled = false;
+            stepBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            updateUI();
+            drawGrid();
+            updateQTableUI();
+            updateBellmanUI();
+        }
+
+        // --- Drawing Functions ---
+        function drawGrid() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#4a5568';
+            ctx.font = 'bold 12px Inter';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            for (let i = 0; i < GRID_SIZE; i++) {
+                ctx.fillText((i).toString(), HEADER_SIZE + i * CELL_SIZE + CELL_SIZE / 2, HEADER_SIZE / 2);
+                ctx.fillText((i).toString(), HEADER_SIZE / 2, HEADER_SIZE + i * CELL_SIZE + CELL_SIZE / 2);
+            }
+
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cellType = getCellType(x, y);
+                    let color = '#f7fafc';
+                    if (cellType === 'S') color = '#f6e05e';
+                    else if (cellType === 'G') color = '#48bb78';
+                    else if (cellType === 'H') color = '#f56565';
+                    
+                    const drawX = HEADER_SIZE + x * CELL_SIZE;
+                    const drawY = HEADER_SIZE + y * CELL_SIZE;
+
+                    ctx.fillStyle = color;
+                    ctx.fillRect(drawX, drawY, CELL_SIZE, CELL_SIZE);
+                    ctx.strokeStyle = '#e2e8f0';
+                    ctx.strokeRect(drawX, drawY, CELL_SIZE, CELL_SIZE);
+
+                    const reward = REWARDS[cellType];
+                    ctx.fillStyle = '#374151';
+                    ctx.font = 'bold 12px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(reward.toString(), drawX + CELL_SIZE / 2, drawY + CELL_SIZE / 2);
+                }
+            }
+            drawAgent();
+
+             if (showPolicy) {
+                drawPolicy();
+            }
+        }
+        
+        function drawAgent() {
+            const agentX = HEADER_SIZE + agentPos.x * CELL_SIZE + CELL_SIZE / 2;
+            const agentY = HEADER_SIZE + agentPos.y * CELL_SIZE + CELL_SIZE / 2;
+            ctx.fillStyle = '#4299e1';
+            ctx.beginPath();
+            ctx.arc(agentX, agentY, CELL_SIZE / 3, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        function drawPolicy() {
+            let currX = startPos.x;
+            let currY = startPos.y;
+            ctx.strokeStyle = '#2d3748';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(HEADER_SIZE + currX * CELL_SIZE + CELL_SIZE / 2, HEADER_SIZE + currY * CELL_SIZE + CELL_SIZE / 2);
+
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const cellType = getCellType(currX, currY);
+                if (cellType === 'G' || cellType === 'H') break;
+                const state = getStateKey(currX, currY);
+                const action = getBestAction(state);
+                const nextPos = getNextPosition(currX, currY, action);
+                ctx.lineTo(HEADER_SIZE + nextPos.x * CELL_SIZE + CELL_SIZE / 2, HEADER_SIZE + nextPos.y * CELL_SIZE + CELL_SIZE / 2);
+                currX = nextPos.x;
+                currY = nextPos.y;
+            }
+            ctx.stroke();
+            ctx.lineWidth = 1;
+        }
+
+        // --- Q-Learning Logic ---
+        function chooseAction(state) {
+            actionCounts[state] = actionCounts[state] || [0, 0, 0, 0];
+            
+            switch (explorationMethod) {
+                case 'epsilon':
+                    if (Math.random() < epsilon) {
+                        return Math.floor(Math.random() * 4);
+                    }
+                    return getBestAction(state);
+                
+                case 'softmax':
+                    const qValues = qTable[state];
+                    const expValues = qValues.map(q => Math.exp(q / temperature));
+                    const sumExpValues = expValues.reduce((a, b) => a + b, 0);
+                    const probs = expValues.map(e => e / sumExpValues);
+                    
+                    const rand = Math.random();
+                    let cumulativeProb = 0;
+                    for (let i = 0; i < probs.length; i++) {
+                        cumulativeProb += probs[i];
+                        if (rand < cumulativeProb) {
+                            return i;
+                        }
+                    }
+                    return probs.length - 1; // Fallback
+
+                case 'ucb':
+                    const totalStateActions = actionCounts[state].reduce((a, b) => a + b, 0);
+                    const ucbValues = qTable[state].map((q, action) => {
+                        if (actionCounts[state][action] === 0) {
+                            return Infinity; // Encourage trying untried actions
+                        }
+                        return q + ucbC * Math.sqrt(Math.log(totalStateActions + 1) / actionCounts[state][action]);
+                    });
+                    return ucbValues.indexOf(Math.max(...ucbValues));
+
+                default:
+                    return getBestAction(state);
+            }
+        }
+
+
+        function getBestAction(state) {
+            const qValues = qTable[state];
+            return qValues.indexOf(Math.max(...qValues));
+        }
+
+        function getNextPosition(x, y, action) {
+            let nextX = x;
+            let nextY = y;
+            if (action === ACTIONS.UP) nextY--;
+            else if (action === ACTIONS.DOWN) nextY++;
+            else if (action === ACTIONS.LEFT) nextX--;
+            else if (action === ACTIONS.RIGHT) nextX++;
+
+            if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
+                return { x, y };
+            }
+            return { x: nextX, y: nextY };
+        }
+
+        function updateQValue(state, action, reward, nextState) {
+            const oldQValue = qTable[state][action];
+            const maxNextQ = (nextState in qTable) ? Math.max(...qTable[nextState]) : 0;
+            const newQValue = oldQValue + learningRate * (reward + discountFactor * maxNextQ - oldQValue);
+            qTable[state][action] = newQValue;
+            lastUpdateInfo = { state, action };
+            lastBellmanCalc = { state, action, reward, nextState, oldQValue, maxNextQ, newQValue };
+        }
+
+        function runStep() {
+            if (!isRunning && simulationInterval) return;
+
+            const currentState = getStateKey(agentPos.x, agentPos.y);
+            const action = chooseAction(currentState);
+            
+            // For UCB, increment action count
+            actionCounts[currentState][action]++;
+            
+            const nextPos = getNextPosition(agentPos.x, agentPos.y, action);
+            const nextCellType = getCellType(nextPos.x, nextPos.y);
+            const reward = REWARDS[nextCellType];
+            const nextState = getStateKey(nextPos.x, nextPos.y);
+            
+            updateQValue(currentState, action, reward, nextState);
+            
+            agentPos = nextPos;
+            totalSteps++;
+
+            if (nextCellType === 'G' || nextCellType === 'H') {
+                startNewEpisode();
+            }
+            
+            updateUI();
+            drawGrid();
+        }
+
+        function startNewEpisode() {
+            episode++;
+            agentPos = { ...startPos };
+            if (epsilon > minEpsilon) {
+                epsilon *= epsilonDecay;
+            }
+        }
+
+        function gameLoop() {
+            runStep();
+            if (isRunning) {
+                simulationInterval = setTimeout(gameLoop, simulationSpeed);
+            }
+        }
+        
+        function calculateOptimalPath() {
+            optimalPathStates = [];
+            let currX = startPos.x;
+            let currY = startPos.y;
+            for (let i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+                const state = getStateKey(currX, currY);
+                optimalPathStates.push(state);
+                const cellType = getCellType(currX, currY);
+                if (cellType === 'G' || cellType === 'H') break;
+                const action = getBestAction(state);
+                const nextPos = getNextPosition(currX, currY, action);
+                if (nextPos.x === currX && nextPos.y === currY) break;
+                currX = nextPos.x;
+                currY = nextPos.y;
+            }
+        }
+
+        // --- UI Update Functions ---
+        function updateUI() {
+            episodeCountEl.textContent = episode;
+            stepCountEl.textContent = totalSteps;
+            statusEl.textContent = isRunning ? 'Training...' : (showPolicy ? 'Policy Shown' : 'Paused');
+            epsilonSlider.value = epsilon;
+            epsilonValueEl.textContent = epsilon.toFixed(2);
+            updateQTableUI();
+            updateBellmanUI();
+        }
+
+        function updateQTableUI() {
+            let tableHTML = '<thead><tr><th>State (x,y)</th><th>↑ Up</th><th>↓ Down</th><th>← Left</th><th>→ Right</th></tr></thead><tbody>';
+            const states = Object.keys(qTable).sort((a,b) => {
+                const [ax, ay] = a.split(',').map(Number);
+                const [bx, by] = b.split(',').map(Number);
+                if(ay !== by) return ay - by;
+                return ax - bx;
+            });
+
+            let minQ = 0, maxQ = 0;
+            for(const state of states) {
+                minQ = Math.min(minQ, ...qTable[state]);
+                maxQ = Math.max(maxQ, ...qTable[state]);
+            }
+            
+            const updatedState = lastUpdateInfo ? lastUpdateInfo.state : null;
+            const updatedAction = lastUpdateInfo ? lastUpdateInfo.action : null;
+
+            for (const state of states) {
+                const isOptimal = showPolicy && optimalPathStates.includes(state);
+                const rowClass = isOptimal ? 'optimal-path-row' : '';
+                tableHTML += `<tr class="${rowClass}"><td>${state}</td>`;
+                const qValues = qTable[state];
+                const bestAction = getBestAction(state);
+                qValues.forEach((q, index) => {
+                    const color = getColorForValue(q, minQ, maxQ);
+                    const isBest = index === bestAction && Math.max(...qValues) > 0;
+                    const highlightClass = (state === updatedState && index === updatedAction) ? 'q-cell-updated' : '';
+                    tableHTML += `<td class="q-table-cell ${highlightClass}" style="background-color: ${color}; color: ${Math.abs(q) > Math.abs(maxQ/2) ? 'white' : 'black'};">
+                                    <span class="q-value">${q.toFixed(2)}</span>
+                                    ${isBest ? '<span class="best-action-indicator">★</span>' : ''}
+                                  </td>`;
+                });
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</tbody>';
+            qTableEl.innerHTML = tableHTML;
+            lastUpdateInfo = null;
+        }
+
+        function updateBellmanUI() {
+            if (!lastBellmanCalc) {
+                bellmanEl.innerHTML = `<h4 class="font-semibold text-center mb-2 text-gray-700">Bellman Equation Calculation</h4>
+                                       <p class="text-center text-gray-500">Press Start or Step to see the calculation.</p>`;
+                return;
+            }
+
+            const { state, action, reward, nextState, oldQValue, maxNextQ, newQValue } = lastBellmanCalc;
+            const actionSymbol = ACTION_MAP[action];
+
+            const html = `
+                <h4 class="font-semibold text-center mb-2 text-gray-700">Bellman Equation Update</h4>
+                <div class="text-xs text-center font-mono break-words">
+                    <p class="font-semibold">Q(s, a) = Q(s, a) + α * [R + γ * max Q(s') - Q(s, a)]</p>
+                    <hr class="my-2">
+                    <p><strong class="text-blue-600">State (s):</strong> ${state}</p>
+                    <p><strong class="text-blue-600">Action (a):</strong> ${actionSymbol}</p>
+                    <p><strong class="text-red-600">Reward (R):</strong> <span id="calc-reward" class="calc-value">${reward}</span></p>
+                    <p><strong class="text-green-600">max Q(s'):</strong> max Q(${nextState}) = <span id="calc-maxNextQ" class="calc-value">${maxNextQ.toFixed(2)}</span></p>
+                    <hr class="my-2">
+                    <p class="font-semibold">New Q(${state}, ${actionSymbol}) = </p>
+                    <p>
+                        <span id="calc-oldQ" class="calc-value">${oldQValue.toFixed(2)}</span> + 
+                        <span id="calc-alpha" class="calc-value">${learningRate.toFixed(2)}</span> * [<span id="calc-reward2" class="calc-value">${reward}</span> + 
+                        <span id="calc-gamma" class="calc-value">${discountFactor.toFixed(2)}</span> * <span id="calc-maxNextQ2" class="calc-value">${maxNextQ.toFixed(2)}</span> - 
+                        <span id="calc-oldQ2" class="calc-value">${oldQValue.toFixed(2)}</span>]
+                    </p>
+                    <p class="font-bold text-lg mt-1 text-indigo-600">= <span id="calc-newQ" class="calc-value" style="opacity: 0;">${newQValue.toFixed(2)}</span></p>
+                </div>
+            `;
+            bellmanEl.innerHTML = html;
+
+            const highlightOrder = [
+                ['calc-oldQ', 'calc-oldQ2'], ['calc-reward', 'calc-reward2'], ['calc-maxNextQ', 'calc-maxNextQ2'],
+                ['calc-gamma'], ['calc-alpha'],
+            ];
+            let delay = 50;
+            highlightOrder.forEach(ids => {
+                setTimeout(() => ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.classList.add('anim-highlight');
+                        setTimeout(() => el.classList.remove('anim-highlight'), 700);
+                    }
+                }), delay);
+                delay += 200;
+            });
+            setTimeout(() => {
+                const finalEl = document.getElementById('calc-newQ');
+                if (finalEl) {
+                    finalEl.style.opacity = '1';
+                    finalEl.classList.add('anim-reveal', 'anim-highlight');
+                    setTimeout(() => finalEl.classList.remove('anim-highlight'), 700);
+                }
+            }, delay);
+        }
+
+        function getColorForValue(value, min, max) {
+            if (value === 0 || max === min) return '#ffffff';
+            if (value > 0) return `rgba(72, 187, 120, ${value/max})`;
+            return `rgba(245, 101, 101, ${value/min})`;
+        }
+        
+        // --- Event Listeners ---
+        function setActiveTab(activeTab) {
+            const tabs = [simTab, instrTab, conceptsTab, explorationTab, bellmanTab, appsTab, gridTab];
+            const contents = [simulationContent, instructionsContent, conceptsContent, explorationContent, bellmanContent, applicationsContent, gridContent];
+
+            tabs.forEach((tab, index) => {
+                const content = contents[index];
+                if(tab === activeTab) {
+                    content.classList.remove('hidden');
+                    tab.classList.add('text-blue-600', 'border-blue-600');
+                    tab.classList.remove('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                } else {
+                    content.classList.add('hidden');
+                    tab.classList.remove('text-blue-600', 'border-blue-600');
+                    tab.classList.add('text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300', 'border-transparent');
+                }
+            });
+        }
+        
+        simTab.addEventListener('click', () => setActiveTab(simTab));
+        instrTab.addEventListener('click', () => setActiveTab(instrTab));
+        conceptsTab.addEventListener('click', () => setActiveTab(conceptsTab));
+        explorationTab.addEventListener('click', () => setActiveTab(explorationTab));
+        bellmanTab.addEventListener('click', () => setActiveTab(bellmanTab));
+        appsTab.addEventListener('click', () => setActiveTab(appsTab));
+        gridTab.addEventListener('click', () => setActiveTab(gridTab));
+
+        startBtn.addEventListener('click', () => {
+            if (isRunning) return;
+            isRunning = true;
+            stepBtn.disabled = true;
+            stepBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            showPolicy = false;
+            optimalPathStates = [];
+            gameLoop();
+        });
+
+        stopBtn.addEventListener('click', () => {
+            isRunning = false;
+            stepBtn.disabled = false;
+            stepBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            clearTimeout(simulationInterval);
+            updateUI();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            initialize(false);
+        });
+
+        showPolicyBtn.addEventListener('click', () => {
+            isRunning = false;
+            clearTimeout(simulationInterval);
+            showPolicy = true;
+            agentPos = { ...startPos };
+            calculateOptimalPath();
+            updateUI();
+            drawGrid();
+        });
+
+        stepBtn.addEventListener('click', () => {
+            if (isRunning) return;
+            showPolicy = false;
+            optimalPathStates = [];
+            runStep();
+        });
+
+        // --- Parameter Listeners ---
+        learningRateSlider.addEventListener('input', (e) => { learningRate = parseFloat(e.target.value); learningRateValueEl.textContent = learningRate.toFixed(2); });
+        discountFactorSlider.addEventListener('input', (e) => { discountFactor = parseFloat(e.target.value); discountFactorValueEl.textContent = discountFactor.toFixed(2); });
+        epsilonSlider.addEventListener('input', (e) => { if (!isRunning) { epsilon = parseFloat(e.target.value); epsilonValueEl.textContent = epsilon.toFixed(2); } });
+        temperatureSlider.addEventListener('input', (e) => { temperature = parseFloat(e.target.value); temperatureValueEl.textContent = temperature.toFixed(2); });
+        ucbCSlider.addEventListener('input', (e) => { ucbC = parseFloat(e.target.value); ucbCValueEl.textContent = ucbC.toFixed(1); });
+        speedSlider.addEventListener('input', (e) => { simulationSpeed = 501 - parseInt(e.target.value); speedValueEl.textContent = `${simulationSpeed}ms`; });
+        
+        explorationMethodSelect.addEventListener('change', (e) => {
+            explorationMethod = e.target.value;
+            document.querySelectorAll('.exploration-param').forEach(el => el.classList.add('hidden-param'));
+            document.getElementById(`${explorationMethod}-param`).classList.remove('hidden-param');
+            initialize(false); // Reset to apply new method cleanly
+        });
+
+        // Grid Customization Listeners
+        gridSizeSlider.addEventListener('input', (e) => {
+            const size = parseInt(e.target.value);
+            gridSizeValue.textContent = `${size}x${size}`;
+            holeCountSlider.max = Math.floor(size * size / 3);
+        });
+
+        holeCountSlider.addEventListener('input', (e) => { holeCountValue.textContent = e.target.value; });
+        
+        applyGridChangesBtn.addEventListener('click', () => {
+            GRID_SIZE = parseInt(gridSizeSlider.value);
+            holeCount = parseInt(holeCountSlider.value);
+            initialize(true);
+            setActiveTab(simTab);
+        });
+
+        randomizeGridBtn.addEventListener('click', () => {
+            initialize(true);
+            setActiveTab(simTab);
+        });
+
+        // --- Initial Load ---
+        initialize(true);
+
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB Machine Learning Quiz</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Set Inter as the default font -->
+    <style>
+        html {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for answer feedback */
+        .answer-btn.correct {
+            background-color: #d1fae5; /* green-100 */
+            border-color: #10b981; /* green-500 */
+            color: #065f46; /* green-800 */
+        }
+        .answer-btn.incorrect {
+            background-color: #fee2e2; /* red-100 */
+            border-color: #ef4444; /* red-500 */
+            color: #991b1b; /* red-800 */
+        }
+        .answer-btn.selected {
+            ring: 2px;
+            ring-offset-2;
+        }
+        .answer-btn:disabled {
+            opacity: 0.8;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <!-- Start Screen Container -->
+    <div id="start-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl">
+        <h1 class="text-3xl font-bold text-indigo-700 mb-2">IB Machine Learning Quiz</h1>
+        <p class="text-lg text-gray-600 mb-8">Select a topic to revise or take the full quiz.</p>
+        
+        <div id="section-list" class="space-y-6">
+            <!-- Sections will be dynamically inserted here -->
+        </div>
+
+        <button onclick="startQuiz(-1)" class="w-full mt-8 bg-green-600 text-white px-6 py-3 rounded-lg font-medium text-lg hover:bg-green-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2">
+            Quiz All (70 Questions)
+        </button>
+    </div>
+
+    <!-- Quiz Container (Initially Hidden) -->
+    <div id="quiz-container" class="bg-white p-6 sm:p-8 rounded-xl shadow-2xl w-full max-w-2xl hidden">
+        
+        <!-- Quiz Header -->
+        <div class="flex justify-between items-center border-b pb-4 mb-6">
+            <h1 id="quiz-title" class="text-2xl font-bold text-indigo-700">IB Machine Learning Quiz</h1>
+            <div id="question-counter" class="text-sm font-semibold text-gray-600 bg-gray-100 px-3 py-1 rounded-full"></div>
+        </div>
+
+        <!-- Question -->
+        <div id="question-text" class="text-xl font-semibold text-gray-800 mb-6 min-h-[50px]"></div>
+
+        <!-- Answer Options -->
+        <div id="options-container" class="grid grid-cols-1 gap-4">
+            <!-- Answer buttons will be dynamically inserted here -->
+        </div>
+
+        <!-- Footer -->
+        <div class="flex justify-between items-center mt-8 pt-6 border-t">
+            <button id="hint-btn" class="bg-blue-500 text-white px-5 py-2 rounded-lg font-medium hover:bg-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2">
+                Hint
+            </button>
+            <button id="next-btn" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 hidden">
+                Next Question
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Score Modal -->
+    <div id="score-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md text-center">
+            <h2 class="text-3xl font-bold text-indigo-700 mb-4">Quiz Complete!</h2>
+            <p class="text-xl text-gray-700 mb-6">Your final score is:</p>
+            <div id="final-score" class="text-6xl font-extrabold text-gray-800 mb-8"></div>
+            
+            <!-- Review Feedback Section -->
+            <div class="mb-6">
+                <p class="text-lg text-gray-700 mb-2 font-semibold">Areas to Review:</p>
+                <div id="review-feedback" class_S="text-left text-sm text-gray-600 bg-gray-50 p-4 rounded-lg max-h-40 overflow-y-auto">
+                    <!-- Feedback will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <button id="restart-btn" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-medium text-lg hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
+                Back to Menu
+            </button>
+        </div>
+    </div>
+
+    <!-- Hint Modal -->
+    <div id="hint-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+        <div class="bg-white p-7 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 class="text-xl font-semibold text-blue-700 mb-4">Hint</h3>
+            <p id="hint-text" class="text-gray-700 mb-6"></p>
+            <button onclick="closeModal('hint-modal')" class="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-medium hover:bg-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Rationale Modal -->
+    <div id="rationale-modal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-60 flex items-center justify-center p-4">
+        <div id="rationale-content" class="bg-white p-7 rounded-xl shadow-2xl w-full max-w-md">
+            <h3 id="rationale-title" class="text-2xl font-bold mb-4"></h3>
+            <p id="rationale-text" class="text-gray-700 mb-6"></p>
+            <button onclick="closeModal('rationale-modal')" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2">
+                Continue
+            </button>
+        </div>
+    </div>
+
+
+    <script>
+        // --- 1. QUIZ DATA ---
+        // New structured data with 10 questions (9 MC, 1 Cloze) per section
+        const rawQuizData = {
+            "sections": [
+                {
+                    "title": "Section 1: Core Concepts & Types of ML",
+                    "summary": "Revise the main types of ML (Supervised, Unsupervised, Reinforcement, Transfer) and key hardware/platform concepts (GPU, Edge Computing).",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "The main types of ML include `____` (1) learning, which uses labeled data (like spam filtering), and `____` (2) learning, which finds patterns in unlabeled data (like customer segmentation). A third type, `____` (3) learning, involves an agent learning from rewards.",
+                            "hint": "Match the type to its description: (1) Labeled data, (2) Unlabeled data, (3) Rewards.",
+                            "concept": "ML Types",
+                            "GE": [
+                                {"text": "(1) Supervised, (2) Unsupervised, (3) Reinforcement", "Sr": true, "O8": "Correct. Supervised uses labels, Unsupervised finds patterns, and Reinforcement uses rewards."},
+                                {"text": "(1) Unsupervised, (2) Supervised, (3) Reinforcement", "Sr": false, "O8": "This incorrectly swaps Supervised (labeled data) and Unsupervised (unlabeled data)."},
+                                {"text": "(1) Supervised, (2) Transfer, (3) Unsupervised", "Sr": false, "O8": "This is incorrect. (2) is Unsupervised and (3) is Reinforcement."},
+                                {"text": "(1) Reinforcement, (2) Unsupervised, (3) Supervised", "Sr": false, "O8": "This is incorrect. The order is mixed up."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "Which type of machine learning algorithm is trained on a dataset where each example is labeled with the correct output?",
+                            "hint": "Think about which method requires a 'teacher' or 'supervisor' to provide the correct answers during training.",
+                            "concept": "Supervised Learning",
+                            "GE": [
+                                {"text": "Supervised Learning", "Sr": true, "O8": "Supervised learning uses labeled datasets (input-output pairs) to train a model to make predictions."},
+                                {"text": "Unsupervised Learning", "Sr": false, "O8": "Unsupervised learning works with unlabeled data to find hidden patterns or structures."},
+                                {"text": "Reinforcement Learning", "Sr": false, "O8": "Reinforcement learning involves an agent learning by receiving rewards or penalties for actions in an environment."},
+                                {"text": "Transfer Learning", "Sr": false, "O8": "Transfer learning involves reusing a model trained on one task for a different but related task."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "An algorithm that groups customers into distinct segments based on their purchasing habits, without any predefined labels, is an example of:",
+                            "hint": "The key phrase is 'without any predefined labels'. Which type of learning deals with unlabeled data?",
+                            "concept": "Unsupervised Learning",
+                            "GE": [
+                                {"text": "Classification", "Sr": false, "O8": "Classification is a supervised task that assigns items to predefined categories, which is not what's happening here."},
+                                {"text": "Regression", "Sr": false, "O8": "Regression is a supervised task that predicts a continuous numerical value, not groups."},
+                                {"text": "Unsupervised Learning", "Sr": true, "O8": "This scenario describes finding patterns (segments) in unlabeled data, which is the definition of unsupervised learning (specifically clustering)."},
+                                {"text": "Reinforcement Learning", "Sr": false, "O8": "This does not involve an agent learning from rewards or penalties for actions."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "A model learning to play chess by receiving a +1 for winning a game and a -1 for losing is using which ML approach?",
+                            "hint": "This type of learning involves an 'agent', an 'environment', and 'rewards' or 'penalties'.",
+                            "concept": "Reinforcement Learning",
+                            "GE": [
+                                {"text": "Supervised Learning", "Sr": false, "O8": "This isn't supervised learning because the model isn't given labeled 'correct moves' for every board state."},
+                                {"text": "Unsupervised Learning", "Sr": false, "O8": "The model isn't just finding patterns; it's learning a strategy based on outcomes."},
+                                {"text": "Reinforcement Learning", "Sr": true, "O8": "The model (agent) learns by interacting with an environment (the game) and receiving rewards/penalties (winning/losing)."},
+                                {"text": "Transfer Learning", "Sr": false, "O8": "The model is not being adapted from a different, pre-existing task."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "What is the term for reusing a model trained to recognize general objects (like on ImageNet) and fine-tuning it to identify specific bird species?",
+                            "hint": "This technique involves 'transferring' knowledge from a broad task to a more specific one.",
+                            "concept": "Transfer Learning",
+                            "GE": [
+                                {"text": "Transfer Learning", "Sr": true, "O8": "This is the definition of transfer learning: leveraging knowledge from one task to improve performance on a related one."},
+                                {"text": "Unsupervised Learning", "Sr": false, "O8": "The original model was trained on labeled data, and the new task also uses labels (bird species)."},
+                                {"text": "Reinforcement Learning", "Sr": false, "O8": "This process doesn't involve learning from rewards for actions in an environment."},
+                                {"text": "Data Preprocessing", "Sr": false, "O8": "Data preprocessing is about cleaning and preparing data, not reusing an existing model."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "Which hardware component is specifically designed to accelerate the matrix operations common in deep learning models?",
+                            "hint": "This component was originally designed for rendering graphics, but its parallel architecture is perfect for ML.",
+                            "concept": "Hardware",
+                            "GE": [
+                                {"text": "Standard CPU (Central Processing Unit)", "Sr": false, "O8": "While CPUs can run ML models, they are not as optimized for the massive parallel processing required by deep learning as other options."},
+                                {"text": "SSD (Solid State Drive)", "Sr": false, "O8": "SSDs are for fast data storage, not for computation."},
+                                {"text": "GPU (Graphics Processing Unit)", "Sr": true, "O8": "GPUs provide massive parallel processing capabilities, making them essential for accelerating deep learning training."},
+                                {"text": "RAM (Random Access Memory)", "Sr": false, "O8": "RAM is for temporary data storage (memory), not the primary computation."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "A developer running a real-time object detection model directly on a smartphone is an example of what?",
+                            "hint": "This computing paradigm brings computation closer to the source of the data, avoiding a round-trip to the cloud.",
+                            "concept": "Platforms",
+                            "GE": [
+                                {"text": "Cloud-Based Platform", "Sr": false, "O8": "This is the opposite of a cloud-based platform; the processing is happening locally on the device."},
+                                {"text": "High-Performance Computing (HPC)", "Sr": false, "O8": "HPC involves massive clusters of computers, not a single, low-power device."},
+                                {"text": "Edge Computing", "Sr": true, "O8": "Edge computing involves running ML models locally on devices at the 'edge' of the network, like smartphones or IoT devices."},
+                                {"text": "Model Training", "Sr": false, "O8": "This describes deployment or 'inference', not the initial training of the model, which likely happened on more powerful hardware."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "What is the primary significance of data cleaning in the machine learning pipeline?",
+                            "hint": "Think about the principle of 'garbage in, garbage out'. What does data cleaning prevent?",
+                            "concept": "Data Cleaning",
+                            "GE": [
+                                {"text": "It always makes the dataset smaller.", "Sr": false, "O8": "While cleaning can remove duplicates or irrelevant data, imputation for missing values can keep the dataset size the same."},
+                                {"text": "It improves the accuracy and reliability of the model.", "Sr": true, "O8": "Models trained on 'dirty' data (with errors, outliers, or missing values) will produce unreliable results. Cleaning is crucial for quality."},
+                                {"text": "It selects the final algorithm to be used.", "Sr": false, "O8": "Data cleaning is a preprocessing step; it doesn't select the model itself."},
+                                {"text": "It is only necessary for unsupervised learning.", "Sr": false, "O8": "Data cleaning is a crucial step for all types of machine learning."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "A self-driving car's image recognition system, which takes in pixel data and outputs labels like 'pedestrian' or 'stop sign', is a classic example of:",
+                            "hint": "The system is trained on data that is pre-labeled (e.g., millions of images labeled 'stop sign').",
+                            "concept": "Supervised Learning",
+                            "GE": [
+                                {"text": "Supervised Learning", "Sr": true, "O8": "Correct. This is a classification task, which is a form of supervised learning, as it's trained on labeled input-output pairs."},
+                                {"text": "Unsupervised Learning", "Sr": false, "O8": "This is incorrect. The model isn't just finding 'patterns' in the pixels; it's assigning predefined labels."},
+                                {"text": "Reinforcement Learning", "Sr": false, "O8": "This is incorrect. While the car's *driving logic* might use reinforcement, the *image recognition* part is supervised."},
+                                {"text": "Transfer Learning", "Sr": false, "O8": "This is incorrect. While it *uses* transfer learning (e.g., a pre-trained base model), the task *itself* is supervised learning."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "Which of these is NOT a typical application of unsupervised learning?",
+                            "hint": "Unsupervised learning finds hidden patterns. Which of these options has a predefined 'correct answer'?",
+                            "concept": "Unsupervised Learning",
+                            "GE": [
+                                {"text": "Customer segmentation (grouping similar customers)", "Sr": false, "O8": "This is a classic clustering (unsupervised) task."},
+                                {"text": "Spam email filtering (classifying as 'spam' or 'not spam')", "Sr": true, "O8": "Correct. This is a supervised learning (classification) task because it's trained on data already labeled as 'spam' or 'not spam'."},
+                                {"text": "Anomaly detection (finding unusual bank transactions)", "Sr": false, "O8": "This is an unsupervised task, as the model learns what 'normal' looks like and flags deviations."},
+                                {"text": "Market basket analysis (finding items often bought together)", "Sr": false, "O8": "This is an unsupervised task (association rule mining)."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 2: HL - Data Preprocessing & Features",
+                    "summary": "Focus on how to clean data. Understand methods for handling outliers (IQR) and missing data (Imputation), and the difference between feature selection and extraction (Filter, Wrapper, Embedded).",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "(HL) Data preprocessing is vital. To fill in missing data, we use `____` (1). To reduce the number of features, we can use `____` (2) methods (which are model-agnostic) or `____` (3) methods (which wrap the model).",
+                            "hint": "(1) Fills missing data. (2) Is model-agnostic. (3) Uses the model for selection.",
+                            "concept": "Preprocessing",
+                            "GE": [
+                                {"text": "(1) Imputation, (2) Filter, (3) Wrapper", "Sr": true, "O8": "Correct. Imputation fills missing data. Filter methods are model-agnostic (e.g., correlation), and Wrapper methods use the model's performance."},
+                                {"text": "(1) Extraction, (2) Filter, (3) Embedded", "Sr": false, "O8": "This is incorrect. (1) is Imputation, and (3) is a Wrapper method."},
+                                {"text": "(1) Imputation, (2) Wrapper, (3) Filter", "Sr": false, "O8": "This incorrectly swaps Filter and Wrapper methods."},
+                                {"text": "(1) Filter, (2) Imputation, (3) Wrapper", "Sr": false, "O8": "This is incorrect. (1) is Imputation and (2) is a Filter method."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "(HL) The method of defining outliers as data points falling below $Q1 - 1.5 \\times IQR$ or above $Q3 + 1.5 \\times IQR$ is known as:",
+                            "hint": "The name of the method is directly related to the components used in its formula (Q1, Q3, IQR).",
+                            "concept": "Outliers",
+                            "GE": [
+                                {"text": "Z-score Method", "Sr": false, "O8": "The Z-score method identifies outliers based on the number of standard deviations from the mean."},
+                                {"text": "Interquartile Range (IQR) Method", "Sr": true, "O8": "This is the definition of the IQR method, which uses quartiles (Q1, Q3) to identify outliers."},
+                                {"text": "Mean Imputation", "Sr": false, "O8": "Mean imputation is a technique for handling missing data, not identifying outliers."},
+                                {"text": "Feature Selection", "Sr": false, "O8": "Feature selection is about choosing relevant columns (features), not identifying problematic rows (outliers)."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "(HL) Replacing all missing values in a 'Salary' column with the average salary from all non-missing entries is an example of:",
+                            "hint": "This technique involves 'imputing' a value based on the column's average.",
+                            "concept": "Missing Data",
+                            "GE": [
+                                {"text": "Row Deletion", "Sr": false, "O8": "Row deletion would involve removing the entire row (employee record) that has a missing salary."},
+                                {"text": "Mean Imputation", "Sr": true, "O8": "'Imputation' means filling in missing data, and 'mean' refers to using the average value."},
+                                {"text": "Handling Outliers", "Sr": false, "O8": "This technique addresses missing data, not data points that are present but significantly different from others."},
+                                {"text": "Fuzzy Matching", "Sr": false, "O8": "Fuzzy matching is used to find and consolidate duplicate data that has slight variations (e.g., typos)."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "(HL) What is the primary role of feature selection?",
+                            "hint": "Think about what happens when a model has too many irrelevant features. It can get confused by noise.",
+                            "concept": "Feature Selection",
+                            "GE": [
+                                {"text": "To increase the total number of features in the dataset.", "Sr": false, "O8": "Feature selection aims to reduce the number of features, not increase them."},
+                                {"text": "To handle missing data by creating new features.", "Sr": false, "O8": "This describes a specific type of imputation or feature engineering, not the main goal of feature selection."},
+                                {"text": "To improve model performance by reducing overfitting and complexity.", "Sr": true, "O8": "By selecting only the most relevant features, the model becomes simpler, trains faster, and is less likely to 'memorize' noise (overfit)."},
+                                {"text": "To convert categorical features into numerical formats.", "Sr": false, "O8": "This process is called encoding (e.g., one-hot encoding), which is a different preprocessing step."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "(HL) A feature selection strategy that evaluates subsets of features by training and testing a specific ML model is called a:",
+                            "hint": "This method's name comes from the idea that it 'wraps' around a model to evaluate features.",
+                            "concept": "Feature Selection",
+                            "GE": [
+                                {"text": "Filter Method", "Sr": false, "O8": "Filter methods use statistical measures (like correlation) independent of any ML model."},
+                                {"text": "Wrapper Method", "Sr": true, "O8": "Wrapper methods 'wrap' the feature selection process around a specific model, using its performance as the selection criterion."},
+                                {"text": "Embedded Method", "Sr": false, "O8": "Embedded methods perform feature selection as part of the model training process itself (e.g., L1 regularization)."},
+                                {"text": "Dimensionality Reduction", "Sr": false, "O8": "This is a general term. Wrapper methods are a specific type of dimensionality reduction (specifically, feature selection)."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "(HL) L1 (Lasso) Regularization, which can shrink the coefficients of irrelevant features to zero during training, is an example of what?",
+                            "hint": "This method's feature selection is 'embedded' within the model's learning algorithm.",
+                            "concept": "Feature Selection",
+                            "GE": [
+                                {"text": "A Filter Method", "Sr": false, "O8": "Filter methods are model-agnostic and are applied before training."},
+                                {"text": "A Wrapper Method", "Sr": false, "O8": "Wrapper methods train multiple models on different feature subsets, which is not what Lasso does."},
+                                {"text": "An Embedded Method", "Sr": true, "O8": "Embedded methods, like Lasso, build feature selection directly into the model's training process."},
+                                {"text": "Feature Extraction", "Sr": false, "O8": "Lasso selects from existing features; it does not create new, transformed features."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "(HL) What is the key difference between feature selection and feature extraction (e.g., PCA)?",
+                            "hint": "Think about whether the final features are still understandable in their original context (e.g., 'Age', 'Salary').",
+                            "concept": "Feature Extraction",
+                            "GE": [
+                                {"text": "There is no difference; they are the same.", "Sr": false, "O8": "They are both dimensionality reduction techniques, but they work differently."},
+                                {"text": "Feature selection creates new features; feature extraction keeps original ones.", "Sr": false, "O8": "This is the reverse of the correct definitions."},
+                                {"text": "Feature selection keeps original features; feature extraction creates new ones.", "Sr": true, "O8": "Selection chooses a subset of the original features, while extraction (like PCA) transforms the data into a new, smaller set of features."},
+                                {"text": "Feature selection only works for regression; feature extraction only for classification.", "Sr": false, "O8": "Both techniques can be used for both regression and classification problems."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "(HL) If your 'Salary' data has a few *extremely* high outliers, which method of imputation would be a poor choice?",
+                            "hint": "Think about how the 'mean' (average) is affected by extreme values compared to the 'median' (middle value).",
+                            "concept": "Missing Data",
+                            "GE": [
+                                {"text": "Mean Imputation", "Sr": true, "O8": "Correct. The mean is sensitive to outliers and will be skewed high, leading to unrealistic imputed values. Median imputation would be better."},
+                                {"text": "Median Imputation", "Sr": false, "O8": "This is a good choice, as the median (middle value) is robust to outliers."},
+                                {"text": "Row Deletion", "Sr": false, "O8": "This is a valid (though often undesirable) way to handle missing data, but its 'goodness' isn't related to the outliers themselves."},
+                                {"text": "Mode Imputation", "Sr": false, "O8": "Mode (most frequent value) is not sensitive to outliers, though it's a strange choice for a continuous variable like salary."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "(HL) A 'Filter' method for feature selection is characterized by:",
+                            "hint": "Filter methods are fast because they don't use the ML model at all.",
+                            "concept": "Feature Selection",
+                            "GE": [
+                                {"text": "Using an ML model's performance to score feature subsets.", "Sr": false, "O8": "This is a Wrapper method, which is computationally expensive."},
+                                {"text": "Using statistical properties of the features (e.g., correlation) to score them.", "Sr": true, "O8": "Correct. Filter methods use fast statistical tests (like correlation) *before* training the model."},
+                                {"text": "Being built-in to the model's training process (e.g., Lasso).", "Sr": false, "O8": "This is an Embedded method."},
+                                {"text": "Transforming features into a new, lower-dimensional space.", "Sr": false, "O8": "This is Feature Extraction (e.g., PCA), not selection."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "(HL) What is 'Fuzzy Matching' used for in data cleaning?",
+                            "hint": "This technique helps find typos, like 'New York' vs. 'New Yrok'.",
+                            "concept": "Data Cleaning",
+                            "GE": [
+                                {"text": "To find and merge duplicate entries with slight variations.", "Sr": true, "O8": "Correct. Fuzzy matching identifies strings that are 'close' but not identical, like typos."},
+                                {"text": "To identify data points that are far from the average.", "Sr": false, "O8": "This is outlier detection."},
+                                {"text": "To fill in missing numerical values.", "Sr": false, "O8": "This is imputation."},
+                                {"text": "To convert categorical data (like 'Red') into numbers.", "Sr": false, "O8": "This is encoding."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 3: HL - Supervised Learning",
+                    "summary": "Revise the two main tasks: Regression (Linear Regression) and Classification (k-NN, Decision Trees). Know their evaluation metrics (MSE, $R^2$, Gini Impurity).",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "(HL) Supervised learning includes `____` (1), which predicts a continuous value (e.g., price) and is evaluated with metrics like `____` (2). The other main task is `____` (3), which predicts a category (e.g., 'cat' or 'dog').",
+                            "hint": "(1) Predicts values. (2) Is a regression metric. (3) Predicts categories.",
+                            "concept": "Supervised Tasks",
+                            "GE": [
+                                {"text": "(1) Regression, (2) $R^2$, (3) Classification", "Sr": true, "O8": "Correct. Regression predicts continuous values (evaluated by $R^2$), and Classification predicts discrete categories."},
+                                {"text": "(1) Classification, (2) $R^2$, (3) Regression", "Sr": false, "O8": "This incorrectly swaps Regression and Classification."},
+                                {"text": "(1) Regression, (2) Gini Impurity, (3) Classification", "Sr": false, "O8": "This is incorrect. Gini Impurity is a metric for Classification (Decision Trees), not Regression."},
+                                {"text": "(1) Clustering, (2) MSE, (3) Classification", "Sr": false, "O8": "This is incorrect. (1) is Regression, not Clustering (which is unsupervised)."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "(HL) Linear regression is a supervised learning algorithm used to predict what type of outcome?",
+                            "hint": "The 'Exam Scores' activity in the document, which predicts a score from 0-100, is a key example of this.",
+                            "concept": "Regression",
+                            "GE": [
+                                {"text": "Discrete categories (e.g., 'cat' or 'dog')", "Sr": false, "O8": "This describes a classification problem, not regression."},
+                                {"text": "Continuous numerical values (e.g., 'price' or 'temperature')", "Sr": true, "O8": "Regression models predict values on a continuous scale, like the price of a house or a student's exam score."},
+                                {"text": "Hidden patterns in unlabeled data (e.g., 'customer segments')", "Sr": false, "O8": "This describes an unsupervised clustering problem."},
+                                {"text": "A sequence of actions to maximize a reward (e.g., 'winning a game')", "Sr": false, "O8": "This describes a reinforcement learning problem."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "(HL) In regression analysis, which metric measures the proportion of the variance in the target variable that is predictable from the feature(s)?",
+                            "hint": "A value of 1.0 for this metric means a perfect fit, and 0.0 means the model explains none of the variability.",
+                            "concept": "Regression Metrics",
+                            "GE": [
+                                {"text": "Mean Squared Error (MSE)", "Sr": false, "O8": "MSE measures the average squared error, giving an absolute measure of error in the target's units (squared), not a proportion of variance."},
+                                {"text": "R-squared ($R^2$)", "Sr": true, "O8": "R-squared (or the coefficient of determination) is a relative measure of fit that indicates the percentage of variance explained by the model."},
+                                {"text": "Gini Impurity", "Sr": false, "O8": "Gini impurity is used in decision trees for classification to measure node purity."},
+                                {"text": "Support", "Sr": false, "O8": "Support is a metric used in association rule mining."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "(HL) Which metric gives an absolute measure of a regression model's error, expressed in the *squared units* of the target variable?",
+                            "hint": "This metric heavily penalizes large errors because it squares the difference between the actual and predicted values.",
+                            "concept": "Regression Metrics",
+                            "GE": [
+                                {"text": "Mean Squared Error (MSE)", "Sr": true, "O8": "MSE is the average of the squared differences between actual and predicted values. If predicting price in dollars, MSE is in dollars-squared."},
+                                {"text": "R-squared ($R^2$)", "Sr": false, "O8": "R-squared is a unitless proportion (percentage) and not an absolute measure of error in the target's units."},
+                                {"text": "Confidence", "Sr": false, "O8": "Confidence is a metric used in association rule mining."},
+                                {"text": "Accuracy", "Sr": false, "O8": "Accuracy is typically used in classification to measure the percentage of correct predictions."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "(HL) How does the K-Nearest Neighbors (k-NN) algorithm classify a new, unseen data point?",
+                            "hint": "The name of the algorithm itself describes the method. What do 'K' and 'Neighbors' suggest?",
+                            "concept": "k-NN",
+                            "GE": [
+                                {"text": "By calculating a regression line and seeing where the point falls.", "Sr": false, "O8": "This describes linear regression, not k-NN."},
+                                {"text": "By building a decision tree and following the splits.", "Sr": false, "O8": "This describes a decision tree classifier."},
+                                {"text": "By finding the 'k' closest points in the training data and taking a majority vote of their classes.", "Sr": true, "O8": "This is the definition of k-NN classification. It classifies based on the 'neighborhood' of the new point."},
+                                {"text": "By assigning it to the cluster with the nearest centroid.", "Sr": false, "O8": "This describes K-Means clustering, which is an unsupervised algorithm."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "(HL) In a decision tree, what does a 'leaf node' represent?",
+                            "hint": "Think of a real tree. The leaves are at the very end of the branches.",
+                            "concept": "Decision Trees",
+                            "GE": [
+                                {"text": "The initial question that splits all the data.", "Sr": false, "O8": "This is the 'root node', not a leaf node."},
+                                {"text": "A question about a feature that splits a subgroup.", "Sr": false, "O8": "This is an 'internal node' or 'decision node'."},
+                                {"text": "The final decision or class prediction after all questions are answered.", "Sr": true, "O8": "Leaf nodes are the endpoints of the tree's branches and represent the final classification."},
+                                {"text": "A measure of how 'mixed up' the data is at a node.", "Sr": false, "O8": "This describes Gini impurity, a metric used to decide *how* to split, not a part of the tree structure itself."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "(HL) In the context of decision trees, what does a Gini Impurity score of 0 signify?",
+                            "hint": "'Impurity' is a measure of how mixed-up a group is. What would 'zero impurity' mean?",
+                            "concept": "Classification Metrics",
+                            "GE": [
+                                {"text": "The node is perfectly 'pure' (all data points belong to the same class).", "Sr": true, "O8": "A Gini of 0 means there is no impurity or 'mix' of classes; the group is perfectly sorted."},
+                                {"text": "The node is perfectly 'impure' (an equal mix of all classes).", "Sr": false, "O8": "A perfectly impure node would have a high Gini score (e.g., 0.5 for two classes)."},
+                                {"text": "The node is the root of the tree.", "Sr": false, "O8": "The root node can have any Gini score; it is often the most impure node before any splits."},
+                                {"text": "The node has no data points in it.", "Sr": false, "O8": "Gini impurity is calculated on the data points within the node; an empty node wouldn't be evaluated."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "(HL) A major disadvantage of the k-NN algorithm is:",
+                            "hint": "k-NN is a 'lazy learner'. It does no work at training, but must do a lot of work at prediction time.",
+                            "concept": "k-NN",
+                            "GE": [
+                                {"text": "It is very fast at making predictions on new data.", "Sr": false, "O8": "This is false. It's very *slow* at prediction, as it must compare the new point to *all* training points."},
+                                {"text": "It is slow or computationally expensive at prediction time.", "Sr": true, "O8": "Correct. Because it has to calculate the distance to every single point in the training set, it is very 'lazy' at training but very 'slow' at predicting."},
+                                {"text": "It is very easy for a human to interpret its logic.", "Sr": false, "O8": "This is false. It's a 'black box' model; the logic ('because 3 of 5 neighbors said so') is not easily interpretable. Decision Trees are interpretable."},
+                                {"text": "It requires the data to be unlabeled.", "Sr": false, "O8": "This is false. k-NN is a *supervised* algorithm and requires labeled data."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "(HL) In a Decision Tree, what is the 'root node'?",
+                            "hint": "This is the very first node at the top of the tree.",
+                            "concept": "Decision Trees",
+                            "GE": [
+                                {"text": "The final class prediction.", "Sr": false, "O8": "This is a 'leaf node'."},
+                                {"text": "A node that has no more questions and cannot be split.", "Sr": false, "O8": "This is a 'leaf node'."},
+                                {"text": "The very first feature and split that best divides the entire dataset.", "Sr": true, "O8": "Correct. The root node is the starting point of the tree, representing the most informative initial split."},
+                                {"text": "A measure of how 'pure' a node is.", "Sr": false, "O8": "This is Gini Impurity, a metric, not a node."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "(HL) What is a primary difference between Linear Regression and a Decision Tree for regression?",
+                            "hint": "Think about the *shape* of the output. One fits a single straight line, the other fits 'steps'.",
+                            "concept": "Model Comparison",
+                            "GE": [
+                                {"text": "Linear Regression can only handle one feature, while a Decision Tree can handle many.", "Sr": false, "O8": "This is false. Multiple Linear Regression can handle many features."},
+                                {"text": "Linear Regression outputs a continuous line, while a Decision Tree outputs step-wise, constant predictions.", "Sr": true, "O8": "Correct. A Decision Tree for regression splits data into regions and predicts the *average* of each region, creating a 'step' function."},
+                                {"text": "Linear Regression is a 'black box' model, while a Decision Tree is interpretable.", "Sr": false, "O8": "This is false. Linear Regression is highly interpretable (you can read the coefficients). Decision Trees are also interpretable."},
+                                {"text": "Linear Regression uses Gini Impurity, while a Decision Tree uses $R^2$.", "Sr": false, "O8": "This is false. It's the other way around for evaluation (Gini for classification trees, $R^2$ for regression trees)."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 4: HL - Unsupervised Learning",
+                    "summary": "Revise Clustering (K-Means, centroids) and Association Rule Mining. Ensure you know the three key metrics: Support, Confidence, and Lift, and what they mean.",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "(HL) Unsupervised learning includes `____` (1), which groups data using centroids. It also includes Association Rule Mining, which uses `____` (2) to measure 'if-then' probability, and `____` (3) to see if the rule is a real pattern.",
+                            "hint": "(1) Is a grouping method. (2) Is the 'if-then' metric. (3) Checks if the rule is a coincidence.",
+                            "concept": "Unsupervised Tasks",
+                            "GE": [
+                                {"text": "(1) Clustering, (2) Confidence, (3) Lift", "Sr": true, "O8": "Correct. K-Means is a Clustering method. Confidence measures 'if A, then B', and Lift measures the strength of the association."},
+                                {"text": "(1) Classification, (2) Confidence, (3) Lift", "Sr": false, "O8": "This is incorrect. (1) is Clustering, as Classification is supervised."},
+                                {"text": "(1) Clustering, (2) Support, (3) Confidence", "Sr": false, "O8": "This is incorrect. (2) is Confidence, and (3) is Lift. Support measures overall popularity."},
+                                {"text": "(1) Clustering, (2) Lift, (3) Confidence", "Sr": false, "O8": "This incorrectly swaps Lift and Confidence."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "(HL) In K-Means clustering, what is a 'centroid'?",
+                            "hint": "Think of the 'Pizza Shop' analogy from the document. What does the 'pin' on the map represent?",
+                            "concept": "K-Means",
+                            "GE": [
+                                {"text": "A data point that is an outlier.", "Sr": false, "O8": "Outliers are data points far from others, not cluster centers."},
+                                {"text": "The initial 'k' data points chosen at random.", "Sr": false, "O8": "While centroids are often initialized randomly, the centroid *itself* is the center, which moves, not the initial point."},
+                                {"text": "The average location or center of all data points within a cluster.", "Sr": true, "O8": "The centroid represents the 'mean' or center of its cluster, as seen in the 'Pizza Shop' analogy."},
+                                {"text": "The 'k' value in the algorithm's name.", "Sr": false, "O8": "'k' is the *number* of clusters, while the centroid is the *center* of a cluster."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "(HL) The K-Means algorithm works by iteratively repeating which two steps until the clusters stabilize?",
+                            "hint": "Refer to the 'Pizza Shop' analogy: First, customers are assigned to the closest shop (pin), then the shop (pin) moves to the center of its customers.",
+                            "concept": "K-Means",
+                            "GE": [
+                                {"text": "1. Add a new cluster and 2. Remove an old cluster.", "Sr": false, "O8": "The number of clusters, 'k', is fixed in K-Means and does not change during the process."},
+                                {"text": "1. Assign data points to the closest centroid and 2. Update each centroid's location.", "Sr": true, "O8": "This is the core iterative loop of K-Means: assign points, then move the 'mean' (centroid) of the new group."},
+                                {"text": "1. Calculate Gini impurity and 2. Find the best split.", "Sr": false, "O8": "This describes the process of building a decision tree, not K-Means."},
+                                {"text": "1. Select 'parents' and 2. Perform 'crossover'.", "Sr": false, "O8": "This describes the process of a genetic algorithm."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "(HL) In association rule mining, the 'Support' of an itemset {A, B} measures:",
+                            "hint": "This metric measures the 'support' or popularity of a combination of items across all transactions.",
+                            "concept": "ARM Metrics",
+                            "GE": [
+                                {"text": "How often A appears in transactions that do *not* contain B.", "Sr": false, "O8": "Support measures how often items appear *together*."},
+                                {"text": "The percentage of transactions containing A that *also* contain B.", "Sr": false, "O8": "This is the definition of 'Confidence', not Support."},
+                                {"text": "The percentage of *all* transactions that contain *both* A and B.", "Sr": true, "O8": "Support measures the overall frequency or popularity of the itemset in the entire dataset."},
+                                {"text": "The increase in likelihood of B occurring when A is present.", "Sr": false, "O8": "This is the definition of 'Lift'."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "(HL) The association rule metric 'Confidence' for the rule {A} -> {B} is calculated as:",
+                            "hint": "This metric measures how 'confident' we can be that B will be present, *given* that we have already seen A.",
+                            "concept": "ARM Metrics",
+                            "GE": [
+                                {"text": "(Cases with both A and B) / (Total Cases)", "Sr": false, "O8": "This is the formula for 'Support'."},
+                                {"text": "(Cases with A) / (Cases with B)", "Sr": false, "O8": "This is the reverse of the confidence formula and doesn't measure the 'if A, then B' relationship."},
+                                {"text": "(Cases with both A and B) / (Cases with A)", "Sr": true, "O8": "This formula calculates: 'Given that A has occurred, what is the probability that B also occurs?'"},
+                                {"text": "(Cases with B) / (Total Cases)", "Sr": false, "O8": "This is the 'Support' of item B, not the confidence of the rule."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "(HL) In association rule mining, what does a 'Lift' value greater than 1 signify?",
+                            "hint": "This metric tells you if the rule is a real pattern or just a coincidence. A value > 1 means it's a 'strong lead'.",
+                            "concept": "ARM Metrics",
+                            "GE": [
+                                {"text": "The two items are negatively correlated (one makes the other less likely).", "Sr": false, "O8": "A Lift value *less* than 1 would signify a negative correlation."},
+                                {"text": "The two items are independent (one has no effect on the other).", "Sr": false, "O8": "A Lift value *equal* to 1 would signify independence."},
+                                {"text": "The two items are positively correlated (one makes the other more likely).", "Sr": true, "O8": "Lift > 1 means that finding item A 'lifts' or increases the probability of finding item B, indicating a real association."},
+                                {"text": "The rule has 100% confidence.", "Sr": false, "O8": "High confidence does not guarantee high lift. A rule can be 100% confident but have a lift of 1 if the consequent item is in every transaction."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "(HL) What is the main *disadvantage* of the K-Means algorithm?",
+                            "hint": "This model is sensitive to outliers and the initial placement of its starting points.",
+                            "concept": "K-Means",
+                            "GE": [
+                                {"text": "It is a supervised algorithm and requires labeled data.", "Sr": false, "O8": "This is false. K-Means is an unsupervised algorithm."},
+                                {"text": "It can only be used for regression, not for grouping data.", "Sr": false, "O8": "This is false. K-Means is one of the *most common* algorithms for grouping (clustering) data."},
+                                {"text": "It is sensitive to the initial placement of centroids and can get stuck in a sub-optimal solution.", "Sr": true, "O8": "Correct. A bad random start can lead to a bad final clustering. This is why it's often run multiple times."},
+                                {"text": "It is extremely slow to train compared to a deep neural network.", "Sr": false, "O8": "This is false. K-Means is generally considered very fast to train."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "(HL) If the rule {Bread} -> {Butter} has a Lift of 1.0, what does this mean?",
+                            "hint": "A Lift of 1.0 means the two items are independent. The 'rule' is just a coincidence.",
+                            "concept": "ARM Metrics",
+                            "GE": [
+                                {"text": "This is a strong, valuable rule.", "Sr": false, "O8": "This is false. A Lift of 1.0 means the rule is not valuable at all."},
+                                {"text": "Customers who buy Bread are *less* likely to buy Butter.", "Sr": false, "O8": "This is false. This would be indicated by a Lift *less* than 1.0."},
+                                {"text": "Customers who buy Bread are *exactly* as likely to buy Butter as any random customer.", "Sr": true, "O8": "Correct. A Lift of 1.0 means the two items are statistically independent. The rule is a coincidence, likely because Butter is just a popular item on its own."},
+                                {"text": "Every customer who buys Bread also buys Butter.", "Sr": false, "O8": "This would mean a *Confidence* of 100%, but says nothing about the Lift."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "(HL) The 'k' in K-Means refers to:",
+                            "hint": "This is the main parameter you must set *before* running the algorithm.",
+                            "concept": "K-Means",
+                            "GE": [
+                                {"text": "The number of features used in the clustering.", "Sr": false, "O8": "This is incorrect. The model uses all provided features."},
+                                {"text": "The number of data points in the smallest cluster.", "Sr": false, "O8": "This is incorrect. The size of clusters is a *result* of the algorithm, not an input."},
+                                {"text": "The number of clusters the user wants to find.", "Sr": true, "O8": "Correct. 'k' is a hyperparameter set by the user to define how many groups to partition the data into."},
+                                {"text": "The number of iterations before the algorithm stops.", "Sr": false, "O8": "This is incorrect. The algorithm stops when the centroids no longer move, which is not a predefined number."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "(HL) Which of these is NOT an unsupervised learning task?",
+                            "hint": "Which of these tasks requires pre-labeled data to train?",
+                            "concept": "Unsupervised Tasks",
+                            "GE": [
+                                {"text": "K-Means Clustering", "Sr": false, "O8": "This is an unsupervised task."},
+                                {"text": "Predicting a student's final exam score based on hours studied.", "Sr": true, "O8": "Correct. This is a supervised learning (regression) task, as it requires a dataset of (hours, score) labels."},
+                                {"text": "Association Rule Mining", "Sr": false, "O8": "This is an unsupervised task."},
+                                {"text": "Dimensionality Reduction (e.g., PCA)", "Sr": false, "O8": "This is an unsupervised task, as it finds patterns in the features themselves without a target label."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 5: HL - Advanced Algorithms",
+                    "summary": "Revise Reinforcement Learning (Agent, Environment, Reward, Exploration vs. Exploitation, Q-Learning), Genetic Algorithms (Chromosome, Gene, Crossover, Mutation), and ANNs.",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "(HL) In a Genetic Algorithm, a `____` (1) represents one full solution, built from `____` (2). The algorithm combines parents using `____` (3) and adds random changes via `____` (4).",
+                            "hint": "(1) Is the full solution. (2) Are the building blocks. (3) Combines parents. (4) Adds random changes.",
+                            "concept": "Genetic Algorithms",
+                            "GE": [
+                                {"text": "(1) Chromosome, (2) Genes, (3) Crossover, (4) Mutation", "Sr": true, "O8": "Correct. A Chromosome (solution) is made of Genes. Crossover combines parents, and Mutation adds random changes."},
+                                {"text": "(1) Gene, (2) Chromosomes, (3) Crossover, (4) Mutation", "Sr": false, "O8": "This incorrectly swaps Gene and Chromosome."},
+                                {"text": "(1) Chromosome, (2) Genes, (3) Mutation, (4) Crossover", "Sr": false, "O8": "This incorrectly swaps Mutation and Crossover."},
+                                {"text": "(1) Population, (2) Genes, (3) Selection, (4) Crossover", "Sr": false, "O8": "This is incorrect. (1) is a Chromosome, and (3) is Crossover."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "(HL) In reinforcement learning, what is the 'agent'?",
+                            "hint": "In the 'robot vacuum' example, this is the robot itself.",
+                            "concept": "Reinforcement Learning",
+                            "GE": [
+                                {"text": "The world or environment the agent operates in.", "Sr": false, "O8": "This is the 'Environment' (e.g., the 6x6 grid in the robot vacuum example)."},
+                                {"text": "The feedback (e.g., +15 points) given for an action.", "Sr": false, "O8": "This is the 'Reward'."},
+                                {"text": "The learner and decision-maker.", "Sr": true, "O8": "The agent is the entity that learns and makes decisions (e.g., the robot vacuum)."},
+                                {"text": "A snapshot of the agent's current situation (e.g., its coordinates).", "Sr": false, "O8": "This is the 'State'."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "(HL) In reinforcement learning, what is the 'Exploration vs. Exploitation' dilemma?",
+                            "hint": "Think about trying a new restaurant (exploration) vs. going to your favorite one (exploitation).",
+                            "concept": "Reinforcement Learning",
+                            "GE": [
+                                {"text": "Choosing between a high reward now and a lower reward later.", "Sr": false, "O8": "This is related to 'discount factor', but not the core exploration/exploitation dilemma."},
+                                {"text": "Choosing between using its existing knowledge (exploitation) or trying a random action to learn more (exploration).", "Sr": true, "O8": "This is the fundamental trade-off: stick with what works (exploit) or try new things to find a potentially better strategy (explore)."},
+                                {"text": "Choosing between a positive reward and a negative penalty.", "Sr": false, "O8": "The agent doesn't choose its reward; it chooses an action and *receives* a reward or penalty."},
+                                {"text": "Choosing between a large Q-Table and a small Q-Table.", "Sr": false, "O8": "The Q-Table's size is defined by the problem's states and actions, not a choice the agent makes during learning."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "(HL) In a Genetic Algorithm, what does a 'Chromosome' represent?",
+                            "hint": "In the Traveling Salesperson Problem, this is one entire, valid route.",
+                            "concept": "Genetic Algorithms",
+                            "GE": [
+                                {"text": "A single, basic building block (e.g., one city).", "Sr": false, "O8": "This is a 'Gene'."},
+                                {"text": "A single, complete potential solution (e.g., one full route).", "Sr": true, "O8": "A chromosome is an 'individual' solution in the population, like a complete route in the Traveling Salesperson Problem."},
+                                {"text": "The entire collection of all potential solutions.", "Sr": false, "O8": "This is the 'Population'."},
+                                {"text": "A small, random change to a solution.", "Sr": false, "O8": "This is 'Mutation'."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "(HL) The Genetic Algorithm step where two 'parent' solutions are combined to create a new 'child' solution is called:",
+                            "hint": "This step is analogous to biological reproduction, where offspring inherit traits from both parents.",
+                            "concept": "Genetic Algorithms",
+                            "GE": [
+                                {"text": "Selection", "Sr": false, "O8": "Selection is the process of *choosing* which parents get to reproduce."},
+                                {"text": "Mutation", "Sr": false, "O8": "Mutation is a *small, random change* to a single child solution."},
+                                {"text": "Evaluation", "Sr": false, "O8": "Evaluation is the process of measuring a solution's 'fitness' (e.g., its total distance)."},
+                                {"text": "Crossover", "Sr": true, "O8": "Crossover (or mating) is the process of 'crossing' traits from two parents to create a new offspring."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "(HL) What is the function of an Artificial Neural Network (ANN)?",
+                            "hint": "This type of model is inspired by the structure of the human brain.",
+                            "concept": "ANNs",
+                            "GE": [
+                                {"text": "To find the shortest path between cities using evolution.", "Sr": false, "O8": "This describes a Genetic Algorithm applied to the TSP."},
+                                {"text": "To group data into 'k' clusters based on proximity to a mean.", "Sr": false, "O8": "This describes K-Means clustering."},
+                                {"text": "To model complex patterns and relationships using interconnected layers of 'neurons'.", "Sr": true, "O8": "ANNs are inspired by the brain and use layers of nodes (neurons) to learn complex functions."},
+                                {"text": "To find 'if-then' rules in large datasets.", "Sr": false, "O8": "This describes association rule mining."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "(HL) What is the 'Q-Table' in Q-Learning?",
+                            "hint": "It's a 'cheat sheet' or 'lookup table' that the agent builds to store its knowledge.",
+                            "concept": "Reinforcement Learning",
+                            "GE": [
+                                {"text": "A table of all the rewards the agent has ever received.", "Sr": false, "O8": "This is incorrect. The Q-Table stores the *expected future* reward, not just a history of past rewards."},
+                                {"text": "A data structure that maps (State, Action) pairs to their expected future reward (the 'Q-value').", "Sr": true, "O8": "Correct. The agent uses this table to look up the 'Quality' (Q-value) of each possible action from its current state."},
+                                {"text": "A table that lists all possible states in the environment.", "Sr": false, "O8": "This is only one *dimension* of the Q-Table. It's missing the 'Actions' and the 'Q-values'."},
+                                {"text": "The algorithm used to choose the next action (e.g., 'epsilon-greedy').", "Sr": false, "O8": "This is incorrect. The 'epsilon-greedy' policy is the *method* used to *decide* whether to use the Q-Table (exploit) or not (explore)."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "(HL) In a Genetic Algorithm, what is the 'fitness function'?",
+                            "hint": "This is the 'judge' that scores how good each solution is.",
+                            "concept": "Genetic Algorithms",
+                            "GE": [
+                                {"text": "The process of combining two parent chromosomes.", "Sr": false, "O8": "This is 'Crossover'."},
+                                {"text": "A function that measures the quality or 'goodness' of a solution (chromosome).", "Sr": true, "O8": "Correct. In the TSP, this would be a function that calculates the total distance of a route. A 'fitter' solution has a shorter distance."},
+                                {"text": "The process of randomly changing a gene.", "Sr": false, "O8": "This is 'Mutation'."},
+                                {"text": "The set of all possible solutions.", "Sr": false, "O8": "This is the 'Population'."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "(HL) An Artificial Neural Network is considered a 'black box' model because:",
+                            "hint": "It's easy to see the input and output, but very hard to understand the *why*.",
+                            "concept": "ANNs",
+                            "GE": [
+                                {"text": "It can only be trained on data that is unlabeled.", "Sr": false, "O8": "This is false. ANNs are most commonly used for supervised learning on labeled data."},
+                                {"text": "Its internal decision-making logic (the weights) is not easily interpretable by humans.", "Sr": true, "O8": "Correct. A deep ANN has millions of numerical weights, making it almost impossible to trace *why* a specific decision was made."},
+                                {"text": "It is not a very accurate or powerful type of model.", "Sr": false, "O8": "This is false. ANNs (especially deep ones) are the *most* powerful and accurate models for many complex tasks (like image recognition)."},
+                                {"text": "It must be run on 'Edge' devices, not in the cloud.", "Sr": false, "O8": "This is false. ANNs are typically *trained* in the cloud on powerful GPUs."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "(HL) In Reinforcement Learning, the 'discount factor' (gamma, $\\gamma$) controls:",
+                            "hint": "Does the agent care more about a small reward *now* or a big reward *later*?",
+                            "concept": "Reinforcement Learning",
+                            "GE": [
+                                {"text": "How often the agent chooses a random action (exploration).", "Sr": false, "O8": "This is controlled by 'epsilon' ($\\epsilon$) in an epsilon-greedy policy."},
+                                {"text": "The balance between valuing immediate rewards vs. future rewards.", "Sr": true, "O8": "Correct. A high gamma (e.g., 0.9) makes the agent 'far-sighted', while a low gamma (e.g., 0.1) makes it 'short-sighted'."},
+                                {"text": "The size of the Q-Table.", "Sr": false, "O8": "This is incorrect. The Q-Table size is (states x actions)."},
+                                {"text": "The penalty for making an incorrect move.", "Sr": false, "O8": "This is simply a negative 'Reward', which is part of the 'Environment'."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 6: AI Ethics & Societal Impacts",
+                    "summary": "Revise the key ethical pillars: Bias (and its source), Privacy (consent), Accountability (the 'black box' problem), Employment (job displacement), and Security (adversarial attacks).",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "Key ethical issues include `____` (1), where models amplify historical prejudice. The `____` (2) problem refers to a lack of explainability. A security risk where a model is intentionally fooled is an `____` (3).",
+                            "hint": "(1) Is about unfairness. (2) Is about explainability. (3) Is about being tricked.",
+                            "concept": "Ethics Overview",
+                            "GE": [
+                                {"text": "(1) Bias, (2) Black Box, (3) Adversarial Attack", "Sr": true, "O8": "Correct. Bias is about unfair prejudice, Black Box is about explainability, and an Adversarial Attack is a security exploit."},
+                                {"text": "(1) Privacy, (2) Black Box, (3) Overfitting", "Sr": false, "O8": "This is incorrect. (1) is Bias, and (3) is an Adversarial Attack."},
+                                {"text": "(1) Bias, (2) Job Displacement, (3) Adversarial Attack", "Sr": false, "O8": "This is incorrect. (2) is the Black Box problem, not Job Displacement."},
+                                {"text": "(1) Black Box, (2) Bias, (3) Adversarial Attack", "Sr": false, "O8": "This incorrectly swaps Bias and Black Box."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "The ethical concern that an ML model trained on historical data might learn and amplify existing human prejudices is known as:",
+                            "hint": "This is a major ethical issue where a model might make unfair decisions for different groups of people.",
+                            "concept": "Bias",
+                            "GE": [
+                                {"text": "Privacy", "Sr": false, "O8": "Privacy relates to the data being collected, not the model's predictive behavior based on that data."},
+                                {"text": "Bias", "Sr": true, "O8": "Bias occurs when a model produces systematically prejudiced results, often because it was trained on biased data."},
+                                {"text": "Overfitting", "Sr": false, "O8": "Overfitting is a technical problem where a model memorizes training data, not an ethical one about prejudice."},
+                                {"text": "Scalability", "Sr": false, "O8": "Scalability is a hardware and engineering challenge, not an ethical one."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "What major ethical concern is raised when companies use personal data, collected without explicit and informed consent, to train ML models?",
+                            "hint": "This ethical pillar concerns an individual's right to control their own information.",
+                            "concept": "Privacy",
+                            "GE": [
+                                {"text": "Privacy", "Sr": true, "O8": "This directly relates to the violation of user privacy and data rights."},
+                                {"text": "Bias", "Sr": false, "O8": "While related, bias is about unfair outcomes, not the collection of data itself."},
+                                {"text": "Scalability", "Sr": false, "O8": "This is a technical challenge, not an ethical one related to consent."},
+                                {"text": "Overfitting", "Sr": false, "O8": "This is a technical error in model training."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "The 'black box' problem in complex models like deep neural networks refers to which ethical challenge?",
+                            "hint": "When a model denies someone a loan, but we can't figure out *why*, this is the problem.",
+                            "concept": "Accountability",
+                            "GE": [
+                                {"text": "Lack of Accountability and Explainability", "Sr": true, "O8": "If we can't explain a model's decision, we can't hold anyone accountable for its mistakes."},
+                                {"text": "Data Privacy", "Sr": false, "O8": "This is about *how* the model decides, not the data it was trained on."},
+                                {"text": "Algorithmic Bias", "Sr": false, "O8": "This is a *result* that can be *hidden* by the black box, but the black box problem itself is about non-explainability."},
+                                {"text": "Job Displacement", "Sr": false, "O8": "This is a socio-economic impact, not a technical-ethical one."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "The widespread implementation of AI that automates tasks previously done by humans, such as truck driving or data entry, primarily raises which societal and ethical concern?",
+                            "hint": "This relates to the economic and social impact on the workforce.",
+                            "concept": "Employment",
+                            "GE": [
+                                {"text": "Impact on Employment", "Sr": true, "O8": "This concern deals with large-scale job displacement and the need for reskilling."},
+                                {"text": "Adversarial Attacks", "Sr": false, "O8": "This is a security concern, not a socio-economic one."},
+                                {"text": "Data Bias", "Sr": false, "O8": "This is about unfairness in the model's decisions, not its effect on jobs."},
+                                {"text": "Privacy Violation", "Sr": false, "O8": "This is not the primary concern related to automation of tasks."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "What is the term for the security-related ethical issue where an ML model (e.g., for image recognition) is intentionally tricked by an attacker using specially crafted, malicious input?",
+                            "hint": "Think of a self-driving car being tricked by a special sticker on a stop sign.",
+                            "concept": "Security",
+                            "GE": [
+                                {"text": "Adversarial Attacks", "Sr": true, "O8": "This is the precise term for exploiting vulnerabilities in a model's perception to cause it to misclassify."},
+                                {"text": "Overfitting", "Sr": false, "O8": "This is a training error, not a malicious attack."},
+                                {"text": "Underfitting", "Sr": false, "O8": "This is a training error where the model is too simple."},
+                                {"text": "The 'Black Box' Problem", "Sr": false, "O8": "This is about explainability, not being actively tricked."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "Why is 'bias' a more significant ethical problem in ML than just 'inaccurate results'?",
+                            "hint": "This concern goes beyond simple errors and touches on fairness and justice.",
+                            "concept": "Bias",
+                            "GE": [
+                                {"text": "It can systematically and unfairly discriminate against specific groups.", "Sr": true, "O8": "Bias means the errors are not random, but targeted at protected groups, reinforcing societal prejudices."},
+                                {"text": "It makes the model train slower.", "Sr": false, "O8": "Bias is about the *outcome*, not the training speed."},
+                                {"text": "It only affects unsupervised learning.", "Sr": false, "O8": "Bias is a major problem in supervised learning (e.g., loan applications, criminal justice)."},
+                                {"text": "It is easily fixed by adding more data.", "Sr": false, "O8": "Adding more data can *amplify* the bias if the new data is also biased."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "A bank's loan approval model, trained on 20 years of historical data, is found to be *biased* against a certain demographic. What is the *most likely* reason?",
+                            "hint": "The model learns from the data it is given. What if the data itself reflects past prejudices? (Garbage In, Garbage Out)",
+                            "concept": "Bias",
+                            "GE": [
+                                {"text": "The model's algorithm (e.g., an ANN) is inherently prejudiced by design.", "Sr": false, "O8": "This is incorrect. The algorithm is just a mathematical function; it is not inherently prejudiced. It learns prejudice from the data."},
+                                {"text": "The model was not trained on a powerful enough GPU.", "Sr": false, "O8": "This is incorrect. Hardware performance affects training *speed*, not the ethical *bias* of the model's predictions."},
+                                {"text": "The model is *overfitting* to the training data.", "Sr": false, "O8": "While overfitting is a problem, it's not the *source* of the bias. The bias would still exist even if the model generalized perfectly to its (biased) training data."},
+                                {"text": "The historical data reflected biased decisions made by human loan officers in the past.", "Sr": true, "O8": "Correct. This is the most common source of AI bias. The model accurately *learned* the historical prejudice present in the data, and is now *amplifying* it."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "What does 'accountability' mean in the context of AI ethics?",
+                            "hint": "If an AI model causes harm, who is responsible?",
+                            "concept": "Accountability",
+                            "GE": [
+                                {"text": "The model's ability to count objects accurately.", "Sr": false, "O8": "This is a technical capability, not an ethical concept."},
+                                {"text": "The challenge of determining who is responsible (the programmer, the user, the company) when an AI model makes a harmful mistake.", "Sr": true, "O8": "Correct. Accountability is about liability and responsibility, which is difficult when a 'black box' model makes a decision."},
+                                {"text": "The need to gather as much personal data as possible to train the model.", "Sr": false, "O8": "This is a privacy concern, and generally the *opposite* of ethical data collection (which values minimization)."},
+                                {"text": "The model's ability to run on different hardware platforms.", "Sr": false, "O8": "This is scalability or portability."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "An example of an 'adversarial attack' would be:",
+                            "hint": "This is an attack that tricks the model's *perception*.",
+                            "concept": "Security",
+                            "GE": [
+                                {"text": "An AI model learning to be biased against a group.", "Sr": false, "O8": "This is a bias problem, usually caused by bad data, not a direct attack."},
+                                {"text": "A self-driving car's AI logic being automated, causing job displacement for drivers.", "Sr": false, "O8": "This is an employment impact."},
+                                {"text": "Placing a specially designed sticker on a 'Stop' sign to make an AI model classify it as a 'Speed Limit 60' sign.", "Sr": true, "O8": "Correct. This is a classic example of an adversarial attack, where a small, crafted change to the input fools the model."},
+                                {"text": "A company collecting user data without their consent.", "Sr": false, "O8": "This is a privacy violation."}
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "title": "Section 7: HL Challenge Questions",
+                    "summary": "These scenario-based questions test your ability to *apply* and *compare* concepts. They focus on the trade-offs (e.g., Mean vs. Median Imputation, Wrapper vs. Filter) and interpreting metrics in context (e.g., Lift, $R^2$).",
+                    "questions": [
+                        // 1. Cloze Question
+                        {
+                            "question": "(HL Challenge) A key trade-off in Q-Learning is `____` (1) (trying new things) vs. `____` (2) (sticking with known good actions). The value of future rewards is controlled by the `____` (3) (gamma).",
+                            "hint": "(1) Is trying new paths. (2) Is using the best known path. (3) Is 'gamma'.",
+                            "concept": "Advanced RL",
+                            "GE": [
+                                {"text": "(1) Exploration, (2) Exploitation, (3) Discount Factor", "Sr": true, "O8": "Correct. This is the core trade-off (Exploration vs. Exploitation), and the Discount Factor (gamma) controls the value of future rewards."},
+                                {"text": "(1) Exploitation, (2) Exploration, (3) Discount Factor", "Sr": false, "O8": "This incorrectly swaps Exploration and Exploitation."},
+                                {"text": "(1) Exploration, (2) Exploitation, (3) Q-Value", "Sr": false, "O8": "This is incorrect. (3) is the Discount Factor. The Q-Value is the *result* stored in the table."},
+                                {"text": "(1) Crossover, (2) Mutation, (3) Discount Factor", "Sr": false, "O8": "This is incorrect. Crossover and Mutation are from Genetic Algorithms."}
+                            ]
+                        },
+                        // 2. Multiple Choice
+                        {
+                            "question": "(HL Challenge) Why is R-squared ($R^2$) often more useful for *comparing* two different regression models (e.g., one on house prices, one on exam scores) than MSE?",
+                            "hint": "Think about the units. MSE for house prices would be in (dollars)^2, while for exam scores it would be in (points)^2.",
+                            "concept": "Metric Interpretation",
+                            "GE": [
+                                {"text": "R-squared is a unit-less (relative) metric, while MSE is scale-dependent (absolute).", "Sr": true, "O8": "Correct. R-squared is a percentage (0-1), so it's independent of the target's units. An $R^2$ of 0.8 is good for both models. An MSE of 20,000 is tiny for house prices but terrible for exam scores."},
+                                {"text": "MSE only works for linear regression, but R-squared works for all models.", "Sr": false, "O8": "This is incorrect. Both metrics can be calculated for any regression model."},
+                                {"text": "A high MSE is always better, while a low R-squared is better.", "Sr": false, "O8": "This is incorrect. A *low* MSE (less error) and a *high* R-squared (more variance explained) are better."},
+                                {"text": "R-squared measures outliers, while MSE measures bias.", "Sr": false, "O8": "This is incorrect. Both are measures of overall model fit and error."}
+                            ]
+                        },
+                        // 3. Multiple Choice
+                        {
+                            "question": "(HL Challenge) A key advantage of a Decision Tree over k-Nearest Neighbors (k-NN) is its 'interpretability'. What does this mean?",
+                            "hint": "A Decision Tree is a 'white box' model, while k-NN is more of a 'black box' model.",
+                            "concept": "Model Comparison",
+                            "GE": [
+                                {"text": "The model trains much faster than k-NN.", "Sr": false, "O8": "This is incorrect. k-NN has no 'training' phase at all (it's a lazy learner), while a decision tree has an explicit training phase."},
+                                {"text": "The model's decision-making logic (the 'if-then' rules) is easy for a human to read and understand.", "Sr": true, "O8": "Correct. You can literally trace the path from the root to a leaf to see *why* a decision was made. k-NN's logic ('because 3 of its 5 neighbors said so') is less intuitive."},
+                                {"text": "The model always provides a Gini Impurity score for its final prediction.", "Sr": false, "O8": "Gini impurity is used *during training* to decide on splits, it's not part of the final prediction."},
+                                {"text": "It can be run on an Edge device, while k-NN requires a cloud platform.", "Sr": false, "O8": "This is incorrect. Both models are relatively simple and can often be run on edge devices (though k-NN can be slow at prediction if the dataset is large)."}
+                            ]
+                        },
+                        // 4. Multiple Choice
+                        {
+                            "question": "(HL Challenge) What is the *primary disadvantage* of a Wrapper feature selection method compared to a Filter method?",
+                            "hint": "Wrapper methods involve training a model multiple times. Filter methods just use statistics.",
+                            "concept": "Trade-offs",
+                            "GE": [
+                                {"text": "They are much more computationally expensive (slower).", "Sr": true, "O8": "Correct. Because wrapper methods train and test a model for each subset of features, they take significantly more time and computing power than filter methods."},
+                                {"text": "They are significantly less accurate.", "Sr": false, "O8": "This is incorrect. Wrapper methods are generally *more* accurate because they select features optimized for the specific model."},
+                                {"text": "They only work for regression, not classification.", "Sr": false, "O8": "This is incorrect. Wrapper methods can be used for both."},
+                                {"text": "They cannot be used with Artificial Neural Networks.", "Sr": false, "O8": "This is incorrect. You can use a wrapper method with any model, though it would be extremely slow with an ANN."}
+                            ]
+                        },
+                        // 5. Multiple Choice
+                        {
+                            "question": "(HL Challenge) A store finds the rule {Milk} -> {Cereal} has 90% Confidence, but a Lift of 1.0. What does this combination of metrics *actually* mean?",
+                            "hint": "Confidence just says 'If Milk, then 90% Cereal'. Lift compares this to how often *everyone* buys Cereal.",
+                            "concept": "Metric Interpretation",
+                            "GE": [
+                                {"text": "This is a very strong and valuable rule for promotions.", "Sr": false, "O8": "This is incorrect. The 90% confidence looks high, but the Lift of 1.0 reveals the truth."},
+                                {"text": "The rule is just a coincidence; Milk has no real effect on Cereal sales.", "Sr": true, "O8": "Correct. A Lift of 1.0 means Milk buyers are *exactly* as likely to buy Cereal as *any random customer*. This implies Cereal is just a very popular item (bought by 90% of all customers anyway), and the 'rule' is not a meaningful pattern."},
+                                {"text": "Almost no one buys Milk or Cereal.", "Sr": false, "O8": "This is incorrect. This would be indicated by a very low *Support* metric, not by Lift."},
+                                {"text": "Buying Milk *prevents* customers from buying Cereal.", "Sr": false, "O8": "This is incorrect. This would be signified by a Lift value *less* than 1.0."}
+                            ]
+                        },
+                        // 6. Multiple Choice
+                        {
+                            "question": "(HL Challenge) In a Genetic Algorithm, what is the combined purpose of 'Crossover' and 'Mutation'?",
+                            "hint": "One of them *exploits* existing good solutions, and the other *explores* new possibilities.",
+                            "concept": "Advanced GAs",
+                            "GE": [
+                                {"text": "Crossover *exploits* good solutions, while Mutation *explores* new genetic diversity.", "Sr": true, "O8": "Correct. Crossover combines the 'fit' parents (exploitation), and Mutation adds random changes to prevent the algorithm from getting stuck with only the initial gene pool (exploration)."},
+                                {"text": "Crossover *explores* new solutions, while Mutation *exploits* good solutions.", "Sr": false, "O8": "This is incorrect. It's the other way around. Crossover combines existing traits, while Mutation creates new ones."},
+                                {"text": "Both are used to evaluate the fitness of a solution.", "Sr": false, "O8": "This is incorrect. That is the 'Evaluation' step, which uses the 'fitness function'."},
+                                {"text": "Both are used to select which solutions get to reproduce.", "Sr": false, "O8": "This is incorrect. That is the 'Selection' step (e.g., tournament selection)."}
+                            ]
+                        },
+                        // 7. Multiple Choice
+                        {
+                            "question": "(HL Challenge) How can a feature *selection* process (like L1 Regularization) help mitigate the 'black box' problem in a complex model?",
+                            "hint": "Is it easier to explain a model that uses 500 features, or one that uses only 5?",
+                            "concept": "Advanced Scenarios",
+                            "GE": [
+                                {"text": "It converts the complex model (e.g., ANN) into a simple, interpretable Decision Tree.", "Sr": false, "O8": "This is incorrect. Feature selection is a *preprocessing* step; it doesn't change the model's algorithm."},
+                                {"text": "It simplifies the problem by reducing the number of input features, making the model's logic easier to analyze.", "Sr": true, "O8": "Correct. A model with 500 features is almost impossible to explain. A model with only 5 features, even if it's an ANN, is much simpler to analyze (e.g., using sensitivity analysis)."},
+                                {"text": "It guarantees that the model will be 100% free from bias.", "Sr": false, "O8": "This is incorrect. It might even *increase* bias if it removes a feature that was helping to *correct* for a bias elsewhere."},
+                                {"text": "It increases the number of hidden layers in the neural network.", "Sr": false, "O8": "This is incorrect. Feature selection deals with *inputs*, not the model's internal architecture."}
+                            ]
+                        },
+                        // 8. Multiple Choice
+                        {
+                            "question": "(HL Challenge) Why must the 'k' in k-NN be an odd number for a binary (2-class) classification problem?",
+                            "hint": "What happens if k=4 and you get 2 votes for Class A and 2 votes for Class B?",
+                            "concept": "k-NN",
+                            "GE": [
+                                {"text": "It doesn't have to be; an even 'k' is always better.", "Sr": false, "O8": "This is false. An even 'k' is problematic for binary classification."},
+                                {"text": "To prevent ties in the 'majority vote' of the neighbors.", "Sr": true, "O8": "Correct. If k=4 and there are 2 votes for 'cat' and 2 for 'dog', the algorithm can't make a decision. Using k=3 or k=5 guarantees a majority."},
+                                {"text": "Because 'k' must be a prime number to work.", "Sr": false, "O8": "This is false. 'k' can be any integer, though odd numbers are preferred for binary classification (e.g., k=9 is not prime but is fine)."},
+                                {"text": "An even 'k' requires too much computation.", "Sr": false, "O8": "This is false. The computation for k=4 vs k=5 is nearly identical."}
+                            ]
+                        },
+                        // 9. Multiple Choice
+                        {
+                            "question": "(HL Challenge) A model has a high $R^2$ (e.g., 0.95) but a very high MSE (e.g., 5,000,000). What is the most likely scenario?",
+                            "hint": "High $R^2$ = good *relative* fit. High MSE = large *absolute* error. How can both be true?",
+                            "concept": "Metric Interpretation",
+                            "GE": [
+                                {"text": "The model is useless and the metrics are contradictory.", "Sr": false, "O8": "This is incorrect. The metrics are not contradictory; they are telling two different stories."},
+                                {"text": "The model is predicting a target variable with a very large scale, like house prices.", "Sr": true, "O8": "Correct. A high $R^2$ means the model explains 95% of the variance (which is great). The high MSE is just a reflection of the *units*. An error of $2,000 (MSE \\approx 4M) on a $500,000 house is very small relatively."},
+                                {"text": "The model is a classification model, not a regression model.", "Sr": false, "O8": "This is incorrect. $R^2$ and MSE are metrics for regression models."},
+                                {"text": "The model is underfitting the data.", "Sr": false, "O8": "This is incorrect. A high $R^2$ of 0.95 is the *opposite* of underfitting; it's a very strong fit."}
+                            ]
+                        },
+                        // 10. Multiple Choice
+                        {
+                            "question": "(HL Challenge) Which model is 'lazy' (does no work at training) and which is 'eager' (builds a model at training)?",
+                            "hint": "Which model just stores the data? Which one builds a set of 'if-then' rules?",
+                            "concept": "Model Comparison",
+                            "GE": [
+                                {"text": "Lazy: k-NN, Eager: Decision Tree", "Sr": true, "O8": "Correct. k-NN is a 'lazy learner' because it just stores the training data. A Decision Tree is 'eager' because it actively builds the tree structure during training."},
+                                {"text": "Lazy: Decision Tree, Eager: k-NN", "Sr": false, "O8": "This is incorrect. It's the other way around."},
+                                {"text": "Both are lazy models.", "Sr": false, "O8": "This is incorrect. A Decision Tree does a lot of work (finding splits) during training."},
+                                {"text": "Both are eager models.", "Sr": false, "O8": "This is incorrect. k-NN does no work during training (it just stores the data)."}
+                            ]
+                        }
+                    ]
+                }
+            ]
+        };
+
+        // --- 2. DOM Elements ---
+        const startContainer = document.getElementById('start-container');
+        const sectionList = document.getElementById('section-list');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizTitle = document.getElementById('quiz-title');
+        const questionCounter = document.getElementById('question-counter');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const hintBtn = document.getElementById('hint-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const scoreModal = document.getElementById('score-modal');
+        const finalScore = document.getElementById('final-score');
+        const restartBtn = document.getElementById('restart-btn');
+        const hintModal = document.getElementById('hint-modal');
+        const hintText = document.getElementById('hint-text');
+        const rationaleModal = document.getElementById('rationale-modal');
+        const rationaleTitle = document.getElementById('rationale-title');
+        const rationaleText = document.getElementById('rationale-text');
+        const reviewFeedbackEl = document.getElementById('review-feedback'); // New element
+
+        // --- 3. Quiz State ---
+        let currentQuizQuestions = []; // This will hold the questions for the active quiz
+        let currentQuestionIndex = 0;
+        let score = 0;
+        let answerSelected = false;
+        let wrongAnswers = []; // NEW: To track concepts for review
+
+        // --- 4. Core Functions ---
+
+        /**
+         * Populates the start screen with sections from the quiz data
+         */
+        function populateStartScreen() {
+            sectionList.innerHTML = ''; // Clear existing list
+            rawQuizData.sections.forEach((section, index) => {
+                const sectionEl = document.createElement('div');
+                sectionEl.className = 'border border-gray-200 rounded-lg p-5';
+                
+                sectionEl.innerHTML = `
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center">
+                        <div class="mb-4 sm:mb-0">
+                            <h2 class="text-xl font-bold text-indigo-700">${section.title}</h2>
+                            <p class="text-sm text-gray-600 mt-1">${section.summary}</p>
+                        </div>
+                        <button onclick="startQuiz(${index})" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:ring-offset-2 ml-0 sm:ml-4 flex-shrink-0">
+                            Start (10)
+                        </button>
+                    </div>
+                `;
+                sectionList.appendChild(sectionEl);
+            });
+        }
+
+        /**
+         * Starts a quiz for a specific section or all questions
+         * @param {number} sectionIndex - The index of the section, or -1 for all
+         */
+        function startQuiz(sectionIndex) {
+            if (sectionIndex === -1) {
+                // Combine all questions for the "Quiz All" option
+                currentQuizQuestions = [].concat(...rawQuizData.sections.map(s => s.questions));
+                quizTitle.textContent = 'IB Machine Learning Quiz (All)';
+            } else {
+                // Get questions for the specific section
+                const section = rawQuizData.sections[sectionIndex];
+                currentQuizQuestions = section.questions;
+                quizTitle.textContent = section.title;
+            }
+
+            // Shuffle the questions for this quiz session
+            shuffleArray(currentQuizQuestions);
+
+            // Hide start screen, show quiz container
+            startContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+
+            startQuizFlow();
+        }
+
+        /**
+         * Resets quiz state and loads the first question
+         */
+        function startQuizFlow() {
+            currentQuestionIndex = 0;
+            score = 0;
+            answerSelected = false;
+            wrongAnswers = []; // NEW: Reset wrong answers
+            nextBtn.classList.add('hidden');
+            loadQuestion();
+        }
+
+        /**
+         * Loads the current question and its options
+         */
+        function loadQuestion() {
+            if (currentQuestionIndex < currentQuizQuestions.length) {
+                answerSelected = false;
+                nextBtn.classList.add('hidden');
+                hintBtn.disabled = false;
+                
+                const question = currentQuizQuestions[currentQuestionIndex];
+                
+                // Update question text and counter
+                questionCounter.textContent = `Question ${currentQuestionIndex + 1} / ${currentQuizQuestions.length}`;
+                // Bolder styling for the blanks
+                questionText.innerHTML = question.question
+                    .replace(/\`(.*?)\`/g, '<code class="font-bold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded">$1</code>')
+                    .replace(/\$(.*?)\$/g, '<span class="font-mono text-indigo-600">$1</span>');
+                
+                // Clear old options
+                optionsContainer.innerHTML = '';
+                
+                // Create new answer buttons
+                question.GE.forEach((option, index) => {
+                    const button = document.createElement('button');
+                    button.innerHTML = option.text
+                        .replace(/\`(.*?)\`/g, '<code class="font-bold text-indigo-600 bg-indigo-50 px-1 py-0.5 rounded">$1</code>')
+                        .replace(/\$(.*?)\$/g, '<span class="font-mono text-indigo-600">$1</span>');
+                    button.className = 'answer-btn w-full p-4 border-2 border-gray-300 rounded-lg text-left text-gray-700 font-medium hover:bg-gray-50 hover:border-indigo-400 focus:outline-none transition-colors duration-150';
+                    button.dataset.correct = option.Sr;
+                    button.dataset.rationale = option.O8;
+                    // Note: We get the concept from the question object in selectAnswer
+                    button.onclick = () => selectAnswer(button, question.GE);
+                    optionsContainer.appendChild(button);
+                });
+
+                // Set hint
+                hintBtn.onclick = () => showModal('hint-modal', question.hint);
+
+            } else {
+                // Quiz is over
+                showFinalScore();
+            }
+        }
+
+        /**
+         * Handles the logic when an answer button is clicked
+         */
+        function selectAnswer(selectedButton, allOptions) {
+            if (answerSelected) return; // Prevent multiple clicks
+            answerSelected = true;
+            
+            const isCorrect = selectedButton.dataset.correct === 'true';
+            const rationale = selectedButton.dataset.rationale;
+            const question = currentQuizQuestions[currentQuestionIndex]; // Get current question
+            
+            // Disable all buttons
+            optionsContainer.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.disabled = true;
+                // Show the correct answer
+                if (btn.dataset.correct === 'true') {
+                    btn.classList.add('correct');
+                }
+            });
+
+            if (isCorrect) {
+                score++;
+                selectedButton.classList.add('correct');
+                // Show rationale immediately for correct answers
+                showModal('rationale-modal', rationale, 'Correct!');
+            } else {
+                selectedButton.classList.add('incorrect');
+                // NEW: Add concept to wrongAnswers array
+                if (question.concept) {
+                    wrongAnswers.push(question.concept);
+                }
+                // Show rationale for incorrect answers
+                showModal('rationale-modal', rationale, 'Not Quite...');
+            }
+
+            // Show next button
+            nextBtn.classList.remove('hidden');
+            nextBtn.onclick = () => {
+                currentQuestionIndex++;
+                loadQuestion();
+            };
+        }
+
+        /**
+         * Displays the final score modal
+         */
+        function showFinalScore() {
+            quizContainer.classList.add('hidden');
+            scoreModal.classList.remove('hidden');
+            finalScore.textContent = `${score} / ${currentQuizQuestions.length}`;
+            finalScore.className = `text-6xl font-extrabold mb-8 ${getScoreColor(score, currentQuizQuestions.length)}`;
+            
+            // NEW: Generate and display review feedback
+            if (wrongAnswers.length === 0) {
+                reviewFeedbackEl.innerHTML = '<p class="text-green-600 font-medium">Great job! No specific areas to review.</p>';
+            } else {
+                const reviewCounts = {};
+                wrongAnswers.forEach(concept => {
+                    reviewCounts[concept] = (reviewCounts[concept] || 0) + 1;
+                });
+                
+                // Sort concepts by most-missed
+                const sortedReview = Object.entries(reviewCounts).sort((a, b) => b[1] - a[1]);
+                
+                let feedbackHtml = '<ul class="list-disc list-inside">';
+                sortedReview.forEach(([concept, count]) => {
+                    feedbackHtml += `<li class="mb-1"><strong>${concept}</strong> (missed ${count} ${count > 1 ? 'questions' : 'question'})</li>`;
+                });
+                feedbackHtml += '</ul>';
+                reviewFeedbackEl.innerHTML = feedbackHtml;
+            }
+        }
+
+        /**
+         * Resets the quiz and returns to the start menu
+         */
+        function restartQuiz() {
+            scoreModal.classList.add('hidden');
+            startContainer.classList.remove('hidden');
+        }
+
+        // --- 5. Helper Functions ---
+
+        /**
+         * Shows a specified modal with text
+         */
+        function showModal(modalId, text, title = null) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+
+            if (modalId === 'hint-modal') {
+                hintText.textContent = text;
+            } else if (modalId === 'rationale-modal') {
+                rationaleTitle.textContent = title || 'Rationale';
+                rationaleText.textContent = text;
+            }
+            
+            modal.classList.remove('hidden');
+        }
+
+        /**
+         * Closes any modal by its ID
+         */
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+            // If we closed the rationale modal, and the quiz isn't over, go to next question
+            if (modalId === 'rationale-modal' && currentQuestionIndex < currentQuizQuestions.length) {
+                nextBtn.click();
+            }
+        }
+
+        /**
+         * Returns a Tailwind color class based on the score percentage
+         */
+        function getScoreColor(score, total) {
+            const percentage = (score / total) * 100;
+            if (percentage >= 80) return 'text-green-600';
+            if (percentage >= 50) return 'text-yellow-600';
+            return 'text-red-600';
+        }
+
+        /**
+         * Shuffles an array in place (Fisher-Yates shuffle)
+         */
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // --- 6. Event Listeners ---
+        window.onload = populateStartScreen;
+        restartBtn.onclick = restartQuiz;
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('hint-modal');
+                closeModal('rationale-modal');
+            }
+        });
+
+    </script>
+</body>
+</html>
+

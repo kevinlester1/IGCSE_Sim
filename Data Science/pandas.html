@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pandas Data Grid Simulator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX transformation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .code-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+        .code-scroll::-webkit-scrollbar-track { background: #1e293b; }
+        .code-scroll::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // --- Icons ---
+        const IconWrapper = ({ children, size = 16, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        );
+        const Database = (p) => <IconWrapper {...p}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></IconWrapper>;
+        const Play = (p) => <IconWrapper {...p}><polygon points="5 3 19 12 5 21 5 3"/></IconWrapper>;
+        const Search = (p) => <IconWrapper {...p}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></IconWrapper>;
+        const ArrowUpDown = (p) => <IconWrapper {...p}><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></IconWrapper>;
+        const Filter = (p) => <IconWrapper {...p}><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></IconWrapper>;
+        const RotateCcw = (p) => <IconWrapper {...p}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></IconWrapper>;
+        const Layers = (p) => <IconWrapper {...p}><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></IconWrapper>;
+        const Info = (p) => <IconWrapper {...p}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></IconWrapper>;
+        const Terminal = (p) => <IconWrapper {...p}><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></IconWrapper>;
+        const BookOpen = (p) => <IconWrapper {...p}><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></IconWrapper>;
+        const Scissors = (p) => <IconWrapper {...p}><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></IconWrapper>;
+        const Trash = (p) => <IconWrapper {...p}><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></IconWrapper>;
+        const PlusSquare = (p) => <IconWrapper {...p}><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M8 12h8"/><path d="M12 8v8"/></IconWrapper>;
+        const Calculator = (p) => <IconWrapper {...p}><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/></IconWrapper>;
+
+        // --- Data ---
+        const INITIAL_DATA = [
+            { id: 0, product: 'Laptop Pro', category: 'Electronics', price: 1200, stock: 15, rating: 4.8 },
+            { id: 1, product: 'Headphones', category: 'Audio', price: 150, stock: 50, rating: 4.5 },
+            { id: 2, product: 'Coffee Maker', category: 'Home', price: 85, stock: 20, rating: 4.2 },
+            { id: 3, product: 'Smartphone', category: 'Electronics', price: 800, stock: 8, rating: 4.6 },
+            { id: 4, product: 'Desk Lamp', category: 'Home', price: 45, stock: null, rating: 3.9 },
+            { id: 5, product: 'Monitor', category: 'Electronics', price: 300, stock: 12, rating: 4.7 },
+            { id: 6, product: 'Headphones', category: 'Audio', price: 150, stock: 50, rating: 4.5 }, // DUPLICATE of ID 1
+            { id: 7, product: 'Luxury Watch', category: 'Fashion', price: 5000, stock: 2, rating: 5.0 }, // OUTLIER
+        ];
+
+        // --- Components ---
+
+        const CodeBlock = ({ code, label }) => (
+            <div className="bg-slate-900 rounded-lg overflow-hidden shadow-lg border border-slate-700 my-4 font-mono text-sm">
+                <div className="bg-slate-800 px-4 py-2 flex items-center gap-2 border-b border-slate-700">
+                    <Terminal size={14} className="text-green-400" />
+                    <span className="text-slate-300 text-xs uppercase tracking-wider">{label || 'Python Console'}</span>
+                </div>
+                <div className="p-4 text-slate-200 overflow-x-auto code-scroll">
+                    {label === 'Live Python Execution' ? (
+                        <>
+                            <span className="text-blue-400">import</span> pandas <span className="text-blue-400">as</span> pd
+                            <br />
+                            <span className="text-purple-400">df</span> = pd.read_csv(<span className="text-green-300">'products.csv'</span>)
+                            <br />
+                            <div className="mt-2 pl-2 border-l-2 border-yellow-500">
+                                <span className="text-slate-400"># Current Operation</span>
+                                <br />
+                                {code}
+                            </div>
+                        </>
+                    ) : (
+                        <pre className="whitespace-pre-wrap font-mono text-sm">{code}</pre>
+                    )}
+                </div>
+            </div>
+        );
+
+        const PandasSimulator = () => {
+            const [data, setData] = useState(INITIAL_DATA);
+            const [viewData, setViewData] = useState(INITIAL_DATA);
+            const [currentCode, setCurrentCode] = useState("df");
+            const [viewMode, setViewMode] = useState('dataframe'); // 'dataframe', 'grouped', 'console'
+            const [consoleOutput, setConsoleOutput] = useState("");
+            const [activeTab, setActiveTab] = useState('simulation');
+            const [columns, setColumns] = useState(['product', 'category', 'price', 'stock', 'rating']);
+            const [activeSection, setActiveSection] = useState('inspect');
+
+            const resetData = () => {
+                setData(INITIAL_DATA);
+                setViewData(INITIAL_DATA);
+                setCurrentCode("df");
+                setViewMode('dataframe');
+                setColumns(['product', 'category', 'price', 'stock', 'rating']);
+                setConsoleOutput("");
+            };
+
+            // --- Operations ---
+
+            // 1. Inspection
+            const handleHead = () => {
+                setViewData(data.slice(0, 5));
+                setCurrentCode("df.head(5)");
+                setViewMode('dataframe');
+            };
+
+            const handleTail = () => {
+                setViewData(data.slice(-5));
+                setCurrentCode("df.tail(5)");
+                setViewMode('dataframe');
+            };
+
+            const handleInfo = () => {
+                const infoStr = `
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: ${data.length} entries, 0 to ${data.length - 1}
+Data columns (total ${columns.length} columns):
+ #   Column     Non-Null Count  Dtype  
+---  ------     --------------  -----  
+ 0   product    ${data.length} non-null      object 
+ 1   category   ${data.length} non-null      object 
+ 2   price      ${data.length} non-null      int64  
+ 3   stock      ${data.filter(r=>r.stock !== null).length} non-null      float64
+ 4   rating     ${data.length} non-null      float64
+dtypes: float64(2), int64(1), object(2)
+memory usage: ${(data.length * 120) / 1000} KB
+`;
+                setConsoleOutput(infoStr);
+                setCurrentCode("df.info()");
+                setViewMode('console');
+            };
+
+            const handleDescribe = () => {
+                // Simple mock description for numeric cols
+                const count = data.length;
+                const stockCount = data.filter(r => r.stock !== null).length;
+                const prices = data.map(r => r.price);
+                const meanPrice = (prices.reduce((a, b) => a + b, 0) / count).toFixed(2);
+                const minPrice = Math.min(...prices);
+                const maxPrice = Math.max(...prices);
+                
+                const descStr = `
+       price      stock      rating
+count  ${count}.000000   ${stockCount}.000000   ${count}.000000
+mean   ${meanPrice}     22.000000   4.412500
+std    1600.12    14.312233   0.341200
+min    ${minPrice}.000000    2.000000    3.900000
+25%    101.2500   10.000000   4.175000
+50%    225.0000   15.000000   4.550000
+75%    1000.000   35.000000   4.725000
+max    ${maxPrice}.000000    50.000000   5.000000
+`;
+                setConsoleOutput(descStr);
+                setCurrentCode("df.describe()");
+                setViewMode('console');
+            };
+
+            // 2. Cleaning
+            const handleDropNA = () => {
+                const cleaned = data.filter(item => Object.values(item).every(val => val !== null));
+                setViewData(cleaned);
+                setCurrentCode("df.dropna()");
+                setViewMode('dataframe');
+            };
+
+            const handleDropDuplicates = () => {
+                const seen = new Set();
+                const unique = data.filter(item => {
+                    const val = item.product + item.price + item.rating; // Simple key
+                    if (seen.has(val)) return false;
+                    seen.add(val);
+                    return true;
+                });
+                setViewData(unique);
+                setCurrentCode("df.drop_duplicates()");
+                setViewMode('dataframe');
+            };
+
+            const handleFillNA = () => {
+                const filled = viewData.map(item => ({
+                    ...item,
+                    stock: item.stock === null ? 0 : item.stock
+                }));
+                setViewData(filled);
+                setCurrentCode("df.fillna(0)");
+                setViewMode('dataframe');
+            };
+
+            const handleIQR = () => {
+                // Filter Outliers (Price > 2000 based on current data spread)
+                const filtered = data.filter(item => item.price < 2000);
+                setViewData(filtered);
+                setCurrentCode(`# Remove Outliers (Price < 2000)\ndf = df[df['price'] < 2000]`);
+                setViewMode('dataframe');
+            };
+
+            // 3. Organization
+            const handleSortPrice = () => {
+                const sorted = [...viewData].sort((a, b) => b.price - a.price);
+                setViewData(sorted);
+                setCurrentCode("df.sort_values('price', ascending=False)");
+                setViewMode('dataframe');
+            };
+
+            const handleFilterLogic = () => {
+                const filtered = data.filter(item => item.category === 'Electronics' && item.price > 500);
+                setViewData(filtered);
+                setCurrentCode("df[(df['category'] == 'Electronics') & (df['price'] > 500)]");
+                setViewMode('dataframe');
+            };
+
+            const handleGroupBy = () => {
+                const groups = {};
+                data.forEach(item => {
+                    if (!groups[item.category]) groups[item.category] = { count: 0, price_sum: 0 };
+                    groups[item.category].count += 1;
+                    groups[item.category].price_sum += item.price;
+                });
+                
+                const grouped = Object.keys(groups).map(k => ({
+                    category: k,
+                    price_mean: (groups[k].price_sum / groups[k].count).toFixed(2)
+                }));
+                
+                setViewData(grouped);
+                setCurrentCode("df.groupby('category')['price'].mean()");
+                setViewMode('grouped');
+            };
+
+            const handleNewColumn = () => {
+                 // Add High_Value column
+                 const enriched = viewData.map(item => ({
+                     ...item,
+                     High_Value: item.price > 500 ? 'True' : 'False'
+                 }));
+                 if(!columns.includes('High_Value')) setColumns([...columns, 'High_Value']);
+                 setViewData(enriched);
+                 setCurrentCode("df['High_Value'] = df['price'] > 500");
+                 setViewMode('dataframe');
+            };
+
+            // 4. Summarization
+            const handleMean = () => {
+                const mean = (data.reduce((a,b) => a + b.price, 0) / data.length).toFixed(2);
+                setConsoleOutput(`price    ${mean}\ndtype: float64`);
+                setCurrentCode("df['price'].mean()");
+                setViewMode('console');
+            };
+
+            const handleValueCounts = () => {
+                const counts = {};
+                data.forEach(i => counts[i.category] = (counts[i.category] || 0) + 1);
+                let str = "";
+                Object.entries(counts).sort((a,b) => b[1]-a[1]).forEach(([k,v]) => str += `${k.padEnd(15)} ${v}\n`);
+                str += "Name: category, dtype: int64";
+                setConsoleOutput(str);
+                setCurrentCode("df['category'].value_counts()");
+                setViewMode('console');
+            };
+
+            const handleCorr = () => {
+                setConsoleOutput(`        price   rating
+price   1.0000  0.8654
+rating  0.8654  1.0000`);
+                setCurrentCode("df[['price', 'rating']].corr()");
+                setViewMode('console');
+            };
+
+            return (
+                <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-10">
+                    <header className="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center sticky top-0 z-10 shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-yellow-400 p-2 rounded-lg text-slate-900">
+                                <Database size={24} />
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-bold text-slate-800">Pandas Data Grid Sim</h1>
+                                <p className="text-xs text-slate-500">Interactive Python Data Analysis Learning</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button onClick={() => setActiveTab('simulation')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'simulation' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Simulation</button>
+                            <button onClick={() => setActiveTab('learn')} className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === 'learn' ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>Concept Guide</button>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto p-6">
+                        {activeTab === 'simulation' ? (
+                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div className="lg:col-span-4 space-y-4">
+                                    {/* Control Panel */}
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                        <div className="flex border-b border-slate-200">
+                                            {['inspect', 'clean', 'org', 'stats'].map(sec => (
+                                                <button 
+                                                    key={sec}
+                                                    onClick={() => setActiveSection(sec)}
+                                                    className={`flex-1 py-3 text-xs font-semibold uppercase tracking-wider ${activeSection === sec ? 'bg-slate-100 text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:bg-slate-50'}`}
+                                                >
+                                                    {sec}
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div className="p-4 space-y-2 min-h-[200px]">
+                                            {activeSection === 'inspect' && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button onClick={handleHead} className="op-btn"><Search/> .head()</button>
+                                                    <button onClick={handleTail} className="op-btn"><Search/> .tail()</button>
+                                                    <button onClick={handleInfo} className="op-btn"><Info/> .info()</button>
+                                                    <button onClick={handleDescribe} className="op-btn"><Info/> .describe()</button>
+                                                </div>
+                                            )}
+                                            {activeSection === 'clean' && (
+                                                <div className="flex flex-col gap-2">
+                                                    <button onClick={handleDropNA} className="op-btn"><Trash/> .dropna()</button>
+                                                    <button onClick={handleFillNA} className="op-btn"><RotateCcw/> .fillna(0)</button>
+                                                    <button onClick={handleDropDuplicates} className="op-btn"><Scissors/> .drop_duplicates()</button>
+                                                    <button onClick={handleIQR} className="op-btn"><Filter/> Remove Outliers (IQR)</button>
+                                                </div>
+                                            )}
+                                            {activeSection === 'org' && (
+                                                <div className="flex flex-col gap-2">
+                                                    <button onClick={handleSortPrice} className="op-btn"><ArrowUpDown/> .sort_values('price')</button>
+                                                    <button onClick={handleFilterLogic} className="op-btn"><Filter/> Electronics & Price {'>'} 500</button>
+                                                    <button onClick={handleGroupBy} className="op-btn"><Layers/> .groupby('category')</button>
+                                                    <button onClick={handleNewColumn} className="op-btn"><PlusSquare/> Create 'High_Value' Col</button>
+                                                </div>
+                                            )}
+                                            {activeSection === 'stats' && (
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <button onClick={handleMean} className="op-btn"><Calculator/> .mean()</button>
+                                                    <button onClick={handleValueCounts} className="op-btn"><Calculator/> .value_counts()</button>
+                                                    <button onClick={handleCorr} className="op-btn col-span-2"><Calculator/> .corr()</button>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="p-4 border-t border-slate-100 bg-slate-50">
+                                            <button onClick={resetData} className="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 py-2 rounded text-sm font-medium transition-colors border border-slate-200 bg-white">
+                                                <RotateCcw size={14} /> Reset DataFrame
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <CodeBlock code={currentCode} label="Live Python Execution" />
+                                </div>
+
+                                {/* Visualization Area */}
+                                <div className="lg:col-span-8">
+                                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full min-h-[500px]">
+                                        <div className="bg-slate-50 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
+                                            <div>
+                                                <h3 className="font-bold text-slate-700 flex items-center gap-2">
+                                                    <Database size={18} className="text-blue-500" />
+                                                    {viewMode === 'console' ? 'Console Output' : 'DataFrame View'}
+                                                </h3>
+                                                {viewMode === 'dataframe' && (
+                                                    <p className="text-xs text-slate-500 mt-1">
+                                                        Shape: ({viewData.length} rows × {columns.length} columns)
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="overflow-x-auto flex-grow p-4 bg-white relative">
+                                            {viewMode === 'console' ? (
+                                                <pre className="font-mono text-sm text-slate-700 whitespace-pre bg-slate-50 p-4 rounded border border-slate-200 h-full overflow-auto">
+                                                    {consoleOutput}
+                                                </pre>
+                                            ) : (
+                                                viewData.length === 0 ? (
+                                                    <div className="h-64 flex flex-col items-center justify-center text-slate-400 border-2 border-dashed border-slate-200 rounded-lg">
+                                                        <Database size={48} className="mb-2 opacity-20" />
+                                                        <p>Empty DataFrame</p>
+                                                    </div>
+                                                ) : (
+                                                    <table className="w-full text-sm text-left border-collapse">
+                                                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                                                            <tr>
+                                                                <th className="px-4 py-3 font-bold border-r border-slate-200 w-16 text-center bg-slate-100">Index</th>
+                                                                {viewMode === 'dataframe' ? (
+                                                                    columns.map(col => (
+                                                                        <th key={col} className="px-4 py-3 font-semibold tracking-wider hover:bg-slate-100 transition-colors cursor-help">{col}</th>
+                                                                    ))
+                                                                ) : (
+                                                                    Object.keys(viewData[0]).map(key => (
+                                                                        <th key={key} className="px-4 py-3 font-semibold tracking-wider text-orange-600 bg-orange-50">{key}</th>
+                                                                    ))
+                                                                )}
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody className="divide-y divide-slate-100 font-mono text-slate-700">
+                                                            {viewData.map((row, idx) => (
+                                                                <tr key={idx} className="hover:bg-blue-50 transition-colors group">
+                                                                    <td className="px-4 py-3 font-bold text-slate-400 border-r border-slate-200 bg-slate-50 text-center group-hover:bg-blue-100">
+                                                                        {viewMode === 'dataframe' ? row.id : idx}
+                                                                    </td>
+                                                                    {viewMode === 'dataframe' ? (
+                                                                        columns.map(col => (
+                                                                            <td key={col} className="px-4 py-3">
+                                                                                {row[col] === null ? (
+                                                                                    <span className="text-red-400 font-bold italic">NaN</span>
+                                                                                ) : (
+                                                                                    col === 'price' ? `$${row[col]}` : row[col]
+                                                                                )}
+                                                                            </td>
+                                                                        ))
+                                                                    ) : (
+                                                                        Object.values(row).map((val, i) => (
+                                                                            <td key={i} className="px-4 py-3 font-bold">{val}</td>
+                                                                        ))
+                                                                    )}
+                                                                </tr>
+                                                            ))}
+                                                        </tbody>
+                                                    </table>
+                                                )
+                                            )}
+                                        </div>
+                                        
+                                        {/* Legend */}
+                                        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 text-xs text-slate-500 flex flex-wrap gap-4">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 bg-slate-200 rounded-sm"></div>
+                                                <span>Index</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-red-400 font-bold">NaN</span>
+                                                <span>Missing</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="font-mono text-blue-600">High_Value</span>
+                                                <span>New Column</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                             <div className="max-w-4xl mx-auto">
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                                    <h2 className="text-2xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+                                        <BookOpen className="text-blue-600" /> Pandas Overview & Concepts
+                                    </h2>
+                                    
+                                    <div className="space-y-10">
+                                        <section>
+                                            <h3 className="text-xl font-bold text-slate-700 mb-3 border-b pb-2">What is Pandas?</h3>
+                                            <p className="text-slate-600 leading-relaxed mb-4">
+                                                Pandas is like a super-powered spreadsheet program within Python. It helps you work with data in a really organized and efficient way. 
+                                            </p>
+                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-sm text-blue-800">
+                                                <strong>Why is it useful?</strong>
+                                                <ul className="list-disc pl-5 mt-1 space-y-1">
+                                                    <li>Handle large datasets without getting messy.</li>
+                                                    <li>Automate boring tasks like cleaning and summarizing.</li>
+                                                    <li>Gain insights by quickly discovering patterns and trends.</li>
+                                                </ul>
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <h3 className="text-lg font-bold text-slate-700 mb-2 border-l-4 border-green-500 pl-3">1. Data Loading & Inspection</h3>
+                                            <p className="text-slate-600 leading-relaxed mb-3">
+                                                The first step is bringing data from an external source (like a CSV file) into a DataFrame.
+                                            </p>
+                                            <CodeBlock 
+                                                label="Python Example"
+                                                code={`import pandas as pd\n\n# Load a CSV file\ndf = pd.read_csv('data.csv')\n\n# Basic Inspection\nprint(df.head())      # First 5 rows\nprint(df.tail())      # Last 5 rows\nprint(df.info())      # Data types & non-null counts\nprint(df.describe())  # Summary stats (mean, min, max)\nprint(df.shape)       # Dimensions (rows, columns)`} 
+                                            />
+                                        </section>
+
+                                        <section>
+                                            <h3 className="text-lg font-bold text-slate-700 mb-2 border-l-4 border-yellow-500 pl-3">2. Data Cleaning</h3>
+                                            <p className="text-slate-600 leading-relaxed mb-3">
+                                                Real-world data is messy. Cleaning ensures your analysis is reliable.
+                                            </p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                                <div className="bg-slate-50 p-4 rounded border border-slate-200">
+                                                    <h4 className="font-bold text-slate-700 mb-2">Missing Values</h4>
+                                                    <pre className="bg-white p-2 rounded border text-xs text-slate-500 font-mono mb-2">df.dropna()</pre>
+                                                    <pre className="bg-white p-2 rounded border text-xs text-slate-500 font-mono">df.fillna(0)</pre>
+                                                </div>
+                                                <div className="bg-slate-50 p-4 rounded border border-slate-200">
+                                                    <h4 className="font-bold text-slate-700 mb-2">Duplicates & Types</h4>
+                                                    <pre className="bg-white p-2 rounded border text-xs text-slate-500 font-mono mb-2">df.drop_duplicates()</pre>
+                                                    <pre className="bg-white p-2 rounded border text-xs text-slate-500 font-mono">df['Age'] = df['Age'].astype(int)</pre>
+                                                </div>
+                                            </div>
+                                            <div className="bg-red-50 p-4 rounded border border-red-100 mt-4">
+                                                <h4 className="font-bold text-red-800 mb-2 text-sm">Handling Outliers (IQR Method)</h4>
+                                                <CodeBlock 
+                                                    label="IQR Logic"
+                                                    code={`Q1 = df['Salary'].quantile(0.25)\nQ3 = df['Salary'].quantile(0.75)\nIQR = Q3 - Q1\n\n# Keep only data within the "fences"\ndf = df[(df['Salary'] >= Q1 - 1.5 * IQR) & \n        (df['Salary'] <= Q3 + 1.5 * IQR)]`}
+                                                />
+                                            </div>
+                                        </section>
+
+                                        <section>
+                                            <h3 className="text-lg font-bold text-slate-700 mb-2 border-l-4 border-blue-500 pl-3">3. Data Organization</h3>
+                                            <p className="text-slate-600 leading-relaxed mb-3">
+                                                Organizing data helps you find what you need.
+                                            </p>
+                                            <ul className="list-disc pl-5 space-y-2 text-slate-600 mb-4">
+                                                <li><strong>Sorting:</strong> Ordering data (e.g., by Age or Salary).</li>
+                                                <li><strong>Filtering:</strong> Selecting rows that meet criteria (e.g., Age {'>'} 30).</li>
+                                                <li><strong>Grouping:</strong> combining data by category (e.g., Avg salary per Dept).</li>
+                                            </ul>
+                                            <CodeBlock 
+                                                label="Organization Examples"
+                                                code={`# Sorting\ndf.sort_values(by='Age', ascending=True)\n\n# Filtering\ndf[df['Age'] > 30]\n\n# Grouping\ndf.groupby('Department')['Salary'].mean()\n\n# Creating New Columns\ndf['Salary_Category'] = df['Salary'].apply(lambda x: 'High' if x > 80000 else 'Low')`}
+                                            />
+                                        </section>
+
+                                        <section>
+                                            <h3 className="text-lg font-bold text-slate-700 mb-2 border-l-4 border-purple-500 pl-3">4. Data Summarization</h3>
+                                            <p className="text-slate-600 leading-relaxed mb-3">
+                                                Summarization condenses large datasets into key insights.
+                                            </p>
+                                            <CodeBlock 
+                                                label="Stats Examples"
+                                                code={`print(df['Salary'].mean())    # Average\nprint(df['Age'].median())     # Middle value\nprint(df['City'].value_counts()) # Count occurrences\n\n# Correlation (Relationships)\nprint(df[['Age', 'Salary']].corr())`}
+                                            />
+                                        </section>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+                    <style>{`
+                        .op-btn {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 0.5rem;
+                            padding: 0.5rem 0.75rem;
+                            border-radius: 0.375rem;
+                            border: 1px solid #e2e8f0;
+                            font-size: 0.875rem;
+                            line-height: 1.25rem;
+                            color: #334155;
+                            background-color: #f8fafc;
+                            transition: all 0.2s;
+                            width: 100%;
+                            text-align: left;
+                        }
+                        .op-btn:hover {
+                            background-color: #eff6ff;
+                            color: #2563eb;
+                            border-color: #bfdbfe;
+                        }
+                    `}</style>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<PandasSimulator />);
+    </script>
+</body>
+</html>

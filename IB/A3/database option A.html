@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS Option A: Database Review Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap');
+        body { font-family: 'Plus+Jakarta+Sans', sans-serif; scroll-behavior: smooth; }
+        .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; }
+        .glass { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        .checklist-item:has(input:checked) { background-color: #f0fdf4; opacity: 0.8; border-color: #22c55e; }
+        .checklist-item:has(input:checked) .teacher-note { opacity: 0.4; }
+        .exam-tip { border-left: 4px solid #f59e0b; background-color: #fffbeb; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .sql-code { font-family: 'Courier New', Courier, monospace; }
+        
+        /* Print Styles for Exam Practice Tab */
+        @media print {
+            body { background: white !important; color: black !important; }
+            nav, .nav-btn, .no-print, #quiz-ui, #quiz-results-container, #norm-explanation, .norm-step-btn { display: none !important; }
+            .tab-content { display: none !important; }
+            #tab-exam { display: block !important; }
+            .shadow-sm, .shadow-lg { box-shadow: none !important; }
+            .print-border { border: 1px solid #cbd5e1 !important; margin-bottom: 20px !important; page-break-inside: avoid; }
+            textarea { border: 1px solid #cbd5e1 !important; color: blue !important; resize: none; overflow: visible; font-family: monospace; }
+            .markscheme-container { display: block !important; border-left: 4px solid #22c55e !important; padding-left: 10px !important; margin-top: 10px !important; background-color: #f0fdf4 !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+
+    <!-- Sticky Navigation -->
+    <nav class="sticky top-0 z-50 glass border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-blue-600 p-2 rounded-lg text-white shadow-lg shadow-blue-200">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                        </svg>
+                    </div>
+                    <span class="font-bold text-xl tracking-tight hidden sm:block">IB CS: Option A (Official)</span>
+                </div>
+                <div class="flex space-x-4 overflow-x-auto no-scrollbar">
+                    <button onclick="showTab('guides')" id="btn-guides" class="nav-btn py-4 px-2 text-sm font-semibold tab-active">Guides</button>
+                    <button onclick="showTab('norm')" id="btn-norm" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500">Norm Lab</button>
+                    <button onclick="showTab('walk')" id="btn-walk" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500">Walkthroughs</button>
+                    <button onclick="showTab('exam')" id="btn-exam" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500 whitespace-nowrap">Exam Practice</button>
+                    <button onclick="showTab('hl')" id="btn-hl" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500 whitespace-nowrap">Data Mining (HL)</button>
+                    <button onclick="showTab('vocab')" id="btn-vocab" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500">Vocab</button>
+                    <button onclick="showTab('quiz')" id="btn-quiz" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500">Quiz</button>
+                    <button onclick="showTab('list')" id="btn-list" class="nav-btn py-4 px-2 text-sm font-semibold text-slate-500">Checklist & TN</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- ==================== 1. CONCEPT GUIDES ==================== -->
+        <section id="tab-guides" class="tab-content space-y-8">
+            
+            <!-- SQL Masterclass -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-blue-800 p-4 text-white font-bold text-lg flex justify-between items-center">
+                    <span>SQL Query Masterclass</span>
+                    <span class="text-xs bg-white/20 px-3 py-1 rounded-full uppercase tracking-widest text-[10px]">A.3.1 - A.3.3</span>
+                </div>
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-3 border-b pb-2">Basic DML Syntax & Logic</h4>
+                        <pre class="bg-slate-900 text-blue-300 p-4 rounded-xl text-xs overflow-x-auto mb-4">
+-- Selecting Data
+SELECT Field1, Field2
+FROM TableName
+WHERE Condition
+ORDER BY Field1 ASC;
+
+-- Joins (Standard IB Style)
+SELECT STUDENT.Name, CLASS.Title
+FROM STUDENT, CLASS
+WHERE STUDENT.Class_ID = CLASS.Class_ID;
+
+-- Aggregation
+SELECT COUNT(StudentID), Class_ID
+FROM ENROLLMENT
+GROUP BY Class_ID
+HAVING COUNT(StudentID) > 20;</pre>
+                        <div class="space-y-2 text-xs text-slate-600">
+                            <p><strong class="text-blue-700">1. Identify Tables:</strong> Which tables contain the data? List in FROM.</p>
+                            <p><strong class="text-blue-700">2. Link Keys:</strong> For >1 table, link PK=FK in WHERE.</p>
+                            <p><strong class="text-blue-700">3. Filter vs Aggregate:</strong> WHERE for rows, HAVING for grouped sums/counts.</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-3 border-b pb-2">The 5 SQL Sub-Languages</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="p-3 bg-slate-50 rounded-xl border">
+                                <h5 class="font-bold text-blue-800 text-xs">1. DDL (Definition)</h5>
+                                <p class="text-[10px] text-slate-500 mb-1">Schema structure.</p>
+                                <div class="text-[10px] font-mono text-slate-700">CREATE, ALTER, DROP</div>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border">
+                                <h5 class="font-bold text-blue-800 text-xs">2. DML (Manipulation)</h5>
+                                <p class="text-[10px] text-slate-500 mb-1">Modifying data content.</p>
+                                <div class="text-[10px] font-mono text-slate-700">INSERT, UPDATE, DELETE</div>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border">
+                                <h5 class="font-bold text-blue-800 text-xs">3. DQL (Query)</h5>
+                                <p class="text-[10px] text-slate-500 mb-1">Retrieving data.</p>
+                                <div class="text-[10px] font-mono text-slate-700">SELECT</div>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border">
+                                <h5 class="font-bold text-blue-800 text-xs">4. DCL (Control)</h5>
+                                <p class="text-[10px] text-slate-500 mb-1">Access rights.</p>
+                                <div class="text-[10px] font-mono text-slate-700">GRANT, REVOKE</div>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border md:col-span-2">
+                                <h5 class="font-bold text-blue-800 text-xs">5. TCL (Transaction)</h5>
+                                <p class="text-[10px] text-slate-500 mb-1">Managing ACID states.</p>
+                                <div class="text-[10px] font-mono text-slate-700">COMMIT, ROLLBACK</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Missing Fundamentals: Validation, DB vs IS, Data Dictionary -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Validation vs Verification -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-rose-600 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Validation vs Verification</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.3.4</span>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <div>
+                            <h5 class="font-bold text-rose-800 text-sm">Data Validation</h5>
+                            <p class="text-xs text-slate-600 mt-1">Performed by the <strong>computer</strong> to ensure data is logical and allowed. Doesn't guarantee it is correct.</p>
+                            <p class="text-[10px] font-mono text-slate-500 mt-1">Examples: Range check, Type check, Presence check.</p>
+                        </div>
+                        <div class="border-t pt-4">
+                            <h5 class="font-bold text-rose-800 text-sm">Data Verification</h5>
+                            <p class="text-xs text-slate-600 mt-1">Performed by a <strong>human/system</strong> to ensure data matches the original source exactly.</p>
+                            <p class="text-[10px] font-mono text-slate-500 mt-1">Examples: Double-entry, Visual proofreading.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database vs Info System -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-cyan-700 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Information Systems</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.1.2</span>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-xs text-slate-600">A <strong>Database</strong> is simply an organized collection of data. It is only one component of an Information System.</p>
+                        <p class="text-xs text-slate-600">An <strong>Information System (IS)</strong> is the broader environment. It includes:</p>
+                        <ul class="text-xs text-slate-700 list-disc ml-4 space-y-1">
+                            <li>The Database (Data)</li>
+                            <li>Hardware (Servers)</li>
+                            <li>Software (The DBMS / App)</li>
+                            <li>Networks (Communication)</li>
+                            <li>People (Users / DBA)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Data Dictionary -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-amber-600 p-4 text-white font-bold flex justify-between items-center">
+                        <span>The Data Dictionary</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.2.5</span>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-xs text-slate-600">A critical system file that contains <strong>metadata</strong> (data about data). Without it, the DBMS cannot function.</p>
+                        <p class="text-xs text-slate-800 font-bold">It stores information such as:</p>
+                        <ul class="text-xs text-slate-700 list-disc ml-4 space-y-1">
+                            <li>Table and field names</li>
+                            <li>Data types (e.g., Integer, String)</li>
+                            <li>Validation rules and constraints</li>
+                            <li>Relationships and Keys</li>
+                            <li>Access rights for users</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Normalization Anomalies -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-indigo-700 p-4 text-white font-bold flex justify-between items-center">
+                    <span>Why Normalize? Transaction Anomalies Example</span>
+                    <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.2.11</span>
+                </div>
+                <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- Example Table -->
+                    <div class="space-y-3">
+                        <h5 class="font-bold text-slate-800 text-sm border-b pb-2">Unnormalized Enrollment Table</h5>
+                        <p class="text-[11px] text-slate-500 mb-2">The Primary Key is the composite of <strong class="text-indigo-600">StudentID + CourseID</strong>. Notice the redundant data.</p>
+                        <div class="overflow-hidden rounded-lg border border-slate-200 shadow-sm">
+                            <table class="w-full text-left text-[10px] whitespace-nowrap">
+                                <thead class="bg-slate-100 text-slate-600">
+                                    <tr><th class="p-2 border-b border-slate-200">StudentID (PK)</th><th class="p-2 border-b border-slate-200">StudentName</th><th class="p-2 border-b border-slate-200">CourseID (PK)</th><th class="p-2 border-b border-slate-200">TeacherName</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 bg-white">
+                                    <tr><td class="p-2 font-bold text-blue-700">S1</td><td class="p-2">Alice</td><td class="p-2 font-bold text-blue-700">CS1</td><td class="p-2 bg-amber-50">Mr. Turing</td></tr>
+                                    <tr><td class="p-2 font-bold text-blue-700">S1</td><td class="p-2">Alice</td><td class="p-2 font-bold text-blue-700">MATH1</td><td class="p-2 bg-orange-50">Ms. Ada</td></tr>
+                                    <tr><td class="p-2 font-bold text-blue-700">S2</td><td class="p-2">Bob</td><td class="p-2 font-bold text-blue-700">CS1</td><td class="p-2 bg-amber-50">Mr. Turing</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Anomalies Explanation -->
+                    <div class="space-y-4">
+                        <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+                            <h5 class="font-bold text-red-800 text-xs uppercase mb-1">1. Insertion Anomaly</h5>
+                            <p class="text-[11px] text-red-900 leading-snug"><strong>Scenario:</strong> You hire a new teacher for a new course, but no students are enrolled yet.<br><strong>The Error:</strong> You <em>cannot</em> insert this course into the database because <code>StudentID</code> is part of the Primary Key and cannot be NULL.</p>
+                        </div>
+                        <div class="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                            <h5 class="font-bold text-orange-800 text-xs uppercase mb-1">2. Deletion Anomaly</h5>
+                            <p class="text-[11px] text-orange-900 leading-snug"><strong>Scenario:</strong> Alice drops out of <code>MATH1</code>. She was the only student taking it.<br><strong>The Error:</strong> When you delete Alice's record to remove her from the class, you accidentally delete the fact that <em>Ms. Ada</em> teaches <em>MATH1</em>.</p>
+                        </div>
+                        <div class="bg-amber-50 p-3 rounded-lg border border-amber-100">
+                            <h5 class="font-bold text-amber-800 text-xs uppercase mb-1">3. Update Anomaly</h5>
+                            <p class="text-[11px] text-amber-900 leading-snug"><strong>Scenario:</strong> Mr. Turing earns his PhD and needs his title updated.<br><strong>The Error:</strong> His name is duplicated across multiple rows. If you update Alice's row but forget Bob's row, your database contains conflicting data.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- ACID Principles -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-emerald-600 p-4 text-white font-bold flex justify-between">
+                        <span>ACID Properties</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.1.4</span>
+                    </div>
+                    <div class="p-6 grid grid-cols-2 gap-4 h-full content-start">
+                        <div class="p-3 border rounded-xl bg-slate-50">
+                            <p class="font-bold text-emerald-700 text-xs uppercase mb-1">Atomicity</p>
+                            <p class="text-[10px] text-slate-600">Transaction is all or nothing. Uses rollback.</p>
+                        </div>
+                        <div class="p-3 border rounded-xl bg-slate-50">
+                            <p class="font-bold text-emerald-700 text-xs uppercase mb-1">Consistency</p>
+                            <p class="text-[10px] text-slate-600">Moves DB from one valid state to another.</p>
+                        </div>
+                        <div class="p-3 border rounded-xl bg-slate-50">
+                            <p class="font-bold text-emerald-700 text-xs uppercase mb-1">Isolation</p>
+                            <p class="text-[10px] text-slate-600">Transactions don't interfere (Concurrency).</p>
+                        </div>
+                        <div class="p-3 border rounded-xl bg-slate-50">
+                            <p class="font-bold text-emerald-700 text-xs uppercase mb-1">Durability</p>
+                            <p class="text-[10px] text-slate-600">Changes are permanent after commit.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Concurrency -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-indigo-600 p-4 text-white font-bold flex justify-between">
+                        <span>Concurrency & Locking</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.3.5 / A.3.6</span>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <p class="text-sm text-slate-700"><strong>Concurrency</strong> is the ability of multiple users to access and modify the database simultaneously.</p>
+                        <div class="bg-indigo-50 p-3 rounded-lg border border-indigo-100">
+                            <h5 class="font-bold text-indigo-800 text-xs">The Problem: Lost Updates</h5>
+                            <p class="text-[11px] text-slate-600 mt-1">If User A and User B both read a record and update it at the same time, one user's changes overwrite the other's.</p>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                            <h5 class="font-bold text-slate-800 text-xs">The Solution: Locking</h5>
+                            <p class="text-[11px] text-slate-600 mt-1">The DBMS applies a <strong>lock</strong> to a record being edited. Other users must wait until the lock is released.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Recovery -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-sky-600 p-4 text-white font-bold flex justify-between">
+                        <span>Database Recovery</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.3.7 / A.3.8</span>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <p class="text-sm text-slate-700">Methods used by the DBA to restore the database to a consistent state after a failure.</p>
+                        <div class="space-y-2">
+                            <div class="flex items-start gap-2">
+                                <span class="bg-sky-100 text-sky-700 font-bold px-2 rounded text-xs">1</span>
+                                <div>
+                                    <h5 class="font-bold text-xs text-slate-800">Transaction Logs</h5>
+                                    <p class="text-[11px] text-slate-600">A sequential record of changes used to <strong>UNDO</strong> incomplete transactions or <strong>REDO</strong> committed ones.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <span class="bg-sky-100 text-sky-700 font-bold px-2 rounded text-xs">2</span>
+                                <div>
+                                    <h5 class="font-bold text-xs text-slate-800">Deferred Update</h5>
+                                    <p class="text-[11px] text-slate-600">Changes are only written to the log until fully committed, preventing partial file writes.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Denormalization -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-fuchsia-600 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Denormalization</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.3.11</span>
+                    </div>
+                    <div class="p-6 space-y-3">
+                        <p class="text-sm text-slate-700 leading-relaxed"><strong>Denormalization</strong> is the deliberate introduction of redundancy into a normalized database.</p>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="bg-green-50 p-3 rounded-lg border border-green-100">
+                                <h5 class="font-bold text-green-800 text-xs mb-1">Why do it?</h5>
+                                <ul class="text-[10px] text-slate-600 list-disc ml-3">
+                                    <li>Drastically speeds up read queries.</li>
+                                    <li>Reduces complex JOIN operations.</li>
+                                </ul>
+                            </div>
+                            <div class="bg-red-50 p-3 rounded-lg border border-red-100">
+                                <h5 class="font-bold text-red-800 text-xs mb-1">The Trade-offs</h5>
+                                <ul class="text-[10px] text-slate-600 list-disc ml-3">
+                                    <li>Reintroduces risk of update anomalies.</li>
+                                    <li>Slows down write/insert operations.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 2. NORMALIZATION LAB ==================== -->
+        <section id="tab-norm" class="tab-content hidden space-y-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Normalization Lab</h2>
+                        <p class="text-slate-500 text-sm italic">Scenario: Cleaning the Enrollment Table</p>
+                    </div>
+                    <div class="flex bg-slate-100 p-1 rounded-xl">
+                        <button onclick="setNormStep(0)" id="step-0" class="norm-step-btn px-4 py-2 rounded-lg text-sm font-bold bg-white shadow-sm text-blue-600">0NF</button>
+                        <button onclick="setNormStep(1)" id="step-1" class="norm-step-btn px-4 py-2 rounded-lg text-sm font-bold text-slate-500">1NF</button>
+                        <button onclick="setNormStep(2)" id="step-2" class="norm-step-btn px-4 py-2 rounded-lg text-sm font-bold text-slate-500">2NF</button>
+                        <button onclick="setNormStep(3)" id="step-3" class="norm-step-btn px-4 py-2 rounded-lg text-sm font-bold text-slate-500">3NF</button>
+                    </div>
+                </div>
+                <div id="norm-explanation" class="p-5 bg-blue-50 border-l-4 border-blue-600 rounded-r-xl mb-8 text-sm text-blue-900 leading-relaxed shadow-sm"></div>
+                <div id="norm-tables" class="space-y-10 overflow-x-auto pb-6"></div>
+            </div>
+        </section>
+
+        <!-- ==================== 3. WALKTHROUGHS SECTION ==================== -->
+        <section id="tab-walk" class="tab-content hidden space-y-8">
+            <h2 class="text-3xl font-bold text-slate-800">Model Answer Walkthroughs</h2>
+
+            <!-- Case Study 1: SQL Steps -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-blue-600 p-4 text-white font-bold flex justify-between items-center">
+                    <span>SQL Query Steps (May 2024)</span>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded">4 Marks</span>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div class="bg-slate-50 p-4 rounded-lg border-l-4 border-blue-500">
+                        <p class="text-xs font-bold text-blue-600 uppercase mb-1">Question 1(e):</p>
+                        <p class="text-sm italic text-slate-700 leading-relaxed">"Identify the steps to create a query to calculate the total number of sites where 'gorse' has been found from the samples carried out on 14 October 2019."</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex gap-4 items-start">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">1</div>
+                            <div>
+                                <h4 class="font-bold text-sm">Join Necessary Tables</h4>
+                                <p class="text-xs text-slate-600">The query requires 'Species' from the <strong>Plant</strong> table and 'Date' from the <strong>Distribution</strong> table. Link them where <code>Plant.Plant_ID = Distribution.Plant_ID</code>.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">2</div>
+                            <div>
+                                <h4 class="font-bold text-sm">Apply Filtering Criteria</h4>
+                                <p class="text-xs text-slate-600">Filter records where the <code>Species = 'Gorse'</code> AND <code>Date = '14/10/2019'</code>.</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-4 items-start">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">3</div>
+                            <div>
+                                <h4 class="font-bold text-sm">Select and Aggregate</h4>
+                                <p class="text-xs text-slate-600">Use the aggregate <code>COUNT</code> function on the <code>Site_ID</code> field.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Study 2: Normalization -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-emerald-600 p-4 text-white font-bold flex justify-between items-center">
+                    <span>3NF Normalization: Pet Passports (Nov 2023)</span>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded">6 Marks</span>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div class="bg-slate-50 p-4 rounded-lg border-l-4 border-emerald-500">
+                        <p class="text-xs font-bold text-emerald-600 uppercase mb-1">Scenario:</p>
+                        <p class="text-sm italic text-slate-700">"Convert the following into 3NF: PET(TransponderID, Name, Species, Breed, VetName, VetAddress)"</p>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+                            <h4 class="font-bold text-xs text-emerald-800 uppercase mb-2">Transitive Dependency Found:</h4>
+                            <p class="text-xs text-slate-700">VetAddress depends on VetName, not on the TransponderID (Pet). This violates 3NF. They must be split.</p>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div class="p-4 border rounded-xl shadow-sm">
+                                <h5 class="font-bold text-emerald-700 mb-2 border-b pb-1">PET TABLE</h5>
+                                <p><u>TransponderID</u><br>Name<br>Species<br>Breed<br>VetName <em>(Foreign Key)</em></p>
+                            </div>
+                            <div class="p-4 border rounded-xl shadow-sm">
+                                <h5 class="font-bold text-emerald-700 mb-2 border-b pb-1">VET TABLE</h5>
+                                <p><u>VetName</u> <em>(Primary Key)</em><br>VetAddress</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Study 3: Transaction ACID -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-indigo-600 p-4 text-white font-bold flex justify-between items-center">
+                    <span>Transaction Recovery (May 2023)</span>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded">4 Marks</span>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div class="bg-slate-50 p-4 rounded-lg border-l-4 border-indigo-500 mb-4">
+                        <p class="text-sm italic text-slate-700 leading-relaxed">"If the database crashes after the payment has been made but before the availability of the vehicle has been updated, explain how ACID properties ensure a consistent state."</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 border rounded-xl">
+                            <h4 class="font-bold text-indigo-700 mb-1">Atomicity</h4>
+                            <p class="text-xs text-slate-600 leading-relaxed">The DBMS reads the <strong>Transaction Log</strong>. Seeing the transaction didn't complete, it performs a <strong>rollback</strong> of the payment, returning to the state before the booking started.</p>
+                        </div>
+                        <div class="p-4 border rounded-xl">
+                            <h4 class="font-bold text-indigo-700 mb-1">Consistency</h4>
+                            <p class="text-xs text-slate-600 leading-relaxed">Constraints (e.g., car stock cannot be negative) are re-verified after recovery, ensuring no illegal data states exist due to the interruption.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Case Study 4: ERD Taxonomy -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-amber-600 p-4 text-white font-bold flex justify-between items-center">
+                    <span>Bird Taxonomy ERD (Linnaean Model)</span>
+                    <span class="text-xs bg-white/20 px-2 py-1 rounded">2 Marks</span>
+                </div>
+                <div class="p-6 space-y-6">
+                    <div class="bg-slate-50 p-4 rounded-lg border-l-4 border-amber-500">
+                        <p class="text-sm italic text-slate-700">"This classification is hierarchical so one class has many orders, and one order has many families. Construct an ERD."</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row items-center justify-around gap-4 p-8 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                        <div class="p-4 bg-white border-2 border-slate-200 rounded shadow-sm text-center font-bold">CLASS</div>
+                        <div class="text-2xl font-black text-slate-400">1 ─── ∞</div>
+                        <div class="p-4 bg-white border-2 border-slate-200 rounded shadow-sm text-center font-bold">ORDER</div>
+                        <div class="text-2xl font-black text-slate-400">1 ─── ∞</div>
+                        <div class="p-4 bg-white border-2 border-slate-200 rounded shadow-sm text-center font-bold">FAMILY</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 4. EXAM PRACTICE SECTION ==================== -->
+        <section id="tab-exam" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Printable Exam Practice</h2>
+                    <p class="text-slate-500 text-sm">10 real past-paper questions. Write your answers, reveal the markscheme, and print.</p>
+                </div>
+                <button onclick="printExam()" class="mt-4 md:mt-0 px-6 py-2 bg-slate-800 text-white rounded-lg font-bold shadow-md hover:bg-slate-900 transition no-print flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Print Worksheet & Answers
+                </button>
+            </div>
+            
+            <div id="exam-container" class="space-y-6"></div>
+        </section>
+
+        <!-- ==================== 5. HL EXTENSION ==================== -->
+        <section id="tab-hl" class="tab-content hidden space-y-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="bg-slate-800 p-4 text-white font-bold flex justify-between items-center">
+                    <span>Comparison of Database Models</span>
+                    <span class="text-[10px] bg-white/20 px-2 py-1 rounded">Syllabus A.4.1</span>
+                </div>
+                <div class="p-6 overflow-x-auto">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 border-b">
+                                <th class="p-3">Model</th>
+                                <th class="p-3">Structure</th>
+                                <th class="p-3">Key Feature</th>
+                                <th class="p-3">Use Case</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y">
+                            <tr>
+                                <td class="p-3 font-bold text-blue-600">Relational</td>
+                                <td class="p-3">Tables (Relations)</td>
+                                <td class="p-3">PK/FK Relationships</td>
+                                <td class="p-3">Banking, E-commerce</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-blue-600">Hierarchical</td>
+                                <td class="p-3">Tree structure</td>
+                                <td class="p-3">One parent only (1:M)</td>
+                                <td class="p-3">File systems, Taxonomy</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-blue-600">Network</td>
+                                <td class="p-3">Graph/Web</td>
+                                <td class="p-3">Multiple parents (M:M)</td>
+                                <td class="p-3">Legacy mainframes</td>
+                            </tr>
+                            <tr>
+                                <td class="p-3 font-bold text-blue-600">Object-Oriented</td>
+                                <td class="p-3">Objects</td>
+                                <td class="p-3">Encapsulates Data + Methods</td>
+                                <td class="p-3">CAD, Scientific Simulations</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Data Warehouse & ETL -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-indigo-800 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Data Warehouses & ETL</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.4.3 / A.4.4</span>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <h4 class="font-bold text-indigo-700 text-sm mb-2">What is a Data Warehouse?</h4>
+                            <p class="text-xs text-slate-600 mb-2">Unlike operational databases, a data warehouse is:</p>
+                            <ul class="text-[11px] text-slate-700 list-disc ml-4 space-y-1">
+                                <li><strong>Subject-oriented:</strong> Focused on specific business areas (e.g., Sales).</li>
+                                <li><strong>Non-volatile:</strong> Historical data is read-only; past records are never altered.</li>
+                                <li><strong>Time-variant:</strong> Stores data as a series of snapshots over time.</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 class="font-bold text-slate-800 text-sm mb-3">The ETL Process</h4>
+                            <div class="space-y-3">
+                                <div class="flex gap-3">
+                                    <span class="font-black text-indigo-500">E</span>
+                                    <div><p class="text-xs font-bold">Extract</p><p class="text-[10px] text-slate-500">Gathering data from disparate sources.</p></div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <span class="font-black text-indigo-500">T</span>
+                                    <div><p class="text-xs font-bold">Transform (Data Scrubbing)</p><p class="text-[10px] text-slate-500">Cleaning and standardizing data formats.</p></div>
+                                </div>
+                                <div class="flex gap-3">
+                                    <span class="font-black text-indigo-500">L</span>
+                                    <div><p class="text-xs font-bold">Load</p><p class="text-[10px] text-slate-500">Importing data into the Warehouse.</p></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Data Mining Techniques & Prediction Tools -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-violet-700 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Data Mining Techniques</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.4.7</span>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-3 bg-violet-50 rounded-lg border border-violet-100">
+                            <h5 class="font-bold text-violet-800 text-xs mb-1">Cluster Analysis</h5>
+                            <p class="text-[10px] text-slate-700 leading-relaxed">Grouping records with similar characteristics <em>without</em> using pre-defined labels.</p>
+                        </div>
+                        <div class="p-3 bg-violet-50 rounded-lg border border-violet-100">
+                            <h5 class="font-bold text-violet-800 text-xs mb-1">Classification</h5>
+                            <p class="text-[10px] text-slate-700 leading-relaxed">Assigning new records to <em>pre-defined</em> categories based on historical training data.</p>
+                        </div>
+                        <div class="p-3 bg-violet-50 rounded-lg border border-violet-100">
+                            <h5 class="font-bold text-violet-800 text-xs mb-1">Association Rules</h5>
+                            <p class="text-[10px] text-slate-700 leading-relaxed">Discovering 'if-then' correlations. Also known as Market Basket Analysis.</p>
+                        </div>
+                        <div class="p-3 bg-violet-50 rounded-lg border border-violet-100">
+                            <h5 class="font-bold text-violet-800 text-xs mb-1">Deviation Detection</h5>
+                            <p class="text-[10px] text-slate-700 leading-relaxed">Identifying outliers outside the historical norm. <strong>Prediction Use:</strong> Early warning systems for credit card fraud.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Spatial & OOP Databases -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden lg:col-span-2">
+                    <div class="bg-teal-700 p-4 text-white font-bold flex justify-between items-center">
+                        <span>Advanced Models: Spatial Databases</span>
+                        <span class="text-[10px] bg-white/20 px-2 py-1 rounded">A.4.2</span>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <h4 class="font-bold text-teal-800 text-sm border-b pb-2">Spatial Databases</h4>
+                                <p class="text-xs text-slate-600 leading-relaxed mt-2">Optimized for geometric space (points, lines, polygons) using specialized R-Trees. Used in GIS and GPS.</p>
+                            </div>
+                            <div class="bg-teal-50 p-3 rounded-lg border border-teal-100">
+                                <h5 class="font-bold text-teal-900 text-xs mb-1">Spatial Relationships Queries:</h5>
+                                <ul class="text-[10px] text-slate-700 list-disc ml-4 space-y-1">
+                                    <li><strong>Topological:</strong> Contains, Intersects, Overlaps, Touches, Disjoint.</li>
+                                    <li><strong>Distance (Metric):</strong> Within 5km, Nearest Neighbor.</li>
+                                    <li><strong>Directional:</strong> North of, Left of.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                <h5 class="font-bold text-slate-800 text-xs mb-1">Data Mining in Spatial Data:</h5>
+                                <ul class="text-[10px] text-slate-700 list-disc ml-4 space-y-1">
+                                    <li><strong>Spatial Clustering:</strong> Finding geographical "hotspots" (e.g., disease outbreaks, crime zones).</li>
+                                    <li><strong>Spatial Association:</strong> Location-based rules (e.g., "Properties near subway stations are commercial").</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 6. VOCAB SECTION ==================== -->
+        <section id="tab-vocab" class="tab-content hidden">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6 border-b">
+                    <input type="text" id="vocabSearch" onkeyup="filterVocab()" placeholder="Search definitions (e.g. Data Dictionary, Verification)..." class="w-full p-4 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                </div>
+                <div id="vocabList" class="divide-y divide-slate-100 max-h-[600px] overflow-y-auto p-2"></div>
+            </div>
+        </section>
+
+        <!-- ==================== 7. QUIZ SECTION ==================== -->
+        <section id="tab-quiz" class="tab-content hidden">
+            <div id="quiz-root" class="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-slate-100">
+                <div id="quiz-ui">
+                    <div class="flex justify-between items-center mb-8 border-b pb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold">Concept Check Quiz</h2>
+                            <p class="text-slate-500 text-sm" id="q-count">Question 1 of 10</p>
+                        </div>
+                        <div class="flex flex-col items-end">
+                            <button onclick="resetQuiz()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold mb-2 transition">
+                                ↺ Reset Quiz
+                            </button>
+                            <div class="h-2 w-32 bg-slate-100 rounded-full overflow-hidden">
+                                <div id="q-progress" class="h-full bg-blue-600 transition-all" style="width: 10%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-6 pt-4">
+                        <p id="q-text" class="text-lg font-semibold leading-snug">Loading quiz question...</p>
+                        <div id="q-options" class="grid grid-cols-1 gap-3"></div>
+                        <div id="q-feedback" class="hidden p-4 rounded-xl text-sm border-l-4 shadow-sm"></div>
+                        <button id="q-next" onclick="nextQuestion()" class="hidden w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-black transition shadow-lg mt-6">Next Question</button>
+                    </div>
+                </div>
+                <div id="quiz-results-container" class="hidden text-center py-10 space-y-6">
+                    <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center mx-auto text-blue-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <h2 class="text-4xl font-bold text-blue-600">Score: <span id="final-score">0</span> / 10</h2>
+                    <p class="text-slate-600 font-medium">Session Complete! Want to try another 10 random questions?</p>
+                    <button onclick="resetQuiz()" class="px-10 py-4 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition transform hover:scale-105">
+                        New Random Set
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ==================== 8. CHECKLIST SECTION ==================== -->
+        <section id="tab-list" class="tab-content hidden space-y-6">
+            <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Master Syllabus Checklist</h2>
+                    <p class="text-slate-500 text-sm">Track your progress across all Option A topics. Includes IB Teacher Notes.</p>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">
+                        <span id="checked-count">0</span> / <span id="total-checklist">0</span>
+                    </div>
+                    <div class="text-[10px] uppercase font-bold text-slate-400">Completed</div>
+                </div>
+            </div>
+            
+            <div id="checklist-container" class="space-y-6"></div>
+        </section>
+    </main>
+
+    <script>
+        // ==================== DATA SOURCES (OFFICIALLY VALIDATED 2014) ====================
+
+        const syllabusData = [
+            { section: "A.1 Basic concepts", items: [
+                { id: "A.1.1", text: "Outline the differences between data and information.", tn: "Data has no meaning on its own; Information is processed data in context." },
+                { id: "A.1.2", text: "Outline the differences between an information system and a database.", tn: "A database is a component of an IS. An IS also includes people, hardware, software, and networks." },
+                { id: "A.1.3", text: "Discuss the need for databases.", tn: "Focus on data sharing, reducing redundancy, improving data integrity/consistency, and security." },
+                { id: "A.1.4", text: "Describe the use of transactions, including ACID properties.", tn: "ACID = Atomicity, Consistency, Isolation, Durability. Essential for reliable operations." },
+                { id: "A.1.5", text: "Explain the functions of a DBMS.", tn: "Includes data dictionary management, data storage, security, concurrency, and recovery." },
+                { id: "A.1.6", text: "Describe the role of the database administrator (DBA).", tn: "Responsible for authorization, access control, schema design, and disaster recovery." }
+            ]},
+            { section: "A.2 The relational database model", items: [
+                { id: "A.2.1", text: "Define: table, record, field, primary key, secondary key, foreign key, candidate key, composite primary key, join.", tn: "Know the exact definitions. Secondary key is used for searching; Candidate key is a potential PK." },
+                { id: "A.2.2", text: "Identify the different types of relationships: 1:1, 1:M, M:M.", tn: "M:M relationships cannot be directly implemented in a relational DB; they require a junction table." },
+                { id: "A.2.3", text: "Define the term database schema.", tn: "The logical structure and organization of the database." },
+                { id: "A.2.4", text: "Identify characteristics of the three schema levels: conceptual, logical, physical.", tn: "Physical = storage; Logical = tables/fields; Conceptual = enterprise-wide logical view." },
+                { id: "A.2.5", text: "Describe the nature of the data dictionary.", tn: "A system file storing metadata (data about data)." },
+                { id: "A.2.6", text: "Explain the importance of a data dictionary.", tn: "Ensures consistency, helps developers, enforces data types and constraints." },
+                { id: "A.2.7", text: "Define the term data modeling.", tn: "Creating a visual representation of data structures (e.g., ERDs)." },
+                { id: "A.2.8", text: "Construct an ERD for a given scenario.", tn: "Use standard notation (boxes for entities, lines for relationships)." },
+                { id: "A.2.9", text: "Outline the importance of data modeling in DB design.", tn: "Reduces errors, improves communication with users, creates a blueprint before coding." },
+                { id: "A.2.10", text: "Describe the differences between 1NF, 2NF and 3NF.", tn: "1NF=Atomic. 2NF=No partial dependencies. 3NF=No transitive dependencies." },
+                { id: "A.2.11", text: "Explain the importance of normalization.", tn: "Minimizes redundancy and prevents update, insertion, and deletion anomalies." },
+                { id: "A.2.12", text: "Normalize a database to 3NF.", tn: "Be able to systematically apply 1NF, 2NF, 3NF rules to flat files." },
+                { id: "A.2.13", text: "Construct an ERD to level 3NF.", tn: "Ensure the visual diagram reflects the normalized tables." },
+                { id: "A.2.14", text: "Construct a relational database to 3NF.", tn: "Translating the ERD/Normal forms into final table schemas." }
+            ]},
+            { section: "A.3 Database operations", items: [
+                { id: "A.3.1", text: "Identify different types of queries.", tn: "Simple, complex, single-table, multi-table (joins)." },
+                { id: "A.3.2", text: "Construct query steps.", tn: "Use Boolean logic (AND, OR, NOT) to describe how a query filters data." },
+                { id: "A.3.3", text: "Explain functions of DDL and DML.", tn: "DDL defines schema (CREATE, ALTER). DML manipulates data (INSERT, UPDATE, SELECT)." },
+                { id: "A.3.4", text: "Explain the difference between data validation and data verification.", tn: "Validation checks if data is logical/allowed (by computer). Verification checks if it's true to source (by human)." },
+                { id: "A.3.5", text: "Explain the need for concurrency in database operations.", tn: "Allows multiple users to access data simultaneously without creating bottlenecks." },
+                { id: "A.3.6", text: "Describe methods of concurrency control.", tn: "Record locking prevents 'lost update' anomalies." },
+                { id: "A.3.7", text: "Explain the need for database recovery.", tn: "To protect against hardware failure, software crashes, or malicious attacks." },
+                { id: "A.3.8", text: "Describe methods of database recovery.", tn: "Use of transaction logs (redo/undo) and deferred updates." },
+                { id: "A.3.9", text: "Explain the need for database security.", tn: "Protecting sensitive personal and corporate data from unauthorized access." },
+                { id: "A.3.10", text: "Describe methods of database security.", tn: "Access rights, audit trails, encryption, and Views." },
+                { id: "A.3.11", text: "Evaluate the need for denormalization.", tn: "Trade-off: Speeds up read queries by reducing joins, but increases redundancy and anomaly risk." }
+            ]},
+            { section: "A.4 Databases & related concepts (HL)", items: [
+                { id: "A.4.1", text: "Differences between relational and object-oriented models.", tn: "OODBMS encapsulates data and methods, handles complex data better than flat relational tables." },
+                { id: "A.4.2", text: "Describe the use of spatial databases.", tn: "Stores geometric space data (points, lines, polygons) using R-trees for GIS applications." },
+                { id: "A.4.3", text: "Describe the nature of a data warehouse.", tn: "Subject-oriented, integrated, time-variant, non-volatile collection of data." },
+                { id: "A.4.4", text: "Explain the need for the ETL process.", tn: "Data must be cleaned and standardized before entering a warehouse to ensure accurate analysis." },
+                { id: "A.4.5", text: "Describe the ETL processes.", tn: "Extract from sources, Transform (clean/scrub), Load into warehouse." },
+                { id: "A.4.6", text: "Describe the purpose of data mining.", tn: "To discover hidden patterns and predict future trends from large datasets." },
+                { id: "A.4.7", text: "Compare data mining techniques.", tn: "Cluster analysis, classification, association analysis (market basket), deviation detection." },
+                { id: "A.4.8", text: "Describe the use of predictive modeling.", tn: "Using historical data to predict future outcomes." },
+                { id: "A.4.9", text: "Describe the use of link analysis.", tn: "Discovering relationships between nodes (e.g., social networks, crime rings)." },
+                { id: "A.4.10", text: "Discuss social and ethical issues associated with data mining.", tn: "Privacy concerns, consent, data ownership, algorithmic bias." }
+            ]}
+        ];
+
+        const glossary = [
+            { term: "Atomic Value", def: "A value that cannot be subdivided further (1NF requirement)." },
+            { term: "DQL", def: "Data Query Language: Sub-language of SQL used for data retrieval (SELECT)." },
+            { term: "DCL", def: "Data Control Language: Sub-language used for permissions (GRANT, REVOKE)." },
+            { term: "TCL", def: "Transaction Control Language: Sub-language used to manage ACID (COMMIT, ROLLBACK)." },
+            { term: "Insertion Anomaly", def: "Inability to add data without unrelated data in unnormalized tables." },
+            { term: "Deletion Anomaly", def: "Loss of unintended data when a record is deleted." },
+            { term: "Update Anomaly", def: "Inconsistency caused by redundant data instances when one instance is edited." },
+            { term: "Referential Integrity", def: "Constraint ensuring foreign keys point to valid primary keys." },
+            { term: "Data Warehouse", def: "Subject-oriented, non-volatile database for analysis (HL)." },
+            { term: "Deviation Detection", def: "Identifying patterns that fall outside the historical norm (HL)." },
+            { term: "Link Analysis", def: "Evaluating associations between nodes in a dataset (HL)." },
+            { term: "Non-volatile", def: "Characteristic of data warehouses where data is permanent once loaded (HL)." },
+            { term: "Spatial Database", def: "Optimized for geometric space (points, polygons) using R-Trees (HL)." },
+            { term: "Attribute", def: "A single piece of data (column) describing an entity in a relational table." },
+            { term: "Tuple", def: "A formal term for a single record (row) in a database table." },
+            { term: "Primary Key", def: "A unique identifier for a record in a table." },
+            { term: "Foreign Key", def: "A field that creates a relationship by referring to the PK of another table." },
+            { term: "Composite Key", def: "A primary key composed of two or more attributes to ensure uniqueness." },
+            { term: "Candidate Key", def: "Any minimal set of attributes that could uniquely identify a record." },
+            { term: "Secondary Key", def: "A non-identifying field used for fast indexing/retrieval (e.g., Surname)." },
+            { term: "Data Dictionary", def: "System file containing metadata about the DB (fields, types, constraints)." },
+            { term: "Data Validation", def: "Computer check to ensure data is logical and allowed (e.g., Range check)." },
+            { term: "Data Verification", def: "Human check to ensure data matches original source (e.g., Double entry)." },
+            { term: "Information System", def: "A system combining hardware, software, people, networks, and the database itself." },
+            { term: "Normalization", def: "The process of organizing data into tables to reduce redundancy and anomalies." },
+            { term: "1NF", def: "First Normal Form: Requires atomic values and no repeating groups." },
+            { term: "2NF", def: "Second Normal Form: In 1NF + no partial functional dependencies on composite keys." },
+            { term: "3NF", def: "Third Normal Form: In 2NF + no transitive dependencies (non-key to non-key)." },
+            { term: "ACID", def: "Atomicity, Consistency, Isolation, Durability: Properties for reliable transactions." },
+            { term: "Concurrency", def: "Simultaneous access to data by multiple users/processes." },
+            { term: "Locking", def: "A mechanism preventing users from editing a record while it is being updated." },
+            { term: "ETL", def: "Extract, Transform, Load: Moving and cleaning data for a warehouse (HL)." },
+            { term: "Data Mining", def: "Discovering patterns/correlations in large datasets using automation (HL)." },
+            { term: "OODBMS", def: "Object-Oriented Database: stores complex data as objects with methods (HL)." },
+            { term: "DDL", def: "Data Definition Language (CREATE, ALTER, DROP) - structure focused." },
+            { term: "DML", def: "Data Manipulation Language (SELECT, INSERT, UPDATE, DELETE) - data focused." },
+            { term: "DBA", def: "Database Administrator: manages performance, security, schema, and recovery." },
+            { term: "Transaction Log", def: "A file recording all DB changes, used for redo/undo in recovery." }
+        ];
+
+        const fullQuizData = [
+            { q: "Which SQL sub-language deals with access privileges and permissions?", a: ["DML", "DQL", "DCL", "TCL"], c: 2, e: "DCL (Data Control Language) includes GRANT and REVOKE." },
+            { q: "What anomaly occurs when deleting a student also deletes the only record of a course?", a: ["Update", "Insertion", "Deletion", "Referential"], c: 2, e: "This is a Deletion Anomaly." },
+            { q: "Which property ensures a transaction is all-or-nothing?", a: ["Consistency", "Durability", "Isolation", "Atomicity"], c: 3, e: "Atomicity ensures partial completions are rolled back." },
+            { q: "Which normal form requires removing transitive dependencies?", a: ["1NF", "2NF", "3NF", "BCNF"], c: 2, e: "3NF is about non-key attributes depending on other non-key attributes." },
+            { q: "What is a 'Tuple' in relational database terminology?", a: ["A Table", "A Column", "A Row/Record", "A Key"], c: 2, e: "Tuple is the formal name for a row." },
+            { q: "Which schema level defines how data is stored on disk?", a: ["Conceptual", "Logical", "Physical", "External"], c: 2, e: "Physical schema handles storage details." },
+            { q: "A Primary Key composed of two or more fields is called a:", a: ["Foreign Key", "Candidate Key", "Composite Key", "Secondary Key"], c: 2, e: "Composite keys use multiple attributes for uniqueness." },
+            { q: "Which SQL keyword is used to save changes permanently?", a: ["SAVE", "COMMIT", "ROLLBACK", "FINISH"], c: 1, e: "COMMIT is part of TCL." },
+            { q: "In ETL, what does the 'T' stand for?", a: ["Transfer", "Translate", "Transform", "Transaction"], c: 2, e: "Transform involves cleaning and formatting data." },
+            { q: "Which data mining technique groups records without using pre-defined labels?", a: ["Classification", "Clustering", "Association", "Forecasting"], c: 1, e: "Clustering finds natural groupings." },
+            { q: "Which property prevents two transactions from interfering with each other?", a: ["Durability", "Atomicity", "Isolation", "Consistency"], c: 2, e: "Isolation ensures serializability." },
+            { q: "What is a characteristic of a Data Warehouse?", a: ["Volatile", "Real-time only", "Non-volatile", "Normalized to 3NF"], c: 2, e: "Warehouses are non-volatile (permanent data)." },
+            { q: "Which normal form requires atomic values?", a: ["1NF", "2NF", "3NF", "0NF"], c: 0, e: "1NF removes repeating groups." },
+            { q: "What is the primary role of a DBA?", a: ["Write code", "Design UI", "Manage and secure the DB", "Analyze sales"], c: 2, e: "Database Administrators manage performance, schemas, and security." },
+            { q: "Which SQL sub-language uses SELECT?", a: ["DDL", "DQL", "DCL", "TCL"], c: 1, e: "DQL is Data Query Language." },
+            { q: "What ensures a foreign key value always exists in the parent table?", a: ["Entity Integrity", "Normalization", "Referential Integrity", "Encryption"], c: 2, e: "Referential Integrity links tables safely." },
+            { q: "In 2NF, we remove dependencies on part of a composite key. These are called:", a: ["Transitive", "Partial", "Direct", "Circular"], c: 1, e: "Partial dependencies violate 2NF." },
+            { q: "Which model uses a tree-like structure with one parent per record?", a: ["Relational", "Network", "Hierarchical", "Object-Oriented"], c: 2, e: "Hierarchical is a tree." },
+            { q: "What is the purpose of denormalization?", a: ["Save space", "Improve read performance", "Remove 1NF", "Ensure 3NF"], c: 1, e: "Denormalization reduces joins to speed up reads." },
+            { q: "Which ACID property ensures data remains valid after a transaction?", a: ["Atomicity", "Consistency", "Isolation", "Durability"], c: 1, e: "Consistency ensures constraints are met." },
+            { q: "What is 'data scrubbing'?", a: ["Deleting data", "Cleaning data for ETL", "Encrypting rows", "Indexing"], c: 1, e: "Scrubbing fixes errors during transformation." },
+            { q: "Which technique predicts future numerical values based on past trends?", a: ["Classification", "Association", "Forecasting", "Link Analysis"], c: 2, e: "Forecasting is trend prediction." },
+            { q: "What prevents a dead-lock in a multi-user database?", a: ["Schemas", "Normalization", "Concurrency Control/Locking", "SQL"], c: 2, e: "Locking manages simultaneous access." },
+            { q: "Which SQL command is DDL?", a: ["INSERT", "UPDATE", "ALTER", "SELECT"], c: 2, e: "ALTER changes table structure." },
+            { q: "What is an OODBMS?", a: ["Online Database", "Object-Oriented DBMS", "Orderly Database", "Oracle DB"], c: 1, e: "Stores objects directly, combining data and methods." },
+            { q: "What is an 'Attribute' in relational DBs?", a: ["Row", "Column", "Table", "Constraint"], c: 1, e: "Attributes are columns." },
+            { q: "Which mining technique finds 'if-then' correlations?", a: ["Clustering", "Association", "Deviation", "Link Analysis"], c: 1, e: "Market basket analysis is association mining." },
+            { q: "What is 'non-volatile' data?", a: ["Data that changes often", "Data that is permanent/read-only", "Dangerous data", "Encrypted data"], c: 1, e: "Common in warehouses." },
+            { q: "Which database component stores metadata like table definitions and constraints?", a: ["Data Warehouse", "Data Dictionary", "Transaction Log", "View"], c: 1, e: "The Data Dictionary defines the structure and rules." },
+            { q: "What type of check ensures data falls between 1 and 10?", a: ["Validation", "Verification", "Normalization", "Scrubbing"], c: 0, e: "This is a Range Check, which is a Validation technique." },
+            { q: "Which process uses double-entry to ensure data matches the original source exactly?", a: ["Validation", "Verification", "ETL", "Locking"], c: 1, e: "Verification is a human-led proofing process." },
+            { q: "Which property guarantees committed data is not lost even during power failure?", a: ["Atomicity", "Consistency", "Isolation", "Durability"], c: 3, e: "Durability uses logs to persist data." },
+            { q: "A 'secondary key' is used for:", a: ["Unique ID", "Linking tables", "Fast searching on non-PK fields", "Encryption"], c: 2, e: "It acts as a search index." },
+            { q: "Which anomaly occurs when you can't add a teacher until they have a class?", a: ["Insertion", "Deletion", "Update", "Referential"], c: 0, e: "Insertion anomaly." },
+            { q: "What is the 'conceptual schema'?", a: ["Bit storage", "Business logic/logical structure", "User interface", "SQL code"], c: 1, e: "It defines the high-level logic, independent of the software." },
+            { q: "Which SQL command removes a table entirely?", a: ["DELETE", "TRUNCATE", "DROP", "REMOVE"], c: 2, e: "DROP is DDL." },
+            { q: "What is the purpose of a junction table?", a: ["Resolve M:M relationships", "Speed up queries", "Store 3NF data", "Link 1:1"], c: 0, e: "Intersection/Junction tables resolve Many-to-Many ties." },
+            { q: "Which mining technique assigns a record to a predefined category?", a: ["Clustering", "Classification", "Association", "Deviation"], c: 1, e: "Classification uses historical labels." },
+            { q: "What is 'concurrency'?", a: ["Data speed", "Multiple users sharing access", "Data accuracy", "Key uniqueness"], c: 1, e: "Simultaneous access." },
+            { q: "Which SQL keyword filters grouped results?", a: ["WHERE", "FILTER", "HAVING", "LIMIT"], c: 2, e: "HAVING works after GROUP BY." },
+            { q: "What is a 'Candidate Key'?", a: ["A secondary key", "Any minimal set of attributes that could be a PK", "A foreign key", "A password"], c: 1, e: "Minimal superkeys." },
+            { q: "Which normal form requires 1NF and no partial dependencies?", a: ["2NF", "3NF", "BCNF", "4NF"], c: 0, e: "Goal of 2nd Normal Form." },
+            { q: "Which mining technique detects fraud or outliers?", a: ["Forecasting", "Classification", "Deviation Detection", "Clustering"], c: 2, e: "Finds the 'strange' records." },
+            { q: "What is the difference between data and information?", a: ["Data is context; Info is raw", "Data is raw; Info is processed", "No difference", "Data is HL; Info is SL"], c: 1, e: "Information is data with meaning/context." },
+            { q: "What is 'referential integrity'?", a: ["PK is unique", "FK matches a valid PK", "Data is encrypted", "1NF"], c: 1, e: "Links tables reliably." },
+            { q: "Which model allows a record to have multiple parents?", a: ["Relational", "Hierarchical", "Network", "Flat File"], c: 2, e: "Network model uses graphs." },
+            { q: "What is a 'Transaction'?", a: ["Payment", "Unit of work in a DB", "A query", "Normalization"], c: 1, e: "A sequence of operations treated as one." },
+            { q: "Which SQL clause joins tables?", a: ["SELECT", "FROM", "WHERE", "JOIN"], c: 3, e: "You can JOIN in the FROM clause or link PK=FK in WHERE." },
+            { q: "What anomaly is solved by removing redundant name copies in multiple rows?", a: ["Insertion", "Deletion", "Update", "Referential"], c: 2, e: "Update anomaly." },
+            { q: "What is a 'view' in SQL?", a: ["A table", "A virtual table based on a query", "The GUI", "A key"], c: 1, e: "Used for security and simplification." }
+        ];
+
+        const examQuestions = [
+            { q: "Define the term database transaction.", marks: 1, ms: "• A logical unit of work executed in full or not at all.<br>• A change in the database state." },
+            { q: "Outline two reasons why an organization would use a database to store information rather than a spreadsheet.", marks: 4, ms: "Award up to [4 max].<br>• Data can be structured/normalized to maintain data integrity/consistency;<br>• Databases allow data to be integrated from multiple sources;<br>• Concurrency can be ensured so multiple users can make changes at the same time;<br>• A database can load from storage only the data needed, whereas a spreadsheet loads all data into RAM;<br>• Data can be searched/queried by multiple fields using advanced SQL;<br>• Databases allow the creation of views to improve data privacy." },
+            { q: "Explain the importance of durability in a database transaction.", marks: 2, ms: "Award up to [2 max].<br>• Durability ensures that once a transaction is committed, its changes to the database are permanent;<br>• The changes survive even in the event of system failures, power outages, or crashes (guaranteeing reliability)." },
+            { q: "Describe two methods of database recovery that a database administrator can carry out.", marks: 4, ms: "Award [2] per method, up to [4 max].<br>• Backup and Restore [1]: The DBA restores the database from periodic backups using BACKUP and RESTORE commands [1].<br>• Log Recovery / Point in time [1]: Backup is recorded in log files; if a failure occurs, the database is reverted, and transactions after that point are redone [1].<br>• Deferred update [1]: Changes are only written to the log until fully committed, preventing partial writes [1]." },
+            { q: "Outline two ways that a database management system (DBMS) can be used to ensure personal data remains secure.", marks: 4, ms: "Award [2] per method, up to [4 max].<br>• Access control levels [1]: Administrators can see everything, while standard users can see very little based on their role [1].<br>• Maintaining data anonymity/masking [1]: Personally identifiable information (PII) is located in a separate table and linked via a unique identifier to protect identity [1].<br>• Encryption [1]: Data is scrambled so that if intercepted it cannot be read [1]." },
+            { q: "Outline why a table containing a field with multiple values in a single cell (e.g. 'Math, CS') is not in 1st Normal Form (1NF).", marks: 2, ms: "Award up to [2 max].<br>• 1NF requires atomic values (values that cannot be subdivided further);<br>• Repeating data/multiple values in a single cell violates this rule." },
+            { q: "Explain why queries would be used to create views of a database.", marks: 3, ms: "Award up to [3 max].<br>• Views act as 'virtual tables' that can combine data from two or more tables using joins;<br>• They hide complicated queries and improve security by giving users access to a view without giving access to the underlying tables;<br>• Views automatically update (dynamic) as the data in the tables change." },
+            { q: "Identify the steps to create a query to calculate the total number of sites where 'gorse' has been found from samples on 14 October 2019.", marks: 4, ms: "Award up to [4 max].<br>• Step 1: Identify the necessary tables (e.g., Plant and Distribution) [1];<br>• Step 2: Link them on their foreign/primary keys (Plant.Plant_ID = Distribution.Plant_ID) [1];<br>• Step 3: Apply filtering conditions (WHERE Species = 'Gorse' AND Date = '14/10/2019') [1];<br>• Step 4: Use the aggregate function COUNT on the Site_ID column [1]." },
+            { q: "Explain how a database management system (DBMS) prevents a record from being updated by two users simultaneously.", marks: 3, ms: "Award up to [3 max].<br>• The DBMS applies a lock to the record/table while it is being edited;<br>• Other users must wait until the lock is released (transaction committed or rolled back) before they can write to it;<br>• This ensures concurrency control and prevents 'lost updates'." },
+            { q: "(HL Extension) Explain why data from individual retailers is transformed before it is loaded into a data warehouse.", marks: 3, ms: "Award up to [3 max].<br>• Transformation cleans and standardizes data formats from disparate sources (Data Scrubbing);<br>• It resolves inconsistencies (e.g., standardizing 'Male' to 'M');<br>• It handles missing values and removes duplicates to ensure data quality in the warehouse for complex OLAP queries." }
+        ];
+
+        // ==================== CORE LOGIC ====================
+        let activeQuestions = [];
+        let currentQ = 0, score = 0;
+
+        function showTab(tab) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('tab-active', 'text-blue-600'));
+            document.getElementById('btn-' + tab).classList.add('tab-active', 'text-blue-600');
+            
+            if(tab === 'vocab') renderVocab();
+            if(tab === 'list') renderChecklist();
+            if(tab === 'exam') renderExam();
+            if(tab === 'quiz' && activeQuestions.length === 0) resetQuiz();
+            if(tab === 'norm') setNormStep(0);
+        }
+
+        // ==================== EXAM PRACTICE LOGIC ====================
+        function renderExam() {
+            const container = document.getElementById('exam-container');
+            if (!container) return;
+            if (container.innerHTML.trim() !== "") return;
+
+            let html = "";
+            examQuestions.forEach((item, index) => {
+                html += `
+                <div class="bg-white rounded-xl border border-slate-200 p-6 print-border">
+                    <div class="flex justify-between items-start mb-3">
+                        <h3 class="font-bold text-slate-800 text-lg">Question ${index + 1}</h3>
+                        <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded text-xs font-bold">[${item.marks} marks]</span>
+                    </div>
+                    <p class="text-sm text-slate-800 mb-4 leading-relaxed">${item.q}</p>
+                    
+                    <textarea oninput="this.setAttribute('data-val', this.value)" class="w-full border border-slate-300 rounded-lg p-4 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-4 text-blue-800" rows="${item.marks + 1}" placeholder="Write your answer here..."></textarea>
+                    
+                    <button onclick="toggleMarkscheme(${index})" class="text-xs bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-2 rounded-lg font-bold hover:bg-emerald-100 transition no-print">
+                        Show Markscheme
+                    </button>
+                    
+                    <div id="ms-${index}" class="markscheme-container hidden mt-4 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
+                        <p class="text-[10px] font-black text-green-700 uppercase tracking-widest mb-2">Official Markscheme</p>
+                        <p class="text-sm text-green-900 leading-relaxed">${item.ms}</p>
+                    </div>
+                </div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function toggleMarkscheme(index) {
+            const ms = document.getElementById(`ms-${index}`);
+            if(ms) ms.classList.toggle('hidden');
+        }
+
+        function printExam() {
+            examQuestions.forEach((_, index) => {
+                const ms = document.getElementById(`ms-${index}`);
+                if(ms) ms.classList.remove('hidden');
+            });
+            document.querySelectorAll('#exam-container textarea').forEach(ta => {
+                ta.innerHTML = ta.value;
+            });
+            window.print();
+        }
+
+        // ==================== CHECKLIST LOGIC ====================
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            if (!container) return;
+            
+            let totalItems = 0;
+            syllabusData.forEach(sec => totalItems += sec.items.length);
+            const totalEl = document.getElementById('total-checklist');
+            if(totalEl) totalEl.innerText = totalItems;
+
+            if (container.innerHTML.trim() !== "") return;
+
+            let html = "";
+            syllabusData.forEach(sec => {
+                html += `
+                <div class="bg-white rounded-xl border border-slate-200 p-6">
+                    <h3 class="font-bold text-slate-800 mb-4 border-b pb-2">${sec.section}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">`;
+                sec.items.forEach(item => {
+                    html += `
+                        <label class="checklist-item flex flex-col p-4 bg-slate-50 rounded-lg border border-slate-100 cursor-pointer shadow-sm hover:border-blue-400 transition">
+                            <div class="flex items-start">
+                                <input type="checkbox" onchange="updateCount()" class="mt-1 w-4 h-4 rounded border-slate-300 text-blue-600 mr-3 flex-shrink-0">
+                                <div>
+                                    <span class="text-[10px] font-black text-blue-600 uppercase block mb-0.5">${item.id}</span>
+                                    <p class="text-[12px] font-bold text-slate-800 leading-tight">${item.text}</p>
+                                    <p class="text-[10px] text-slate-500 mt-2 italic border-l-2 border-slate-300 pl-2 teacher-note"><strong>TN:</strong> ${item.tn}</p>
+                                </div>
+                            </div>
+                        </label>`;
+                });
+                html += `</div></div>`;
+            });
+            container.innerHTML = html;
+        }
+
+        function updateCount() {
+            const countEl = document.getElementById('checked-count');
+            if(countEl) countEl.innerText = document.querySelectorAll('#checklist-container input:checked').length;
+        }
+
+        // ==================== GLOSSARY LOGIC ====================
+        function renderVocab() {
+            const list = document.getElementById('vocabList');
+            if (!list || list.innerHTML.trim() !== "") return;
+            list.innerHTML = glossary.sort((a,b) => a.term.localeCompare(b.term)).map(i => `<div class="p-5 hover:bg-slate-50 transition vocab-item"><h3 class="font-bold text-blue-600 mb-1 text-sm">${i.term}</h3><p class="text-slate-600 text-[11px] leading-relaxed">${i.def}</p></div>`).join('');
+        }
+
+        function filterVocab() {
+            const q = document.getElementById('vocabSearch').value.toLowerCase();
+            document.querySelectorAll('.vocab-item').forEach(item => item.style.display = item.innerText.toLowerCase().includes(q) ? 'block' : 'none');
+        }
+
+        // ==================== QUIZ LOGIC ====================
+        function resetQuiz() {
+            currentQ = 0;
+            score = 0;
+            activeQuestions = [...fullQuizData].sort(() => 0.5 - Math.random()).slice(0, 10);
+            
+            const ui = document.getElementById('quiz-ui');
+            const res = document.getElementById('quiz-results-container');
+            if(ui) ui.classList.remove('hidden');
+            if(res) res.classList.add('hidden');
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            if(!activeQuestions.length) return;
+            const q = activeQuestions[currentQ];
+            
+            document.getElementById('q-count').innerText = `Question ${currentQ + 1} of 10`;
+            document.getElementById('q-progress').style.width = `${((currentQ + 1)/10)*100}%`;
+            document.getElementById('q-text').innerText = q.q;
+            
+            document.getElementById('q-feedback').classList.add('hidden');
+            document.getElementById('q-next').classList.add('hidden');
+            
+            document.getElementById('q-options').innerHTML = q.a.map((opt, idx) => `<button onclick="checkAnswer(${idx})" class="opt-btn w-full text-left p-4 border rounded-xl hover:bg-blue-50 text-sm font-medium transition shadow-sm">${opt}</button>`).join('');
+        }
+
+        function checkAnswer(idx) {
+            const q = activeQuestions[currentQ];
+            const buttons = document.querySelectorAll('.opt-btn');
+            buttons.forEach(b => b.disabled = true);
+            
+            const feedback = document.getElementById('q-feedback');
+            feedback.classList.remove('hidden');
+            feedback.innerText = q.e;
+            
+            if (idx === q.c) {
+                buttons[idx].classList.add('bg-green-50', 'border-green-500', 'text-green-700', 'ring-2', 'ring-green-200');
+                feedback.className = 'p-4 rounded-xl text-xs border-l-4 bg-green-50 text-green-800 border-green-500 shadow-sm mt-4';
+                score++;
+            } else {
+                buttons[idx].classList.add('bg-red-50', 'border-red-500', 'text-red-700');
+                buttons[q.c].classList.add('bg-green-50', 'border-green-500', 'text-green-700', 'font-bold');
+                feedback.className = 'p-4 rounded-xl text-xs border-l-4 bg-blue-50 text-blue-800 border-blue-500 shadow-sm mt-4';
+            }
+            document.getElementById('q-next').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQ++;
+            if (currentQ < 10) {
+                loadQuestion();
+            } else {
+                document.getElementById('quiz-ui').classList.add('hidden');
+                document.getElementById('quiz-results-container').classList.remove('hidden');
+                document.getElementById('final-score').innerText = score;
+            }
+        }
+
+        // ==================== NORM LAB LOGIC ====================
+        const normSteps = [
+            { step: 0, desc: "<strong>0NF (Unnormalized):</strong> Notice how 'Courses' and 'Teachers' contain multi-valued attributes in one cell. This causes <strong>Insertion Anomalies</strong>.", tables: [{ name: "Master_Registration", headers: ["StudentID", "StudentName", "Courses", "Teachers", "Rooms"], rows: [["S101", "Alice", "CS1, MATH1", "Mr. X, Ms. Y", "R10, R11"], ["S102", "Bob", "CS1", "Mr. X", "R10"]], highlight: [2, 3, 4] }] },
+            { step: 1, desc: "<strong>1NF:</strong> Atoms only. We split multi-valued cells into new rows. A <strong>Composite Key</strong> (StudentID + CourseID) is now mandatory.", tables: [{ name: "Registration_1NF", headers: ["StudentID (PK)", "CourseID (PK)", "StudentName", "Teacher", "Room"], rows: [["S101", "CS1", "Alice", "Mr. X", "R10"], ["S101", "MATH1", "Alice", "Ms. Y", "R11"], ["S102", "CS1", "Bob", "Mr. X", "R10"]], highlight: [0, 1] }] },
+            { step: 2, desc: "<strong>2NF:</strong> Removing <strong>Partial Dependencies</strong>. StudentName only depends on StudentID. We split the table.", tables: [{ name: "STUDENTS", headers: ["StudentID (PK)", "StudentName"], rows: [["S101", "Alice"], ["S102", "Bob"]] }, { name: "COURSES", headers: ["CourseID (PK)", "Teacher", "Room"], rows: [["CS1", "Mr. X", "R10"], ["MATH1", "Ms. Y", "R11"]] }, { name: "ENROLLMENT (Links)", headers: ["StudentID (FK)", "CourseID (FK)"], rows: [["S101", "CS1"], ["S101", "MATH1"], ["S102", "CS1"]] }] },
+            { step: 3, desc: "<strong>3NF:</strong> Removing <strong>Transitive Dependencies</strong>. Room depends on Teacher, not on the CourseID. Teachers move to their own relation.", tables: [{ name: "STUDENTS", headers: ["StudentID (PK)", "StudentName"], rows: [["S101", "Alice"], ["S102", "Bob"]] }, { name: "TEACHERS", headers: ["TeacherID (PK)", "TeacherName", "Room"], rows: [["T1", "Mr. X", "R10"], ["T2", "Ms. Y", "R11"]] }, { name: "COURSES", headers: ["CourseID (PK)", "TeacherID (FK)"], rows: [["CS1", "T1"], ["MATH1", "T2"]] }] }
+        ];
+
+        function setNormStep(step) {
+            document.querySelectorAll('.norm-step-btn').forEach(b => b.className = 'norm-step-btn px-4 py-2 rounded-lg text-sm font-bold text-slate-500 hover:bg-slate-200');
+            document.getElementById('step-' + step).className = 'norm-step-btn px-4 py-2 rounded-lg text-sm font-bold bg-white shadow-sm text-blue-600';
+            const data = normSteps[step];
+            document.getElementById('norm-explanation').innerHTML = data.desc;
+            const container = document.getElementById('norm-tables');
+            if(!container) return;
+            container.innerHTML = data.tables.map(t => `
+                <div class="space-y-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                    <h5 class="text-[11px] font-bold text-slate-500 uppercase tracking-widest flex items-center">
+                        <span class="w-1.5 h-4 bg-blue-600 rounded-full mr-2"></span>Table: ${t.name}
+                    </h5>
+                    <table class="w-full border-collapse border border-slate-200 rounded-lg overflow-hidden text-[10px] shadow-sm">
+                        <thead class="bg-slate-100">
+                            <tr>${t.headers.map((h, i) => `<th class="border border-slate-200 p-3 text-left ${t.highlight?.includes(i) ? 'bg-yellow-50 text-yellow-800 border-b-yellow-400' : ''}">${h}</th>`).join('')}</tr>
+                        </thead>
+                        <tbody class="bg-white">${t.rows.map(r => `<tr>${r.map((c, i) => `<td class="border border-slate-200 p-3 ${t.highlight?.includes(i) ? 'bg-yellow-50/50 font-bold' : ''}">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+                    </table>
+                </div>`).join('');
+        }
+
+        window.onload = () => showTab('guides');
+    </script>
+</body>
+</html>

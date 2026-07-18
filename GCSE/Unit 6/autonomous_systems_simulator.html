@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autonomous Systems Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes dash {
+            to { stroke-dashoffset: -16; }
+        }
+        .animate-dash {
+            animation: dash 1s linear infinite;
+        }
+        
+        /* Hide scrollbar for cleaner look if content overflows slightly */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 font-sans min-h-screen p-4 md:p-8 flex flex-col items-center overflow-x-hidden">
+
+    <header class="max-w-5xl w-full flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
+                Autonomous Systems Simulator
+            </h1>
+            <p class="text-slate-400 text-sm mt-1">Explore Open vs. Closed Loop Control Systems</p>
+        </div>
+        
+        <!-- Scenario Selection -->
+        <div class="flex bg-slate-900 p-1 rounded-lg border border-slate-800" id="scenario-buttons">
+            <!-- Buttons are populated by JS -->
+        </div>
+    </header>
+
+    <div class="max-w-5xl w-full grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Left Column: Explanations & Controls -->
+        <div class="col-span-1 space-y-6">
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl relative overflow-hidden">
+                <div id="type-indicator-bar" class="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
+                <div class="flex justify-between items-start mb-4">
+                    <h2 id="scenario-title" class="text-xl font-bold text-white">Smart Greenhouse</h2>
+                    <span id="scenario-type-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400">
+                        Closed Loop
+                    </span>
+                </div>
+                <p id="scenario-desc" class="text-slate-400 text-sm leading-relaxed mb-6">
+                    <!-- Description goes here -->
+                </p>
+                
+                <div class="space-y-4">
+                    <div class="bg-slate-950 p-4 rounded-lg border border-slate-800">
+                        <h3 class="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-2">Microprocessor Logic</h3>
+                        <pre id="mcu-code" class="font-mono text-xs text-cyan-300 whitespace-pre-wrap">
+                            <!-- Code goes here -->
+                        </pre>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="btn-pause" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2">
+                            ⏸ Pause
+                        </button>
+                        <button id="btn-disturb" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2" title="Manually disrupt the environment to see how the system reacts">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.59-9.21l5.67-5.67"/></svg>
+                            Disturb Env
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
+                <h3 class="text-sm font-bold text-white mb-4">Key Concepts</h3>
+                <ul class="text-sm text-slate-400 space-y-3">
+                    <li><strong class="text-blue-400">Sensor:</strong> Reads physical properties (analog) or states (digital) from the real world.</li>
+                    <li><strong class="text-blue-400">ADC:</strong> Analog-to-Digital Converter. Microprocessors only understand 1s and 0s. The ADC converts an analog wave into a binary number.</li>
+                    <li><strong class="text-blue-400">Microprocessor:</strong> The "brain". It executes programmed logic based on digital inputs.</li>
+                    <li><strong class="text-blue-400">Actuator:</strong> Converts digital commands back into physical action (movement, heat, light).</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Column: Interactive Diagram -->
+        <div class="col-span-1 lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-8 shadow-xl flex flex-col justify-center relative min-h-[600px] overflow-hidden">
+            
+            <!-- Main Diagram Container -->
+            <div class="relative w-full max-w-2xl mx-auto md:scale-100 scale-75 origin-top">
+                
+                <!-- 1. Environment Block -->
+                <div class="absolute top-0 left-1/2 -translate-x-1/2 w-64 bg-slate-800 border-2 border-slate-700 rounded-xl p-4 text-center shadow-lg z-10 transition-transform duration-300 hover:scale-105">
+                    <h3 class="text-slate-300 font-semibold mb-1 flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M4.93 4.93l1.41 1.41"/><path d="M17.66 17.66l1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="M6.34 17.66l-1.41 1.41"/><path d="M19.07 4.93l-1.41 1.41"/></svg>
+                        Environment
+                    </h3>
+                    <div id="env-value" class="text-3xl font-mono font-bold text-white my-2">0.0</div>
+                    <div class="text-xs text-slate-400">Real-world condition</div>
+                </div>
+
+                <!-- Connecting line: Env -> Sensor -->
+                <div class="absolute top-24 left-1/2 w-0.5 h-16 bg-slate-700 -translate-x-1/2">
+                    <div class="w-full h-full bg-blue-500 origin-top animate-pulse"></div>
+                </div>
+
+                <!-- 2. Sensor Block -->
+                <div class="absolute top-40 left-0 w-48 bg-slate-800 border-2 border-blue-900/50 rounded-xl p-4 text-center shadow-lg z-10">
+                    <div class="w-10 h-10 mx-auto bg-blue-900/30 rounded-full flex items-center justify-center text-blue-400 mb-2">
+                        <!-- Generic Sensor Icon -->
+                        <svg id="sensor-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/><path d="M9 18h6"/></svg>
+                    </div>
+                    <h3 id="sensor-name" class="text-blue-300 font-semibold text-sm">Sensor</h3>
+                    <div id="sensor-type" class="text-xs font-bold text-blue-500 mt-1">Analog Sensor</div>
+                    <p id="sensor-desc" class="text-[10px] text-slate-500 mt-2 leading-tight">Description</p>
+                </div>
+
+                <!-- Connecting line: Sensor -> ADC -->
+                <div class="absolute top-[13.5rem] left-[12rem] w-12 h-0.5 bg-slate-700">
+                    <div class="w-full h-full bg-blue-500 origin-left animate-pulse"></div>
+                </div>
+
+                <!-- 3. ADC Block -->
+                <div class="absolute top-40 left-[15rem] w-40 bg-slate-800 border-2 border-purple-900/50 rounded-xl p-4 text-center shadow-lg z-10">
+                    <h3 class="text-purple-300 font-bold text-sm mb-2">ADC Module</h3>
+                    <div id="adc-content" class="text-center flex flex-col items-center">
+                        <!-- Populated by JS based on Analog/Digital -->
+                    </div>
+                </div>
+
+                <!-- Connecting line: ADC -> Microprocessor -->
+                <div class="absolute top-[13.5rem] left-[25rem] w-12 h-0.5 bg-slate-700">
+                    <div class="w-full h-full bg-purple-500 origin-left animate-pulse"></div>
+                </div>
+
+                <!-- 4. Microprocessor Block -->
+                <div class="absolute top-40 right-0 w-48 bg-slate-800 border-2 border-cyan-900/50 rounded-xl p-4 text-center shadow-lg z-10">
+                    <div class="w-10 h-10 mx-auto bg-cyan-900/30 rounded-full flex items-center justify-center text-cyan-400 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2" ry="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/></svg>
+                    </div>
+                    <h3 class="text-cyan-300 font-semibold text-sm">Microprocessor</h3>
+                    <div id="mcu-command" class="mt-2 py-1 px-2 rounded text-xs font-mono font-bold transition-colors bg-slate-900 text-slate-500">
+                        Command: LOW (0)
+                    </div>
+                </div>
+
+                <!-- Connecting line: MCU -> Actuator -->
+                <div class="absolute top-64 right-24 w-0.5 h-16 bg-slate-700">
+                    <div id="mcu-actuator-line" class="w-full h-full origin-top transition-colors duration-300 bg-slate-700"></div>
+                </div>
+
+                <!-- 5. Actuator Block -->
+                <div id="actuator-block" class="absolute top-80 right-0 w-48 bg-slate-800 border-2 border-slate-700 rounded-xl p-4 text-center shadow-lg z-10 transition-colors duration-300">
+                    <div id="actuator-icon-container" class="w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 transition-colors duration-300 bg-slate-900/50 text-slate-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/></svg>
+                    </div>
+                    <h3 id="actuator-name" class="font-semibold text-sm transition-colors text-slate-400">
+                        Actuator
+                    </h3>
+                    <div id="actuator-state" class="text-xl font-bold mt-1 text-slate-600">
+                        OFF
+                    </div>
+                </div>
+
+                <!-- 6. Feedback Loop (Only for Closed Loop) -->
+                <svg id="feedback-svg" class="absolute top-[4.5rem] left-[15rem] w-48 h-80 z-0 pointer-events-none" viewBox="0 0 200 300">
+                    <path id="feedback-path" d="M 180,260 Q 180,50 50,20" fill="none" stroke="#334155" stroke-width="4" stroke-dasharray="8 8" />
+                    <polygon id="feedback-arrow" points="50,20 65,15 60,30" fill="#334155" />
+                </svg>
+                
+                <!-- Open loop indicator (Disjointed visual) -->
+                <div id="open-loop-hint" class="absolute hidden top-[23rem] right-24 text-xs text-orange-500/70 font-mono text-center w-48 -translate-x-1/2 bg-slate-900/80 p-2 rounded">
+                    NO FEEDBACK LOOP<br/>Action goes to environment, but does not affect the sensor.
+                </div>
+
+                <!-- Helper Spacer to keep the relative container sized correctly -->
+                <div class="h-[450px]"></div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data and Configuration
+        const SCENARIOS = {
+            greenhouse: {
+                id: 'greenhouse',
+                title: 'Smart Greenhouse',
+                type: 'Closed Loop',
+                description: 'Maintains a constant temperature. The sensor reads the environment, the MCU decides if it is too cold, and the heater acts. The heat goes BACK into the environment, closing the loop.',
+                sensor: { name: 'Thermistor', type: 'Analog', desc: 'Measures continuous temperature variations.' },
+                actuator: { name: 'Heater Fan', desc: 'Outputs heat to raise the ambient temperature.' },
+                initialEnv: 15.0, // Celsius
+                target: 22.0
+            },
+            sprinkler: {
+                id: 'sprinkler',
+                title: 'Timed Sprinkler',
+                type: 'Open Loop',
+                description: 'Waters the garden based strictly on a timer. It does NOT measure soil moisture. Because there is no feedback from the environment to the system, it is an Open Loop.',
+                sensor: { name: 'Digital Timer', type: 'Digital', desc: 'Outputs discrete states (Time to water: YES/NO).' },
+                actuator: { name: 'Water Valve', desc: 'Opens to release water.' },
+                initialEnv: 0, // Time in hours (0-24)
+                target: 18 // Waters at 18:00
+            },
+            car: {
+                id: 'car',
+                title: 'Auto-Braking Car',
+                type: 'Closed Loop',
+                description: 'Maintains a safe distance from an obstacle. As the car moves, the distance decreases. The brakes slow the car, altering how fast the distance decreases, closing the loop.',
+                sensor: { name: 'Ultrasonic Radar', type: 'Analog', desc: 'Measures continuous distance to the object ahead.' },
+                actuator: { name: 'Brake System', desc: 'Applies friction to slow the vehicle.' },
+                initialEnv: 100.0, // Distance in meters
+                target: 20.0 // Safe distance
+            }
+        };
+
+        // State Variables
+        let activeScenarioId = 'greenhouse';
+        let envValue = SCENARIOS.greenhouse.initialEnv;
+        let isActuatorActive = false;
+        let isPaused = false;
+        
+        let requestRef;
+        let lastTime;
+
+        // DOM Elements
+        const elScenarioButtons = document.getElementById('scenario-buttons');
+        const elTypeBar = document.getElementById('type-indicator-bar');
+        const elTitle = document.getElementById('scenario-title');
+        const elTypeBadge = document.getElementById('scenario-type-badge');
+        const elDesc = document.getElementById('scenario-desc');
+        const elMcuCode = document.getElementById('mcu-code');
+        const elBtnPause = document.getElementById('btn-pause');
+        const elBtnDisturb = document.getElementById('btn-disturb');
+        
+        const elEnvValue = document.getElementById('env-value');
+        
+        const elSensorName = document.getElementById('sensor-name');
+        const elSensorType = document.getElementById('sensor-type');
+        const elSensorDesc = document.getElementById('sensor-desc');
+        
+        const elAdcContent = document.getElementById('adc-content');
+        
+        const elMcuCommand = document.getElementById('mcu-command');
+        const elMcuLine = document.getElementById('mcu-actuator-line');
+        
+        const elActBlock = document.getElementById('actuator-block');
+        const elActIcon = document.getElementById('actuator-icon-container');
+        const elActName = document.getElementById('actuator-name');
+        const elActState = document.getElementById('actuator-state');
+        
+        const elFeedbackSvg = document.getElementById('feedback-svg');
+        const elFeedbackPath = document.getElementById('feedback-path');
+        const elFeedbackArrow = document.getElementById('feedback-arrow');
+        const elOpenLoopHint = document.getElementById('open-loop-hint');
+
+        // Utilities
+        function toBinaryString(val, max) {
+            const normalized = Math.min(255, Math.max(0, Math.floor((val / max) * 255)));
+            return normalized.toString(2).padStart(8, '0');
+        }
+
+        function formatEnvValue() {
+            if (activeScenarioId === 'greenhouse') return `${envValue.toFixed(1)} °C`;
+            if (activeScenarioId === 'sprinkler') {
+                const hours = Math.floor(envValue);
+                const mins = Math.floor((envValue - hours) * 60);
+                return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+            }
+            if (activeScenarioId === 'car') return `${envValue.toFixed(1)} m`;
+            return envValue.toFixed(2);
+        }
+
+        // Core Simulation Loop
+        function updateSimulation(time) {
+            if (lastTime !== undefined && !isPaused) {
+                const deltaTime = (time - lastTime) / 1000; // in seconds
+                const scenario = SCENARIOS[activeScenarioId];
+                let actuatorState = false;
+
+                switch (activeScenarioId) {
+                    case 'greenhouse':
+                        envValue -= 0.5 * deltaTime; // Natural cooling
+                        if (envValue < scenario.target) {
+                            actuatorState = true;
+                            envValue += 3.0 * deltaTime; // Heating
+                        }
+                        break;
+                    case 'sprinkler':
+                        envValue += 2.0 * deltaTime; // Time moves fast
+                        if (envValue >= 24) envValue = 0;
+                        if (envValue >= scenario.target && envValue < scenario.target + 2) {
+                            actuatorState = true;
+                        }
+                        break;
+                    case 'car':
+                        let speed = 15; // m/s
+                        if (envValue < scenario.target + 30) {
+                             actuatorState = true;
+                             speed = Math.max(0, speed - (40 * deltaTime)); 
+                        } else {
+                             actuatorState = false;
+                        }
+                        
+                        if (envValue <= scenario.target) {
+                            envValue = scenario.target;
+                            actuatorState = true; 
+                        } else {
+                            envValue -= speed * deltaTime;
+                        }
+                        break;
+                }
+
+                isActuatorActive = actuatorState;
+                envValue = Math.max(0, envValue); 
+            }
+            
+            lastTime = time;
+            updateDynamicUI();
+            requestRef = requestAnimationFrame(updateSimulation);
+        }
+
+        // Dynamic UI Updates (Every Frame)
+        function updateDynamicUI() {
+            const scenario = SCENARIOS[activeScenarioId];
+            
+            // Environment Output
+            elEnvValue.textContent = formatEnvValue();
+
+            // ADC Output
+            if (scenario.sensor.type === 'Digital') {
+                elAdcContent.innerHTML = `
+                    <div class="text-xs text-gray-400 mb-1">Bypassed</div>
+                    <div class="font-mono text-green-400 text-lg">${isActuatorActive ? '1' : '0'}</div>
+                    <p class="text-[10px] text-slate-500 mt-2 leading-tight">Digital sensors skip conversion.</p>
+                `;
+            } else {
+                let maxVal = activeScenarioId === 'car' ? 150 : 50;
+                elAdcContent.innerHTML = `
+                    <div class="text-xs text-gray-400 mb-1 flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h4l3-9 5 18 3-9h5"/></svg>
+                        Analog IN
+                    </div>
+                    <div class="font-mono text-blue-400 text-lg tracking-widest bg-gray-800 p-1 rounded border border-gray-700">
+                        ${toBinaryString(envValue, maxVal)}
+                    </div>
+                    <div class="text-xs text-gray-400 mt-1 flex items-center justify-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 4H6v6h4V4Z"/><path d="M18 14h-4v6h4v-6Z"/><path d="M14 4h4v6h-4V4Z"/><path d="M6 14h4v6H6v-6Z"/></svg>
+                        Digital OUT
+                    </div>
+                `;
+            }
+
+            // MCU Command Output
+            if (isActuatorActive) {
+                elMcuCommand.className = 'mt-2 py-1 px-2 rounded text-xs font-mono font-bold transition-colors bg-cyan-900/50 text-cyan-300';
+                elMcuCommand.textContent = 'Command: HIGH (1)';
+                
+                elMcuLine.className = 'w-full h-full origin-top transition-colors duration-300 bg-red-500 shadow-[0_0_10px_red]';
+                
+                elActBlock.className = 'absolute top-80 right-0 w-48 bg-slate-800 border-2 rounded-xl p-4 text-center shadow-lg z-10 transition-colors duration-300 border-red-500/50 bg-red-950/20';
+                elActIcon.className = 'w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 transition-colors duration-300 bg-red-900/50 text-red-400 animate-bounce';
+                elActName.className = 'font-semibold text-sm transition-colors text-red-300';
+                elActState.className = 'text-xl font-bold mt-1 text-white';
+                elActState.textContent = 'ACTIVE';
+
+                elFeedbackPath.setAttribute('stroke', '#22c55e');
+                elFeedbackPath.setAttribute('class', 'animate-dash');
+                elFeedbackArrow.setAttribute('fill', '#22c55e');
+            } else {
+                elMcuCommand.className = 'mt-2 py-1 px-2 rounded text-xs font-mono font-bold transition-colors bg-slate-900 text-slate-500';
+                elMcuCommand.textContent = 'Command: LOW (0)';
+                
+                elMcuLine.className = 'w-full h-full origin-top transition-colors duration-300 bg-slate-700';
+                
+                elActBlock.className = 'absolute top-80 right-0 w-48 bg-slate-800 border-2 rounded-xl p-4 text-center shadow-lg z-10 transition-colors duration-300 border-slate-700';
+                elActIcon.className = 'w-10 h-10 mx-auto rounded-full flex items-center justify-center mb-2 transition-colors duration-300 bg-slate-900/50 text-slate-500';
+                elActName.className = 'font-semibold text-sm transition-colors text-slate-400';
+                elActState.className = 'text-xl font-bold mt-1 text-slate-600';
+                elActState.textContent = 'OFF';
+
+                elFeedbackPath.setAttribute('stroke', '#334155');
+                elFeedbackPath.removeAttribute('class');
+                elFeedbackArrow.setAttribute('fill', '#334155');
+            }
+        }
+
+        // Static UI Updates (On Scenario Change)
+        function setScenario(id) {
+            activeScenarioId = id;
+            const scenario = SCENARIOS[id];
+            
+            // Reset Simulation State
+            envValue = scenario.initialEnv;
+            isActuatorActive = false;
+            
+            // Render Scenario Buttons
+            elScenarioButtons.innerHTML = Object.values(SCENARIOS).map(s => `
+                <button onclick="setScenario('${s.id}')" class="px-4 py-2 text-sm font-medium rounded-md transition-all ${
+                    activeScenarioId === s.id 
+                    ? 'bg-blue-600 text-white shadow-lg' 
+                    : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }">
+                    ${s.title}
+                </button>
+            `).join('');
+
+            // Update Left Column Info
+            elTitle.textContent = scenario.title;
+            elDesc.textContent = scenario.description;
+            
+            if (scenario.type === 'Closed Loop') {
+                elTypeBar.className = 'absolute top-0 left-0 w-1 h-full bg-green-500';
+                elTypeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-green-500/20 text-green-400';
+                elTypeBadge.textContent = 'Closed Loop';
+                
+                elFeedbackSvg.classList.remove('hidden');
+                elOpenLoopHint.classList.add('hidden');
+            } else {
+                elTypeBar.className = 'absolute top-0 left-0 w-1 h-full bg-orange-500';
+                elTypeBadge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-orange-500/20 text-orange-400';
+                elTypeBadge.textContent = 'Open Loop';
+                
+                elFeedbackSvg.classList.add('hidden');
+                elOpenLoopHint.classList.remove('hidden');
+            }
+
+            // MCU Logic String
+            let code = '';
+            if (id === 'greenhouse') code = `if (temp_digital < 22) {\n  heaterPin.set(HIGH);\n} else {\n  heaterPin.set(LOW);\n}`;
+            if (id === 'sprinkler') code = `if (time_digital == 18) {\n  valvePin.set(HIGH);\n} else {\n  valvePin.set(LOW);\n}`;
+            if (id === 'car') code = `if (dist_digital < SAFE_DIST) {\n  brakePin.set(HIGH);\n} else {\n  brakePin.set(LOW);\n}`;
+            elMcuCode.textContent = code;
+
+            // Update Sensor Info
+            elSensorName.textContent = scenario.sensor.name;
+            elSensorType.textContent = scenario.sensor.type + ' Sensor';
+            elSensorDesc.textContent = scenario.sensor.desc;
+            
+            // Update Actuator Info
+            elActName.textContent = scenario.actuator.name;
+        }
+
+        // Event Listeners for Controls
+        elBtnPause.addEventListener('click', () => {
+            isPaused = !isPaused;
+            if (isPaused) {
+                elBtnPause.innerHTML = '▶ Resume';
+                elBtnPause.classList.replace('bg-slate-800', 'bg-green-700');
+                elBtnPause.classList.replace('hover:bg-slate-700', 'hover:bg-green-600');
+            } else {
+                elBtnPause.innerHTML = '⏸ Pause';
+                elBtnPause.classList.replace('bg-green-700', 'bg-slate-800');
+                elBtnPause.classList.replace('hover:bg-green-600', 'hover:bg-slate-700');
+            }
+        });
+
+        elBtnDisturb.addEventListener('click', () => {
+            if (activeScenarioId === 'greenhouse') envValue -= 5;
+            if (activeScenarioId === 'sprinkler') envValue = 17.8;
+            if (activeScenarioId === 'car') envValue = 40;
+        });
+
+        // Initialize Application
+        setScenario('greenhouse');
+        requestRef = requestAnimationFrame(updateSimulation);
+
+    </script>
+</body>
+</html>

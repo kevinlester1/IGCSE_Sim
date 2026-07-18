@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Knapsack Logic Explainer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slide-in-bottom { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse-ring { 0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } 100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } }
+        
+        .animate-fade-in { animation: fade-in 0.3s ease-out; }
+        .animate-slide-in { animation: slide-in-bottom 0.5s ease-out; }
+        .pulse-active { animation: pulse-ring 2s infinite; }
+        
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+        
+        .cell-highlight { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        .source-exclude { background-color: #fef3c7 !important; border: 2px solid #f59e0b !important; color: #92400e !important; }
+        .source-include { background-color: #dcfce7 !important; border: 2px solid #22c55e !important; color: #166534 !important; }
+        
+        .connection-line {
+            position: absolute;
+            pointer-events: none;
+            z-index: 5;
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans min-h-screen p-4 md:p-8">
+    <div class="max-w-6xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <div class="text-center space-y-2">
+            <h1 class="text-3xl font-bold tracking-tight">Knapsack Logic Animator</h1>
+            <p class="text-slate-500 text-sm md:text-base">Visualizing the "Exclude vs. Include" decision-making process with the full inventory.</p>
+        </div>
+
+        <!-- Item Reference Section -->
+        <div id="item-cards" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+            <!-- Cards injected by JS -->
+        </div>
+
+        <!-- Animation Controls -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <button id="prev-btn" class="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors">
+                    <i data-lucide="chevron-left"></i>
+                </button>
+                <span id="step-counter" class="text-sm font-bold min-w-[120px] text-center">
+                    Step 1 / 1
+                </span>
+                <button id="next-btn" class="p-2 hover:bg-slate-100 rounded-lg disabled:opacity-30 transition-colors">
+                    <i data-lucide="chevron-right"></i>
+                </button>
+            </div>
+            <div id="action-label" class="hidden sm:block text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Current Action: Loading...
+            </div>
+            <button id="reset-btn" class="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold transition-all">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Reset
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 relative">
+            
+            <!-- Logic Explainer Card -->
+            <div class="space-y-4">
+                <div id="explainer-card" class="bg-slate-900 text-white p-6 rounded-3xl shadow-xl min-h-[460px] relative overflow-hidden flex flex-col">
+                    <div id="card-header" class="flex items-center gap-4 mb-6">
+                        <!-- Header injected by JS -->
+                    </div>
+
+                    <div id="card-body" class="flex-1 flex flex-col gap-5">
+                        <!-- Body injected by JS -->
+                    </div>
+
+                    <div id="card-footer" class="pt-4 border-t border-white/10 flex items-center justify-between mt-6">
+                        <span class="text-xs font-bold uppercase tracking-widest text-white/40">Resulting Cell Value:</span>
+                        <div class="flex items-center gap-3">
+                            <span id="final-val-calc" class="text-xs text-white/40 font-mono"></span>
+                            <span id="final-val" class="text-4xl font-black text-blue-400 animate-pulse">$0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 flex items-start gap-3">
+                    <div class="p-2 bg-blue-50 text-blue-600 rounded-lg shrink-0">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    <div id="footer-hint" class="text-xs text-slate-600 leading-relaxed">
+                        <!-- Hint injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid Visualization -->
+            <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 flex flex-col h-full relative">
+                <div class="overflow-x-auto overflow-y-auto max-h-[550px] custom-scrollbar relative" id="table-container">
+                    <table id="dp-table" class="w-full border-separate border-spacing-1">
+                        <!-- Table injected by JS -->
+                    </table>
+                </div>
+
+                <!-- Visual Legend -->
+                <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                        <div class="w-6 h-6 flex items-center justify-center bg-amber-200 rounded text-amber-800 font-bold text-[10px]">A</div>
+                        <div class="text-[10px] text-amber-800 leading-tight">
+                            <span class="font-bold block mb-0.5 uppercase">Option A: Exclude</span>
+                            Just take the best value from the row above.
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 p-3 bg-emerald-50 rounded-xl border border-emerald-100">
+                        <div class="w-6 h-6 flex items-center justify-center bg-emerald-200 rounded text-emerald-800 font-bold text-[10px]">B</div>
+                        <div class="text-[10px] text-emerald-800 leading-tight">
+                            <span class="font-bold block mb-0.5 uppercase">Option B: Include</span>
+                            Current Value + Value from remaining space.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const items = [
+            { name: 'Gem', value: 60, weight: 1, color: 'bg-blue-500', icon: '💎' },
+            { name: 'Gold', value: 100, weight: 2, color: 'bg-yellow-500', icon: '💰' },
+            { name: 'Laptop', value: 210, weight: 3, color: 'bg-emerald-500', icon: '💻' },
+            { name: 'Headphones', value: 80, weight: 1, color: 'bg-indigo-500', icon: '🎧' },
+            { name: 'Ancient Book', value: 120, weight: 3, color: 'bg-orange-500', icon: '📜' },
+            { name: 'Painting', value: 250, weight: 5, color: 'bg-red-500', icon: '🖼️' },
+            { name: 'Brick', value: 40, weight: 4, color: 'bg-slate-500', icon: '🧱' },
+            { name: 'Jacket', value: 30, weight: 2, color: 'bg-cyan-500', icon: '🧥' },
+        ];
+        const capacity = 6;
+        let step = 0;
+        let animationSteps = [];
+
+        function generateSteps() {
+            const s = [];
+            const n = items.length;
+            const dp = Array(n + 1).fill().map(() => Array(capacity + 1).fill(0));
+
+            for (let i = 1; i <= n; i++) {
+                const item = items[i - 1];
+                for (let w = 1; w <= capacity; w++) {
+                    const canFit = item.weight <= w;
+                    const valAbove = dp[i - 1][w];
+                    let valInclude = 0;
+                    let prevW = 0;
+
+                    if (canFit) {
+                        prevW = w - item.weight;
+                        valInclude = item.value + dp[i - 1][prevW];
+                    }
+
+                    const decision = canFit && valInclude > valAbove ? 'include' : 'exclude';
+                    const finalVal = Math.max(valAbove, valInclude);
+                    
+                    s.push({
+                        i,
+                        w,
+                        item,
+                        canFit,
+                        valAbove,
+                        valInclude,
+                        prevW,
+                        decision,
+                        finalVal,
+                        currentTable: JSON.parse(JSON.stringify(dp))
+                    });
+                    
+                    dp[i][w] = finalVal;
+                }
+            }
+            return s;
+        }
+
+        function init() {
+            animationSteps = generateSteps();
+            renderItemCards();
+            renderTableStructure();
+            update();
+            lucide.createIcons();
+        }
+
+        function renderItemCards() {
+            const container = document.getElementById('item-cards');
+            container.innerHTML = items.map(item => `
+                <div id="card-${item.name.replace(/\s+/g, '')}" class="p-3 rounded-2xl border bg-white shadow-sm transition-all duration-300 border-slate-200">
+                    <div class="text-2xl mb-1">${item.icon}</div>
+                    <div class="font-bold text-[10px] truncate uppercase tracking-tight">${item.name}</div>
+                    <div class="flex justify-between items-end mt-1">
+                        <span class="text-emerald-600 font-bold text-xs">$${item.value}</span>
+                        <span class="text-slate-400 text-[10px]">${item.weight}kg</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTableStructure() {
+            const table = document.getElementById('dp-table');
+            let html = `
+                <thead class="sticky top-0 bg-white z-20">
+                    <tr>
+                        <th class="p-2 text-[10px] text-slate-400 min-w-[100px] text-left">Items \\ Cap</th>
+                        ${Array.from({length: capacity + 1}).map((_, w) => `
+                            <th id="th-cap-${w}" class="p-2 text-xs font-bold text-slate-400 text-center">${w}k</th>
+                        `).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="p-2 text-xs font-bold text-slate-400 italic">Empty Bag</td>
+                        ${Array.from({length: capacity + 1}).map(() => `
+                            <td class="p-2 bg-slate-50 rounded border border-slate-100 text-center text-slate-300 text-xs">0</td>
+                        `).join('')}
+                    </tr>
+                    ${items.map((item, idx) => `
+                        <tr id="row-${idx + 1}">
+                            <td class="p-2 text-xs font-bold flex items-center gap-1 text-slate-500">
+                                <span class="text-sm">${item.icon}</span>
+                                <span class="truncate">${item.name}</span>
+                            </td>
+                            ${Array.from({length: capacity + 1}).map((_, w) => `
+                                <td id="cell-${idx + 1}-${w}" class="p-2 bg-white rounded border border-slate-100 text-center text-xs text-slate-200 transition-all duration-300 cell-highlight">
+                                    0
+                                </td>
+                            `).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+            table.innerHTML = html;
+        }
+
+        function update() {
+            const current = animationSteps[step];
+            
+            // Update Text
+            document.getElementById('step-counter').innerText = `Step ${step + 1} / ${animationSteps.length}`;
+            document.getElementById('action-label').innerText = `Current Action: ${current.item.name} @ ${current.w}kg`;
+            
+            // Highlight current Item Card
+            items.forEach(item => {
+                const el = document.getElementById(`card-${item.name.replace(/\s+/g, '')}`);
+                if (item.name === current.item.name) {
+                    el.classList.add('ring-2', 'ring-blue-500', 'border-blue-500', 'scale-105');
+                } else {
+                    el.classList.remove('ring-2', 'ring-blue-500', 'border-blue-500', 'scale-105');
+                }
+            });
+
+            // Update Explainer Card
+            document.getElementById('card-header').innerHTML = `
+                <div class="w-12 h-12 rounded-full ${current.item.color} flex items-center justify-center text-2xl shadow-lg ring-4 ring-white/10">
+                    ${current.item.icon}
+                </div>
+                <div>
+                    <h3 class="font-bold text-xl">${current.item.name}</h3>
+                    <p class="text-xs text-white/50 uppercase tracking-widest">Target Bag Size: ${current.w}kg</p>
+                </div>
+            `;
+
+            let bodyContent = `
+                <div class="p-4 rounded-2xl border flex items-center justify-between transition-all ${current.canFit ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-red-500/10 border-red-500/50'}">
+                    <div class="flex items-center gap-3">
+                        <div class="p-1.5 rounded-lg ${current.canFit ? 'bg-emerald-500' : 'bg-red-500'}">
+                            <i data-lucide="${current.canFit ? 'check' : 'x'}" class="w-4 h-4 text-white"></i>
+                        </div>
+                        <div>
+                            <span class="text-sm font-bold block leading-none">Can it fit?</span>
+                            <span class="text-[10px] text-white/60">${current.item.weight}kg Item vs ${current.w}kg Capacity</span>
+                        </div>
+                    </div>
+                    <span class="text-lg font-black ${current.canFit ? 'text-emerald-400' : 'text-red-400'}">${current.canFit ? 'YES' : 'NO'}</span>
+                </div>
+            `;
+
+            if (current.canFit) {
+                bodyContent += `
+                    <div class="flex items-center justify-center gap-2 py-1 text-white/20">
+                        <div class="h-px flex-1 bg-white/10"></div>
+                        <span class="text-[10px] font-bold uppercase tracking-widest">Compare Options</span>
+                        <div class="h-px flex-1 bg-white/10"></div>
+                    </div>
+                    <div class="grid grid-cols-1 gap-3 animate-slide-in">
+                        <div class="p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${current.decision === 'exclude' ? 'border-amber-500 bg-amber-500/20' : 'border-white/10 bg-white/5 opacity-60'}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 flex items-center justify-center bg-amber-500/20 rounded-lg text-amber-500 font-bold">A</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-white/40 font-bold leading-none mb-1">Exclude (Keep Previous)</p>
+                                    <p class="text-xl font-black">$${current.valAbove}</p>
+                                </div>
+                            </div>
+                            ${current.decision === 'exclude' ? '<i data-lucide="award" class="text-amber-500"></i>' : ''}
+                        </div>
+                        <div class="p-4 rounded-2xl border-2 transition-all flex items-center justify-between ${current.decision === 'include' ? 'border-emerald-500 bg-emerald-500/20' : 'border-white/10 bg-white/5 opacity-60'}">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 flex items-center justify-center bg-emerald-500/20 rounded-lg text-emerald-500 font-bold">B</div>
+                                <div>
+                                    <p class="text-[10px] uppercase text-white/40 font-bold leading-none mb-1">Include (Item + Remainder)</p>
+                                    <p class="text-xl font-black">$${current.valInclude}</p>
+                                    <p class="text-[9px] text-white/30 italic">$${current.item.value} + $${current.valInclude - current.item.value} (from ${current.prevW}kg space)</p>
+                                </div>
+                            </div>
+                            ${current.decision === 'include' ? '<i data-lucide="award" class="text-emerald-500"></i>' : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                bodyContent += `
+                    <div class="flex-1 flex flex-col items-center justify-center text-center p-6 bg-white/5 rounded-2xl border border-white/10 border-dashed animate-fade-in">
+                        <i data-lucide="copy" class="text-white/20 mb-3 w-8 h-8"></i>
+                        <p class="text-sm text-white/70 leading-relaxed">
+                            Since the item is too heavy for this mini-bag, we simply carry over the best value from the row above.
+                        </p>
+                        <div class="mt-4 px-4 py-2 bg-white/10 rounded-lg font-bold">
+                            Value carried: $${current.valAbove}
+                        </div>
+                    </div>
+                `;
+            }
+            document.getElementById('card-body').innerHTML = bodyContent;
+            document.getElementById('final-val').innerText = `$${current.finalVal}`;
+            
+            if (current.canFit) {
+                const calcText = current.decision === 'exclude' ? `max($${current.valAbove}, $${current.valInclude})` : `max($${current.valAbove}, $${current.valInclude})`;
+                document.getElementById('final-val-calc').innerText = calcText;
+            } else {
+                document.getElementById('final-val-calc').innerText = "";
+            }
+
+            document.getElementById('footer-hint').innerHTML = `<strong>DP Table Logic:</strong> Calculating <strong>${current.item.name}</strong> for capacity <strong>${current.w}kg</strong>. Notice the highlighted "source" cells showing the look-back.`;
+
+            // Reset all cells
+            for (let i = 1; i <= items.length; i++) {
+                for (let w = 0; w <= capacity; w++) {
+                    const cell = document.getElementById(`cell-${i}-${w}`);
+                    const val = (i < current.i || (i === current.i && w < current.w)) 
+                        ? current.currentTable[i][w] 
+                        : (i === current.i && w === current.w) ? '?' : 0;
+                    
+                    cell.innerText = val;
+                    cell.className = "p-2 rounded border border-slate-100 text-center text-xs transition-all duration-300 relative cell-highlight bg-white";
+                    
+                    if (i === current.i && w === current.w) {
+                        cell.classList.add('bg-blue-600', 'text-white', 'font-bold', 'scale-110', 'z-10', 'pulse-active', 'border-blue-400');
+                        cell.innerHTML = `<div class="absolute -top-10 left-1/2 -translate-x-1/2 animate-bounce text-blue-500 z-20"><i data-lucide="target" class="w-5 h-5"></i></div>?`;
+                    } else if (i === current.i - 1 && w === current.w) {
+                        // Exclude Source (directly above)
+                        cell.classList.add('source-exclude');
+                        cell.innerHTML = `<div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-amber-600 bg-amber-50 px-1 border border-amber-200 rounded">A</div>${val}`;
+                    } else if (current.canFit && i === current.i - 1 && w === current.prevW) {
+                        // Include Source (above and back)
+                        cell.classList.add('source-include');
+                        cell.innerHTML = `<div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] font-bold text-emerald-600 bg-emerald-50 px-1 border border-emerald-200 rounded">B-Remainder</div>${val}`;
+                    } else if (i < current.i || (i === current.i && w < current.w)) {
+                        cell.classList.add('text-slate-800');
+                    } else {
+                        cell.classList.add('text-slate-200');
+                    }
+                }
+            }
+
+            // Update Column Highlights
+            for(let w=0; w<=capacity; w++) {
+                const th = document.getElementById(`th-cap-${w}`);
+                if (w === current.w) th.classList.add('text-blue-600', 'bg-blue-50');
+                else th.classList.remove('text-blue-600', 'bg-blue-50');
+            }
+
+            lucide.createIcons();
+            
+            document.getElementById('prev-btn').disabled = step === 0;
+            document.getElementById('next-btn').disabled = step === animationSteps.length - 1;
+        }
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            if (step < animationSteps.length - 1) {
+                step++;
+                update();
+            }
+        });
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (step > 0) {
+                step--;
+                update();
+            }
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            step = 0;
+            update();
+        });
+
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arcade Box: Lesson 1 - Guided Discovery</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #020617;
+            color: #f8fafc;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+        .matrix-container {
+            display: grid;
+            grid-template-columns: repeat(32, 1fr);
+            gap: 2px;
+            background: #0f172a;
+            padding: 4px;
+            border: 2px solid #1e293b;
+            border-radius: 4px;
+            position: relative;
+        }
+        .led {
+            aspect-ratio: 1;
+            background: #1e293b;
+            border-radius: 2px;
+            cursor: crosshair;
+            transition: all 0.1s;
+        }
+        .led:hover {
+            background: #3b82f6;
+            transform: scale(2.5);
+            z-index: 50;
+            border-radius: 50%;
+            box-shadow: 0 0 15px #3b82f6;
+        }
+        .led.active {
+            background: #3b82f6;
+            box-shadow: 0 0 5px #3b82f6;
+        }
+        .led.clue-highlight {
+            background: #f59e0b;
+            box-shadow: 0 0 8px #f59e0b;
+        }
+        .block-divider {
+            grid-column: 1 / -1;
+            height: 4px;
+            background: #334155;
+            margin: 2px 0;
+            position: relative;
+        }
+        .path-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .connector {
+            fill: none;
+            stroke: #22c55e;
+            stroke-width: 0.5;
+            stroke-dasharray: 2, 1;
+            opacity: 0.2;
+            transition: opacity 0.3s;
+        }
+        .connector.visible {
+            opacity: 0.6;
+        }
+        .discovery-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <header class="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">Lesson 1: The Discovery Challenge</h1>
+                <p class="text-slate-400 mt-1">Can you work out how the Raspberry Pi Pico talks to the LED strip?</p>
+            </div>
+            <div class="flex gap-2">
+                <button id="toggle-path" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-xs border border-slate-600 transition">
+                    Show Wiring Path
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Grid Section -->
+            <div class="lg:col-span-7">
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800 shadow-2xl">
+                    <div class="relative" id="viewport">
+                        <svg id="path-overlay" class="path-svg"></svg>
+                        <div id="led-matrix" class="matrix-container">
+                            <!-- LEDs generated via JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-4 flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-widest">
+                    <span>X Coordinates (0-31)</span>
+                    <span>32x32 Matrix</span>
+                </div>
+            </div>
+
+            <!-- Discovery Section -->
+            <div class="lg:col-span-5 space-y-4">
+                <!-- Challenge Panel -->
+                <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-lg discovery-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 id="step-title" class="text-yellow-500 font-bold uppercase text-xs tracking-widest">Challenge 1: The First Column</h2>
+                        <span id="step-count" class="text-slate-500 text-xs font-mono">1 / 4</span>
+                    </div>
+                    
+                    <div id="step-instruction" class="text-sm text-slate-300 leading-relaxed mb-6">
+                        Hover over the LEDs in the very first column (X=0). 
+                        <br><br>
+                        What is the relationship between the <b>Row (Y)</b> and the <b>Physical Index</b>?
+                    </div>
+
+                    <div class="space-y-4 mb-6">
+                        <div class="flex justify-between items-center p-3 bg-slate-950 rounded-lg border border-slate-800">
+                            <span class="text-slate-400 text-xs">Current (X, Y):</span>
+                            <span id="ui-xy" class="font-mono text-white font-bold">(0, 0)</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-blue-900/20 rounded-lg border border-blue-500/30">
+                            <span class="text-blue-300 text-xs font-bold uppercase">Physical Index:</span>
+                            <span id="ui-index" class="font-mono text-2xl text-blue-400">?</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button id="prev-btn" class="flex-1 bg-slate-800 hover:bg-slate-700 disabled:opacity-30 p-2 rounded-lg text-xs font-bold transition" disabled>Back</button>
+                        <button id="next-btn" class="flex-1 bg-blue-600 hover:bg-blue-500 p-2 rounded-lg text-xs font-bold transition">Next Challenge</button>
+                    </div>
+                </div>
+
+                <!-- Clue Area -->
+                <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-800">
+                    <h3 class="text-slate-500 text-[10px] uppercase font-bold mb-2">Clue Box</h3>
+                    <div id="ui-clue" class="text-xs text-slate-400 italic leading-relaxed">
+                        Start at (0,0) and move down to (0,15). Does the index match the Y coordinate?
+                    </div>
+                </div>
+
+                <!-- Solution Reveal (Hidden by default) -->
+                <div id="solution-panel" class="hidden bg-green-900/10 border border-green-500/20 p-4 rounded-xl">
+                    <h3 class="text-green-500 text-[10px] uppercase font-bold mb-2">The Solution</h3>
+                    <pre id="ui-formula" class="text-[10px] font-mono text-green-300/80"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const WIDTH = 32;
+        const HEIGHT = 32;
+        const matrixEl = document.getElementById('led-matrix');
+        const pathSvg = document.getElementById('path-overlay');
+        
+        let currentStep = 0;
+        let pathVisible = false;
+
+        const steps = [
+            {
+                title: "Challenge 1: The First Column",
+                instruction: "Look at the first 16 LEDs in <b>Column 0</b> (X=0).<br><br>As Y increases from 0 to 15, how does the Physical Index change?",
+                clue: "Hover (0,0) then (0,1). If Y is 5, what is the index? It seems like Index = Y... but only for this column!",
+                highlight: (x, y) => x === 0 && y < 16
+            },
+            {
+                title: "Challenge 2: The Multiplier",
+                instruction: "Now look at the top of <b>Column 2</b> (X=2, Y=0) and <b>Column 4</b> (X=4, Y=0).<br><br>What is the Index at (2,0)? How many LEDs are in each column?",
+                clue: "At (0,0) index is 0. At (2,0) index is 32. At (4,0) index is 64. What is the multiplier for X?",
+                highlight: (x, y) => (x % 2 === 0) && y === 0
+            },
+            {
+                title: "Challenge 3: The Serpentine Flip",
+                instruction: "Hover over <b>Column 1</b> (X=1). Start at the top (Y=0) then move to the bottom (Y=15).<br><br>Wait... why does the index get <i>smaller</i> as you move down?",
+                clue: "In odd columns, the wire goes from bottom-to-top! If a column has 16 LEDs, how do you 'flip' Y? Maybe (15 - Y)?",
+                highlight: (x, y) => x === 1 && y < 16
+            },
+            {
+                title: "Challenge 4: The Block Jump",
+                instruction: "Compare (0, 15) and (0, 16).<br><br>The Y coordinate only changed by 1, but the Physical Index jumped by a huge amount. Why?",
+                clue: "The 32x32 screen is actually two separate 32x16 blocks. How many LEDs are in the first block? (32 columns * 16 rows = ?)",
+                highlight: (x, y) => x === 0 && (y === 15 || y === 16)
+            }
+        ];
+
+        const ui = {
+            xy: document.getElementById('ui-xy'),
+            index: document.getElementById('ui-index'),
+            title: document.getElementById('step-title'),
+            count: document.getElementById('step-count'),
+            instr: document.getElementById('step-instruction'),
+            clue: document.getElementById('ui-clue'),
+            next: document.getElementById('next-btn'),
+            prev: document.getElementById('prev-btn'),
+            solution: document.getElementById('solution-panel'),
+            formula: document.getElementById('ui-formula')
+        };
+
+        function conv(x, y) {
+            let block = Math.floor(y / 16);
+            let localY = y % 16;
+            let led;
+            if (x % 2 === 0) led = 16 * x + localY;
+            else led = 16 * x + 15 - localY;
+            led = led + block * 512;
+            return { led, block, localY, isEven: x % 2 === 0 };
+        }
+
+        function updateStep() {
+            const step = steps[currentStep];
+            ui.title.textContent = step.title;
+            ui.count.textContent = `${currentStep + 1} / ${steps.length}`;
+            ui.instr.innerHTML = step.instruction;
+            ui.clue.innerHTML = step.clue;
+            
+            ui.prev.disabled = currentStep === 0;
+            ui.next.textContent = currentStep === steps.length - 1 ? "Reveal Final Logic" : "Next Challenge";
+            
+            ui.solution.classList.toggle('hidden', currentStep !== steps.length - 1);
+            if (currentStep === steps.length - 1) {
+                ui.formula.textContent = "def get_led(x, y):\n  block = y // 16\n  ly = y % 16\n  if x % 2 == 0:\n    return (16 * x + ly) + (block * 512)\n  else:\n    return (16 * x + 15 - ly) + (block * 512)";
+            }
+
+            renderGrid();
+        }
+
+        function renderGrid() {
+            matrixEl.innerHTML = '';
+            for (let y = 0; y < HEIGHT; y++) {
+                if (y === 16) {
+                    const div = document.createElement('div');
+                    div.className = 'block-divider';
+                    matrixEl.appendChild(div);
+                }
+                for (let x = 0; x < WIDTH; x++) {
+                    const led = document.createElement('div');
+                    led.className = 'led';
+                    if (steps[currentStep].highlight(x, y)) {
+                        led.classList.add('clue-highlight');
+                    }
+                    led.onmouseenter = () => {
+                        const d = conv(x, y);
+                        ui.xy.textContent = `(${x}, ${y})`;
+                        ui.index.textContent = d.led;
+                        
+                        document.querySelectorAll('.led.active').forEach(el => el.classList.remove('active'));
+                        led.classList.add('active');
+                    };
+                    matrixEl.appendChild(led);
+                }
+            }
+            drawPath();
+        }
+
+        function drawPath() {
+            let pathD = "";
+            const containerRect = matrixEl.getBoundingClientRect();
+            const leds = Array.from(document.querySelectorAll('.led'));
+
+            for (let b = 0; b < 2; b++) {
+                for (let x = 0; x < WIDTH; x++) {
+                    const isEvenCol = x % 2 === 0;
+                    const yStart = b * 16;
+                    if (isEvenCol) {
+                        for (let ly = 0; ly < 16; ly++) addPoint(x, yStart + ly);
+                    } else {
+                        for (let ly = 15; ly >= 0; ly--) addPoint(x, yStart + ly);
+                    }
+                }
+            }
+
+            function addPoint(x, y) {
+                const led = leds.find(el => el.dataset.x == x && el.dataset.y == y) || 
+                            Array.from(matrixEl.children).find(el => el.dataset?.x == x && el.dataset?.y == y);
+                // Fallback for querySelector since we regen grid
+                const target = document.querySelector(`.led[data-x="${x}"][data-y="${y}"]`);
+                if (!target) return;
+                const rect = target.getBoundingClientRect();
+                const cx = rect.left - containerRect.left + rect.width / 2;
+                const cy = rect.top - containerRect.top + rect.height / 2;
+                if (pathD === "") pathD = `M ${cx} ${cy}`;
+                else pathD += ` L ${cx} ${cy}`;
+            }
+            pathSvg.innerHTML = `<path d="${pathD}" class="connector ${pathVisible ? 'visible' : ''}" />`;
+        }
+
+        ui.next.onclick = () => {
+            if (currentStep < steps.length - 1) {
+                currentStep++;
+                updateStep();
+            }
+        };
+
+        ui.prev.onclick = () => {
+            if (currentStep > 0) {
+                currentStep--;
+                updateStep();
+            }
+        };
+
+        document.getElementById('toggle-path').onclick = (e) => {
+            pathVisible = !pathVisible;
+            e.target.textContent = pathVisible ? "Hide Wiring Path" : "Show Wiring Path";
+            document.querySelector('.connector').classList.toggle('visible', pathVisible);
+        };
+
+        init();
+        function init() {
+            updateStep();
+            window.addEventListener('resize', drawPath);
+        }
+    </script>
+</body>
+</html>

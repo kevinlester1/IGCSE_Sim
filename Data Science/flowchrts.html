@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Flowchart Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #111827;
+            --card-color: #1f2937;
+            --border-color: #374151;
+            --text-color: #d1d5db;
+            --text-muted: #9ca3af;
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+            --sim-highlight: #f59e0b; /* Amber color for highlighting */
+            --connector-color: #6b7280;
+            --connector-label-color: #9ca3af;
+            --connector-point-bg: #4f46e5; /* Indigo for points */
+            --connector-point-hover-bg: #6366f1;
+        }
+        html, body { height: 100%; overflow: hidden; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-color); overscroll-behavior: none; }
+        #canvas-container { cursor: grab; }
+        #canvas-container:active { cursor: grabbing; }
+        #canvas {
+            position: absolute; transform-origin: 0 0;
+            background-image: linear-gradient(var(--border-color) 1px, transparent 1px), linear-gradient(to right, var(--border-color) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .flowchart-shape {
+            position: absolute; border: 2px solid var(--border-color); background-color: var(--card-color);
+            padding: 8px 12px; min-width: 100px; min-height: 50px;
+            display: flex; align-items: center; justify-content: center; text-align: center;
+            font-size: 12px; cursor: move; user-select: none; z-index: 10;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .flowchart-shape.selected { border-color: var(--accent-color); box-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
+        .flowchart-shape.simulating { border-color: var(--sim-highlight); box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
+        
+        .shape-start-end { border-radius: 9999px; /* Pill shape for Terminator */ } 
+        .shape-process { border-radius: 0; } /* Rectangle */
+        .shape-assign { border-radius: 0; } /* Visually same as process */
+        .shape-input { transform: skewX(-20deg); } /* Parallelogram for Input */
+        .shape-input > div { transform: skewX(20deg); } 
+        .shape-output { /* Flowgorithm document style */
+             border-radius: 0; 
+             clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 75% 90%, 25% 100%, 0% 90%); /* Adjusted clip-path */
+             min-height: 60px; /* Adjust height for clip path */
+             padding-bottom: 12px; /* Add padding for curved bottom */
+        }
+         .shape-declare { /* Rectangle with internal line */
+             position: relative; border-radius: 0; padding-left: 15px; padding-right: 15px; 
+         }
+         .shape-declare::before { 
+             content: ''; position: absolute; top: 0; bottom: 0; left: 5px; width: 1px; background-color: var(--border-color);
+         }
+          .shape-declare::after { 
+             content: ''; position: absolute; top: 0; bottom: 0; right: 5px; width: 1px; background-color: var(--border-color);
+         }
+        
+        .shape-decision {
+            width: 120px; height: 80px; padding: 0; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+        }
+        .shape-while, .shape-for { /* Hexagon-like */
+             clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+             min-width: 120px; min-height: 70px;
+        }
+        .shape-subroutine { /* Rectangle with double side lines */
+            position: relative; border-radius: 0;
+        }
+        .shape-subroutine::before, .shape-subroutine::after {
+            content: ''; position: absolute; top: 0; bottom: 0; width: 2px; background-color: var(--border-color);
+        }
+        .shape-subroutine::before { left: 5px; }
+        .shape-subroutine::after { right: 5px; }
+
+        .connector-point {
+            position: absolute; width: 12px; height: 12px; 
+            background-color: var(--connector-point-bg); 
+            border: 1px solid var(--bg-color); 
+            border-radius: 50%; cursor: crosshair; z-index: 12; display: none;
+            transition: background-color 0.2s;
+        }
+        .flowchart-shape:hover .connector-point { display: block; }
+        .connector-point:hover { background-color: var(--connector-point-hover-bg); } 
+
+        .cp-top { top: -6px; left: 50%; transform: translateX(-50%); } 
+        .cp-bottom { bottom: -6px; left: 50%; transform: translateX(-50%); }
+        .cp-left { left: -6px; top: 50%; transform: translateY(-50%); }
+        .cp-right { right: -6px; top: 50%; transform: translateY(-50%); }
+
+        #connectors-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; transform-origin: 0 0; }
+        .connector-line { stroke: var(--connector-color); stroke-width: 2; fill: none; } /* Used for polyline now */
+         .connector-label { 
+             font-size: 10px; fill: var(--connector-label-color); 
+             pointer-events: none; 
+             text-anchor: middle; 
+             dominant-baseline: middle; 
+         }
+        .connector-hitbox { 
+            stroke: transparent; stroke-width: 10; fill: none;
+            cursor: pointer; pointer-events: stroke; 
+        }
+        /* Highlight line and arrow polygon on hitbox hover */
+        .connector-hitbox:hover + .connector-line { stroke: var(--accent-color); } 
+        .connector-hitbox:hover ~ .connector-arrow-marker polygon { fill: var(--accent-color); } 
+        
+        .connector-arrow-marker polygon { fill: var(--connector-color); transition: fill 0.2s; } 
+        .temp-connector { stroke: var(--accent-hover); stroke-width: 2; stroke-dasharray: 5,5; fill: none;}
+        .palette-shape { border: 2px solid var(--border-color); background-color: var(--card-color); margin-bottom: 8px; cursor: grab; text-align: center; font-size: 10px; padding: 5px; position: relative; display: flex; align-items: center; justify-content: center; min-height: 30px;} 
+        .palette-shape:active { cursor: grabbing; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-color); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+        
+        /* Modal Styles */
+        .modal-input { background-color: var(--border-color); color: var(--text-color); border: 1px solid #4b5563; }
+    </style>
+</head>
+<body class="w-screen h-screen flex text-sm">
+
+    <!-- Left Sidebar (Palette Only) -->
+    <aside class="w-48 h-full bg-gray-900 flex-shrink-0 flex flex-col">
+        <div class="p-4 border-b border-gray-700">
+            <h1 class="text-xl font-bold text-white">Flowchart Sim</h1>
+        </div>
+
+        <!-- Shape Palette -->
+        <div class="p-4 flex-1 overflow-y-auto">
+            <h2 class="text-lg font-semibold text-white mb-2">Shapes</h2>
+            <div id="shape-palette">
+                <div class="palette-shape shape-start-end" draggable="true" data-shape-type="start-end">Terminator</div>
+                <div class="palette-shape shape-declare" draggable="true" data-shape-type="declare">Declare</div>
+                <div class="palette-shape shape-assign" draggable="true" data-shape-type="assign">Assign</div>
+                <div class="palette-shape shape-input relative" draggable="true" data-shape-type="input"><div>Input</div></div>
+                <div class="palette-shape shape-output relative" draggable="true" data-shape-type="output"><div>Output</div></div>
+                <div class="palette-shape shape-decision relative" draggable="true" data-shape-type="decision"><div class="absolute inset-0 flex items-center justify-center text-[10px]">Decision</div></div>
+                <div class="palette-shape shape-while" draggable="true" data-shape-type="while">While</div>
+                <div class="palette-shape shape-for" draggable="true" data-shape-type="for">For</div>
+                <div class="palette-shape shape-subroutine" draggable="true" data-shape-type="subroutine">Subroutine</div>
+            </div>
+        </div>
+         <div class="p-2 text-xs text-gray-500 border-t border-gray-700">
+            Double-click shapes to edit. Del key removes selected.
+        </div>
+    </aside>
+
+    <!-- Main Canvas Area -->
+    <main id="canvas-container" class="flex-1 relative overflow-hidden bg-gray-800">
+        <div id="canvas" class="w-[3000px] h-[3000px]">
+            <svg id="connectors-svg" class="w-[3000px] h-[3000px]"></svg>
+            <!-- Flowchart shapes will be added here -->
+        </div>
+    </main>
+
+     <!-- Right Sidebar (Simulation & Variables) -->
+    <aside class="w-64 h-full bg-gray-900 flex-shrink-0 flex flex-col">
+         <!-- Simulation Controls -->
+        <div class="p-4 border-b border-gray-700">
+            <h2 class="text-lg font-semibold text-white mb-2">Simulation</h2>
+            <div class="flex gap-2">
+                <button id="sim-start-btn" class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700">Start</button>
+                <button id="sim-step-btn" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50" disabled>Step</button>
+                <button id="sim-reset-btn" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50" disabled>Reset</button>
+            </div>
+        </div>
+
+        <!-- Variables Display -->
+        <div class="p-4 flex-1 overflow-y-auto">
+            <h2 class="text-lg font-semibold text-white mb-2">Variables</h2>
+            <div id="variables-display" class="text-xs font-mono space-y-1 text-gray-400">
+                <p>No variables yet.</p>
+                <!-- Variables will be listed here -->
+            </div>
+        </div>
+    </aside>
+
+    <!-- Modal for Input -->
+    <div id="input-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-sm border border-gray-600">
+            <h2 id="input-modal-prompt" class="text-lg font-bold text-white mb-4">Enter value:</h2>
+            <input type="text" id="input-modal-value" class="modal-input w-full px-3 py-2 rounded mb-4">
+            <button id="input-modal-submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit</button>
+        </div>
+    </div>
+
+     <!-- Modal for Output -->
+    <div id="output-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-600">
+             <h2 class="text-lg font-bold text-white mb-4">Output</h2>
+            <div id="output-modal-content" class="bg-gray-900 p-4 rounded mb-4 text-center font-mono"></div>
+            <button id="output-modal-close" class="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">OK</button>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elements
+            const shapePalette = document.getElementById('shape-palette');
+            const canvasContainer = document.getElementById('canvas-container');
+            const canvas = document.getElementById('canvas');
+            const connectorsSvg = document.getElementById('connectors-svg');
+            const variablesDisplay = document.getElementById('variables-display');
+            const simStartBtn = document.getElementById('sim-start-btn');
+            const simStepBtn = document.getElementById('sim-step-btn');
+            const simResetBtn = document.getElementById('sim-reset-btn');
+            const inputModal = document.getElementById('input-modal');
+            const inputModalPrompt = document.getElementById('input-modal-prompt');
+            const inputModalValue = document.getElementById('input-modal-value');
+            const inputModalSubmit = document.getElementById('input-modal-submit');
+            const outputModal = document.getElementById('output-modal');
+            const outputModalContent = document.getElementById('output-modal-content');
+            const outputModalClose = document.getElementById('output-modal-close');
+
+            // State
+            let shapes = {};
+            let connectors = [];
+            let nextShapeId = 0;
+            let nextConnectorId = 0;
+            let selectedElement = null; // Can be shape { type: 'shape', id: shapeId } or connector { type: 'connector', id: connectorId }
+            let view = { zoom: 1, panX: 0, panY: 0, isPanning: false, lastPanX: 0, lastPanY: 0 };
+            let connectingState = { isConnecting: false, startShapeId: null, startPoint: null, tempLine: null };
+            let simulationState = { running: false, currentShapeId: null, variables: {}, history: [], loopStates: {} }; // loopStates to track For loop variables
+            let inputResolve = null; // Promise resolver for input modal
+
+            const SHAPE_DEFAULTS = { width: 120, height: 60 };
+
+            // --- Canvas Viewport (Pan/Zoom) ---
+            function updateViewTransform() {
+                canvas.style.transform = `translate(${view.panX}px, ${view.panY}px) scale(${view.zoom})`;
+            }
+
+            canvasContainer.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const rect = canvasContainer.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+                const zoomFactor = 1.1; const oldZoom = view.zoom;
+                
+                if (e.deltaY < 0) { view.zoom *= zoomFactor; } else { view.zoom /= zoomFactor; }
+                view.zoom = Math.max(0.2, Math.min(3, view.zoom));
+                view.panX = mouseX - (mouseX - view.panX) * (view.zoom / oldZoom);
+                view.panY = mouseY - (mouseY - view.panY) * (view.zoom / oldZoom);
+                updateViewTransform();
+            });
+
+            canvasContainer.addEventListener('mousedown', (e) => {
+                if (e.button === 1) { // Middle mouse button for panning
+                    e.preventDefault();
+                    view.isPanning = true; view.lastPanX = e.clientX; view.lastPanY = e.clientY;
+                    canvasContainer.style.cursor = 'grabbing';
+                } else if (e.target === canvasContainer || e.target === canvas) {
+                     setSelectedElement(null); // Deselect on background click
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (view.isPanning) {
+                    const dx = e.clientX - view.lastPanX; const dy = e.clientY - view.lastPanY;
+                    view.panX += dx; view.panY += dy;
+                    view.lastPanX = e.clientX; view.lastPanY = e.clientY;
+                    updateViewTransform();
+                } else if (connectingState.isConnecting) {
+                    onConnectingMouseMove(e);
+                }
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (e.button === 1 && view.isPanning) {
+                    view.isPanning = false; canvasContainer.style.cursor = 'grab';
+                }
+            });
+
+             // --- Shape Creation & Management ---
+            function createShape(type, x, y, text = '') {
+                const id = nextShapeId++;
+                const shapeEl = document.createElement('div');
+                shapeEl.id = `shape-${id}`;
+                shapeEl.className = `flowchart-shape shape-${type}`;
+                shapeEl.style.left = `${x}px`;
+                shapeEl.style.top = `${y}px`;
+                shapeEl.dataset.id = id;
+                shapeEl.dataset.type = type;
+
+                 // Inner div for text, helps with transforms like skew
+                const textEl = document.createElement('div');
+                textEl.textContent = text || type; // Default text
+                shapeEl.appendChild(textEl);
+                
+                // Add connector points
+                const points = ['top', 'bottom', 'left', 'right'];
+                points.forEach(p => {
+                    const pointEl = document.createElement('div');
+                    pointEl.className = `connector-point cp-${p}`;
+                    pointEl.dataset.point = p;
+                    shapeEl.appendChild(pointEl);
+                    pointEl.addEventListener('mousedown', (e) => startConnecting(e, id, p));
+                });
+
+                canvas.appendChild(shapeEl);
+                shapes[id] = { id, type, x, y, text: textEl.textContent, el: shapeEl, textEl: textEl };
+
+                makeShapeDraggable(shapeEl);
+                addShapeEventListeners(shapeEl, id);
+                return id;
+            }
+
+            function makeShapeDraggable(el) {
+                let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+                el.onmousedown = dragMouseDown;
+
+                function dragMouseDown(e) {
+                    if (e.target.classList.contains('connector-point') || e.button !== 0) return;
+                    e.preventDefault(); e.stopPropagation();
+                    setSelectedElement({ type: 'shape', id: el.dataset.id });
+                    pos3 = e.clientX; pos4 = e.clientY;
+                    document.onmouseup = closeDragElement;
+                    document.onmousemove = elementDrag;
+                }
+
+                function elementDrag(e) {
+                    e.preventDefault();
+                    pos1 = (pos3 - e.clientX) / view.zoom; pos2 = (pos4 - e.clientY) / view.zoom;
+                    pos3 = e.clientX; pos4 = e.clientY;
+                    const newY = el.offsetTop - pos2;
+                    const newX = el.offsetLeft - pos1;
+                    el.style.top = `${newY}px`;
+                    el.style.left = `${newX}px`;
+                    
+                    const id = el.dataset.id;
+                    if (shapes[id]) { shapes[id].x = newX; shapes[id].y = newY; }
+                    updateConnectorsForShape(id);
+                }
+
+                function closeDragElement() {
+                    document.onmouseup = null; document.onmousemove = null;
+                }
+            }
+
+            function addShapeEventListeners(el, id) {
+                 el.addEventListener('dblclick', () => {
+                     editShapeText(id);
+                 });
+                 // Click handled in makeShapeDraggable mousedown for selection
+            }
+
+            function editShapeText(id) {
+                const shape = shapes[id];
+                if (!shape) return;
+                
+                let defaultText = '';
+                 switch(shape.type) {
+                     case 'declare': defaultText = 'Declare variable'; break;
+                     case 'assign': defaultText = 'variable = value'; break;
+                     case 'input': defaultText = 'Input variable'; break;
+                     case 'output': defaultText = 'Output message or variable'; break;
+                     case 'while': defaultText = 'condition'; break;
+                     case 'for': defaultText = 'var = start to end step 1'; break;
+                     default: defaultText = shape.text;
+                 }
+
+                const newText = prompt(`Enter text for ${shape.type} shape:`, shape.text || defaultText);
+                if (newText !== null) {
+                    shape.text = newText;
+                    shape.textEl.textContent = newText;
+                }
+            }
+
+             function deleteShape(id) {
+                if (!shapes[id]) return;
+                shapes[id].el.remove();
+                delete shapes[id];
+                // Remove connectors attached to this shape
+                connectors = connectors.filter(conn => conn.from !== id && conn.to !== id);
+                // Clean up loop state if the deleted shape was part of a loop
+                delete simulationState.loopStates[id]; 
+                drawAllConnectors();
+                if (selectedElement?.type === 'shape' && selectedElement.id === id) {
+                    setSelectedElement(null);
+                }
+            }
+
+            // --- Connector Creation & Management ---
+            function startConnecting(e, startShapeId, startPoint) {
+                e.preventDefault(); e.stopPropagation();
+                connectingState.isConnecting = true;
+                connectingState.startShapeId = startShapeId;
+                connectingState.startPoint = startPoint;
+
+                connectingState.tempLine = document.createElementNS('http://www.w3.org/2000/svg', 'polyline'); // Changed to polyline
+                connectingState.tempLine.setAttribute('class', 'temp-connector');
+                connectorsSvg.appendChild(connectingState.tempLine);
+
+                const startPos = getConnectorPointPosition(startShapeId, startPoint);
+                 if (startPos) {
+                     // Initial point for polyline
+                     connectingState.tempLine.setAttribute('points', `${startPos.x},${startPos.y} ${startPos.x},${startPos.y}`); 
+                 }
+                
+                window.addEventListener('mouseup', finishConnecting, { once: true });
+            }
+
+            function onConnectingMouseMove(e) {
+                if (!connectingState.isConnecting || !connectingState.tempLine) return;
+                 const startPos = getConnectorPointPosition(connectingState.startShapeId, connectingState.startPoint);
+                 const canvasRect = canvas.getBoundingClientRect();
+                 const currentX = (e.clientX - canvasRect.left) / view.zoom;
+                 const currentY = (e.clientY - canvasRect.top) / view.zoom;
+                 
+                 // Calculate simple elbow point (horizontal then vertical)
+                 const cornerX = currentX;
+                 const cornerY = startPos.y;
+
+                 connectingState.tempLine.setAttribute('points', `${startPos.x},${startPos.y} ${cornerX},${cornerY} ${currentX},${currentY}`);
+            }
+
+            function finishConnecting(e) {
+                if (!connectingState.isConnecting) return;
+                
+                const endTarget = e.target;
+                let createdConnector = false;
+                
+                if (endTarget && endTarget.classList.contains('connector-point')) {
+                    const endShapeEl = endTarget.closest('.flowchart-shape');
+                    if (endShapeEl) {
+                        const endShapeId = parseInt(endShapeEl.dataset.id); 
+                        const endPoint = endTarget.dataset.point;
+
+                        if (connectingState.startShapeId != endShapeId) {
+                           const startShape = shapes[connectingState.startShapeId];
+                           let label = null;
+                           if (startShape && (startShape.type === 'decision' || startShape.type === 'while' || startShape.type === 'for')) {
+                                let defaultLabel = (startShape.type === 'decision') ? "Yes" : "True";
+                                const existingLabels = connectors.filter(c => c.from === startShape.id).map(c => c.label?.toUpperCase());
+                                if (startShape.type === 'decision') {
+                                    if (!existingLabels.includes("YES")) defaultLabel = "Yes";
+                                    else if (!existingLabels.includes("NO")) defaultLabel = "No";
+                                    else defaultLabel = ""; 
+                                } else { 
+                                     if (!existingLabels.includes("TRUE")) defaultLabel = "True";
+                                     else if (!existingLabels.includes("FALSE")) defaultLabel = "False";
+                                     else defaultLabel = "";
+                                }
+
+                                label = prompt(`Enter label for this path (e.g., Yes/No, True/False):`, defaultLabel);
+                               if (label === null) { 
+                                    if (connectingState.tempLine) connectingState.tempLine.remove();
+                                    connectingState = { isConnecting: false, startShapeId: null, startPoint: null, tempLine: null };
+                                    return; 
+                               }
+                           }
+                            createConnector(connectingState.startShapeId, connectingState.startPoint, endShapeId, endPoint, label);
+                            createdConnector = true;
+                        }
+                    }
+                }
+
+                // Cleanup
+                if (connectingState.tempLine) connectingState.tempLine.remove();
+                connectingState = { isConnecting: false, startShapeId: null, startPoint: null, tempLine: null };
+                
+            }
+            
+             function createConnector(fromId, fromPoint, toId, toPoint, label = null) {
+                 const id = nextConnectorId++;
+                 connectors.push({ id, from: fromId, fromPoint, to: toId, toPoint, label });
+                 drawAllConnectors();
+             }
+
+            function deleteConnector(id) {
+                connectors = connectors.filter(conn => conn.id !== id);
+                drawAllConnectors();
+                 if (selectedElement?.type === 'connector' && selectedElement.id === id) {
+                    setSelectedElement(null);
+                }
+            }
+
+
+            function getConnectorPointPosition(shapeId, point) {
+                const shape = shapes[shapeId];
+                if (!shape) return null;
+                const el = shape.el;
+               
+                let x = 0, y = 0;
+                switch(point) {
+                    case 'top':    x = el.offsetLeft + el.offsetWidth / 2; y = el.offsetTop; break;
+                    case 'bottom': x = el.offsetLeft + el.offsetWidth / 2; y = el.offsetTop + el.offsetHeight; break;
+                    case 'left':   x = el.offsetLeft; y = el.offsetTop + el.offsetHeight / 2; break;
+                    case 'right':  x = el.offsetLeft + el.offsetWidth; y = el.offsetTop + el.offsetHeight / 2; break;
+                }
+                 return { x: x, y: y };
+            }
+
+            function drawAllConnectors() {
+                const defs = connectorsSvg.querySelector('defs') || document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                if (!connectorsSvg.contains(defs)) {
+                     defs.innerHTML = `
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                              refX="9" refY="3.5" orient="auto" markerUnits="strokeWidth">
+                            <polygon points="0 0, 10 3.5, 0 7" class="connector-arrow-marker" /> 
+                        </marker>`; // Added class to polygon
+                     connectorsSvg.appendChild(defs);
+                 }
+                
+                connectorsSvg.querySelectorAll('g.connector-group').forEach(el => el.remove());
+
+                connectors.forEach(conn => {
+                    const startPos = getConnectorPointPosition(conn.from, conn.fromPoint);
+                    const endPos = getConnectorPointPosition(conn.to, conn.toPoint);
+
+                    if (startPos && endPos) {
+                        const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                        group.classList.add('connector-group'); 
+
+                        // Simple Elbow Calculation (horizontal then vertical)
+                        const cornerX = endPos.x;
+                        const cornerY = startPos.y;
+                        const points = `${startPos.x},${startPos.y} ${cornerX},${cornerY} ${endPos.x},${endPos.y}`;
+
+                        // Visible line (polyline for elbow)
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                        line.setAttribute('points', points);
+                        line.setAttribute('class', 'connector-line');
+                        line.setAttribute('marker-end', 'url(#arrowhead)');
+                        
+                        // Hitbox (polyline for elbow)
+                        const hitbox = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+                        hitbox.setAttribute('points', points);
+                        hitbox.classList.add('connector-hitbox');
+                        hitbox.dataset.id = conn.id; 
+
+                        hitbox.addEventListener('click', (e) => {
+                             e.stopPropagation();
+                             setSelectedElement({ type: 'connector', id: conn.id });
+                        });
+                        
+                        group.appendChild(hitbox); // Hitbox first (drawn below)
+                        group.appendChild(line); // Visible line on top
+
+                         // Add label if present - position near corner
+                        if (conn.label) {
+                            const labelText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                            // Position label slightly offset from the corner point
+                            let labelX = cornerX;
+                            let labelY = cornerY;
+                            const offset = 10;
+                            // Adjust based on direction (simple check)
+                            if (startPos.y < endPos.y) labelY -= offset; else labelY += offset; // Above/below corner
+                            if (startPos.x < endPos.x) labelX += offset; else labelX -= offset; // Left/right of corner
+
+                            labelText.setAttribute('x', labelX);
+                            labelText.setAttribute('y', labelY);
+                            labelText.textContent = conn.label;
+                            labelText.classList.add('connector-label');
+                            group.appendChild(labelText);
+                        }
+                        
+                        connectorsSvg.appendChild(group);
+                    }
+                });
+            }
+
+
+            function updateConnectorsForShape(shapeId) {
+                drawAllConnectors(); // Simplest way is to redraw all
+            }
+            
+            // --- Selection & Deletion ---
+            function setSelectedElement(element) { 
+                // Deselect previous
+                if (selectedElement) {
+                    if (selectedElement.type === 'shape' && shapes[selectedElement.id]) {
+                        shapes[selectedElement.id].el.classList.remove('selected');
+                    } else if (selectedElement.type === 'connector') {
+                       const group = connectorsSvg.querySelector(`.connector-group:has(.connector-hitbox[data-id="${selectedElement.id}"])`);
+                       const line = group?.querySelector('.connector-line');
+                       if(line) line.style.stroke = ''; 
+                       const arrowPoly = group?.querySelector('.connector-arrow-marker polygon'); 
+                       if(arrowPoly) arrowPoly.style.fill = '';
+                    }
+                }
+                
+                selectedElement = element;
+
+                // Select new
+                if (selectedElement) {
+                     if (selectedElement.type === 'shape' && shapes[selectedElement.id]) {
+                        shapes[selectedElement.id].el.classList.add('selected');
+                    } else if (selectedElement.type === 'connector') {
+                       const group = connectorsSvg.querySelector(`.connector-group:has(.connector-hitbox[data-id="${selectedElement.id}"])`);
+                       const line = group?.querySelector('.connector-line');
+                       if(line) line.style.stroke = 'var(--accent-color)'; 
+                       const arrowPoly = group?.querySelector('.connector-arrow-marker polygon'); 
+                       if(arrowPoly) arrowPoly.style.fill = 'var(--accent-color)'; 
+                    }
+                }
+            }
+            
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+                    if (selectedElement) {
+                        if (selectedElement.type === 'shape') {
+                            deleteShape(selectedElement.id);
+                        } else if (selectedElement.type === 'connector') {
+                            deleteConnector(selectedElement.id);
+                        }
+                        selectedElement = null; // Deselect after deletion
+                    }
+                }
+            });
+
+
+            // --- Drag and Drop from Palette ---
+            shapePalette.addEventListener('dragstart', (e) => {
+                if (e.target.dataset.shapeType) {
+                    e.dataTransfer.setData('text/plain', e.target.dataset.shapeType);
+                    e.dataTransfer.effectAllowed = 'copy';
+                }
+            });
+
+            canvasContainer.addEventListener('dragover', (e) => e.preventDefault());
+
+            canvasContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('text/plain');
+                if (!type) return; 
+
+                const rect = canvasContainer.getBoundingClientRect();
+                const x = (e.clientX - rect.left - view.panX) / view.zoom;
+                const y = (e.clientY - rect.top - view.panY) / view.zoom;
+                
+                let defaultText = '';
+                 switch(type) {
+                     case 'start-end': defaultText = 'Start'; break;
+                     case 'declare': defaultText = 'Declare counter As Integer'; break; 
+                     case 'assign': defaultText = 'counter = 0'; break;
+                     case 'input': defaultText = 'Input value'; break;
+                     case 'output': defaultText = 'Output "Hello"'; break;
+                     case 'decision': defaultText = 'counter > 10'; break;
+                     case 'while': defaultText = 'counter < 5'; break;
+                     case 'for': defaultText = 'i = 1 to 10 step 1'; break;
+                     case 'subroutine': defaultText = 'Call MySub()'; break;
+                 }
+
+                createShape(type, x - SHAPE_DEFAULTS.width / 2, y - SHAPE_DEFAULTS.height / 2, defaultText);
+            });
+            
+             // --- Simulation Logic ---
+
+             function resetSimulation() {
+                 simulationState = { running: false, currentShapeId: null, variables: {}, history: [], loopStates: {} };
+                 simStartBtn.disabled = false;
+                 simStepBtn.disabled = true;
+                 simResetBtn.disabled = true;
+                 Object.values(shapes).forEach(s => s.el.classList.remove('simulating'));
+                 updateVariablesDisplay();
+            }
+
+            function startSimulation() {
+                 resetSimulation();
+                 const startShapes = Object.values(shapes).filter(s => s.type === 'start-end' && s.text.toLowerCase() === 'start');
+                 if (startShapes.length === 0) { alert("Error: No 'Start' shape found."); return; }
+                 if (startShapes.length > 1) { alert("Error: Multiple 'Start' shapes found."); return; }
+
+                 simulationState.running = true;
+                 simulationState.currentShapeId = startShapes[0].id;
+                 simStartBtn.disabled = true;
+                 simStepBtn.disabled = false;
+                 simResetBtn.disabled = false;
+                 highlightCurrentShape();
+                 updateVariablesDisplay();
+             }
+             
+             // Function to parse "var = start to end step s"
+             function parseForLoop(text) {
+                 // Updated regex to handle expressions for start, end, step
+                 const match = text.match(/^([a-zA-Z_]\w*)\s*=\s*(.+?)\s+to\s+(.+?)(?:\s+step\s+(.+))?$/i);
+                 if (!match) throw new Error(`Invalid For loop format: ${text}. Use 'var = startExpr to endExpr step stepExpr'`);
+                 
+                 const variable = match[1];
+                 const startExpr = match[2];
+                 const endExpr = match[3];
+                 const stepExpr = match[4] || '1'; // Default step is 1
+
+                 // Evaluate expressions in the current scope
+                 const start = evaluateExpression(startExpr, simulationState.variables, true);
+                 const end = evaluateExpression(endExpr, simulationState.variables, true);    
+                 const step = evaluateExpression(stepExpr, simulationState.variables, true); 
+
+                 if (typeof start !== 'number' || typeof end !== 'number' || typeof step !== 'number') {
+                      throw new Error(`For loop bounds and step must evaluate to numbers: ${text}`)
+                 }
+                  if (step === 0) { throw new Error(`For loop step cannot be zero: ${text}`); }
+
+                 return { variable, start, end, step };
+             }
+
+             async function stepSimulation() {
+                 if (!simulationState.running || simulationState.currentShapeId === null) return;
+
+                 const currentShape = shapes[simulationState.currentShapeId];
+                 if (!currentShape) {
+                     alert("Simulation error: Current shape not found."); resetSimulation(); return;
+                 }
+                 
+                 // --- Loop Handling ---
+                 // Check if we are *entering* or *re-evaluating* a loop shape
+                 let justEnteredLoop = false;
+                 if ((currentShape.type === 'while' || currentShape.type === 'for') && !simulationState.loopStates[currentShape.id]?.active) {
+                     justEnteredLoop = true;
+                 }
+
+                 // Handle iteration *before* processing the loop shape itself if returning
+                 const previousShapeId = simulationState.history.length > 0 ? simulationState.history[simulationState.history.length - 1] : null;
+                 const returningToLoopId = connectors.find(c => c.to === currentShape.id && c.from === previousShapeId)?.to;
+
+                 if (returningToLoopId && simulationState.loopStates[returningToLoopId]?.active) {
+                     const loopState = simulationState.loopStates[returningToLoopId];
+                     if (loopState.type === 'for') {
+                         simulationState.variables[loopState.variable] += loopState.step;
+                         updateVariablesDisplay(); 
+                     }
+                      // For 'while', condition is just re-evaluated below
+                 }
+
+                 simulationState.history.push(currentShape.id); 
+
+                 let nextShapeId = null;
+                 let conditionMet = null; 
+
+                 try {
+                     switch (currentShape.type) {
+                         case 'start-end':
+                             if (currentShape.text.toLowerCase() === 'end') { simulationState.running = false; } 
+                             else { nextShapeId = findNextShape(currentShape.id); }
+                             break;
+                         case 'declare':
+                             const declareParts = currentShape.text.split(/\s+/);
+                             if (declareParts.length >= 2 && declareParts[0].toLowerCase() === 'declare') {
+                                 const varName = declareParts[1];
+                                 if (/^[a-zA-Z_]\w*$/.test(varName)) {
+                                     simulationState.variables[varName] = undefined; 
+                                 } else { console.warn(`Invalid variable name in declaration: ${currentShape.text}`); }
+                             } else { console.warn(`Could not parse declaration: ${currentShape.text}`); }
+                             nextShapeId = findNextShape(currentShape.id);
+                             break;
+                         case 'assign': 
+                             evaluateExpression(currentShape.text, simulationState.variables);
+                             nextShapeId = findNextShape(currentShape.id);
+                             break;
+                          case 'process': case 'subroutine': 
+                             evaluateExpression(currentShape.text, simulationState.variables);
+                             nextShapeId = findNextShape(currentShape.id);
+                             break;
+                         case 'input': 
+                             const inputText = currentShape.text.trim();
+                             const inputVarMatch = inputText.match(/^(?:input|get)\s+([a-zA-Z_]\w*)/i);
+                             if (inputVarMatch && inputVarMatch[1]) {
+                                 const varName = inputVarMatch[1];
+                                 if (!(varName in simulationState.variables)) { throw new Error(`Variable "${varName}" must be declared before input.`); }
+                                 const promptText = `Enter value for ${varName}:`;
+                                 const value = await promptForInput(promptText);
+                                 simulationState.variables[varName] = !isNaN(parseFloat(value)) && isFinite(value) ? parseFloat(value) : value;
+                             } else { throw new Error(`Invalid input format: ${inputText}. Use 'Input variableName'`) }
+                             nextShapeId = findNextShape(currentShape.id);
+                             break;
+                         case 'output': 
+                             const outputText = currentShape.text.trim();
+                             const outputValue = evaluateExpression(outputText, simulationState.variables, true); 
+                             await showOutput(outputValue);
+                             nextShapeId = findNextShape(currentShape.id);
+                             break;
+                         case 'decision':
+                              conditionMet = !!evaluateExpression(currentShape.text, simulationState.variables); 
+                              nextShapeId = findNextShape(currentShape.id, conditionMet); 
+                             break;
+                         case 'while':
+                             conditionMet = !!evaluateExpression(currentShape.text, simulationState.variables);
+                             if (conditionMet) {
+                                  if (!simulationState.loopStates[currentShape.id]) { // Mark active on first true entry
+                                     simulationState.loopStates[currentShape.id] = { type: 'while', active: true };
+                                 }
+                             } else {
+                                 delete simulationState.loopStates[currentShape.id]; // Exiting loop
+                             }
+                             nextShapeId = findNextShape(currentShape.id, conditionMet);
+                             break;
+                        case 'for':
+                            let loopParams;
+                            let currentLoopVal;
+                            // Initialize on first entry
+                            if (justEnteredLoop || !simulationState.loopStates[currentShape.id]) {
+                                loopParams = parseForLoop(currentShape.text);
+                                if (!(loopParams.variable in simulationState.variables)) { throw new Error(`Loop variable "${loopParams.variable}" must be declared.`); }
+                                simulationState.variables[loopParams.variable] = loopParams.start;
+                                simulationState.loopStates[currentShape.id] = { type: 'for', active: true, ...loopParams };
+                                currentLoopVal = loopParams.start;
+                                updateVariablesDisplay(); // Show initial value
+                            } else {
+                                loopParams = simulationState.loopStates[currentShape.id];
+                                currentLoopVal = simulationState.variables[loopParams.variable];
+                            }
+                            
+                            // Check condition 
+                             conditionMet = (loopParams.step >= 0) 
+                                             ? (currentLoopVal <= loopParams.end) 
+                                             : (currentLoopVal >= loopParams.end);
+
+                             if (!conditionMet) {
+                                 delete simulationState.loopStates[currentShape.id]; // Exiting loop
+                             } else if (!simulationState.loopStates[currentShape.id].active) {
+                                  simulationState.loopStates[currentShape.id].active = true; // Mark active on first true check
+                             }
+                             
+                             nextShapeId = findNextShape(currentShape.id, conditionMet);
+                             break; 
+                     }
+                 } catch (error) {
+                      alert(`Simulation Error at shape ${currentShape.id} (${currentShape.text}):\n${error.message}`);
+                      resetSimulation();
+                      return; 
+                 }
+
+                 updateVariablesDisplay(); // Update display after potential assignments/increments
+
+                 // --- Handle Loop Back ---
+                 // If the next step is the beginning of an *active* loop, we let the normal flow handle it
+                 // The logic at the *start* of stepSimulation detects the return and increments/re-evaluates
+                 
+                 // --- Normal Flow / Exit Loop ---
+                 if (simulationState.running) {
+                     simulationState.currentShapeId = nextShapeId;
+                     if (nextShapeId === null) {
+                        if (currentShape.type !== 'start-end' || currentShape.text.toLowerCase() !== 'end') {
+                             const expectedLabel = (currentShape.type === 'decision' || currentShape.type === 'while' || currentShape.type === 'for') 
+                                                  ? (conditionMet ? "'True'/'Yes'" : "'False'/'No'") : "";
+                            alert(`Simulation stopped: No valid outgoing path ${expectedLabel} found from shape ${currentShape.id} (${currentShape.text})`);
+                        }
+                         simulationState.running = false; 
+                     }
+                 }
+
+                 if (!simulationState.running) {
+                     simStepBtn.disabled = true;
+                     if (currentShape.type !== 'start-end' || currentShape.text.toLowerCase() !== 'end') {
+                          // Only alert if stopped unexpectedly
+                          // alert("Simulation finished unexpectedly."); 
+                     } else {
+                          alert("Simulation finished.");
+                     }
+                 }
+                  highlightCurrentShape();
+             }
+
+             function findNextShape(currentShapeId, conditionResult = null) { // conditionResult is boolean or null
+                 const outgoingConnectors = connectors.filter(c => c.from === currentShapeId);
+                 if (outgoingConnectors.length === 0) return null;
+                 
+                 const currentShape = shapes[currentShapeId];
+                 
+                 // Decision, While, For all need conditional routing based on labels
+                 if (currentShape.type === 'decision' || currentShape.type === 'while' || currentShape.type === 'for') { 
+                      if (conditionResult === null) return null; 
+
+                      const targetLabel = (currentShape.type === 'decision') 
+                                           ? (conditionResult ? "YES" : "NO")
+                                           : (conditionResult ? "TRUE" : "FALSE");
+                      const altLabel = (currentShape.type === 'decision') 
+                                           ? (conditionResult ? "TRUE" : "FALSE") 
+                                           : (conditionResult ? "YES" : "NO"); 
+
+                      const matchingConnector = outgoingConnectors.find(c => c.label?.toUpperCase() === targetLabel || c.label?.toUpperCase() === altLabel);
+                      
+                      if (matchingConnector) {
+                          return matchingConnector.to;
+                      } else {
+                          // Fallback: Check for unlabeled connectors if only one exists for the expected path
+                          const expectedConnectorCount = (currentShape.type === 'decision' || currentShape.type === 'while' || currentShape.type === 'for') ? 2 : 1;
+                           if (outgoingConnectors.length === 1 && outgoingConnectors[0].label === null) {
+                                console.warn(`Shape ${currentShapeId} (${currentShape.type}) using unlabeled connector for '${targetLabel}'/'${altLabel}' path.`);
+                                return outgoingConnectors[0].to;
+                           } else if (outgoingConnectors.length === expectedConnectorCount && !outgoingConnectors.some(c => c.label)) {
+                               // If exactly the expected number of connectors exist and NONE are labeled, use positional fallback
+                               console.warn(`Shape ${currentShapeId} (${currentShape.type}) has unlabeled connectors. Assuming first is TRUE/YES, second is FALSE/NO.`);
+                                return conditionResult ? outgoingConnectors[0].to : outgoingConnectors[1].to;
+                           }
+                           
+                          console.error(`Shape ${currentShapeId} (${currentShape.type}) has no connector labeled '${targetLabel}' or '${altLabel}'.`);
+                      }
+                      return null; // No suitable path found
+                 } 
+                 // Standard shapes follow the first (or only) path
+                 else {
+                     if (outgoingConnectors.length > 1) {
+                         console.warn(`Shape ${currentShapeId} (${currentShape.type}) has multiple outgoing paths but is not conditional.`);
+                     }
+                     return outgoingConnectors[0].to;
+                 }
+             }
+
+              function highlightCurrentShape() {
+                 Object.values(shapes).forEach(s => s.el.classList.remove('simulating'));
+                 if (simulationState.currentShapeId !== null && shapes[simulationState.currentShapeId]) {
+                     shapes[simulationState.currentShapeId].el.classList.add('simulating');
+                 }
+             }
+
+              function updateVariablesDisplay() {
+                 const vars = simulationState.variables;
+                 if (Object.keys(vars).length === 0) {
+                     variablesDisplay.innerHTML = '<p>No variables declared.</p>'; // Updated message
+                 } else {
+                     variablesDisplay.innerHTML = Object.entries(vars)
+                         .sort(([keyA], [keyB]) => keyA.localeCompare(keyB)) // Sort alphabetically
+                         .map(([key, value]) => `<div>${key} = ${value === undefined ? '<i>undefined</i>' : JSON.stringify(value)}</div>`) // Show undefined
+                         .join('');
+                 }
+             }
+             
+             // Basic expression evaluator (vulnerable to injection if not careful)
+            function evaluateExpression(expr, vars, evaluateOnly = false) {
+                 expr = expr.trim();
+                 
+                 // Handle simple string literals for output/display
+                 if (evaluateOnly && ((expr.startsWith('"') && expr.endsWith('"')) || (expr.startsWith("'") && expr.endsWith("'")))) {
+                     // Check if it's ONLY a string literal
+                     if (!expr.substring(1, expr.length - 1).match(/["']/)) {
+                        return expr.substring(1, expr.length - 1);
+                     }
+                 }
+
+                 // Assignment (e.g., x = y + 1) - used by Assign shape
+                 if (!evaluateOnly && expr.includes('=') && !expr.includes('==') && !expr.includes('!=') && !expr.includes('<=') && !expr.includes('>=') ) {
+                     const parts = expr.split('=').map(p => p.trim());
+                     if (parts.length === 2 && /^[a-zA-Z_]\w*$/.test(parts[0])) { 
+                         const varName = parts[0];
+                         if (!(varName in vars)) { throw new Error(`Variable "${varName}" not declared before assignment.`); } 
+                         const expressionToEvaluate = parts[1];
+                         try {
+                              const funcBody = `return (${expressionToEvaluate});`;
+                              const evaluator = new Function(...Object.keys(vars), funcBody);
+                              vars[varName] = evaluator(...Object.values(vars).map(v => v === undefined ? null : v)); 
+                              return vars[varName]; 
+                         } catch (e) { throw new Error(`Eval assignment "${expr}": ${e.message}`); }
+                     } else { throw new Error(`Invalid assignment: ${expr}`); }
+                 } 
+                 // Condition or simple value/expression
+                 else {
+                     let safeExpr = expr.replace(/==+/g, '==').replace(/!=+/g, '!=').replace(/>=+/g, '>=').replace(/<=+/g, '<=');
+                      safeExpr = safeExpr.replace(/&/g, '+'); // Treat & as string concat (+)
+
+                     try {
+                         const funcBody = `return (${safeExpr});`;
+                         const evaluator = new Function(...Object.keys(vars), funcBody);
+                         return evaluator(...Object.values(vars).map(v => v === undefined ? null : v)); 
+                     } catch (e) { throw new Error(`Eval expression "${expr}": ${e.message}`); }
+                 }
+            }
+
+
+            // --- Input/Output Modals ---
+            function promptForInput(promptText) {
+                return new Promise((resolve) => {
+                    inputModalPrompt.textContent = promptText;
+                    inputModalValue.value = '';
+                    inputModal.classList.remove('hidden');
+                    inputModalValue.focus();
+                    inputResolve = resolve; // Store the resolve function
+                });
+            }
+
+             inputModalSubmit.addEventListener('click', () => {
+                 if (inputResolve) {
+                     inputResolve(inputModalValue.value);
+                     inputModal.classList.add('hidden');
+                     inputResolve = null;
+                 }
+             });
+             
+              inputModalValue.addEventListener('keyup', (e) => {
+                 if (e.key === 'Enter') {
+                     inputModalSubmit.click();
+                 }
+             });
+
+            function showOutput(value) {
+                 return new Promise((resolve) => {
+                     outputModalContent.textContent = String(value);
+                     outputModal.classList.remove('hidden');
+                     outputModalClose.onclick = () => { // Use onclick to easily overwrite
+                        outputModal.classList.add('hidden');
+                        resolve();
+                     };
+                 });
+            }
+
+            // --- Init ---
+            simStartBtn.addEventListener('click', startSimulation);
+            simStepBtn.addEventListener('click', stepSimulation);
+            simResetBtn.addEventListener('click', resetSimulation);
+            updateViewTransform(); // Initial setup
+
+        });
+    </script>
+</body>
+</html>
+

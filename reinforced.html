@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detective Q-Learning Hunt</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Premium Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .code-font { font-family: 'Fira Code', monospace; }
+        /* Custom scrollbar for logs and terminal */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        /* Real-World Animations */
+        .car-sim { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sensor-line { transition: opacity 0.3s ease; }
+        .bar-fill { transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .robot-joint { transform-origin: center left; transition: transform 0.8s ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-0 z-40 px-6 py-4 shadow-sm">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-2xl shadow-md shadow-indigo-600/10">
+                    <span class="text-2xl">👮</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+                        Detective Q-Learning Hunt
+                    </h1>
+                    <p class="text-xs text-slate-500 font-medium">Interactive Learning Simulation</p>
+                </div>
+            </div>
+            
+            <!-- Three-Stage Global Header Menu Bar -->
+            <div class="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200">
+                <button onclick="setStage(1)" id="btn-stage-1" class="px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 shadow-sm bg-white text-slate-800 border border-slate-200">🕹️ Stage 1: Play</button>
+                <button onclick="setStage(2)" id="btn-stage-2" class="px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800">🧠 Stage 2: Reveal AI</button>
+                <button onclick="setStage(3)" id="btn-stage-3" class="px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800">🌍 Stage 3: Real World</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column Dashboard: Detective Control Pad & Map Designer -->
+        <section id="leftColumnContainer" class="lg:col-span-4 flex flex-col gap-6">
+            
+            <!-- Navigation Controls (Dashboard) -->
+            <div id="leftControlsPanel" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center justify-between">
+                    <span>🎮 Detective Control Pad</span>
+                </h2>
+
+                <!-- 3-Column Scoreboard Cards -->
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center shadow-sm flex flex-col justify-center transition-all duration-300">
+                        <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-extrabold mb-1">Current</span>
+                        <span id="scoreValue" class="text-2xl font-black code-font text-indigo-600 transition-colors duration-300">0</span>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center shadow-sm flex flex-col justify-center transition-all duration-300">
+                        <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-extrabold mb-1">Best Score</span>
+                        <span id="bestScoreValue" class="text-2xl font-black code-font text-emerald-600 transition-colors duration-300">-</span>
+                    </div>
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 text-center shadow-sm flex flex-col justify-center">
+                        <span class="block text-[9px] uppercase tracking-wider text-slate-400 font-extrabold mb-1">Steps</span>
+                        <span id="stepsValue" class="text-2xl font-black code-font text-cyan-600">0</span>
+                    </div>
+                </div>
+
+                <!-- Layout Directional Pad -->
+                <div class="flex flex-col items-center gap-1.5">
+                    <button onclick="handleManualMove('UP')" class="w-12 h-10 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center font-bold text-lg active:scale-95 transition shadow-md">↑</button>
+                    <div class="flex gap-1.5">
+                        <button onclick="handleManualMove('LEFT')" class="w-12 h-10 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center font-bold text-lg active:scale-95 transition shadow-md">←</button>
+                        <button onclick="resetPlayerToStart()" class="w-12 h-10 bg-slate-100 border border-slate-200 hover:bg-slate-200 text-slate-600 rounded-xl flex items-center justify-center text-sm font-semibold active:scale-95 transition shadow-md" title="Reset to Start">🔄</button>
+                        <button onclick="handleManualMove('RIGHT')" class="w-12 h-10 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center font-bold text-lg active:scale-95 transition shadow-md">→</button>
+                    </div>
+                    <button onclick="handleManualMove('DOWN')" class="w-12 h-10 bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white rounded-xl flex items-center justify-center font-bold text-lg active:scale-95 transition shadow-md">↓</button>
+                </div>
+            </div>
+
+            <!-- Map Builder -->
+            <div id="mapBuilderPanel" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4">
+                <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-3 flex items-center justify-between">
+                    <span>🏙️ City Layout Architect</span>
+                </h2>
+
+                <!-- Preset Maps Selector -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-2">🏆 Classroom Competition Set Maps</label>
+                    <div class="grid grid-cols-5 gap-1" id="presetSelectorContainer">
+                        <button onclick="loadPresetMap(1)" id="btn-preset-1" class="preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">1</button>
+                        <button onclick="loadPresetMap(2)" id="btn-preset-2" class="preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">2</button>
+                        <button onclick="loadPresetMap(3)" id="btn-preset-3" class="preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">3</button>
+                        <button onclick="loadPresetMap(4)" id="btn-preset-4" class="preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">4</button>
+                        <button onclick="loadPresetMap(5)" id="btn-preset-5" class="preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition">5</button>
+                    </div>
+                    <p id="activeMapName" class="text-[10px] text-slate-500 font-semibold mt-1.5 italic">// Map 1 Loaded (Easy Street)</p>
+                </div>
+
+                <!-- Grid Dimension Configuration -->
+                <div>
+                    <div class="flex justify-between items-center mb-1.5">
+                        <label class="text-xs font-bold text-slate-600">Grid Size (3x3 to 8x8)</label>
+                        <span id="gridSizeValue" class="text-xs font-extrabold code-font bg-slate-100 px-2.5 py-0.5 rounded border border-slate-200 text-slate-700">5x5</span>
+                    </div>
+                    <input type="range" id="gridSizeRange" min="3" max="8" value="5" class="w-full accent-indigo-600 bg-slate-200 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Paint Brushes -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-600 mb-2">Paint Brush (Switch to Stage 2 to see hazards while editing!)</label>
+                    <div class="grid grid-cols-2 gap-2" id="brushSelectors">
+                        <button onclick="setBrush('start')" id="brush-start" class="brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 text-left transition font-semibold">
+                            <span class="w-5 h-5 rounded bg-indigo-600 flex items-center justify-center text-[11px] text-white shadow-sm">🚨</span>
+                            <span class="text-slate-700">HQ Start</span>
+                        </button>
+                        <button onclick="setBrush('goal')" id="brush-goal" class="brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 text-left transition font-semibold">
+                            <span class="w-5 h-5 rounded bg-amber-500 flex items-center justify-center text-[11px] shadow-sm">💰</span>
+                            <span class="text-slate-700">Stolen Loot</span>
+                        </button>
+                        <button onclick="setBrush('mud')" id="brush-mud" class="brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 text-left transition font-semibold">
+                            <span class="w-5 h-5 rounded bg-blue-100 border border-blue-300 flex items-center justify-center text-[11px] shadow-sm">🕳️</span>
+                            <span class="text-slate-700">Street Hole</span>
+                        </button>
+                        <button onclick="setBrush('wall')" id="brush-wall" class="brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 text-left transition font-semibold">
+                            <span class="w-5 h-5 rounded bg-red-100 border border-red-300 flex items-center justify-center text-[11px] shadow-sm">🥷</span>
+                            <span class="text-slate-700">Thief Wall</span>
+                        </button>
+                        <button onclick="setBrush('empty')" id="brush-empty" class="brush-btn col-span-2 flex items-center justify-center gap-2 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 transition font-semibold">
+                            <span class="w-4 h-4 rounded bg-white border border-slate-300"></span>
+                            <span class="text-slate-700">Clear Empty Street</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 border-t border-slate-100 pt-3">
+                    <button onclick="randomizeEnvironment()" class="flex-1 text-xs py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold rounded-xl transition shadow-sm">
+                        🎲 Randomize
+                    </button>
+                    <button onclick="resetBrain()" class="flex-1 text-xs py-2.5 px-3 bg-rose-50 border border-rose-100 text-rose-700 hover:bg-rose-100 font-bold rounded-xl transition shadow-sm">
+                        🧠 Reset Q-Table
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hyperparameters (Stage 2 Only) -->
+            <div id="hyperparametersPanel" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col gap-4 hidden">
+                <h2 class="text-sm font-extrabold uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-3 flex items-center gap-2">
+                    🎛&nbsp;Hyperparameters
+                </h2>
+
+                <!-- Exploration Rate Epsilon -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-xs font-bold text-slate-600">Exploration Rate ($\epsilon$)</label>
+                        <span id="epsVal" class="text-xs font-bold code-font text-amber-600">0.2</span>
+                    </div>
+                    <input type="range" id="epsRange" min="0" max="1" step="0.1" value="0.2" class="w-full accent-amber-500 bg-slate-200 h-1.5 rounded-lg appearance-none cursor-pointer">
+                    <p class="text-[10px] text-slate-500 mt-1">Probability of random exploratory actions during Auto-Run.</p>
+                </div>
+
+                <!-- Reward Settings Tuning -->
+                <div class="border-t border-slate-100 pt-3">
+                    <button onclick="toggleRewardSettings()" class="text-xs font-bold text-slate-500 flex items-center justify-between w-full hover:text-slate-800 transition">
+                        <span>⚙️ Fine-Tune Reward Weights</span>
+                        <span id="rewardChevron">▶</span>
+                    </button>
+                    <div id="rewardSettingsDiv" class="hidden flex-col gap-3 mt-3">
+                        <div class="grid grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Loot Found Reward</label>
+                                <input type="number" id="rewardGoal" value="10" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-lg p-1.5 text-xs text-center code-font">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Step Penalty</label>
+                                <input type="number" id="rewardStep" value="-1" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-lg p-1.5 text-xs text-center code-font">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Hole Penalty</label>
+                                <input type="number" id="rewardMud" value="-5" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-lg p-1.5 text-xs text-center code-font">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 mb-1">Thief Block Penalty</label>
+                                <input type="number" id="rewardWall" value="-2" class="w-full bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-lg p-1.5 text-xs text-center code-font">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Center Column Workspace (Varying grid sizes dynamically) -->
+        <section id="centerColumn" class="lg:col-span-8 flex flex-col gap-6 transition-all duration-300">
+            
+            <!-- Classroom Interactive Hub -->
+            <div id="interactiveHub" class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                <!-- Tab Selector Bar -->
+                <div class="flex border-b border-slate-100 bg-slate-50/50">
+                    <button onclick="setActiveHubTab('mission')" id="hub-tab-mission" class="flex-1 py-3 px-4 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center justify-center gap-1.5 transition">
+                        📋 Active Stage Instruction
+                    </button>
+                    <button onclick="setActiveHubTab('theory')" id="hub-tab-theory" class="flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center justify-center gap-1.5 transition">
+                        🎓 Q-Learning Theory Guide
+                    </button>
+                </div>
+                
+                <!-- Tab Content Bodies -->
+                <div class="p-5">
+                    <!-- Tab 1: Stage Instruction -->
+                    <div id="hub-content-mission" class="space-y-3">
+                        <div id="stage1Banner" class="flex flex-col gap-3">
+                            <div class="flex gap-3">
+                                <span class="text-2xl">🙈</span>
+                                <div class="text-xs leading-relaxed text-slate-600">
+                                    <p class="font-extrabold text-slate-900 mb-0.5">Stage 1: Blindfolded Play Instructions</p>
+                                    <ol class="list-decimal pl-4 space-y-1 mt-1 text-slate-500">
+                                        <li>Pick a **Preset Map (1 to 5)** to load a street design layout.</li>
+                                        <li>Have a student navigate blindly using the **Control Pad** arrow keys to track down the **Stolen Loot 💰**.</li>
+                                        <li>All Thief Barricades 🥷 and Holes 🕳️ are completely invisible. Listen to your bumps in the Terminal log below!</li>
+                                        <li>Complete **5 run attempts or restarts** on this map layout to unlock the quick reveal button below.</li>
+                                    </ol>
+                                </div>
+                            </div>
+                            
+                            <!-- Reveal Map Feature Section -->
+                            <div class="mt-2 flex flex-col sm:flex-row sm:items-center gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                                <button id="btnRevealHazards" onclick="toggleRevealHazards()" class="px-4 py-2 text-xs font-bold rounded-lg border transition shadow-sm bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shrink-0" disabled>
+                                    🔍 Reveal Hazards (0/5)
+                                </button>
+                                <div class="text-[11px] leading-normal text-slate-500">
+                                    <span id="revealStatusText" class="font-medium">Complete at least <span class="font-bold text-indigo-600">5 runs or resets</span> on this map layout to unlock the map reveal.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="stage2Banner" class="flex flex-col gap-3 hidden">
+                            <div class="flex gap-3">
+                                <span class="text-2xl">🧠</span>
+                                <div class="text-xs leading-relaxed text-slate-600 flex-grow">
+                                    <p class="font-extrabold text-slate-900 mb-0.5">Stage 2: Revealing the AI Brain</p>
+                                    <p>Observe the Q-table in real-time as you take manual steps or run the automated training engine! Watch how reward values ripple backward through the grid streets step-by-step.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Q-Learning Theory and Formulas -->
+                    <div id="hub-content-theory" class="hidden space-y-3.5">
+                        <div class="bg-indigo-50/30 border border-indigo-150 p-5 rounded-xl space-y-3">
+                            <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2">🔄 The Reinforcement Learning Loop</h3>
+                            <p class="text-xs text-slate-600 leading-relaxed">
+                                Reinforcement Learning (RL) is a branch of machine learning where an AI learns by interacting with its environment through trial and error. Here are the core terms that define this interactive loop:
+                            </p>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-indigo-600 flex items-center gap-1.5">🕵️ Agent</span>
+                                    <p class="text-slate-500 leading-relaxed">The decision-maker. In our game, the <b>Detective 👮</b> acts as the Agent, learning how to make the best moves.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-cyan-600 flex items-center gap-1.5">🏙️ Environment</span>
+                                    <p class="text-slate-500 leading-relaxed">The world the Agent interacts with. Here, it is the <b>City Grid Layout</b> filled with streets, thieves, and holes.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-emerald-600 flex items-center gap-1.5">📍 State ($S$)</span>
+                                    <p class="text-slate-500 leading-relaxed">The current situation of the Agent. In this grid, it represents the specific <b>coordinates $(x, y)$</b> of the Detective.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-amber-600 flex items-center gap-1.5">⚡ Action ($A$)</span>
+                                    <p class="text-slate-500 leading-relaxed">The moves the Agent can make. Our Detective can choose from 4 Actions: <b>UP, DOWN, LEFT, or RIGHT</b>.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-rose-600 flex items-center gap-1.5">🎁 Reward ($R$)</span>
+                                    <p class="text-slate-500 leading-relaxed">The feedback from the Environment. The Detective receives a <b>Score penalty</b> for steps/holes, and a <b>positive reward</b> for the loot.</p>
+                                </div>
+                                <div class="bg-white border border-slate-200 p-3.5 rounded-xl text-xs space-y-1.5 shadow-sm">
+                                    <span class="font-extrabold text-purple-600 flex items-center gap-1.5">🗺️ Policy ($\pi$)</span>
+                                    <p class="text-slate-500 leading-relaxed">The strategy. It is the learned <b>brain roadmap</b> mapping each State to the best possible Action to reach the Goal.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Game Canvas (Perfect Full-Width Aspect-Square) -->
+            <div id="gridCanvasCard" class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col items-center">
+                <div class="w-full flex justify-between items-center border-b border-slate-100 pb-3 mb-5">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                        🚨 Active Pursuit Grid
+                    </h2>
+                    <span id="pursuitBadge" class="text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                        Manual Mode
+                    </span>
+                </div>
+
+                <!-- PERFECT SQUARE FULL-WIDTH CELL CONTAINER -->
+                <div class="w-full aspect-square bg-slate-100 border-2 border-slate-200 rounded-2xl shadow-inner p-2 flex items-center justify-center">
+                    <div id="game-grid" class="grid w-full h-full gap-1">
+                        <!-- Loaded Dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Training Automation Container (Stage 2 Only) -->
+            <div id="trainingControlsPanel" class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm hidden">
+                <div class="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                    <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">🤖 Automated Training Engine</h3>
+                    <div class="flex flex-col items-end gap-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-500 font-medium">Episodes Completed:</span>
+                            <span id="episodeCount" class="text-xs font-extrabold code-font bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 text-indigo-700">0</span>
+                        </div>
+                        <div class="flex items-center gap-1.5 mt-0.5">
+                            <span class="text-[10px] text-slate-400 font-bold uppercase">Status:</span>
+                            <span id="convergenceBadge" class="text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200">
+                                🔄 Learning
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col gap-4">
+                    <div class="flex gap-2">
+                        <button id="btnAutoStep" onclick="runAutoStep()" class="flex-1 text-xs font-bold py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-xl transition flex items-center justify-center gap-2 shadow-sm">
+                            <span>🤖</span> Step Once
+                        </button>
+                        <button id="btnToggleTrain" onclick="toggleAutoTrain()" class="flex-1 text-xs font-extrabold py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10">
+                            <span id="playIcon">▶</span> <span id="trainBtnText">Continuous Run</span>
+                        </button>
+                    </div>
+
+                    <!-- Termination Control Toggles -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-150 flex items-center justify-between">
+                        <div class="flex flex-col">
+                            <span class="text-xs font-bold text-slate-700">Auto-Stop on Convergence</span>
+                            <span class="text-[10px] text-slate-400">Stops continuous training once values stabilize.</span>
+                        </div>
+                        <input type="checkbox" id="chkAutoStop" checked class="w-4 h-4 text-indigo-600 border-slate-300 rounded focus:ring-indigo-500 cursor-pointer">
+                    </div>
+
+                    <!-- Delay timer -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-bold text-slate-600">Simulation Tick-rate</label>
+                            <span id="speedVal" class="text-xs font-bold code-font text-indigo-600">100ms</span>
+                        </div>
+                        <input type="range" id="speedRange" min="20" max="1000" step="20" value="100" class="w-full accent-indigo-600 bg-slate-200 h-1.5 rounded-lg appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right Column: Brain Visualizer & Live Math Tracker (Revealed in Stage 2) -->
+        <section id="rightColumn" class="lg:col-span-4 flex flex-col gap-6 hidden">
+            <!-- Brain / Q-Table Visualizer -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col w-full">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                    <h2 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                        🧠 The Q-Table (AI Brain Matrix)
+                    </h2>
+                    <span class="text-xs font-bold code-font text-indigo-600 font-semibold">Q(S, A)</span>
+                </div>
+
+                <p id="qTableInstruction" class="text-[11px] text-slate-500 mb-4 bg-slate-50 border border-slate-200 p-3 rounded-xl leading-relaxed">
+                    💡 Hover your mouse cursor over any grid cell to load its direction values into the live formula inspector down below.
+                </p>
+
+                <!-- Perfect Square Q-Table Grid Container -->
+                <div class="w-full aspect-square bg-slate-100 border-2 border-slate-200 rounded-2xl shadow-inner p-2 flex items-center justify-center">
+                    <div id="qtable-grid" class="grid w-full h-full gap-1">
+                        <!-- Loaded Dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Math / Bellman Equation Tracker -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col gap-3 w-full">
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center justify-between border-b border-slate-100 pb-3">
+                    <span id="inspectorTitle">📝 Bellman Equation Solver</span>
+                    <span id="inspectorBadge" class="text-[9px] uppercase font-extrabold bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600">Live Inspector</span>
+                </h3>
+
+                <!-- Q-Value Update Block / Interactive Workshop -->
+                <div class="bg-slate-900 rounded-xl p-4 flex flex-col gap-3 shadow-inner">
+                    <div class="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider">Formula structure</div>
+                    <div class="code-font text-[10px] text-indigo-400 leading-normal overflow-x-auto whitespace-nowrap bg-slate-950 p-2.5 rounded border border-slate-800">
+                        New Value = Current Value + (Reward Received + Best Future Value)
+                    </div>
+                    
+                    <div class="text-[9px] text-slate-400 uppercase font-extrabold tracking-wider border-t border-slate-800 pt-2.5">Evaluation Workshop</div>
+                    <div id="equationVisualizer" class="code-font text-[11px] text-slate-300 leading-relaxed">
+                        <span class="text-slate-500 italic">// Hover over any explored cell or take steps to analyze the calculations.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- STAGE 3: REAL WORLD SCENARIOS BLOCK (Takes full 12 cols when active) -->
+        <section id="realWorldScenariosPanel" class="lg:col-span-12 flex-col gap-6 hidden">
+            
+            <div class="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm">
+                <div class="border-b border-slate-150 pb-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div>
+                        <h2 class="text-lg font-black text-slate-900">🌍 Stage 3: Real World Q-Learning Scenarios</h2>
+                        <p class="text-xs text-slate-500 font-medium">Observe how continuous physical variables are mapped into States, Actions, and Rewards.</p>
+                    </div>
+                    <span class="text-xs bg-indigo-50 border border-indigo-150 text-indigo-700 font-extrabold px-3.5 py-1.5 rounded-full uppercase tracking-wider animate-pulse">🌍 Real World Dashboard</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- 1. Autonomous Vehicle Avoidance System -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-black uppercase text-indigo-600 tracking-wider">1. Autonomous Vehicle</h3>
+                                <span id="carActionLabel" class="hidden text-[10px] font-bold bg-amber-100 border border-amber-300 text-amber-700 px-2 py-0.5 rounded animate-bounce">Swerve Left!</span>
+                            </div>
+                            <!-- Simulation Box -->
+                            <div class="relative bg-slate-800 h-32 rounded-xl overflow-hidden border-4 border-slate-700 shadow-inner">
+                                <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(#fff 1px, transparent 0); background-size: 15px 15px;"></div>
+                                <!-- Roads lines -->
+                                <div class="absolute inset-x-0 top-1/2 -translate-y-1/2 border-t-2 border-dashed border-slate-500/40"></div>
+                                <div id="realCar" class="car-sim absolute left-6 top-1/2 -translate-y-1/2 text-2xl z-10" style="transform: translateY(0);">🚘</div>
+                                <div id="realObstacle" class="absolute right-12 top-1/2 -translate-y-1/2 text-2xl cursor-pointer hover:scale-110 transition active:scale-90" onclick="triggerCarAvoidance()">🚧</div>
+                                
+                                <!-- LIDAR Sensor Overlay lines -->
+                                <svg class="absolute inset-0 pointer-events-none w-full h-full">
+                                    <line id="s1" class="sensor-line opacity-100" x1="45" y1="64" x2="160" y2="30" stroke="#f87171" stroke-width="2" stroke-dasharray="2 2" />
+                                    <line id="s2" class="sensor-line opacity-100" x1="45" y1="64" x2="180" y2="64" stroke="#4ade80" stroke-width="2" />
+                                    <line id="s3" class="sensor-line opacity-100" x1="45" y1="64" x2="160" y2="98" stroke="#4ade80" stroke-width="2" />
+                                </svg>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-500 space-y-1.5 shadow-sm">
+                                <p class="font-extrabold text-slate-800">Q-Learning Mechanics:</p>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><b>State ($S$):</b> Sensor beam intersections.</li>
+                                    <li><b>Action ($A$):</b> Maintain speed or Steer Left/Right.</li>
+                                    <li><b>Reward ($R$):</b> +10 safe distance, -100 collision threat.</li>
+                                </ul>
+                                <button onclick="triggerCarAvoidance()" class="w-full mt-2 py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition active:scale-95 text-[10px]">🚧 Push Obstacle Near</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Content Personalization Recommendation Engine -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-black uppercase text-emerald-600 tracking-wider">2. Recommendation Engine</h3>
+                                <span class="text-[9px] font-extrabold bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded">CTR Optimization</span>
+                            </div>
+                            
+                            <!-- Dynamic Content Shuffling List -->
+                            <div class="space-y-2" id="recSimContainer">
+                                <div id="rec-gaming" class="flex items-center gap-3 bg-white p-2.5 border border-slate-200 rounded-xl shadow-sm transition-all duration-300">
+                                    <span class="text-xl">🎮</span>
+                                    <div class="flex-grow">
+                                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-600"><span>Gaming Streams</span><span class="text-emerald-600 font-extrabold font-mono" id="rec-gaming-q">Q: 0</span></div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="rec-gaming-bar" class="bar-fill bg-indigo-500 h-full" style="width: 0%"></div></div>
+                                    </div>
+                                    <button onclick="rewardCategory('gaming')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow active:scale-95 transition">Like</button>
+                                </div>
+                                <div id="rec-cooking" class="flex items-center gap-3 bg-white p-2.5 border border-slate-200 rounded-xl shadow-sm transition-all duration-300">
+                                    <span class="text-xl">🥗</span>
+                                    <div class="flex-grow">
+                                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-600"><span>Cooking Tips</span><span class="text-emerald-600 font-extrabold font-mono" id="rec-cooking-q">Q: 0</span></div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="rec-cooking-bar" class="bar-fill bg-slate-400 h-full" style="width: 0%"></div></div>
+                                    </div>
+                                    <button onclick="rewardCategory('cooking')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow active:scale-95 transition">Like</button>
+                                </div>
+                                <div id="rec-music" class="flex items-center gap-3 bg-white p-2.5 border border-slate-200 rounded-xl shadow-sm transition-all duration-300">
+                                    <span class="text-xl">🎵</span>
+                                    <div class="flex-grow">
+                                        <div class="flex justify-between text-[10px] font-bold mb-1 text-slate-600"><span>Music Playlists</span><span class="text-emerald-600 font-extrabold font-mono" id="rec-music-q">Q: 0</span></div>
+                                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden"><div id="rec-music-bar" class="bar-fill bg-purple-500 h-full" style="width: 0%"></div></div>
+                                    </div>
+                                    <button onclick="rewardCategory('music')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow active:scale-95 transition">Like</button>
+                                </div>
+                            </div>
+
+                            <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-500 space-y-1.5 shadow-sm">
+                                <p class="font-extrabold text-slate-800">Q-Learning Mechanics:</p>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><b>State ($S$):</b> User watch/click history logs.</li>
+                                    <li><b>Action ($A$):</b> Promote category to primary slot.</li>
+                                    <li><b>Reward ($R$):</b> +10 User Click/Like, -2 ignore block.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Industrial Robot Arm (Cargo Handling) -->
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <h3 class="text-xs font-black uppercase text-amber-600 tracking-wider">3. Industrial Robot Arm</h3>
+                                <span class="text-[9px] font-extrabold bg-amber-100 text-amber-700 px-2 py-0.5 rounded">Confidence: <b id="armConfidence">0%</b></span>
+                            </div>
+                            
+                            <!-- Robot animation canvas -->
+                            <div class="bg-slate-100 h-32 rounded-xl relative border border-slate-200 flex items-center justify-center overflow-hidden shadow-inner">
+                                <div id="robotBase" class="absolute left-6 bottom-0 w-8 h-8 bg-slate-400 rounded-t-lg border-t-2 border-slate-300"></div>
+                                <div id="robotArm" class="robot-joint absolute left-10 bottom-4 w-16 h-2 bg-slate-600 rounded-full flex items-center justify-end" style="transform: rotate(0deg); transition: transform 0.8s ease-in-out;">
+                                    <div class="w-3 h-5 bg-slate-800 rounded-sm -mr-1.5 flex items-center justify-center text-[7px] text-white">⚙️</div>
+                                </div>
+                                <div id="packageBox" class="absolute right-12 bottom-4 text-2xl cursor-pointer hover:scale-110 active:scale-90 transition duration-150" onclick="triggerRobotArmPick()">📦</div>
+                            </div>
+
+                            <div class="bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-500 space-y-1.5 shadow-sm">
+                                <p class="font-extrabold text-slate-800">Q-Learning Mechanics:</p>
+                                <ul class="list-disc pl-4 space-y-1">
+                                    <li><b>State ($S$):</b> Motor angle joints and cargo coordinates.</li>
+                                    <li><b>Action ($A$):</b> Shift joints clockwise or grab cargo.</li>
+                                    <li><b>Reward ($R$):</b> +20 safe drop-off, -10 cargo drop drop.</li>
+                                </ul>
+                                <button onclick="triggerRobotArmPick()" class="w-full mt-2 py-1.5 px-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition active:scale-95 text-[10px]">📦 Click Crate to Pick & Place</button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+            
+        </section>
+
+    </main>
+
+    <!-- Script Engine -->
+    <script>
+        // Complete Set of 5 Classroom Competition Maps
+        const PRESET_MAPS = {
+            1: {
+                name: "Map 1: Easy Street",
+                start: { x: 0, y: 0 },
+                goal: { x: 4, y: 4 },
+                layout: [
+                    ['start', 'empty', 'empty', 'empty', 'empty'],
+                    ['empty', 'wall', 'empty', 'empty', 'empty'],
+                    ['empty', 'empty', 'empty', 'empty', 'empty'],
+                    ['empty', 'empty', 'empty', 'mud', 'empty'],
+                    ['empty', 'empty', 'empty', 'empty', 'goal']
+                ]
+            },
+            2: {
+                name: "Map 2: Double Detour",
+                start: { x: 0, y: 0 },
+                goal: { x: 4, y: 4 },
+                layout: [
+                    ['start', 'empty', 'wall', 'empty', 'empty'],
+                    ['empty', 'empty', 'wall', 'empty', 'empty'],
+                    ['empty', 'empty', 'wall', 'empty', 'empty'],
+                    ['empty', 'mud', 'empty', 'empty', 'empty'],
+                    ['empty', 'empty', 'empty', 'mud', 'goal']
+                ]
+            },
+            3: {
+                name: "Map 3: Thief Warehouse",
+                start: { x: 0, y: 0 },
+                goal: { x: 4, y: 4 },
+                layout: [
+                    ['start', 'empty', 'empty', 'empty', 'empty'],
+                    ['wall', 'wall', 'wall', 'empty', 'empty'],
+                    ['empty', 'empty', 'mud', 'empty', 'empty'],
+                    ['empty', 'empty', 'wall', 'wall', 'wall'],
+                    ['empty', 'empty', 'empty', 'empty', 'goal']
+                ]
+            },
+            4: {
+                name: "Map 4: Pothole Alley",
+                start: { x: 0, y: 0 },
+                goal: { x: 4, y: 4 },
+                layout: [
+                    ['start', 'mud', 'empty', 'empty', 'empty'],
+                    ['mud', 'empty', 'mud', 'empty', 'empty'],
+                    ['empty', 'mud', 'wall', 'mud', 'empty'],
+                    ['empty', 'empty', 'mud', 'empty', 'mud'],
+                    ['empty', 'empty', 'empty', 'mud', 'goal']
+                ]
+            },
+            5: {
+                name: "Map 5: The Gauntlet (Extreme)",
+                start: { x: 0, y: 0 },
+                goal: { x: 4, y: 4 },
+                layout: [
+                    ['start', 'wall', 'empty', 'empty', 'empty'],
+                    ['empty', 'wall', 'empty', 'wall', 'empty'],
+                    ['empty', 'wall', 'empty', 'wall', 'empty'],
+                    ['empty', 'empty', 'empty', 'wall', 'empty'],
+                    ['mud', 'mud', 'mud', 'wall', 'goal']
+                ]
+            }
+        };
+
+        const ACTIONS = {
+            0: { name: 'UP', dy: -1, dx: 0, symbol: '▲' },
+            1: { name: 'RIGHT', dy: 0, dx: 1, symbol: '▶' },
+            2: { name: 'DOWN', dy: 1, dx: 0, symbol: '▼' },
+            3: { name: 'LEFT', dy: 0, dx: -1, symbol: '◀' }
+        };
+
+        // Core Definitions
+        let gridSize = 5;
+        let selectedBrush = 'wall';
+        let map = []; 
+        let startPos = { x: 0, y: 0 };
+        let goalPos = { x: 4, y: 4 };
+        let playerPos = { x: 0, y: 0 };
+        let activeStage = 1;
+        let qTable = {};
+
+        // Scoreboard variables
+        let currentScore = 0;
+        let bestScore = null;
+        let totalSteps = 0;
+        let trainedEpisodes = 0;
+
+        // Auto training variables
+        let isTraining = false;
+        let trainingTimer = null;
+        let isMouseDown = false;
+        let loadedPresetIndex = 1;
+
+        // Classroom challenges tracking
+        let attemptsOnCurrentMap = 0;
+        let stage1HazardsRevealed = false;
+        let episodeFinishedReset = false;
+        let episodeDelta = 0;
+        let isFullyStable = false;
+
+        const Q_CLAMP_MAX = 100;
+        const Q_CLAMP_MIN = -100;
+
+        // Real-World Simulation Parameters
+        let recEngineScores = { gaming: 0, cooking: 0, music: 0 };
+        let armAttempts = 0;
+        let armConfidence = 0;
+
+        // Web Audio Synthesizer: Dynamically plays custom synthetic sounds (No files required)
+        function playSound(type) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                
+                if (type === 'bump') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(130, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.12);
+                    
+                    gain.gain.setValueAtTime(0.35, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.12);
+                } else if (type === 'hole') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(45, ctx.currentTime + 0.25);
+                    
+                    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.25);
+                } else if (type === 'win') {
+                    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.08);
+                        
+                        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.08);
+                        gain.gain.linearRampToValueAtTime(0.12, ctx.currentTime + idx * 0.08 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.08 + 0.25);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + idx * 0.08);
+                        osc.stop(ctx.currentTime + idx * 0.08 + 0.3);
+                    });
+                } else if (type === 'convent') {
+                    const notes = [587.33, 698.46, 880.00, 1046.50]; // D5, F5, A5, C6
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.06);
+                        
+                        gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.06);
+                        gain.gain.linearRampToValueAtTime(0.1, ctx.currentTime + idx * 0.06 + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.06 + 0.3);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(ctx.currentTime + idx * 0.06);
+                        osc.stop(ctx.currentTime + idx * 0.06 + 0.35);
+                    });
+                }
+            } catch (e) {
+                // Ignore audio errors from browser blocking policies
+            }
+        }
+
+        // Stage Swapping and layout adjustments
+        function setStage(stageNum) {
+            activeStage = stageNum;
+            
+            const btn1 = document.getElementById('btn-stage-1');
+            const btn2 = document.getElementById('btn-stage-2');
+            const btn3 = document.getElementById('btn-stage-3');
+            
+            const leftCol = document.getElementById('leftColumnContainer');
+            const centerCol = document.getElementById('centerColumn');
+            const rightCol = document.getElementById('rightColumn');
+            const hpPanel = document.getElementById('hyperparametersPanel');
+            const trainPanel = document.getElementById('trainingControlsPanel');
+            const s1Banner = document.getElementById('stage1Banner');
+            const s2Banner = document.getElementById('stage2Banner');
+            const realWorldPanel = document.getElementById('realWorldScenariosPanel');
+
+            stage1HazardsRevealed = false;
+            updateRevealButtonUI();
+
+            if (isTraining) toggleAutoTrain();
+
+            if (stageNum === 1) {
+                // Stage 1: Play grid game in blindfolded mode
+                btn1.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 shadow-sm bg-white text-slate-800 border border-slate-200";
+                btn2.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+                btn3.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+
+                leftCol.className = "lg:col-span-4 flex flex-col gap-6";
+                leftCol.classList.remove('hidden');
+                centerCol.className = "lg:col-span-8 flex flex-col gap-6 transition-all duration-300";
+                centerCol.classList.remove('hidden');
+
+                hpPanel.classList.add('hidden');
+                trainPanel.classList.add('hidden');
+                rightCol.classList.add('hidden');
+                rightCol.classList.remove('flex');
+                realWorldPanel.classList.add('hidden');
+                realWorldPanel.classList.remove('flex');
+
+                if (s1Banner) s1Banner.classList.remove('hidden');
+                if (s2Banner) s2Banner.classList.add('hidden');
+
+                renderGrids();
+            } else if (stageNum === 2) {
+                // Stage 2: Reveal AI Grid Game Brain
+                btn1.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+                btn2.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 shadow-sm bg-white text-slate-800 border border-slate-200";
+                btn3.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+
+                leftCol.className = "lg:col-span-3 flex flex-col gap-6";
+                leftCol.classList.remove('hidden');
+                centerCol.className = "lg:col-span-5 flex flex-col gap-6 transition-all duration-300";
+                centerCol.classList.remove('hidden');
+
+                trainPanel.classList.remove('hidden');
+                hpPanel.classList.remove('hidden');
+                rightCol.classList.remove('hidden');
+                rightCol.classList.add('flex');
+                realWorldPanel.classList.add('hidden');
+                realWorldPanel.classList.remove('flex');
+
+                if (s1Banner) s1Banner.classList.add('hidden');
+                if (s2Banner) s2Banner.classList.remove('hidden');
+
+                renderGrids();
+            } else {
+                // Stage 3: Real World Simulations Tab
+                btn1.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+                btn2.className = "px-4 py-2 text-xs font-semibold transition-all duration-200 text-slate-500 hover:text-slate-800";
+                btn3.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all duration-200 shadow-sm bg-white text-slate-800 border border-slate-200";
+
+                // Hide Detective Control Pad & Active Pursuit grids completely
+                leftCol.classList.add('hidden');
+                centerCol.classList.add('hidden');
+                rightCol.classList.add('hidden');
+                rightCol.classList.remove('flex');
+
+                // Expand Real World Panel to 12 columns
+                realWorldPanel.classList.remove('hidden');
+                realWorldPanel.classList.add('flex');
+                
+                // Initialize clean values for real world simulations
+                resetRealWorldSimulations();
+            }
+        }
+
+        // Keep Q-Values legible within compact spaces
+        function formatQValue(val) {
+            if (val === 0) return "0";
+            return Math.round(val).toString();
+        }
+
+        function toggleRevealHazards() {
+            if (attemptsOnCurrentMap < 5) return;
+            stage1HazardsRevealed = !stage1HazardsRevealed;
+            updateRevealButtonUI();
+            renderGameGrid();
+        }
+
+        function updateRevealButtonUI() {
+            const btn = document.getElementById('btnRevealHazards');
+            const statusText = document.getElementById('revealStatusText');
+            if (!btn || !statusText) return;
+
+            if (attemptsOnCurrentMap >= 5) {
+                btn.disabled = false;
+                if (!stage1HazardsRevealed) {
+                    btn.innerText = "🔍 Reveal Hazards";
+                    btn.className = "px-4 py-2 text-xs font-bold rounded-lg border transition shadow-sm bg-indigo-600 hover:bg-indigo-700 text-white border-indigo-600 shrink-0";
+                    statusText.innerHTML = `<span class="text-emerald-600 font-bold">✓ Unlocked!</span> Ready to reveal hidden traps!`;
+                } else {
+                    btn.innerText = "🙈 Hide Hazards";
+                    btn.className = "px-4 py-2 text-xs font-bold rounded-lg border transition shadow-sm bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shrink-0";
+                    statusText.innerHTML = `<span class="text-amber-600 font-bold">👁️ Revealed!</span> Hidden hazards are shown.`;
+                }
+            } else {
+                btn.disabled = true;
+                btn.className = "px-4 py-2 text-xs font-bold rounded-lg border transition shadow-sm bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed shrink-0";
+                btn.innerText = `🔍 Reveal Hazards (${attemptsOnCurrentMap}/5)`;
+                statusText.innerHTML = `Complete at least <span class="font-bold text-indigo-600">${5 - attemptsOnCurrentMap} more</span> runs/resets to unlock!`;
+            }
+        }
+
+        function setActiveHubTab(tabName) {
+            const tabs = ['mission', 'theory'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`hub-tab-${t}`);
+                const content = document.getElementById(`hub-content-${t}`);
+                if (t === tabName) {
+                    btn.className = "flex-1 py-3 px-4 text-xs font-bold text-indigo-600 border-b-2 border-indigo-600 flex items-center justify-center gap-1.5 transition";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "flex-1 py-3 px-4 text-xs font-semibold text-slate-500 hover:text-slate-800 border-b-2 border-transparent flex items-center justify-center gap-1.5 transition";
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        function setBrush(type) {
+            selectedBrush = type;
+            document.querySelectorAll('.brush-btn').forEach(btn => {
+                btn.className = "brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-slate-50 border-slate-200 hover:bg-slate-100 text-left transition font-semibold";
+            });
+            const activeBtn = document.getElementById(`brush-${type}`);
+            if (activeBtn) {
+                activeBtn.className = "brush-btn flex items-center gap-2.5 text-xs p-2.5 rounded-xl border bg-indigo-50 border-indigo-300 hover:bg-indigo-100 text-left transition font-bold";
+            }
+        }
+
+        function handleCellClick(x, y) {
+            applyBrush(x, y);
+        }
+
+        function handleCellHover(x, y) {
+            if (isMouseDown) {
+                applyBrush(x, y);
+            }
+            inspectCell(x, y);
+        }
+
+        function applyBrush(x, y) {
+            if (selectedBrush === 'start') {
+                for (let r = 0; r < gridSize; r++) {
+                    for (let c = 0; c < gridSize; c++) {
+                        if (map[r][c] === 'start') map[r][c] = 'empty';
+                    }
+                }
+                startPos = { x, y };
+                map[y][x] = 'start';
+                resetPlayerToStart();
+            } else if (selectedBrush === 'goal') {
+                for (let r = 0; r < gridSize; r++) {
+                    for (let c = 0; c < gridSize; c++) {
+                        if (map[r][c] === 'goal') map[r][c] = 'empty';
+                    }
+                }
+                goalPos = { x, y };
+                map[y][x] = 'goal';
+            } else {
+                if (map[y][x] === 'start' || map[y][x] === 'goal') return;
+                map[y][x] = selectedBrush;
+            }
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.className = "preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition";
+            });
+            document.getElementById('activeMapName').innerText = `// Custom Layout Modified`;
+            renderGrids();
+        }
+
+        function loadPresetMap(index) {
+            if (isTraining) toggleAutoTrain();
+            loadedPresetIndex = index;
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.className = "preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition";
+            });
+            const selectedBtn = document.getElementById(`btn-preset-${index}`);
+            if (selectedBtn) {
+                selectedBtn.className = "preset-btn py-2 text-xs font-bold rounded-lg border border-indigo-300 bg-indigo-600 text-white transition shadow-sm";
+            }
+
+            const activePreset = PRESET_MAPS[index];
+            document.getElementById('activeMapName').innerText = `// ${activePreset.name} Loaded`;
+
+            gridSize = 5;
+            document.getElementById('gridSizeRange').value = 5;
+            document.getElementById('gridSizeValue').innerText = "5x5";
+
+            startPos = { ...activePreset.start };
+            goalPos = { ...activePreset.goal };
+            playerPos = { ...activePreset.start };
+
+            map = [];
+            for (let y = 0; y < 5; y++) {
+                let row = [];
+                for (let x = 0; x < 5; x++) {
+                    row.push(activePreset.layout[y][x]);
+                }
+                map.push(row);
+            }
+
+            currentScore = 0;
+            bestScore = null;
+            totalSteps = 0;
+            updateScoreUI(0, 0);
+
+            attemptsOnCurrentMap = 0;
+            stage1HazardsRevealed = false;
+            episodeFinishedReset = false;
+            updateRevealButtonUI();
+
+            resetBrain();
+            renderGrids();
+            writeLog(`// Challenge: loaded ${activePreset.name}. Ready for evaluation runs.`);
+        }
+
+        function randomizeEnvironment() {
+            if (isTraining) toggleAutoTrain();
+            
+            document.querySelectorAll('.preset-btn').forEach(btn => {
+                btn.className = "preset-btn py-2 text-xs font-bold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition";
+            });
+            document.getElementById('activeMapName').innerText = `// Custom Random Map`;
+
+            let sX = Math.floor(Math.random() * gridSize);
+            let sY = Math.floor(Math.random() * gridSize);
+            let gX = Math.floor(Math.random() * gridSize);
+            while (gX === sX) gX = Math.floor(Math.random() * gridSize);
+            let gY = Math.floor(Math.random() * gridSize);
+            while (gY === sY) gY = Math.floor(Math.random() * gridSize);
+
+            startPos = { x: sX, y: sY };
+            goalPos = { x: gX, y: gY };
+            playerPos = { x: sX, y: sY };
+
+            map = [];
+            for (let y = 0; y < gridSize; y++) {
+                let row = [];
+                for (let x = 0; x < gridSize; x++) {
+                    if (x === startPos.x && y === startPos.y) {
+                        row.push('start');
+                    } else if (x === goalPos.x && y === goalPos.y) {
+                        row.push('goal');
+                    } else {
+                        const rand = Math.random();
+                        if (rand < 0.15) row.push('wall');
+                        else if (rand < 0.25) row.push('mud');
+                        else row.push('empty');
+                    }
+                }
+                map.push(row);
+            }
+
+            currentScore = 0;
+            bestScore = null; 
+            totalSteps = 0;
+            updateScoreUI(0, 0);
+
+            attemptsOnCurrentMap = 0;
+            stage1HazardsRevealed = false;
+            episodeFinishedReset = false;
+            updateRevealButtonUI();
+            
+            renderGrids();
+            writeLog(`// City layout randomized. Detective start: (${startPos.x},${startPos.y}), Loot hidden: (${goalPos.x},${goalPos.y})`);
+        }
+
+        function resetBrain() {
+            qTable = {};
+            for (let y = 0; y < gridSize; y++) {
+                qTable[y] = {};
+                for (let x = 0; x < gridSize; x++) {
+                    qTable[y][x] = [0.0, 0.0, 0.0, 0.0];
+                }
+            }
+            episodeDelta = 0;
+            isFullyStable = false;
+            
+            const badge = document.getElementById('convergenceBadge');
+            if (badge) {
+                badge.innerText = "🔄 Learning";
+                badge.className = "text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200";
+            }
+            renderGrids();
+            writeLog(`// Q-Table cleared. Detective's spatial memory has been wiped clean.`);
+        }
+
+        function updateScoreUI(score, steps = null) {
+            const scoreEl = document.getElementById('scoreValue');
+            if (scoreEl) {
+                scoreEl.innerText = score;
+                if (score > 0) {
+                    scoreEl.className = "text-2xl font-black code-font text-emerald-600 transition-colors duration-300";
+                } else if (score < 0) {
+                    scoreEl.className = "text-2xl font-black code-font text-rose-600 transition-colors duration-300";
+                } else {
+                    scoreEl.className = "text-2xl font-black code-font text-indigo-600 transition-colors duration-300";
+                }
+            }
+
+            const bestScoreEl = document.getElementById('bestScoreValue');
+            if (bestScoreEl) {
+                if (bestScore === null) {
+                    bestScoreEl.innerText = "-";
+                    bestScoreEl.className = "text-2xl font-black code-font text-slate-400";
+                } else {
+                    bestScoreEl.innerText = bestScore;
+                    if (bestScore > 0) {
+                        bestScoreEl.className = "text-2xl font-black code-font text-emerald-600 transition-all duration-300";
+                    } else if (bestScore < 0) {
+                        bestScoreEl.className = "text-2xl font-black code-font text-rose-600 transition-all duration-300";
+                    } else {
+                        bestScoreEl.className = "text-2xl font-black code-font text-indigo-600 transition-all duration-300";
+                    }
+                }
+            }
+
+            if (steps !== null) {
+                const stepsEl = document.getElementById('stepsValue');
+                if (stepsEl) stepsEl.innerText = steps;
+            }
+        }
+
+        function initEnvironment(size) {
+            if (isTraining) toggleAutoTrain();
+
+            gridSize = size;
+            startPos = { x: 0, y: 0 };
+            goalPos = { x: gridSize - 1, y: gridSize - 1 };
+            playerPos = { x: startPos.x, y: startPos.y };
+            currentScore = 0;
+            bestScore = null; 
+            totalSteps = 0;
+            trainedEpisodes = 0;
+
+            updateScoreUI(0, 0);
+            document.getElementById('episodeCount').innerText = "0";
+
+            map = [];
+            for (let y = 0; y < gridSize; y++) {
+                let row = [];
+                for (let x = 0; x < gridSize; x++) {
+                    if (x === startPos.x && y === startPos.y) {
+                        row.push('start');
+                    } else if (x === goalPos.x && y === goalPos.y) {
+                        row.push('goal');
+                    } else {
+                        const rand = Math.random();
+                        if (rand < 0.15) row.push('wall');
+                        else if (rand < 0.25) row.push('mud');
+                        else row.push('empty');
+                    }
+                }
+                map.push(row);
+            }
+
+            currentScore = 0;
+            totalSteps = 0;
+            updateScoreUI(0, 0);
+
+            attemptsOnCurrentMap = 0;
+            stage1HazardsRevealed = false;
+            episodeFinishedReset = false;
+            updateRevealButtonUI();
+            
+            resetBrain();
+            renderGrids();
+            writeLog(`// City layout initialized. Detective start: (${startPos.x},${startPos.y}), Loot hidden: (${goalPos.x},${goalPos.y})`);
+        }
+
+        function handleManualMove(dirName) {
+            if (isTraining) {
+                toggleAutoTrain();
+            }
+            
+            let actIndex = -1;
+            for (const [idx, details] of Object.entries(ACTIONS)) {
+                if (details.name === dirName) {
+                    actIndex = parseInt(idx);
+                    break;
+                }
+            }
+
+            if (actIndex !== -1) {
+                const pursuitBadge = document.getElementById('pursuitBadge');
+                if (pursuitBadge) {
+                    pursuitBadge.innerText = "Manual Mode";
+                    pursuitBadge.className = "text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200";
+                }
+                performStep(actIndex);
+            }
+        }
+
+        // Core Step Logic matching your simplified user formula additions & Caps
+        function performStep(actionIdx) {
+            const action = ACTIONS[actionIdx];
+            const oldState = { ...playerPos };
+            
+            const rGoal = parseFloat(document.getElementById('rewardGoal').value);
+            const rStep = parseFloat(document.getElementById('rewardStep').value);
+            const rMud = parseFloat(document.getElementById('rewardMud').value);
+            const rWall = parseFloat(document.getElementById('rewardWall').value);
+
+            let nextX = oldState.x + action.dx;
+            let nextY = oldState.y + action.dy;
+            
+            let reward = rStep;
+            let newState = { ...oldState };
+
+            if (nextX < 0 || nextX >= gridSize || nextY < 0 || nextY >= gridSize || map[nextY][nextX] === 'wall') {
+                reward += rWall;
+                playSound('bump'); // Play synthetic wall bump thud sound
+                writeLog(`🚨 Detective bumped into a Thief 🥷 barricade at (${oldState.x},${oldState.y})! Penalty: ${reward}`);
+            } else {
+                newState.x = nextX;
+                newState.y = nextY;
+                
+                const tileType = map[newState.y][newState.x];
+                if (tileType === 'mud') {
+                    reward += rMud;
+                    playSound('secondary-bump'); 
+                    playSound('hole'); // Play street hole slide sound
+                    writeLog(`🕳️ Detective fell into an open Street Hole at (${newState.x},${newState.y})! Penalty: ${reward}`);
+                } else if (tileType === 'goal') {
+                    reward += rGoal;
+                    playSound('win'); // Play arpeggiated victory sound
+                    writeLog(`💰 Stolen Loot recovered at (${newState.x},${newState.y})! Reward: +${reward}`);
+                }
+            }
+
+            const qValuesNewState = qTable[newState.y][newState.x];
+            let maxQNewState = Math.max(...qValuesNewState);
+            
+            if (map[newState.y][newState.x] === 'goal') {
+                maxQNewState = 0;
+            }
+
+            const currentQ = qTable[oldState.y][oldState.x][actionIdx];
+            
+            // SIMPLIFIED UPDATING ARITHMETIC: New Value = Current + (Reward + Best Future)
+            let finalQ = currentQ + reward + maxQNewState;
+
+            // MATHEMATICAL CLAMP: Hard-stops infinite growth to preserve perfect layout readability
+            if (finalQ > Q_CLAMP_MAX) finalQ = Q_CLAMP_MAX;
+            if (finalQ < Q_CLAMP_MIN) finalQ = Q_CLAMP_MIN;
+            finalQ = parseFloat(finalQ.toFixed(1));
+
+            // Accumulate episode Delta to track policy convergence
+            const changeDelta = Math.abs(finalQ - currentQ);
+            episodeDelta += changeDelta;
+
+            playerPos = newState;
+            currentScore += reward;
+            totalSteps++;
+            updateScoreUI(currentScore, totalSteps);
+
+            if (map[newState.y][newState.x] === 'goal') {
+                if (bestScore === null || currentScore > bestScore) {
+                    bestScore = currentScore;
+                    updateScoreUI(currentScore);
+                }
+            }
+
+            // Always automatically update and calculate step-by-step
+            qTable[oldState.y][oldState.x][actionIdx] = finalQ;
+            updateBellmanFormula(oldState, action, reward, newState, maxQNewState, currentQ, finalQ);
+            renderGrids();
+
+            if (map[newState.y][newState.x] === 'goal') {
+                trainedEpisodes++;
+                document.getElementById('episodeCount').innerText = trainedEpisodes;
+
+                attemptsOnCurrentMap++;
+                updateRevealButtonUI();
+                episodeFinishedReset = true; 
+
+                // CONVERGENCE STOP MECHANISM
+                const autoStopEnabled = document.getElementById('chkAutoStop').checked;
+                
+                if (autoStopEnabled && episodeDelta === 0 && trainedEpisodes > 1) {
+                    // Q-Table is completely unchanged/stable over an entire run! Trigger Auto-Termination.
+                    isFullyStable = true;
+                    const badge = document.getElementById('convergenceBadge');
+                    if (badge) {
+                        badge.innerText = "❇️ Solved / Stable";
+                        badge.className = "text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 border border-emerald-300 animate-pulse";
+                    }
+                    setTimeout(() => {
+                        playSound('convent'); // Custom chime for learning complete
+                        writeLog(`🎉 OPTIMAL ROUTE DETECTED! Continuous training auto-terminated.`);
+                        if (isTraining) toggleAutoTrain();
+                        renderGrids();
+                    }, 300);
+                } else {
+                    // Keep learning! Reset the change accumulator for the next run.
+                    episodeDelta = 0;
+                    isFullyStable = false;
+                    const badge = document.getElementById('convergenceBadge');
+                    if (badge) {
+                        badge.innerText = "🔄 Learning";
+                        badge.className = "text-[10px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 border border-slate-200";
+                    }
+                }
+
+                setTimeout(() => {
+                    writeLog(`🔄 Loot secured! Returning Detective to HQ.`);
+                    resetPlayerToStart();
+                }, 600);
+            }
+        }
+
+        function resetPlayerToStart() {
+            if (!episodeFinishedReset && totalSteps > 0) {
+                attemptsOnCurrentMap++;
+                updateRevealButtonUI();
+                writeLog(`🔄 Manual restart counted as a learning attempt (${attemptsOnCurrentMap}/5).`);
+            }
+            episodeFinishedReset = false; 
+            episodeDelta = 0; 
+
+            playerPos = { x: startPos.x, y: startPos.y };
+            currentScore = 0;
+            totalSteps = 0;
+            updateScoreUI(0, 0);
+            renderGrids();
+        }
+
+        function runAutoStep() {
+            const epsilon = parseFloat(document.getElementById('epsRange').value);
+            let actionIdx = 0;
+
+            if (Math.random() < epsilon) {
+                actionIdx = Math.floor(Math.random() * 4);
+            } else {
+                const currentQVals = qTable[playerPos.y][playerPos.x];
+                let maxVal = Math.max(...currentQVals);
+                
+                let bestIndices = [];
+                for (let i = 0; i < 4; i++) {
+                    if (currentQVals[i] === maxVal) bestIndices.push(i);
+                }
+                actionIdx = bestIndices[Math.floor(Math.random() * bestIndices.length)];
+            }
+
+            performStep(actionIdx);
+        }
+
+        function toggleAutoTrain() {
+            const btn = document.getElementById('btnToggleTrain');
+            const icon = document.getElementById('playIcon');
+            const text = document.getElementById('trainBtnText');
+            const stepBtn = document.getElementById('btnAutoStep');
+            const pursuitBadge = document.getElementById('pursuitBadge');
+
+            if (isTraining) {
+                clearInterval(trainingTimer);
+                isTraining = false;
+                if (icon) icon.innerText = "▶";
+                if (text) text.innerText = "Continuous Run";
+                btn.className = "flex-1 text-xs font-extrabold py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/10";
+                stepBtn.disabled = false;
+                stepBtn.classList.remove('opacity-40', 'cursor-not-allowed');
+
+                if (pursuitBadge) {
+                    pursuitBadge.innerText = "Manual Mode";
+                    pursuitBadge.className = "text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200";
+                }
+            } else {
+                isTraining = true;
+                if (icon) icon.innerText = "⏸";
+                if (text) text.innerText = "Pause Training";
+                btn.className = "flex-1 text-xs font-extrabold py-3 px-4 bg-amber-500 hover:bg-amber-600 text-white rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10";
+                stepBtn.disabled = true;
+                stepBtn.classList.add('opacity-40', 'cursor-not-allowed');
+
+                if (pursuitBadge) {
+                    pursuitBadge.innerText = "AI Auto-Pursuit";
+                    pursuitBadge.className = "text-[10px] font-bold tracking-wide uppercase px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 animate-pulse";
+                }
+
+                const speedVal = parseInt(document.getElementById('speedRange').value) || 100;
+                trainingTimer = setInterval(() => {
+                    runAutoStep();
+                }, speedVal);
+            }
+        }
+
+        // Text Breakdown formatting matching user formula layout adjustments
+        function updateBellmanFormula(state, action, reward, newState, maxQNew, oldQ, newQ) {
+            const container = document.getElementById('equationVisualizer');
+            if (activeStage === 1) return;
+
+            const clampNote = (newQ >= Q_CLAMP_MAX || newQ <= Q_CLAMP_MIN) ? ' <span class="text-amber-400 font-bold">(Capped)</span>' : '';
+
+            container.innerHTML = `
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Step breakdown:</div>
+                <div class="pl-2 border-l-2 border-slate-700 mb-2 text-slate-400 font-semibold space-y-0.5">
+                    <div>Current Value = <span class="text-white">${oldQ}</span></div>
+                    <div>Reward Received = <span class="text-yellow-400">${reward}</span></div>
+                    <div>Best Future Value = <span class="text-cyan-400">${maxQNew}</span></div>
+                </div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Calculation:</div>
+                <div class="pl-2 border-l-2 border-indigo-500 text-indigo-300 font-semibold">
+                    New Value = ${oldQ} + ( ${reward} + ${maxQNew} ) = <span class="text-emerald-400 font-bold">${newQ}</span>${clampNote}
+                </div>
+            `;
+        }
+
+        function inspectCell(x, y) {
+            if (activeStage === 1) return;
+
+            const cellQVals = qTable[y][x];
+            const details = document.getElementById('equationVisualizer');
+            
+            let sum = cellQVals.reduce((a, b) => a + b, 0);
+            if (sum === 0 && (x !== playerPos.x || y !== playerPos.y)) {
+                details.innerHTML = `
+                    <div class="text-slate-400">Analyzing Cell <span class="text-white font-bold">(${x},${y})</span>:</div>
+                    <div class="text-[10px] text-slate-500 italic mt-1.5">// This intersection is unexplored. All directional Q-values are currently 0.00.</div>
+                `;
+                return;
+            }
+
+            details.innerHTML = `
+                <div class="text-slate-400 mb-2">Q-Memory values at cell <span class="text-white font-bold">(${x},${y})</span>:</div>
+                <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+                    <div class="bg-slate-950 px-2 py-1 rounded border border-slate-800 flex justify-between">
+                        <span class="text-slate-500 font-bold">UP ▲</span>
+                        <span class="code-font ${cellQVals[0] > 0 ? 'text-emerald-400' : cellQVals[0] < 0 ? 'text-rose-400' : 'text-slate-400'}">${formatQValue(cellQVals[0])}</span>
+                    </div>
+                    <div class="bg-slate-950 px-2 py-1 rounded border border-slate-800 flex justify-between">
+                        <span class="text-slate-500 font-bold">RIGHT ▶</span>
+                        <span class="code-font ${cellQVals[1] > 0 ? 'text-emerald-400' : cellQVals[1] < 0 ? 'text-rose-400' : 'text-slate-400'}">${formatQValue(cellQVals[1])}</span>
+                    </div>
+                    <div class="bg-slate-950 px-2 py-1 rounded border border-slate-800 flex justify-between">
+                        <span class="text-slate-500 font-bold">DOWN ▼</span>
+                        <span class="code-font ${cellQVals[2] > 0 ? 'text-emerald-400' : cellQVals[2] < 0 ? 'text-rose-400' : 'text-slate-400'}">${formatQValue(cellQVals[2])}</span>
+                    </div>
+                    <div class="bg-slate-950 px-2 py-1 rounded border border-slate-800 flex justify-between">
+                        <span class="text-slate-500 font-bold">LEFT ◀</span>
+                        <span class="code-font ${cellQVals[3] > 0 ? 'text-emerald-400' : cellQVals[3] < 0 ? 'text-rose-400' : 'text-slate-400'}">${formatQValue(cellQVals[3])}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderGrids() {
+            renderGameGrid();
+            if (activeStage === 2) {
+                renderBrainGrid();
+            }
+        }
+
+        function renderGameGrid() {
+            const gridEl = document.getElementById('game-grid');
+            if (!gridEl) return;
+            gridEl.innerHTML = '';
+            
+            gridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gridEl.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = `w-full h-full border border-slate-200 flex items-center justify-center font-bold select-none cursor-pointer relative transition-all duration-150 rounded-xl`;
+                    
+                    const tile = map[y] ? map[y][x] : 'empty';
+                    
+                    if (tile === 'start') {
+                        cell.classList.add('bg-indigo-50', 'border-indigo-400', 'text-indigo-700');
+                        cell.innerHTML = '<span class="text-[10px] md:text-xs uppercase tracking-wider font-extrabold text-center">🚨 HQ</span>';
+                    } else if (tile === 'goal') {
+                        cell.classList.add('bg-amber-100', 'border-amber-400', 'text-amber-800');
+                        cell.innerHTML = '<span class="text-2xl md:text-3xl animate-bounce">💰</span>';
+                    } else if (tile === 'wall') {
+                        if (activeStage === 2 || stage1HazardsRevealed) {
+                            cell.classList.add('bg-rose-100', 'border-rose-300', 'text-rose-800');
+                            cell.innerHTML = '<span class="text-xl md:text-2xl">🥷</span>';
+                        } else {
+                            cell.classList.add('bg-white', 'hover:bg-slate-50');
+                        }
+                    } else if (tile === 'mud') {
+                        if (activeStage === 2 || stage1HazardsRevealed) {
+                            cell.classList.add('bg-blue-50', 'border-blue-200', 'text-blue-700');
+                            cell.innerHTML = '<span class="text-xl md:text-2xl">🕳️</span>';
+                        } else {
+                            cell.classList.add('bg-white', 'hover:bg-slate-50');
+                        }
+                    } else {
+                        cell.classList.add('bg-white', 'hover:bg-slate-50');
+                    }
+
+                    if (playerPos.x === x && playerPos.y === y) {
+                        const actor = document.createElement('div');
+                        actor.className = "absolute inset-2 bg-indigo-600 rounded-full flex items-center justify-center border-4 border-white shadow-xl z-10 text-xl md:text-2xl";
+                        actor.innerText = "👮";
+                        cell.appendChild(actor);
+                    }
+
+                    cell.addEventListener('mousedown', () => handleCellClick(x, y));
+                    cell.addEventListener('mouseenter', () => handleCellHover(x, y));
+
+                    gridEl.appendChild(cell);
+                }
+            }
+        }
+
+        function renderBrainGrid() {
+            const tableGridEl = document.getElementById('qtable-grid');
+            if (!tableGridEl) return;
+            tableGridEl.innerHTML = '';
+            tableGridEl.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            tableGridEl.style.gridTemplateRows = `repeat(${gridSize}, 1fr)`;
+
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    const tile = map[y] ? map[y][x] : 'empty';
+                    const container = document.createElement('div');
+                    container.className = `w-full h-full border border-slate-200 relative bg-slate-50 overflow-hidden flex items-center justify-center select-none cursor-pointer rounded-xl transition-all duration-150`;
+
+                    if (tile === 'wall') {
+                        container.className += ' bg-rose-50 text-slate-400';
+                        container.innerHTML = '<span class="text-lg">🥷</span>';
+                    } else if (tile === 'goal') {
+                        container.className += ' bg-amber-50 text-amber-600 font-bold';
+                        container.innerHTML = '<span class="text-xl">💰</span>';
+                    } else {
+                        const qVals = qTable[y] && qTable[y][x] ? qTable[y][x] : [0.0, 0.0, 0.0, 0.0];
+
+                        const upStr = formatQValue(qVals[0]);
+                        const rightStr = formatQValue(qVals[1]);
+                        const downStr = formatQValue(qVals[2]);
+                        const leftStr = formatQValue(qVals[3]);
+
+                        const getFontSizeClass = (str) => {
+                            if (str.length > 3) return 'text-[6px]';
+                            if (str.length > 2) return 'text-[7px]';
+                            return 'text-[8px]';
+                        };
+
+                        const getBadgeColorClass = (val) => {
+                            if (val > 0) {
+                                const satBorder = (val >= Q_CLAMP_MAX) ? 'border-amber-400 ring-1 ring-amber-300' : 'border-emerald-200';
+                                return `bg-emerald-50 text-emerald-700 font-bold ${satBorder}`;
+                            }
+                            if (val < 0) {
+                                const satBorder = (val <= Q_CLAMP_MIN) ? 'border-red-400 ring-1 ring-red-300' : 'border-rose-150';
+                                return `bg-rose-50 text-rose-600 font-bold ${satBorder}`;
+                            }
+                            return 'bg-slate-50 text-slate-400 border-slate-200';
+                        };
+
+                        const innerHTML = `
+                            <!-- Arrow UP (Action 0) -->
+                            <div class="absolute top-1 left-1/2 -translate-x-1/2 flex flex-col items-center select-none" title="UP Action Q-Value: ${qVals[0]}">
+                                <span class="block text-[8px] leading-none text-slate-400">▲</span>
+                                <span class="px-1 py-0.5 border rounded leading-none font-bold ${getFontSizeClass(upStr)} ${getBadgeColorClass(qVals[0])}">${upStr}</span>
+                            </div>
+                            <!-- Arrow RIGHT (Action 1) -->
+                            <div class="absolute right-0.5 top-1/2 -translate-y-1/2 flex flex-row items-center gap-0.5 select-none" title="RIGHT Action Q-Value: ${qVals[1]}">
+                                <span class="px-1 py-0.5 border rounded leading-none font-bold ${getFontSizeClass(rightStr)} ${getBadgeColorClass(qVals[1])}">${rightStr}</span>
+                                <span class="block text-[8px] leading-none text-slate-400">▶</span>
+                            </div>
+                            <!-- Arrow DOWN (Action 2) -->
+                            <div class="absolute bottom-1 left-1/2 -translate-x-1/2 flex flex-col-reverse items-center select-none" title="DOWN Action Q-Value: ${qVals[2]}">
+                                <span class="block text-[8px] leading-none text-slate-400">▼</span>
+                                <span class="px-1 py-0.5 border rounded leading-none font-bold ${getFontSizeClass(downStr)} ${getBadgeColorClass(qVals[2])}">${downStr}</span>
+                            </div>
+                            <!-- Arrow LEFT (Action 3) -->
+                            <div class="absolute left-0.5 top-1/2 -translate-y-1/2 flex flex-row-reverse items-center gap-0.5 select-none" title="LEFT Action Q-Value: ${qVals[3]}">
+                                <span class="px-1 py-0.5 border rounded leading-none font-bold ${getFontSizeClass(leftStr)} ${getBadgeColorClass(qVals[3])}">${leftStr}</span>
+                                <span class="block text-[8px] leading-none text-slate-400">◀</span>
+                            </div>
+                        `;
+                        container.innerHTML = innerHTML;
+                    }
+
+                    container.addEventListener('mouseenter', () => inspectCell(x, y));
+                    tableGridEl.appendChild(container);
+                }
+            }
+        }
+
+        // RESET REAL WORLD SIMULATIONS
+        function resetRealWorldSimulations() {
+            recEngineScores = { gaming: 30, cooking: 10, music: 5 };
+            armAttempts = 0;
+            armConfidence = 0;
+
+            const label = document.getElementById('carActionLabel');
+            if (label) label.classList.add('hidden');
+
+            const car = document.getElementById('realCar');
+            if (car) car.style.transform = "translateY(0) rotate(0deg)";
+
+            const arm = document.getElementById('robotArm');
+            if (arm) arm.style.transform = "rotate(0deg)";
+
+            const confidenceEl = document.getElementById('armConfidence');
+            if (confidenceEl) confidenceEl.innerText = "0%";
+
+            updateRecListUI();
+        }
+
+        // Scenario 1: Self Driving Car Avoidance Animation
+        function triggerCarAvoidance() {
+            const car = document.getElementById('realCar');
+            const label = document.getElementById('carActionLabel');
+            const s1 = document.getElementById('s1');
+
+            if (!car || !label || !s1) return;
+
+            playSound('bump'); // Threat warning thud sound
+            
+            // Sensor flash
+            s1.setAttribute('stroke', '#ef4444');
+            s1.setAttribute('stroke-width', '4');
+            label.classList.remove('hidden');
+
+            // swerve left animation
+            car.style.transform = "translateY(-30px) rotate(-8deg)";
+
+            writeLog(`🚗 Real-World LIDAR: Collision obstacle detected. Action trigger: Swerve Left (-100 collision penalty prevented)`);
+
+            setTimeout(() => {
+                car.style.transform = "translateY(0) rotate(0deg)";
+                label.classList.add('hidden');
+                s1.setAttribute('stroke', '#f87171');
+                s1.setAttribute('stroke-width', '2');
+            }, 1200);
+        }
+
+        // Scenario 2: Social Media Content Personalization Shuffling
+        function rewardCategory(category) {
+            playSound('win'); // Plus reward ping chord
+            
+            // Increment category Q value
+            recEngineScores[category] += 15;
+            if (recEngineScores[category] > Q_CLAMP_MAX) {
+                recEngineScores[category] = Q_CLAMP_MAX;
+            }
+
+            writeLog(`📱 Personalization: User Liked ${category}. Reward +15 added to category. Re-evaluating sorting policy.`);
+            updateRecListUI();
+        }
+
+        function updateRecListUI() {
+            // update scores and bars
+            const cats = ['gaming', 'cooking', 'music'];
+            cats.forEach(c => {
+                const qEl = document.getElementById(`rec-${c}-q`);
+                const barEl = document.getElementById(`rec-${c}-bar`);
+                if (qEl && barEl) {
+                    qEl.innerText = `Q: ${recEngineScores[c]}`;
+                    barEl.style.width = `${recEngineScores[c]}%`;
+                }
+            });
+
+            // sort and shuffle cards dynamically
+            const container = document.getElementById('recSimContainer');
+            if (!container) return;
+
+            const items = Array.from(container.children);
+            items.sort((a, b) => {
+                const idA = a.id.split('-')[1];
+                const idB = b.id.split('-')[1];
+                return recEngineScores[idB] - recEngineScores[idA];
+            });
+
+            // Re-append in sorted policy order
+            items.forEach(item => container.appendChild(item));
+        }
+
+        // Scenario 3: Industrial Robotic Joint Angle Grab
+        function triggerRobotArmPick() {
+            const arm = document.getElementById('robotArm');
+            const pkg = document.getElementById('packageBox');
+            const confEl = document.getElementById('armConfidence');
+
+            if (!arm || !pkg || !confEl) return;
+
+            playSound('win'); // picking success pitch sound
+            
+            armAttempts++;
+            armConfidence = Math.min(100, Math.round(50 + (armAttempts * 10)));
+            confEl.innerText = `${armConfidence}%`;
+
+            // lower arm
+            arm.style.transform = "rotate(35deg) scaleX(1.3)";
+
+            setTimeout(() => {
+                // carry parcel away
+                pkg.style.transform = "translateX(-130px) translateY(-50px) scale(0.6)";
+                arm.style.transform = "rotate(-20deg) scaleX(1)";
+                
+                setTimeout(() => {
+                    // drop parcel and reset arm
+                    pkg.style.transform = "none";
+                    arm.style.transform = "rotate(0deg) scaleX(1)";
+                    writeLog(`🦾 Robotic Arm drop success. Trial: ${armAttempts}, Reward: +20. Path state coordinates stabilized.`);
+                }, 1000);
+            }, 800);
+        }
+
+        function writeLog(text) {
+            const consoleEl = document.getElementById('logConsole');
+            if (!consoleEl) return;
+            const newLine = document.createElement('p');
+            newLine.innerText = text;
+            
+            if (text.includes('💰') || text.includes('Loot') || text.includes('secured')) {
+                newLine.className = "text-emerald-400 font-extrabold";
+            } else if (text.includes('🚨') || text.includes('barricade')) {
+                newLine.className = "text-rose-400 font-semibold";
+            } else if (text.includes('🕳️') || text.includes('Hole')) {
+                newLine.className = "text-amber-400 font-semibold";
+            } else if (text.startsWith('//') || text.startsWith('✍️')) {
+                newLine.className = "text-slate-500 italic font-medium";
+            }
+
+            consoleEl.appendChild(newLine);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        function clearLogs() {
+            document.getElementById('logConsole').innerHTML = `
+                <p class="text-slate-400 italic">// Terminal event log cleared.</p>
+            `;
+        }
+
+        function toggleRewardSettings() {
+            const container = document.getElementById('rewardSettingsDiv');
+            const chevron = document.getElementById('rewardChevron');
+            if (container.classList.contains('hidden')) {
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+                chevron.innerText = "▼";
+            } else {
+                container.classList.add('hidden');
+                container.classList.remove('flex');
+                chevron.innerText = "▶";
+            }
+        }
+
+        function setupEventListeners() {
+            const sizeRange = document.getElementById('gridSizeRange');
+            if (sizeRange) {
+                sizeRange.addEventListener('input', (e) => {
+                    const val = parseInt(e.target.value);
+                    document.getElementById('gridSizeValue').innerText = `${val}x${val}`;
+                    initEnvironment(val);
+                });
+            }
+
+            const epsRange = document.getElementById('epsRange');
+            if (epsRange) {
+                epsRange.addEventListener('input', (e) => {
+                    document.getElementById('epsVal').innerText = e.target.value;
+                });
+            }
+
+            const speedRange = document.getElementById('speedRange');
+            if (speedRange) {
+                speedRange.addEventListener('input', (e) => {
+                    document.getElementById('speedVal').innerText = e.target.value + 'ms';
+                    if (isTraining) {
+                        toggleAutoTrain();
+                        toggleAutoTrain();
+                    }
+                });
+            }
+
+            window.addEventListener('keydown', function(e) {
+                if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].indexOf(e.code) > -1) {
+                    e.preventDefault();
+                    if(e.code === 'ArrowUp') handleManualMove('UP');
+                    if(e.code === 'ArrowDown') handleManualMove('DOWN');
+                    if(e.code === 'ArrowLeft') handleManualMove('LEFT');
+                    if(e.code === 'ArrowRight') handleManualMove('RIGHT');
+                }
+            }, {passive: false});
+
+            document.body.addEventListener('mousedown', () => { isMouseDown = true; });
+            document.body.addEventListener('mouseup', () => { isMouseDown = false; });
+        }
+
+        window.onload = function() {
+            setupEventListeners();
+            loadPresetMap(1);
+            setStage(1);
+            setBrush('wall');
+        };
+    </script>
+</body>
+</html>

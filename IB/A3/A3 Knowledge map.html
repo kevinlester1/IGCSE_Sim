@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS Machine Learning (A4) Knowledge Map</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Use the Inter font family */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom styles for hidden/visible content */
+        .content-view {
+            display: none;
+        }
+        .content-view.active {
+            display: block;
+        }
+        /* Style for active sidebar link */
+        .sidebar-link.active {
+            background-color: #4f46e5; /* indigo-700 */
+            color: white;
+        }
+        canvas {
+            cursor: crosshair;
+        }
+        .syllabus-tag {
+            font-size: 0.9rem;
+            font-style: italic;
+            color: #4b5563; /* gray-600 */
+            margin-left: 8px;
+        }
+        /* Custom list styles */
+        .content-view ul {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+            padding-left: 0.5rem;
+        }
+         .content-view ul ul {
+            list-style-type: circle;
+            margin-left: 1rem;
+        }
+        .content-view ul.no-bullets {
+            list-style-type: none;
+            margin-left: 0;
+            padding-left: 0;
+        }
+        .content-view ul.no-bullets li {
+            margin-bottom: 0.5rem;
+        }
+        .content-view .key-term {
+            font-weight: 600;
+            color: #374151; /* gray-700 */
+        }
+        
+        /* Styles for Command Term tab */
+        .command-term-block {
+            border-left: 4px solid #4f46e5; /* indigo-600 */
+            margin-bottom: 1.5rem;
+            padding-left: 1rem;
+        }
+        .command-term-block h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #4f46e5; /* indigo-600 */
+        }
+        .command-term-block h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #374151; /* gray-700 */
+            margin-top: 0.75rem;
+            margin-bottom: 0.25rem;
+        }
+        .command-term-block .model-question {
+            background-color: #f3f4f6; /* gray-100 */
+            border: 1px solid #e5e7eb; /* gray-200 */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+        }
+        .command-term-block .model-answer {
+            background-color: #f0fdf4; /* green-50 */
+            border: 1px solid #dcfce7; /* green-100 */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+        }
+         .command-term-block .model-explanation {
+            background-color: #fefce8; /* yellow-50 */
+            border: 1px solid #fef9c3; /* yellow-100 */
+            border-radius: 0.5rem;
+            padding: 0.75rem 1rem;
+            margin-top: 0.5rem;
+            font-style: italic;
+            color: #713f12; /* yellow-900 */
+        }
+        
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <!-- Sidebar Navigation -->
+        <nav id="sidebar" class="w-full md:w-1/3 lg:w-1/4 bg-gray-900 text-gray-200 p-6 shadow-lg overflow-y-auto">
+            <h1 class="text-2xl font-bold text-white mb-6">IB CS Machine Learning (A4)</h1>
+            
+            <h2 class="text-lg font-semibold text-indigo-300 mb-2">A4.1: Fundamentals (SL/HL)</h2>
+            <ul class="mb-6 ml-2 space-y-2 no-bullets">
+                <li><a href="#" onclick="showView('view-a4-1', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Types, Apps & Hardware</a></li>
+            </ul>
+
+            <h2 class="text-lg font-semibold text-indigo-300 mb-2">A4.2: Preprocessing (HL)</h2>
+            <ul class="mb-6 ml-2 space-y-2 no-bullets">
+                <li><a href="#" onclick="showView('view-a4-2', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Cleaning & Reduction</a></li>
+            </ul>
+
+            <h2 class="text-lg font-semibold text-indigo-300 mb-2">A4.3: Approaches (HL)</h2>
+            <ul class="mb-6 ml-2 space-y-2 no-bullets">
+                <li><a href="#" onclick="showView('view-a4-3', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Overview</a></li>
+                <li><a href="#" onclick="showView('view-lin-reg', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">► Linear Regression Sim</a></li>
+                <li><a href="#" onclick="showView('view-knn', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">► K-NN Sim</a></li>
+                <li><a href="#" onclick="showView('view-perceptron', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">► Perceptron Sim</a></li>
+                 <li><a href="#" onclick="showView('view-a4-3-other', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Other Models (HL)</a></li>
+            </ul>
+
+            <h2 class="text-lg font-semibold text-indigo-300 mb-2">A4.4: Ethics (SL/HL)</h2>
+            <ul class="mb-6 ml-2 space-y-2 no-bullets">
+                <li><a href="#" onclick="showView('view-a4-4', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Ethical Considerations</a></li>
+            </ul>
+
+             <h2 class="text-lg font-semibold text-indigo-300 mb-2">Summary</h2>
+            <ul class="mb-6 ml-2 space-y-2 no-bullets">
+                <li><a href="#" onclick="showView('view-main-concepts', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Main Concepts</a></li>
+                <li><a href="#" onclick="showView('view-knowledge-needed', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Knowledge Needed</a></li>
+                <li><a href="#" onclick="showView('view-skills', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Skills Required</a></li>
+                <li><a href="#" onclick="showView('view-glossary', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Glossary of Terms</a></li>
+                <li><a href="#" onclick="showView('view-command-terms', this)" class="sidebar-link block p-2 rounded-lg hover:bg-gray-700">Command Term Examples</a></li>
+            </ul>
+
+        </nav>
+
+        <!-- Main Content Area -->
+        <main id="main-content" class="w-full md:w-2/3 lg:w-3/4 p-8 overflow-y-auto">
+            
+            <!-- Welcome View -->
+            <div id="view-welcome" class="content-view active">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h1 class="text-3xl font-bold text-gray-900 mb-4">Interactive Machine Learning Map</h1>
+                    <p class="text-lg text-gray-700 mb-4">Welcome to the interactive guide for the IB Computer Science Machine Learning (A4) unit.</p>
+                    <p class="text-gray-600">Use the sidebar navigation to explore the core concepts, skills, and even play with simple interactive simulations for the HL topics.</p>
+                    <div class="mt-6 p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg">
+                        <p class="font-semibold text-indigo-800">Guiding Question:</p>
+                        <p class="text-indigo-700">"What principles and approaches should be considered to ensure machine learning models produce accurate results ethically?"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.1: ML Fundamentals -->
+            <div id="view-a4-1" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">A4.1: Machine Learning Fundamentals (SL & HL)</h2>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Types of Machine Learning <span class="syllabus-tag">(A4.1.1)</span></h3>
+                        
+                        <p class="key-term">Supervised Learning:</p>
+                        <p class="mb-3">Training an algorithm on a dataset of labeled examples. The labels tell the algorithm what the correct output is for each input. It's used in a wide variety of applications.</p>
+                        <ul class="mb-4">
+                            <li><strong>Spam Filtering:</strong> Trained on emails labeled "spam" or "not spam".</li>
+                            <li><strong>Fraud Detection:</strong> Trained on transactions labeled "fraudulent" or "not fraudulent".</li>
+                            <li><strong>Medical Diagnosis:</strong> Trained on medical records labeled with diseases.</li>
+                        </ul>
+
+                        <p class="key-term">Unsupervised Learning (UL):</p>
+                        <p class="mb-3">The algorithm is given unlabeled data and is asked to find patterns. It's used for clustering, anomaly detection, and dimensionality reduction.</p>
+                        <ul class="mb-4">
+                            <li><strong>Customer Segmentation:</strong> Finding groups of customers with similar purchasing habits.</li>
+                            <li><strong>Anomaly Detection:</strong> Identifying unusual patterns that may indicate fraud or errors.</li>
+                            <li><strong>Recommendation Systems:</strong> Recommending products based on past interactions.</li>
+                        </ul>
+
+                        <p class="key-term">Reinforcement Learning (RL):</p>
+                        <p class="mb-3">An "agent" learns by interacting with an "environment" and receiving rewards or penalties for its actions. It has the potential for robotics, autonomous vehicles, and game playing.</p>
+                        <ul class="mb-4">
+                            <li><strong>Robotics:</strong> Training a robot to pick up objects.</li>
+                            <li><strong>Autonomous Vehicles:</strong> Learning to navigate roads safely.</li>
+                            <li><strong>Game Playing:</strong> An AI learning to play chess or Go.</li>
+                        </ul>
+
+                        <p class="key-term">Transfer Learning (TL):</p>
+                        <p class="mb-3">A model trained on one task is reused for another related task. This saves time and is helpful when you have limited data for the new task.</p>
+                        <ul class="mb-4">
+                            <li><strong>Image Recognition:</strong> A model trained on general images (cats, dogs, cars) is fine-tuned to recognize specific medical scans.</li>
+                            <li><strong>Natural Language Processing (NLP):</strong> A large language model (like BERT or GPT) is fine-tuned for a specific task like sentiment analysis.</li>
+                        </ul>
+
+                        <p class="key-term">Deep Learning (DL):</p>
+                        <p class="mb-3">A subfield of ML using complex, multi-layered neural networks. It powers many modern applications, from NLP to computer vision.</p>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Hardware Requirements <span class="syllabus-tag">(A4.1.2)</span></h3>
+                        <p class->Different ML tasks require different hardware, from standard laptops to advanced infrastructure.</p>
+                        
+                        <p class="key-term mt-4">1. Standard Laptops (Basic ML):</p>
+                        <p class="mb-3">For small-scale projects, learning, and basic data analysis. Uses multi-core CPUs (Intel i5/i7) and 8-16GB RAM. Limitations include slow training for complex models.</p>
+
+                        <p class="key-term mt-4">2. Workstations (Intermediate ML):</p>
+                        <p class="mb-3">For developing moderately complex models. Uses high-performance CPUs (Intel i9, AMD Ryzen 9), 32-64GB RAM, and a dedicated high-end GPU (e.g., NVIDIA RTX series).</p>
+
+                        <p class="key-term mt-4">3. Advanced Infrastructure (High-Performance ML):</p>
+                        <p class="mb-3">For training large-scale deep learning models and real-time processing.</p>
+                        <ul>
+                            <li><strong>GPUs (Graphics Processing Units):</strong> Essential for accelerating deep learning. Massive parallel processing capabilities (e.g., NVIDIA A100/H100).</li>
+                            <li><strong>TPUs (Tensor Processing Units):</strong> Google's custom chips optimized for deep learning.</li>
+                            <li><strong>ASICs (Application-Specific Integrated Circuits):</strong> Custom-built chips for specific high-volume tasks.</li>
+                            <li><strong>FPGAs (Field-Programmable Gate Arrays):</strong> Reconfigurable hardware used in edge computing.</li>
+                            <li><strong>Edge Devices:</strong> (e.g., smartphones, IoT) running models locally for low power and real-time processing.</li>
+                            <li><strong>Cloud-Based Platforms:</strong> (AWS, Google Cloud, Azure) provide scalable access to powerful GPUs/TPUs.</li>
+                            <li><strong>HPC (High-Performance Computing) Centers:</strong> Clusters of computers for extremely large models.</li>
+                        </ul>
+                    </div>
+
+                    <hr class="my-6 border-gray-300">
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Questions</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(SL/HL) Describe</strong> one application of supervised learning in medical imaging diagnostics. [2] <span class="syllabus-tag">(A4.1.1)</span></li>
+                            <li><strong>(SL/HL) Describe</strong> the difference between supervised and unsupervised learning, providing an example of each. [4] <span class="syllabus-tag">(A4.1.1)</span></li>
+                            <li><strong>(SL/HL) Describe</strong> why a GPU is more suitable than a CPU for training a deep learning model. [3] <span class="syllabus-tag">(A4.1.2)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.2: Data Preprocessing -->
+            <div id="view-a4-2" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">A4.2: Data Preprocessing (HL Only)</h2>
+                    <p class="text-lg italic text-gray-600 mb-6">"Garbage in, garbage out." This topic is about cleaning data *before* training a model to ensure quality, reliability, and usability.</p>
+                    
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Data Cleaning <span class="syllabus-tag">(A4.2.1)</span></h3>
+                        <p>This process improves data accuracy, enhances decision-making, and increases efficiency. It includes:</p>
+                        <ul>
+                            <li><span class="key-term">Handling Outliers:</span> Data points that significantly deviate. Identified with visualization (box plots) or stats (Z-score, IQR). Can be transformed (log), capped (Winsorizing), or removed.</li>
+                            <li><span class="key-term">Handling Duplicates:</span> Removing identical rows (exact match) or near-identical rows (fuzzy match) to prevent skewed analysis.</li>
+                            <li><span class="key-term">Handling Incorrect Data:</span> Fixing data that fails validation (wrong data type, out of range), consistency checks (start date after end date), or format checks.</li>
+                            <li><span class="key-term">Filtering Irrelevant Data:</span> Removing columns (features) or rows that do not contribute to the analysis goals and just add noise.</li>
+                            <li><span class="key-term">Transforming Improperly Formatted Data:</span> Standardizing formats (e.g., all dates to YYYY-MM-DD), parsing (extracting info), or encoding (turning text categories into numbers).</li>
+                            <li><span class="key-term">Handling Missing Data:</span>
+                                <ul>
+                                    <li><strong>Deletion:</strong> Removing rows or columns with missing values (risks data loss).</li>
+                                    <li><strong>Imputation:</strong> Filling gaps with the mean, median, or mode.</li>
+                                    <li><strong>Predictive Modelling:</strong> Training a model to predict the missing value.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Feature Selection <span class="syllabus-tag">(A4.2.2)</span></h3>
+                        <p class="mb-2">Identifying and selecting the most relevant and informative features (columns) to improve model performance, reduce computational cost, and enhance interpretability.</p>
+                        <p class="mb-2"><span class="key-term">Analogy:</span> When picking a basketball team, you don't use 100 stats. You select the most relevant ones like "height," "shooting accuracy," and "speed."</p>
+                        <p>Strategies include:</p>
+                        <ul>
+                            <li><span class="key-term">Filter Methods:</span> Evaluate features independently of a model (e.g., checking correlation with the target). Fast and simple.</li>
+                            <li><span class="key-term">Wrapper Methods:</span> Use a model to evaluate different subsets of features. Computationally expensive but effective.</li>
+                            <li><span class="key-term">Embedded Methods:</span> The model itself selects features during training (e.g., Lasso Regression).</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Dimensionality Reduction <span class="syllabus-tag">(A4.2.3)</span></h3>
+                        <p class="mb-2">Reducing the number of features while retaining important information. This addresses the <strong>"curse of dimensionality"</strong> (where too many features make data sparse and models less effective).</p>
+                        <p class="mb-2"><span class="key-term">Analogy:</span> Describing a fruit. You could list 50 features (weight, color, texture, smell, etc.), or you could reduce it to "a small, round, red, sweet apple." This lower-dimensional description captures the essence.</p>
+                        <ul>
+                            <li><span class="key-term">Feature Selection:</span> (see above) You *keep* a subset of the original features.</li>
+                            <li><span class="key-term">Feature Extraction:</span> You *transform* the data into a new, smaller set of features. The new features are combinations of the old ones (e.g., PCA, LDA).</li>
+                        </ul>
+                    </div>
+
+                    <hr class="my-6 border-gray-300">
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Questions (HL)</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(HL) Describe</strong> two techniques for handling missing data during data cleaning. [4] <span class="syllabus-tag">(A4.2.1)</span></li>
+                            <li><strong>(HL) Explain</strong> why feature selection is a crucial step in data preprocessing. [4] <span class="syllabus-tag">(A4.2.2)</span></li>
+                            <li><strong>(HL) Explain</strong> the "curse of dimensionality" and why dimensionality reduction might be a necessary step in preprocessing. [4] <span class="syllabus-tag">(A4.2.3)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.3: ML Approaches -->
+            <div id="view-a4-3" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">A4.3: Machine Learning Approaches (HL Only)</h2>
+                    <p class="text-lg text-gray-700">This topic covers the technical core of how different models work.</p>
+                    <p class="text-gray-600 mt-4">Use the sidebar to explore the interactive simulations for:</p>
+                    <ul class="list-disc ml-6 mt-4 space-y-2 text-indigo-600 font-semibold">
+                        <li>Linear Regression <span class="syllabus-tag">(A4.3.1)</span></li>
+                        <li>K-Nearest Neighbours (K-NN) <span class="syllabus-tag">(A4.3.2)</span></li>
+                        <li>Perceptron <span class="syllabus-tag">(A4.3.8)</span></li>
+                    </ul>
+                    <p class="text-gray-600 mt-4">Other models are listed in the "Other Models (HL)" section.</p>
+                </div>
+            </div>
+
+            <!-- A4.3.1: Linear Regression Sim -->
+            <div id="view-lin-reg" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Linear Regression Simulation (HL) <span class="syllabus-tag">(A4.3.1)</span></h2>
+                    <p class="text-gray-600 mb-4">Regression is used to predict a continuous numerical value by finding a relationship between variables.</p>
+                    
+                    <div class="bg-indigo-50 p-4 rounded-lg mb-4">
+                        <h4 class="font-semibold text-indigo-800">Analogy: Predicting Exam Scores</h4>
+                        <p class="text-indigo-700">Imagine you have data on "Hours Studied" (X-axis) and "Exam Score" (Y-axis). You plot these points and draw a "line of best fit" through them. This line is your regression model. You can now use this line to predict the exam score for a new student who studied for 3.5 hours.</p>
+                    </div>
+
+                    <p class="text-gray-600 mb-4">Click on the white canvas to add data points (your "Exam Score" data). The red line of best fit (your "model") will update automatically.</p>
+                    
+                    <canvas id="linRegCanvas" width="600" height="400" class="bg-white border-2 border-gray-300 rounded-lg"></canvas>
+                    
+                    <div class="flex items-center space-x-4 mt-4">
+                        <button id="linRegClear" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition duration-200">Clear</button>
+                        <div class="text-gray-700">
+                            <p>Points: <span id="linRegPointCount" class="font-mono">0</span></p>
+                            <p>Line: <span id="linRegEquation" class="font-mono">y = mx + b</span></p>
+                        </div>
+                    </div>
+                    
+                    <hr class="my-6 border-gray-300">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Question (HL)</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(HL) Explain</strong> how linear regression is used to predict continuous outcomes. [3] <span class="syllabus-tag">(A4.3.1)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.3.2: K-NN Sim -->
+            <div id="view-knn" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">K-Nearest Neighbours (K-NN) Simulation (HL) <span class="syllabus-tag">(A4.3.2)</span></h2>
+                    <p class="text-gray-600 mb-4">K-NN is a simple classification algorithm that predicts the category of a new data point based on the "votes" of its closest neighbors.</p>
+                    <p class="text-gray-600 mb-4">Here, we have existing data in Class A (blue) and Class B (pink). Click on the canvas to add a new point (black). The simulation will find its 'k' nearest neighbors (yellow lines) and classify it.</p>
+                    
+                    <canvas id="knnCanvas" width="600" height="400" class="bg-white border-2 border-gray-300 rounded-lg"></canvas>
+                    
+                    <div class="flex items-center space-x-4 mt-4">
+                        <button id="knnReset" class="bg-red-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-red-600 transition duration-200">Reset Data</button>
+                        <div class="flex items-center space-x-2">
+                            <label for="kSlider" class="text-gray-700 font-medium">k = <span id="kValue">3</span></label>
+                            <input type="range" id="kSlider" min="1" max="7" value="3" class="w-48 accent-indigo-600">
+                        </div>
+                        <p id="knnResult" class="text-lg font-semibold text-gray-800"></p>
+                    </div>
+                    
+                    <hr class="my-6 border-gray-300">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Question (HL)</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(HL) Explain</strong> how the K-Nearest Neighbours (K-NN) algorithm classifies a new data point. [4] <span class="syllabus-tag">(A4.3.2)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.3.8: Perceptron Sim -->
+            <div id="view-perceptron" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">Perceptron Simulation (HL) <span class="syllabus-tag">(A4.3.8)</span></h2>
+                    <p class="text-gray-600 mb-6">A perceptron is a single "neuron," the simplest unit of an Artificial Neural Network (ANN). It takes multiple inputs, applies a "weight" to each, sums them up, adds a bias, and "fires" (output = 1) if the sum is positive, or "doesn't fire" (output = 0) if it's negative.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <!-- Controls -->
+                        <div class="space-y-4">
+                            <div>
+                                <label for="pInput1" class="text-gray-700 font-medium">Input 1 (x1): <span id="pInput1Val" class="font-mono">0.5</span></label>
+                                <input type="range" id="pInput1" min="0" max="1" value="0.5" step="0.1" class="w-full accent-blue-600">
+                            </div>
+                            <div>
+                                <label for="pWeight1" class="text-gray-700 font-medium">Weight 1 (w1): <span id="pWeight1Val" class="font-mono">0.5</span></label>
+                                <input type="range" id="pWeight1" min="-1" max="1" value="0.5" step="0.1" class="w-full accent-green-600">
+                            </div>
+                            <div>
+                                <label for="pInput2" class="text-gray-700 font-medium">Input 2 (x2): <span id="pInput2Val" class="font-mono">0.5</span></label>
+                                <input type="range" id="pInput2" min="0" max="1" value="0.5" step="0.1" class="w-full accent-blue-600">
+                            </div>
+                            <div>
+                                <label for="pWeight2" class="text-gray-700 font-medium">Weight 2 (w2): <span id="pWeight2Val" class="font-mono">0.5</span></label>
+                                <input type="range" id="pWeight2" min="-1" max="1" value="0.5" step="0.1" class="w-full accent-green-600">
+                            </div>
+                             <div>
+                                <label for="pBias" class="text-gray-700 font-medium">Bias (b): <span id="pBiasVal" class="font-mono">-0.5</span></label>
+                                <input type="range" id="pBias" min="-2" max="2" value="-0.5" step="0.1" class="w-full accent-red-600">
+                            </div>
+                        </div>
+
+                        <!-- Output Visualization -->
+                        <div class="bg-gray-100 p-6 rounded-lg flex flex-col items-center justify-center text-center">
+                            <h3 class="text-lg font-semibold text-gray-800 mb-2">Perceptron Output</h3>
+                            <p class="text-gray-600 font-mono text-sm mb-4">(x1*w1) + (x2*w2) + b</p>
+                            
+                            <p class="font-mono text-gray-800 mb-4">
+                                (<span id="pCalc_x1">0.5</span> * <span id="pCalc_w1">0.5</span>) + (<span id="pCalc_x2">0.5</span> * <span id="pCalc_w2">0.5</span>) + (<span id="pCalc_b">-0.5</span>)
+                            </p>
+                            
+                            <p class="text-lg font-semibold text-gray-800 mb-4">
+                                Sum = <span id="pSum" class="font-bold font-mono">0.00</span>
+                            </p>
+                            
+                            <p class="text-gray-600 mb-2">Activation (Sum > 0 ? 1 : 0)</p>
+                            <div id="pOutput" class="w-24 h-24 rounded-full flex items-center justify-center text-4xl font-bold text-white bg-red-500">
+                                0
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-gray-300">
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Question (HL)</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(HL) Outline</strong> the structure of a single perceptron, including its inputs, weights, bias, and activation function. [4] <span class="syllabus-tag">(A4.3.8)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- A4.3: Other Models (HL) -->
+            <div id="view-a4-3-other" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Other A4.3 Approaches (HL Only)</h2>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Model Evaluation (for Supervised Learning) <span class="syllabus-tag">(A4.3.3)</span></h3>
+                            <p class="mb-2">We split our data into a <span class="key-term">Training Set</span> (to teach the model) and a <span class="key-term">Testing Set</span> (to evaluate it on unseen data). This is essential to prevent <span class="key-term">overfitting</span>, where the model just memorizes the training data but can't generalize to new data.</p>
+                            <ul>
+                                <li><span class="key-term">Mean Squared Error (MSE):</span> For regression. The average of the squared differences between actual and predicted values. <span class="font-semibold">Lower is better.</span></li>
+                                <li><span class="key-term">R-squared (R²):</span> For regression. The proportion of variance in the target variable that is predictable from the features. <span class="font-semibold">Closer to 1 is better.</span></li>
+                                <li><span class="key-term">Accuracy, Precision, Recall, F1 Score:</span> Metrics used for classification.</li>
+                                <li><span class="key-term">Hyperparameter Tuning:</span> Adjusting settings (like 'k' in K-NN) to optimize model performance.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Decision Trees <span class="syllabus-tag">(A4.3.2)</span></h3>
+                            <p class="mb-2">A model that works like a flowchart, asking a series of questions to arrive at a decision.</p>
+                            <p class="mb-2"><span class="key-term">Analogy:</span> The "Warthogs Sorting Orb" (like the Sorting Hat). It asks questions ("Is Courage > 6.5?") to split students into groups. The goal of the tree is to ask questions that create the "purest" possible groups at each step.</p>
+                            <ul>
+                                <li><span class="key-term">Gini Impurity:</span> A measure of how "mixed up" a group is. A Gini of 0 is perfectly pure (all members are in one class). The tree tries to find splits that result in the lowest Gini (highest "Gini Gain").</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Clustering (K-Means) <span class="syllabus-tag">(A4.3.4)</span></h3>
+                            <p class="mb-2">An unsupervised algorithm for grouping similar data points into a pre-determined number ('k') of clusters.</p>
+                            <p class="mb-2"><span class="key-term">Analogy:</span> Placing 3 (k=3) pizza shops in a city. 1) Randomly place 3 shops (centroids). 2) Assign every customer to their *closest* shop. 3) Move each shop to the *center (mean)* of its assigned customers. 4) Repeat steps 2 and 3 until the shop locations stop moving.</p>
+                            <ul>
+                                <li><span class="key-term">Applications:</span> Customer Segmentation, Document Clustering, Image Segmentation (grouping similar pixels), Anomaly Detection.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Association Rule Learning <span class="syllabus-tag">(A4.3.5)</span></h3>
+                            <p class="mb-2">An unsupervised method for discovering "if-then" relationships between items in large datasets.</p>
+                            <p class="mb-2"><span class="key-term">Analogy:</span> "Crime Scene Investigation." Finding patterns like `{Clue A} → {Clue B}`. (If we find Clue A, we are likely to find Clue B).</p>
+                            <ul>
+                                <li><span class="key-term">Support:</span> How often do A and B appear together in all cases? (Measures popularity).</li>
+                                <li><span class="key-term">Confidence:</span> When we find A, how often do we also find B? (Measures reliability).</li>
+                                <li><span class="key-term">Lift:</span> Does finding A *increase* the chance of finding B? (Lift > 1 means it's a strong, real association, not just a coincidence).</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Reinforcement Learning (RL) Concepts <span class="syllabus-tag">(A4.3.6)</span></h3>
+                            <p class="mb-2">An agent learns through trial and error, guided by rewards and penalties from its environment.</p>
+                            <p class="mb-2"><span class="key-term">Analogy:</span> A "Robot Vacuum" in a grid. It gets +15 for a big mess, +5 for a small mess, and -10 for hitting furniture. Its "brain" is a <span class="key-term">Q-Table</span>, a grid that stores the expected future reward for taking any action from any state. It learns the best path by updating this table.</p>
+                            <ul>
+                                <li><span class="key-term">Exploration vs. Exploitation:</span> The agent must balance *exploiting* its known best path with *exploring* random moves to find a potentially better one.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Genetic Algorithms <span class="syllabus-tag">(A4.3.7)</span></h3>
+                            <p class="mb-2">An optimization technique inspired by natural selection, used for problems with a vast number of possibilities.</p>
+                            <p class="mb-2"><span class="key-term">Analogy:</span> Solving the "Traveling Salesperson" problem. A <span class="key-term">Chromosome</span> is one possible route (e.g., [London, Paris, Berlin...]). A <span class="key-term">Population</span> is 500 random routes.</p>
+                            <ul>
+                                <li><span class="key-term">Fitness Function:</span> Calculates the total distance of a route (lower is better).</li>
+                                <li><span class="key-term">Selection:</span> The shortest routes are "fitter" and more likely to be selected.</li>
+                                <li><span class="key-term">Crossover:</span> Two "parent" routes combine to create a "child" route (e.g., child takes [Berlin, Rome, Paris] from Parent 1 and the rest from Parent 2).</li>
+                                <li><span class="key-term">Mutation:</span> A small, random change in a child (e.g., swapping two cities) to ensure genetic diversity.</li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Neural Networks</h3>
+                            <ul>
+                                <li><strong>Artificial Neural Networks (ANNs) <span class="syllabus-tag">(A4.3.8)</span>:</strong>
+                                    <ul class="list-circle ml-6 mt-2">
+                                        <li><strong>Perceptron:</strong> A single "neuron." (See simulation!)</li>
+                                        <li><strong>Multi-Layer Perceptron (MLP):</strong> A network of perceptrons with input, hidden, and output layers.</li>
+                                    </ul>
+                                </li>
+                                <li><strong>Convolutional Neural Networks (CNNs) <span class="syllabus-tag">(A4.3.9)</span>:</strong>
+                                    <ul class="list-circle ml-6 mt-2">
+                                        <li>Specialized for image processing.</li>
+                                        <li>Key components: Convolutional layers, pooling layers, fully connected layers.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3">Model Selection & Comparison <span class="syllabus-tag">(A4.3.10)</span></h3>
+                            <ul>
+                                <li>Explaining the importance of selecting the right model for the right problem.</li>
+                                <li>Considering factors like problem nature (regression vs. classification), data size and complexity, and data characteristics.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-gray-300">
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Questions (HL)</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(HL) Explain</strong> the difference between overfitting and underfitting in a supervised learning model. [4] <span class="syllabus-tag">(A4.3.3)</span></li>
+                            <li><strong>(HL) Describe</strong> how a clustering algorithm, an example of unsupervised learning, could be used for customer segmentation. [3] <span class="syllabus-tag">(A4.3.4)</span></li>
+                            <li><strong>(HL) Describe</strong> the role of the agent and the environment in reinforcement learning. [3] <span class="syllabus-tag">(A4.3.6)</span></li>
+                            <li><strong>(HL) Describe</strong> the roles of Crossover and Mutation in a genetic algorithm. [4] <span class="syllabus-tag">(A4.3.7)</span></li>
+                            <li><strong>(HL) Outline</strong> the basic architecture of a Convolutional Neural Network (CNN). [4] <span class="syllabus-tag">(A4.3.9)</span></li>
+                            <li><strong>(HL) Explain</strong> the importance of model selection when developing a new machine learning solution. [3] <span class="syllabus-tag">(A4.3.10)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- A4.4: Ethical Considerations -->
+            <div id="view-a4-4" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">A4.4: Ethical Considerations (SL & HL)</h2>
+                    <p class="text-lg text-gray-700 mb-6">This is a critical component for all students.</p>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Key Ethical Issues <span class="syllabus-tag">(A4.4.1)</span></h3>
+                        <ul>
+                            <li><strong>Accountability:</strong> Who is responsible when an AI makes a mistake?</li>
+                            <li><strong>Algorithmic Fairness & Bias:</strong> Models trained on biased data (e.g., historical hiring data) will produce biased and unfair results.</li>
+                            <li><strong>Consent:</strong> How is user data collected and used for training?</li>
+                            <li><strong>Environmental Impact:</strong> Training large models requires massive amounts of energy.</li>
+                            <li><strong>Privacy & Security:</strong> How is sensitive user data protected?</li>
+                            <li><strong>Societal Impact:</strong> How does ML affect jobs, social interaction, and equity?</li>
+                            <li><strong>Transparency:</strong> Can we understand *why* a model made a particular decision (the "black box" problem)?</li>
+                        </ul>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="text-xl font-semibold mb-3">Emerging Technologies <span class="syllabus-tag">(A4.4.2)</span></h3>
+                        <p class="text-gray-700">Ethical implications of Quantum Computing, Augmented Reality (AR), Virtual Reality (VR), and the pervasive use of AI.</p>
+                    </div>
+
+                    <hr class="my-6 border-gray-300">
+
+                    <div>
+                        <h3 class="text-xl font-semibold mb-3 text-indigo-700">Typical IB Questions</h3>
+                        <ul class="list-disc ml-6 space-y-3 text-gray-700">
+                            <li><strong>(SL/HL) Discuss</strong> the ethical implications of using machine learning algorithms in facial recognition systems used by law enforcement. [6] <span class="syllabus-tag">(A4.4.1)</span></li>
+                            <li><strong>(SL/HL) Discuss</strong> the potential for algorithmic bias when using machine learning to filter job applications. [6] <span class="syllabus-tag">(A4.4.1)</span></li>
+                            <li><strong>(SL/HL) Discuss</strong> the ethical issues surrounding user consent and data privacy when training large language models. [6] <span class="syllabus-tag">(A4.4.1)</span></li>
+                            <li><strong>(SL/HL) Discuss</strong> the ethical aspects of the increasing integration of augmented reality (AR) technology, powered by AI, into daily life. [6] <span class="syllabus-tag">(A4.4.2)</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Skills -->
+            <div id="view-skills" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Skills Required (Based on Command Terms)</h2>
+                    <p class="text-gray-600 mb-6">This is how you will be assessed.</p>
+
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">Describe (SL & HL)</h3>
+                            <ul>
+                                <li>The different types of ML and their real-world applications. <span class="syllabus-tag">(A4.1.1)</span></li>
+                                <li>The hardware requirements for different ML scenarios. <span class="syllabus-tag">(A4.1.2)</span></li>
+                            </ul>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">Describe (HL Only)</h3>
+                            <ul>
+                                <li>Data preprocessing techniques (cleaning, feature selection). <span class="syllabus-tag">(A4.2.1, A4.2.2)</span></li>
+                                <li>The "curse of dimensionality." <span class="syllabus-tag">(A4.2.3)</span></li>
+                                <li>Clustering, association rules, reinforcement learning, and genetic algorithms. <span class="syllabus-tag">(A4.3.4, A4.3.5, A4.3.6, A4.3.7)</span></li>
+                                <li>The basic architecture of a CNN. <span class="syllabus-tag">(A4.3.9)</span></li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">Explain (HL Only)</h3>
+                            <ul>
+                                <li>How linear regression and classification (K-NN, decision trees) work. <span class="syllabus-tag">(A4.3.1, A4.3.2)</span></li>
+                                <li>The role of hyperparameter tuning and the concepts of overfitting/underfitting. <span class="syllabus-tag">(A4.3.3)</span></li>
+                                <li>The importance of selecting the right model for the right problem. <span class="syllabus-tag">(A4.3.10)</span></li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">Outline (HL Only)</h3>
+                            <ul>
+                                <li>The structure and function of ANNs (perceptron, MLP). <span class="syllabus-tag">(A4.3.8)</span></li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">Discuss (SL & HL)</h3>
+                            <p class="text-gray-700">This is a higher-level skill. You must be able to present a balanced argument with evidence.</p>
+                            <ul class="list-disc ml-6 mt-2 space-y-2 text-gray-700">
+                                <li><strong>Discuss the ethical implications</strong> of machine learning in real-world scenarios. <span class="syllabus-tag">(A4.4.1)</span></li>
+                                <li><strong>Discuss the ethical aspects</strong> of the increasing integration of computer technologies. <span class="syllabus-tag">(A4.4.2)</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- +++ NEW VIEW: Main Concepts +++ -->
+            <div id="view-main-concepts" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Main Concepts & Guiding Principles</h2>
+                    
+                    <div class="mb-6 p-4 bg-indigo-50 border-l-4 border-indigo-500 rounded-lg">
+                        <p class="font-semibold text-indigo-800">Central Guiding Question:</p>
+                        <p class="text-indigo-700">"What principles and approaches should be considered to ensure machine learning models produce accurate results ethically?"</p>
+                    </div>
+
+                    <div class="space-y-4 text-gray-700">
+                        <p>This unit involves understanding:</p>
+                        <ul>
+                            <li><strong>What ML is:</strong> Using data and algorithms to enable systems to learn, identify patterns, and make decisions or predictions with minimal human intervention.</li>
+                            <li><strong>The ML Pipeline:</strong> The end-to-end process of creating a model, which includes gathering and preparing data, training the model, evaluating it, and deploying it.</li>
+                            <li><strong>The Dual Challenge:</strong> ML is not just about technical accuracy (getting the right answer) but also about ethical integrity (being fair, unbiased, and transparent).</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- +++ NEW VIEW: Knowledge Needed +++ -->
+            <div id="view-knowledge-needed" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Knowledge Needed (Summary)</h2>
+                    <p class="text-gray-700 mb-6">This is a summary of the core knowledge required for this unit, broken down by topic.</p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">A4.1: Machine Learning Fundamentals (SL & HL)</h3>
+                            <p class="text-gray-700">The basic vocabulary of ML. What are the different types (Supervised, Unsupervised, etc.), what are they used for (applications), and what hardware is needed to run them.</p>
+                        </div>
+                        
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">A4.2: Data Preprocessing (HL Only)</h3>
+                            <p class="text-gray-700">What to do with data *before* training a model. This includes cleaning messy data, selecting the best features, and reducing complexity (dimensionality reduction).</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">A4.3: Machine Learning Approaches (HL Only)</h3>
+                            <p class="text-gray-700">The technical details of how models work. This includes specific algorithms like Linear Regression, K-NN, Decision Trees, Clustering, Association Rules, Reinforcement Learning, Genetic Algorithms, and Neural Networks.</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-xl font-semibold mb-3 text-indigo-700">A4.4: Ethical Considerations (SL & HL)</h3>
+                            <p class="text-gray-700">The critical, human side of ML. This covers crucial topics like algorithmic bias, data privacy, accountability, and the societal impact of AI technologies.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Glossary -->
+            <div id="view-glossary" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Glossary of Terms</h2>
+                    
+                    <!-- A4.1 Terms -->
+                    <h3 class="text-xl font-bold text-gray-800 mb-4 border-b pb-2">A4.1: Fundamentals</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Supervised Learning</h4>
+                            <p class="text-gray-700">Training an algorithm on a dataset of labeled examples. The labels tell the algorithm what the correct output is for each input (e.g., spam filtering).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Labeled Data</h4>
+                            <p class="text-gray-700">Data where each input sample is tagged with a correct output or "label" (e.g., an image of a cat labeled "cat").</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Unsupervised Learning (UL)</h4>
+                            <p class="text-gray-700">The algorithm is given unlabeled data and is asked to find patterns (e.g., clustering customer data).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Unlabeled Data</h4>
+                            <p class="text-gray-700">Data that consists of inputs without any corresponding correct outputs or labels.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Classification</h4>
+                            <p class="text-gray-700">A supervised learning task that predicts a discrete category or class (e.g., "spam" or "not spam", "cat" or "dog").</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Regression</h4>
+                            <p class="text-gray-700">A supervised learning task that predicts a continuous numerical value (e.g., a house price, a temperature).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Reinforcement Learning (RL)</h4>
+                            <p class="text-gray-700">An "agent" learns by interacting with an "environment" and receiving rewards or penalties for its actions (e.g., a game AI).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Deep Learning (DL)</h4>
+                            <p class="text-gray-700">A subfield of ML using complex, multi-layered neural networks to solve problems like image recognition and NLP.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Transfer Learning (TL)</h4>
+                            <p class="text-gray-700">A model trained on one task (e.g., recognizing general objects) is reused and fine-tuned for another related task (e.g., recognizing medical scans).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">GPU (Graphics Processing Unit)</h4>
+                            <p class="text-gray-700">Hardware essential for accelerating deep learning due to its massive parallel processing capabilities.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">TPU (Tensor Processing Unit)</h4>
+                            <p class="text-gray-700">Google's custom-designed chip (an ASIC) specifically optimized for deep learning and tensor operations.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">ASIC (Application-Specific Integrated Circuit)</h4>
+                            <p class="text-gray-700">A custom-built chip tailored for a specific task, offering high performance and energy efficiency (e.g., a TPU).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">FPGA (Field-Programmable Gate Array)</h4>
+                            <p class="text-gray-700">Reconfigurable hardware that can be customized for specific ML algorithms, often used in edge computing.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Edge Devices</h4>
+                            <p class="text-gray-700">Devices (e.g., smartphones, IoT sensors) that run ML models locally for low-power, real-time processing without a cloud connection.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">HPC (High-Performance Computing)</h4>
+                            <p class="text-gray-700">Clusters of interconnected computers with massive processing power, used for training extremely large and complex ML models.</p>
+                        </div>
+                    </div>
+        
+                    <!-- A4.2 Terms -->
+                    <h3 class="text-xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2">A4.2: Data Preprocessing (HL)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Data Preprocessing</h4>
+                            <p class="text-gray-700">The process of cleaning, transforming, and preparing raw data *before* it is used to train a model. "Garbage in, garbage out."</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Data Cleaning</h4>
+                            <p class="text-gray-700">The process of fixing or removing incorrect, corrupt, improperly formatted, duplicate, or incomplete data within a dataset.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Outlier</h4>
+                            <p class="text-gray-700">A data point that significantly deviates from the rest of the data. Can be identified with box plots, Z-scores, or IQR.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Z-score</h4>
+                            <p class="text-gray-700">A statistical method to find outliers by measuring the number of standard deviations a point is from the mean. A Z-score > 3 is often considered an outlier.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">IQR (Interquartile Range)</h4>
+                            <p class="text-gray-700">A statistical method to find outliers. Outliers are defined as points falling below Q1 - 1.5*IQR or above Q3 + 1.5*IQR.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Winsorizing (Capping)</h4>
+                            <p class="text-gray-700">Replacing outliers with the nearest "acceptable" value (e.g., replacing all values above the 95th percentile with the 95th percentile value).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Fuzzy Matching</h4>
+                            <p class="text-gray-700">A technique for finding non-identical duplicates by accounting for variations like typos or misspellings.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Imputation</h4>
+                            <p class="text-gray-700">The technique of filling in missing data (e.g., using the mean, median, or a predictive model).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Mean/Median/Mode Imputation</h4>
+                            <p class="text-gray-700">A simple method to fill missing data with the mean (average), median (middle), or mode (most frequent) value of the column.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Standardization / Normalization</h4>
+                            <p class="text-gray-700">Transforming data to a consistent format or scale (e.g., scaling all features to have a mean of 0 and a standard deviation of 1).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Encoding (One-Hot, Label)</h4>
+                            <p class="text-gray-700">Converting categorical data (text) into a numerical format that models can understand.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Feature Selection</h4>
+                            <p class="text-gray-700">Identifying and selecting the most relevant features (columns) to improve model performance and reduce complexity.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Filter Methods</h4>
+                            <p class="text-gray-700">A feature selection technique that evaluates features based on their intrinsic properties (e.g., correlation with the target), independent of any ML model.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Wrapper Methods</h4>
+                            <p class="text-gray-700">A feature selection technique that uses a specific ML model to evaluate the performance of different subsets of features.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Embedded Methods</h4>
+                            <p class="text-gray-700">A feature selection technique where the model itself selects the most important features during the training process (e.g., Lasso Regression).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Dimensionality Reduction</h4>
+                            <p class="text-gray-700">Reducing the number of features (dimensions) in a dataset while retaining important information.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Curse of Dimensionality</h4>
+                            <p class="text-gray-700">A problem in high-dimensional spaces where data becomes sparse, making it difficult for models to find patterns effectively.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Feature Extraction</h4>
+                            <p class="text-gray-700">A dimensionality reduction technique that *transforms* the original features into a new, smaller set of features (e.g., PCA).</p>
+                        </div>
+                    </div>
+        
+                    <!-- A4.3 Terms -->
+                    <h3 class="text-xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2">A4.3: ML Approaches (HL)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Linear Regression</h4>
+                            <p class="text-gray-700">A supervised learning model that predicts a continuous numerical value by finding the "line of best fit" that describes the relationship between variables.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">K-Nearest Neighbours (K-NN)</h4>
+                            <p class="text-gray-700">A classification algorithm that predicts the class of a new data point based on the majority "vote" of its 'k' nearest neighbors.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Decision Tree</h4>
+                            <p class="text-gray-700">A supervised learning model that uses a flowchart-like structure of questions (nodes) and answers (branches) to arrive at a final decision (leaf).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Gini Impurity</h4>
+                            <p class="text-gray-700">A metric used by decision trees to measure how "mixed up" a group is. A Gini of 0 is perfectly pure. The tree tries to find splits that maximize the "Gini Gain" (purity improvement).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Training Set</h4>
+                            <p class="text-gray-700">The subset of data used to "teach" or train the model. The model learns patterns from this data.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Testing Set</h4>
+                            <p class="text-gray-700">The subset of data held back during training and used to evaluate the model's performance on unseen data.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Overfitting</h4>
+                            <p class="text-gray-700">A common problem where a model "memorizes" the training data, including its noise, and performs poorly on new, unseen data.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Underfitting</h4>
+                            <p class="text-gray-700">A problem where a model is too simple to capture the underlying patterns in the data, performing poorly on both training and test data.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Hyperparameter Tuning</h4>
+                            <p class="text-gray-700">The process of adjusting the settings of a model (e.g., the 'k' in K-NN) to optimize its performance.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Mean Squared Error (MSE)</h4>
+                            <p class="text-gray-700">A metric for regression models. It's the average of the squared differences between the actual and predicted values. Lower is better.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">R-squared (R²)</h4>
+                            <p class="text-gray-700">A metric for regression models. It represents the proportion of variance in the target variable that is explained by the model. Closer to 1 is better.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Accuracy, Precision, Recall, F1 Score</h4>
+                            <p class="text-gray-700">Metrics used to evaluate the performance of classification models.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Clustering</h4>
+                            <p class="text-gray-700">An unsupervised task of grouping similar data points together based on their features.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">K-Means</h4>
+                            <p class="text-gray-700">A popular clustering algorithm that partitions data into 'k' clusters by iteratively assigning points to the nearest cluster center (centroid) and updating the centroid's position.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Centroid</h4>
+                            <p class="text-gray-700">The center point (average position) of a cluster, used in K-Means.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Association Rule Learning</h4>
+                            <p class="text-gray-700">An unsupervised method for discovering "if-then" relationships between items in large datasets (e.g., "market basket analysis").</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Support (Association Rule)</h4>
+                            <p class="text-gray-700">Measures how frequently an item set appears in the dataset. (Popularity of {A, B}).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Confidence (Association Rule)</h4>
+                            <p class="text-gray-700">Measures how often a rule is true. (If {A}, then how often {B}?).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Lift (Association Rule)</h4>
+                            <p class="text-gray-700">Measures the strength of a rule. A Lift > 1 indicates a real association, not just a coincidence.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Agent (RL)</h4>
+                            <p class="text-gray-700">In Reinforcement Learning, the agent is the learner and decision-maker (e.g., the robot vacuum).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Environment (RL)</h4>
+                            <p class="text-gray-700">In RL, the world the agent operates in (e.g., the room layout).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">State, Action, Reward (RL)</h4>
+                            <p class="text-gray-700">The core loop: The agent observes its <span class="key-term">State</span>, takes an <span class="key-term">Action</span>, and receives a <span class="key-term">Reward</span> (or penalty).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Exploration vs. Exploitation</h4>
+                            <p class="text-gray-700">The RL dilemma: <span class="key-term">Exploiting</span> known good actions vs. <span class="key-term">Exploring</span> random actions to find potentially better rewards.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Q-Table</h4>
+                            <p class="text-gray-700">In RL, a lookup table used by the agent to store the expected future reward (Q-value) for taking any action from any state.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Genetic Algorithm</h4>
+                            <p class="text-gray-700">An optimization technique inspired by natural selection, using concepts like Population, Fitness, Crossover, and Mutation.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Chromosome (GA)</h4>
+                            <p class="text-gray-700">In a Genetic Algorithm, a single, potential solution to the problem (e.g., one complete route in the Traveling Salesperson problem).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Population (GA)</h4>
+                            <p class="text-gray-700">The entire collection of chromosomes (solutions) in the current generation of a Genetic Algorithm.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Fitness Function (GA)</h4>
+                            <p class="text-gray-700">A function that measures how "good" a chromosome (solution) is (e.g., the total distance of a route).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Crossover (GA)</h4>
+                            <p class="text-gray-700">The process of creating a new "child" solution by combining parts of two "parent" solutions.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Mutation (GA)</h4>
+                            <p class="text-gray-700">A small, random change in a chromosome to ensure genetic diversity and prevent getting stuck in a suboptimal solution.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Artificial Neural Network (ANN)</h4>
+                            <p class="text-gray-700">A model inspired by the human brain, consisting of interconnected nodes ("neurons") in layers (input, hidden, output).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Perceptron</h4>
+                            <p class="text-gray-700">The simplest form of an ANN; a single neuron that takes inputs, applies weights, and "fires" if the sum exceeds a threshold.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Multi-Layer Perceptron (MLP)</h4>
+                            <p class="text-gray-700">A network of perceptrons with one or more "hidden layers" between the input and output layers, allowing it to model complex patterns.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Convolutional Neural Network (CNN)</h4>
+                            <p class="text-gray-700">A specialized type of neural network designed for processing grid-like data, such as images.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Convolutional & Pooling Layers</h4>
+                            <p class="text-gray-700">Key components of a CNN. <span class="key-term">Convolutional layers</span> apply filters to detect features (edges, textures). <span class="key-term">Pooling layers</span> downsample the image to reduce size.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Model Selection</h4>
+                            <p class="text-gray-700">The process of choosing the best ML algorithm (e.g., K-NN vs. Decision Tree) for a specific problem based on data size, complexity, and the desired outcome.</p>
+                        </div>
+                    </div>
+        
+                    <!-- A4.4 Terms -->
+                    <h3 class="text-xl font-bold text-gray-800 mt-8 mb-4 border-b pb-2">A4.4: Ethical Considerations</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Accountability</h4>
+                            <p class="text-gray-700">The question of who is responsible when an AI system makes a mistake or causes harm.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Algorithmic Bias</h4>
+                            <p class="text-gray-700">Systematic and repeatable errors in an AI system that result in unfair outcomes, often stemming from biased training data.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Consent</h4>
+                            <p class="text-gray-700">The ethical requirement that users must give informed permission for their data to be collected and used, especially for training models.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Environmental Impact</h4>
+                            <p class="text-gray-700">The consideration of the large amount of energy and computational resources required to train large-scale ML models.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Privacy</h4>
+                            <p class="text-gray-700">The ethical consideration of protecting sensitive user data from being exposed or used inappropriately by ML models.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Societal Impact</h4>
+                            <p class="text-gray-700">The effect of AI on society, including job displacement, equity, and changes in social interaction.</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">Transparency</h4>
+                            <p class="text-gray-700">Also known as "explainability." The degree to which we can understand *how* and *why* an ML model made a particular decision (combating the "black box" problem).</p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-semibold text-indigo-700">"Black Box" Problem</h4>
+                            <p class="text-gray-700">A term for complex models (like deep neural networks) where even the developers cannot fully explain *why* the model made a specific decision.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Command Terms -->
+            <div id="view-command-terms" class="content-view">
+                <div class="bg-white p-8 rounded-lg shadow-md">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">IB CS Command Terms: ML (A4) Model Answers</h2>
+                    <p class="text-gray-600 mb-8">This page provides model answers for the Machine Learning (A4) unit, demonstrating how to respond to different IB command terms. Each example explains *why* the answer fits the command term's specific requirements.</p>
+
+                    <!-- STATE -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>State</code></h3>
+                        <p><strong>IB Definition:</strong> "Give a specific name, value or other brief answer without explanation or calculation."</p>
+                        <p><strong>How to use it for ML:</strong> This is a pure recall question. You should give a short, factual answer (1-5 words). No "because..." or elaboration is needed.</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(SL/HL) State one type of hardware, other than a CPU, that is commonly used to accelerate the training of deep learning models.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                            <p>Graphics Processing Unit (GPU).</p>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer is a specific name ("GPU") and is a brief, correct answer to the question. It does not provide any extra explanation, which is exactly what <code>State</code> requires.</p>
+                        </div>
+                    </div>
+
+                    <!-- DESCRIBE -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>Describe</code></h3>
+                        <p><strong>IB Definition:</strong> "Give a detailed account."</p>
+                        <p><strong>How to use it for ML:</strong> You need to provide the key characteristics, features, and properties of a concept. It's more than a simple definition. Think "what does it do?" and "what are its main features?".</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(SL/HL) Describe two differences between supervised and unsupervised learning.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                            <ol class="list-decimal list-inside">
+                                <li><strong>Data Labeling:</strong> Supervised learning uses a labeled dataset, where each data point has a known, correct output (e.g., an image labeled "cat" or "dog"). In contrast, unsupervised learning uses an unlabeled dataset and the algorithm must find patterns on its own.</li>
+                                <li><strong>Primary Goal:</strong> The goal of supervised learning is typically prediction, such as classifying data (e.g., "spam" or "not spam") or regression (e.g., predicting a house price). The goal of unsupervised learning is pattern discovery, such as clustering similar data points into groups (e.g., customer segmentation).</li>
+                            </ol>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer gives a "detailed account" of two key differences (data and goal). It doesn't just list them; it elaborates on *what* each one means, providing examples (e.g., "labeled dataset," "customer segmentation") to create a full picture, as required by <code>Describe</code>.</p>
+                        </div>
+                    </div>
+
+                    <!-- OUTLINE -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>Outline</code></h3>
+                        <p><strong>IB Definition:</strong> "Give a brief account or summary."</p>
+                        <p><strong>How to use it for ML:</strong> This is for a high-level overview. It's more than a list but less than a full description. It's perfect for describing the steps in a process or the main components of a system. Think bullet points or a short summary of the main stages.</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(HL Only) Outline the process of a K-Means clustering algorithm.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                             <ol class="list-decimal list-inside">
+                                <li><strong>Initialize:</strong> The algorithm starts by randomly placing 'k' centroids (cluster centers) on the data plot.</li>
+                                <li><strong>Assign:</strong> Each data point is assigned to its *nearest* centroid, forming 'k' temporary clusters.</li>
+                                <li><strong>Update:</strong> The position of each centroid is recalculated by finding the *mean* (average position) of all data points assigned to it.</li>
+                                <li><strong>Repeat:</strong> Steps 2 (Assign) and 3 (Update) are repeated iteratively until the centroids stop moving, and the clusters are stable.</li>
+                            </ol>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer gives a "brief account" of the main stages of the algorithm in a clear, sequential order. It avoids deep mathematical detail and lengthy descriptions, fitting the "summary" nature of an <code>Outline</code>.</p>
+                        </div>
+                    </div>
+
+                    <!-- EXPLAIN -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>Explain</code></h3>
+                        <p><strong>IB Definition:</strong> "Give a detailed account including reasons or causes."</p>
+                        <p><strong>How to use it for ML:</strong> This is a crucial command term. You must go beyond "what" and answer "why." Your answer must show a clear logical connection between cause and effect. Use words and phrases like "because," "due to," "as a result," "this leads to," or "in order to."</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(HL Only) Explain why overfitting is a significant problem when training a supervised learning model.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                            <p>Overfitting is a significant problem <strong>because</strong> it means the model has learned the training data *too well*, capturing its noise and random fluctuations rather than the true, underlying pattern. <strong>This leads to</strong> the model having high accuracy on the training data, but it fails to generalize to new, unseen data. <strong>As a result,</strong> the model's performance in the real world (e.g., on the testing set) will be very poor, making it useless for its intended predictive purpose.</p>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer provides clear "reasons or causes."
+                            <ul class="list-disc ml-6">
+                                <li>It defines overfitting (learning the noise).</li>
+                                <li>It explains the *cause* of the problem (capturing noise, not the pattern).</li>
+                                <li>It explains the *effect* (fails to generalize, poor real-world performance).</li>
+                                <li>The use of "because," "this leads to," and "as a result" directly addresses the command term.</li>
+                            </ul>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- EVALUATE -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>Evaluate</code></h3>
+                        <p><strong>IB Definition:</strong> "Make an appraisal by weighing up the strengths and limitations."</p>
+                        <p><strong>How to use it for ML:</strong> This requires a balanced, two-sided argument. You *must* discuss both the good points (strengths/advantages) and the bad points (limitations/disadvantages). A final conclusion or judgment that summarizes your appraisal is essential.</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(HL Only) Evaluate the K-Nearest Neighbours (K-NN) algorithm as a method for classification.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                            <p>K-NN is a simple but computationally intensive classification algorithm.</p>
+                            <ul class="list-disc ml-6">
+                                <li><strong>Strengths:</strong>
+                                    <ol class="list-decimal list-inside ml-4">
+                                        <li>K-NN is very simple to understand and implement, making it a good baseline model.</li>
+                                        <li>It is a non-parametric model, meaning it makes no assumptions about the underlying data distribution, which allows it to be flexible and effective for complex, non-linear problems.</li>
+                                    </ol>
+                                </li>
+                                <li><strong>Limitations:</strong>
+                                     <ol class="list-decimal list-inside ml-4">
+                                        <li>It is computationally expensive and slow during prediction (a "lazy" algorithm) because it must calculate the distance from the new point to *every* point in the training set.</li>
+                                        <li>It suffers from the "curse of dimensionality," performing poorly on high-dimensional datasets (datasets with many features).</li>
+                                        <li>Its performance is highly sensitive to the scale of the features (requiring normalization) and the choice of 'k' (the number of neighbors).</li>
+                                    </ol>
+                                </li>
+                                <li><strong>Conclusion:</strong>
+                                    <p class="ml-4">While K-NN is a good introductory algorithm due to its simplicity, its significant limitations in performance and speed on large, high-dimensional datasets make it unsuitable for most large-scale, real-world applications compared to more efficient models like Decision Trees or Neural Networks.</p>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer provides a clear "appraisal" by "weighing up" the strengths (simple, flexible) directly against the limitations (slow, curse of dimensionality, sensitive). It ends with a specific, justified conclusion that makes a final judgment.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- DISCUSS -->
+                    <div class="command-term-block">
+                        <h3>Command Term: <code>Discuss</code></h3>
+                        <p><strong>IB Definition:</strong> "Offer a considered and balanced review that includes a range of arguments, factors or hypotheses. Opinions or conclusions should be presented clearly and supported by appropriate evidence."</p>
+                        <p><strong>How to use it for ML:</strong> This is typically used for ethical or impact-based questions (like A4.4). It's similar to <code>Evaluate</code> but broader. You need to explore an issue from multiple *perspectives* or *factors*, not just a simple pro/con list. Your "evidence" will be the concepts from the course.</p>
+                        
+                        <div class="model-question">
+                            <h4>Model Question:</h4>
+                            <p>(SL/HL) Discuss the ethical implications of using machine learning models to filter job applications.</p>
+                        </div>
+                        <div class="model-answer">
+                            <h4>Model Answer:</h4>
+                            <p>Using ML to filter job applications presents complex ethical implications, primarily centered on algorithmic bias and transparency.</p>
+                            <ul class="list-disc ml-6">
+                                <li><strong>A key factor is algorithmic bias.</strong> If a model is trained on a company's historical hiring data, and this data reflects past discriminatory practices (e.g., bias against women or minorities), the ML model will *learn* and *amplify* this bias. This could lead to the model systematically discriminating against qualified candidates from certain backgrounds, even if the developers did not intend it.</li>
+                                <li><strong>Another factor is transparency.</strong> Many advanced ML models are "black boxes," meaning even the creators cannot fully explain *why* a specific decision was made. This lack of transparency denies rejected candidates the right to an explanation and makes it extremely difficult to audit the system for fairness or to appeal a decision.</li>
+                                <li><strong>From an alternative perspective,</strong> some argue that a well-designed ML system could *reduce* human bias by ignoring factors like a person's name, gender, or age, which human recruiters might be unconsciously influenced by.</li>
+                                <li><strong>In conclusion,</strong> while ML offers a potential for efficiency, the risk of embedding and scaling historical, systemic bias is significant. Without strict regulations, transparency in decision-making, and regular audits for fairness, using ML for hiring risks creating a system that is not only unethical but also potentially illegal.</li>
+                            </ul>
+                        </div>
+                        <div class="model-explanation">
+                            <h4>Explanation of Answer:</h4>
+                            <p>This answer offers a "considered and balanced review." It identifies the main issue (bias and transparency) and explores it from multiple angles/factors (historical data, the "black box" problem, and the counter-argument of reducing human bias). It uses "appropriate evidence" (concepts like "black box" and "biased training data") and presents a clear, supported conclusion.</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        // --- Global App State ---
+        let currentActiveLink = null;
+        let linRegData = [];
+        let knnData = [];
+        let knnNewPoint = null;
+        const CLASS_A_COLOR = '#3b82f6'; // blue-500
+        const CLASS_B_COLOR = '#ec4899'; // pink-500
+        const NEW_POINT_COLOR = '#1f2937'; // gray-800
+        const NEIGHBOR_COLOR = '#f59e0b'; // amber-500
+
+        // --- DOM Elements ---
+        // LinReg
+        const linRegCanvas = document.getElementById('linRegCanvas');
+        const linRegCtx = linRegCanvas ? linRegCanvas.getContext('2d') : null;
+        const linRegClearBtn = document.getElementById('linRegClear');
+        const linRegPointCount = document.getElementById('linRegPointCount');
+        const linRegEquation = document.getElementById('linRegEquation');
+
+        // K-NN
+        const knnCanvas = document.getElementById('knnCanvas');
+        const knnCtx = knnCanvas ? knnCanvas.getContext('2d') : null;
+        const knnResetBtn = document.getElementById('knnReset');
+        const kSlider = document.getElementById('kSlider');
+        const kValueEl = document.getElementById('kValue');
+        const knnResultEl = document.getElementById('knnResult');
+
+        // Perceptron
+        const pInputs = {
+            x1: document.getElementById('pInput1'),
+            w1: document.getElementById('pWeight1'),
+            x2: document.getElementById('pInput2'),
+            w2: document.getElementById('pWeight2'),
+            b: document.getElementById('pBias')
+        };
+        const pVals = {
+            x1: document.getElementById('pInput1Val'),
+            w1: document.getElementById('pWeight1Val'),
+            x2: document.getElementById('pInput2Val'),
+            w2: document.getElementById('pWeight2Val'),
+            b: document.getElementById('pBiasVal')
+        };
+        const pCalc = {
+            x1: document.getElementById('pCalc_x1'),
+            w1: document.getElementById('pCalc_w1'),
+            x2: document.getElementById('pCalc_x2'),
+            w2: document.getElementById('pCalc_w2'),
+            b: document.getElementById('pCalc_b')
+        };
+        const pSumEl = document.getElementById('pSum');
+        const pOutputEl = document.getElementById('pOutput');
+
+
+        // --- Navigation ---
+        function showView(viewId, linkElement) {
+            // Hide all content views
+            document.querySelectorAll('.content-view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Show the selected view
+            const activeView = document.getElementById(viewId);
+            if (activeView) {
+                activeView.classList.add('active');
+            }
+
+            // Update sidebar link styles
+            if (currentActiveLink) {
+                currentActiveLink.classList.remove('active');
+            }
+            if (linkElement) {
+                linkElement.classList.add('active');
+                currentActiveLink = linkElement;
+            }
+            
+            // Re-initialize canvases if they are being shown
+            if (viewId === 'view-lin-reg') {
+                drawLinReg();
+            }
+            if (viewId === 'view-knn') {
+                drawKnn();
+            }
+        }
+
+        // --- Linear Regression Logic ---
+        function calculateLinearRegression() {
+            if (linRegData.length < 2) {
+                return { m: 0, b: 0 };
+            }
+            
+            let sumX = 0, sumY = 0, sumXY = 0, sumXSquare = 0;
+            const n = linRegData.length;
+
+            linRegData.forEach(p => {
+                sumX += p.x;
+                sumY += p.y;
+                sumXY += p.x * p.y;
+                sumXSquare += p.x * p.x;
+            });
+
+            const m = (n * sumXY - sumX * sumY) / (n * sumXSquare - sumX * sumX);
+            const b = (sumY - m * sumX) / n;
+            
+            return { m, b };
+        }
+
+        function drawLinReg() {
+            if (!linRegCtx) return;
+            const width = linRegCanvas.width;
+            const height = linRegCanvas.height;
+            linRegCtx.clearRect(0, 0, width, height);
+            
+            // Draw points
+            linRegCtx.fillStyle = '#3b82f6'; // blue-500
+            linRegData.forEach(p => {
+                linRegCtx.beginPath();
+                linRegCtx.arc(p.x, p.y, 5, 0, 2 * Math.PI);
+                linRegCtx.fill();
+            });
+
+            // Draw line
+            const { m, b } = calculateLinearRegression();
+            if (!isNaN(m) && !isNaN(b)) {
+                linRegCtx.strokeStyle = '#ef4444'; // red-500
+                linRegCtx.lineWidth = 2;
+                linRegCtx.beginPath();
+                linRegCtx.moveTo(0, b);
+                linRegCtx.lineTo(width, m * width + b);
+                linRegCtx.stroke();
+                
+                if(linRegEquation) linRegEquation.textContent = `y = ${m.toFixed(2)}x + ${b.toFixed(2)}`;
+            } else {
+                 if(linRegEquation) linRegEquation.textContent = `y = mx + b`;
+            }
+            
+            if(linRegPointCount) linRegPointCount.textContent = linRegData.length;
+        }
+
+        if (linRegCanvas) {
+            linRegCanvas.addEventListener('click', (e) => {
+                const rect = linRegCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                linRegData.push({ x, y });
+                drawLinReg();
+            });
+        }
+
+        if (linRegClearBtn) {
+            linRegClearBtn.addEventListener('click', () => {
+                linRegData = [];
+                drawLinReg();
+            });
+        }
+
+        // --- K-NN Logic ---
+        function getDistance(p1, p2) {
+            return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+        }
+
+        function generateKnnData() {
+            knnData = [];
+            for (let i = 0; i < 15; i++) {
+                // Class A (blue) - top-left
+                knnData.push({
+                    x: Math.random() * 250 + 50, // 50 to 300
+                    y: Math.random() * 150 + 50, // 50 to 200
+                    class: 'A'
+                });
+                // Class B (pink) - bottom-right
+                knnData.push({
+                    x: Math.random() * 250 + 300, // 300 to 550
+                    y: Math.random() * 150 + 200, // 200 to 350
+                    class: 'B'
+                });
+            }
+            knnNewPoint = null;
+            if (knnResultEl) {
+                knnResultEl.textContent = '';
+            }
+        }
+
+        function classifyKnn() {
+            if (!knnNewPoint || !kSlider || !knnCtx) return;
+            
+            const k = parseInt(kSlider.value);
+            
+            // 1. Calculate distances
+            const distances = knnData.map(point => ({
+                dist: getDistance(knnNewPoint, point),
+                class: point.class,
+                point: point
+            }));
+            
+            // 2. Sort by distance
+            distances.sort((a, b) => a.dist - b.dist);
+            
+            // 3. Get top K neighbors
+            const neighbors = distances.slice(0, k);
+            
+            // 4. Majority vote
+            let classVotes = { A: 0, B: 0 };
+            neighbors.forEach(n => {
+                if (n.class === 'A') classVotes.A++;
+                if (n.class === 'B') classVotes.B++;
+            });
+            
+            const classification = classVotes.A > classVotes.B ? 'A' : 'B';
+            knnNewPoint.class = classification;
+            
+            // Update UI
+            if (knnResultEl) {
+                knnResultEl.textContent = `Classified as: ${classification}`;
+            }
+            
+            // Redraw with neighbor lines
+            drawKnn(neighbors);
+        }
+
+        function drawKnn(neighbors = []) {
+            if (!knnCtx) return;
+            const width = knnCanvas.width;
+            const height = knnCanvas.height;
+            knnCtx.clearRect(0, 0, width, height);
+
+            // Draw neighbor lines first (so they are behind points)
+            if (knnNewPoint) {
+                knnCtx.strokeStyle = NEIGHBOR_COLOR;
+                knnCtx.lineWidth = 2;
+                neighbors.forEach(n => {
+                    knnCtx.beginPath();
+                    knnCtx.moveTo(knnNewPoint.x, knnNewPoint.y);
+                    knnCtx.lineTo(n.point.x, n.point.y);
+                    knnCtx.stroke();
+                });
+            }
+
+            // Draw existing data points
+            knnData.forEach(p => {
+                knnCtx.fillStyle = p.class === 'A' ? CLASS_A_COLOR : CLASS_B_COLOR;
+                knnCtx.beginPath();
+                knnCtx.arc(p.x, p.y, 7, 0, 2 * Math.PI);
+                knnCtx.fill();
+            });
+
+            // Draw new point
+            if (knnNewPoint) {
+                knnCtx.fillStyle = knnNewPoint.class === 'A' ? CLASS_A_COLOR : (knnNewPoint.class === 'B' ? CLASS_B_COLOR : NEW_POINT_COLOR);
+                knnCtx.strokeStyle = NEIGHBOR_COLOR;
+                knnCtx.lineWidth = 3;
+                knnCtx.beginPath();
+                knnCtx.arc(knnNewPoint.x, knnNewPoint.y, 9, 0, 2 * Math.PI);
+                knnCtx.fill();
+                knnCtx.stroke(); // Highlight the new point
+            }
+        }
+
+        if (knnCanvas) {
+            knnCanvas.addEventListener('click', (e) => {
+                const rect = knnCanvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                knnNewPoint = { x, y, class: null };
+                classifyKnn();
+            });
+        }
+        
+        if (knnResetBtn) {
+            knnResetBtn.addEventListener('click', () => {
+                generateKnnData();
+                drawKnn();
+            });
+        }
+
+        if (kSlider) {
+            kSlider.addEventListener('input', (e) => {
+                if (kValueEl) {
+                    kValueEl.textContent = e.target.value;
+                }
+                classifyKnn();
+            });
+        }
+
+        // --- Perceptron Logic ---
+        function updatePerceptron() {
+            // Check if all elements exist
+            if (!pInputs.x1 || !pVals.x1 || !pCalc.x1 || !pSumEl || !pOutputEl) {
+                return;
+            }
+
+            // 1. Get values
+            const x1 = parseFloat(pInputs.x1.value);
+            const w1 = parseFloat(pInputs.w1.value);
+            const x2 = parseFloat(pInputs.x2.value);
+            const w2 = parseFloat(pInputs.w2.value);
+            const b = parseFloat(pInputs.b.value);
+
+            // 2. Update labels
+            pVals.x1.textContent = x1.toFixed(1);
+            pVals.w1.textContent = w1.toFixed(1);
+            pVals.x2.textContent = x2.toFixed(1);
+            pVals.w2.textContent = w2.toFixed(1);
+            pVals.b.textContent = b.toFixed(1);
+            
+            pCalc.x1.textContent = x1.toFixed(1);
+            pCalc.w1.textContent = w1.toFixed(1);
+            pCalc.x2.textContent = x2.toFixed(1);
+            pCalc.w2.textContent = w2.toFixed(1);
+            pCalc.b.textContent = b.toFixed(1);
+
+            // 3. Calculate sum
+            const sum = (x1 * w1) + (x2 * w2) + b;
+            pSumEl.textContent = sum.toFixed(2);
+
+            // 4. Apply activation function (Step function)
+            const output = sum > 0 ? 1 : 0;
+            pOutputEl.textContent = output;
+
+            // 5. Update output color
+            if (output === 1) {
+                pOutputEl.classList.remove('bg-red-500');
+                pOutputEl.classList.add('bg-green-500');
+            } else {
+                pOutputEl.classList.remove('bg-green-500');
+                pOutputEl.classList.add('bg-red-500');
+            }
+        }
+        
+        // Add listeners to all perceptron sliders
+        Object.values(pInputs).forEach(input => {
+            if (input) {
+                input.addEventListener('input', updatePerceptron);
+            }
+        });
+
+        // --- Initialization ---
+        function init() {
+            // Set default view
+            showView('view-welcome', document.querySelector('.sidebar-link')); // Show welcome, but highlight first link
+             // Set default view to welcome, but don't highlight any link
+            const firstLink = document.querySelector('.sidebar-link');
+            if (firstLink) {
+                 showView('view-welcome', null);
+                 // We want the welcome view, but no sidebar link active
+            }
+
+            // Init LinReg
+            drawLinReg();
+            
+            // Init K-NN
+            generateKnnData();
+            drawKnn();
+
+            // Init Perceptron
+            updatePerceptron();
+        }
+
+        // Run on page load
+        document.addEventListener('DOMContentLoaded', init);
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genetic Algorithm: Traveling Salesperson</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overscroll-behavior: none;
+        }
+        .info-card {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+        canvas {
+            cursor: pointer;
+        }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #22d3ee;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .slider-thumb::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #22d3ee;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .code-highlight {
+            background-color: rgba(244, 114, 182, 0.3);
+            color: #f9a8d4;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .mutation-highlight {
+            background-color: rgba(251, 146, 60, 0.3);
+            color: #fb923c;
+            padding: 1px 3px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .tab-active {
+            background-color: #374151; /* gray-700 */
+            border-bottom-color: #22d3ee; /* cyan-400 */
+            color: #22d3ee;
+        }
+        .tab-inactive {
+             border-bottom-color: transparent;
+        }
+        .prose {
+             max-width: 80ch;
+        }
+        .prose h1 { @apply text-3xl font-bold mb-4 text-cyan-400; }
+        .prose h3 { @apply text-2xl font-bold mt-10 mb-4 text-cyan-300 border-b border-gray-600 pb-3; }
+        .prose h4 { @apply text-lg font-semibold mt-8 mb-3 text-cyan-200; }
+        .prose p { @apply mb-5 text-gray-200 leading-loose; }
+        .prose ul { @apply list-disc list-outside mb-5 pl-5 space-y-3; }
+        .prose li { @apply mb-3 pl-2; }
+        .prose code { @apply bg-gray-900 border border-gray-700 px-2 py-1 rounded-md text-sm text-pink-400 font-mono; }
+        .prose strong { @apply text-cyan-100 font-semibold; }
+        .prose .example-block { @apply bg-gray-900 border-l-4 border-cyan-500 p-6 my-6 rounded-r-lg text-sm space-y-4; }
+        .prose .example-block p { @apply m-0 leading-relaxed text-gray-300; }
+        .prose .example-block ul { @apply my-2 list-outside !pl-5; }
+        .prose .example-block code { @apply text-base bg-gray-800; }
+        .illustration-box { @apply bg-gray-800 p-6 rounded-lg border border-gray-700; }
+        .flowchart-box {
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .flowchart-box:hover > rect {
+            fill: #4b5563; /* gray-600 */
+            stroke: #22d3ee; /* cyan-400 */
+        }
+        .flowchart-box:hover > text {
+            fill: #22d3ee;
+        }
+        /* Python Syntax Highlighting */
+        .python-code .keyword { color: #f92672; } /* Pink */
+        .python-code .function { color: #66d9ef; } /* Cyan */
+        .python-code .string { color: #e6db74; } /* Yellow */
+        .python-code .number { color: #ae81ff; } /* Purple */
+        .python-code .comment { color: #75715e; } /* Grey */
+
+    </style>
+</head>
+<body class="bg-gray-900 text-white antialiased">
+
+    <div class="flex flex-col h-screen max-h-screen">
+        <!-- Tab Navigation -->
+        <div class="flex flex-wrap border-b border-gray-700 px-4 lg:px-6">
+            <button id="simTab" data-content-id="simulationContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-active">Simulation</button>
+            <button id="flowchartTab" data-content-id="flowchartContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Flowchart</button>
+            <button id="initializationTab" data-content-id="initializationContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Initialization</button>
+            <button id="fitnessTab" data-content-id="fitnessContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Fitness</button>
+            <button id="selectionTab" data-content-id="selectionContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Selection</button>
+            <button id="elitismTab" data-content-id="elitismContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Elitism</button>
+            <button id="crossoverTab" data-content-id="crossoverContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Crossover</button>
+            <button id="mutationTab" data-content-id="mutationContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Mutation</button>
+            <button id="examplesTab" data-content-id="examplesContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Examples</button>
+            <button id="pythonTab" data-content-id="pythonContent" class="py-3 px-4 text-sm font-medium border-b-2 transition-colors duration-200 tab-inactive text-gray-400 hover:text-white">Python Code</button>
+        </div>
+
+        <!-- Simulation Content -->
+        <div id="simulationContent" class="flex flex-col lg:flex-row flex-1 min-h-0">
+            <!-- Left Panel: Controls & Explanation -->
+            <div class="w-full lg:w-1/3 p-4 lg:p-6 space-y-4 lg:space-y-6 overflow-y-auto">
+                <header>
+                    <h1 class="text-2xl lg:text-3xl font-bold text-cyan-400">Traveling Salesperson GA</h1>
+                    <p class="text-gray-400 mt-1">An interactive genetic algorithm simulation.</p>
+                </header>
+
+                <!-- Controls -->
+                <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-3 border-b border-gray-600 pb-2">Controls</h2>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="runPauseBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200">Run Automatically</button>
+                        <button id="stepBtn" class="w-full bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200">Step Forward</button>
+                    </div>
+                     <div class="mt-4 grid grid-cols-1 gap-3">
+                        <button id="resetBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200">Reset to European Cities</button>
+                    </div>
+                </div>
+
+                <!-- Visualization Stage -->
+                <div id="explanationPanel" class="p-4 rounded-lg bg-gray-800 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-2 border-b border-gray-600 pb-2">Current Stage</h2>
+                    <p id="explanationText" class="text-sm text-gray-300 min-h-[40px] flex items-center">Press 'Reset' to begin, then 'Step' or 'Run'.</p>
+                </div>
+
+                <!-- Crossover Details Panel -->
+                <div id="crossoverPanel" class="hidden p-4 rounded-lg bg-gray-800 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-2 border-b border-gray-600 pb-2">Crossover Details</h2>
+                    <div class="space-y-2 text-sm">
+                        <div>
+                            <p class="font-medium text-blue-400">Parent 1 Route:</p>
+                            <code id="parent1Route" class="block bg-gray-900 p-2 rounded text-xs break-words"></code>
+                        </div>
+                         <div>
+                            <p class="font-medium text-yellow-400">Parent 2 Route:</p>
+                            <code id="parent2Route" class="block bg-gray-900 p-2 rounded text-xs break-words"></code>
+                        </div>
+                         <div>
+                            <p class="font-medium text-white">Child Route:</p>
+                            <code id="childRoute" class="block bg-gray-900 p-2 rounded text-xs break-words"></code>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parameters -->
+                <div class="p-4 rounded-lg bg-gray-800 border border-gray-700">
+                    <h2 class="text-lg font-semibold mb-3 border-b border-gray-600 pb-2">Parameters</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="populationSize" class="block text-sm font-medium text-gray-300">Population Size: <span id="populationSizeLabel">500</span></label>
+                            <input id="populationSize" type="range" min="10" max="2000" value="500" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                            <p class="text-xs text-gray-400 mt-1">The total number of routes in each generation. A larger population explores more solutions but requires more computation.</p>
+                        </div>
+                        <div>
+                            <label for="mutationRate" class="block text-sm font-medium text-gray-300">Mutation Rate: <span id="mutationRateLabel">0.05</span></label>
+                            <input id="mutationRate" type="range" min="0.01" max="1" value="0.05" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                            <p class="text-xs text-gray-400 mt-1">The probability of a random change (swapping two cities) in a route. This prevents the algorithm from getting stuck.</p>
+                        </div>
+                        <div>
+                            <label for="elitismRate" class="block text-sm font-medium text-gray-300">Elitism Rate: <span id="elitismRateLabel">0.10</span></label>
+                            <input id="elitismRate" type="range" min="0" max="0.5" value="0.1" step="0.01" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                            <p class="text-xs text-gray-400 mt-1">The percentage of the best routes that are carried over to the next generation unchanged, ensuring good solutions aren't lost.</p>
+                        </div>
+                        <div>
+                            <label for="terminationGenerations" class="block text-sm font-medium text-gray-300">Stop After Generations w/o Improvement: <span id="terminationGenerationsLabel">50</span></label>
+                            <input id="terminationGenerations" type="range" min="10" max="500" value="50" step="10" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel: Simulation Canvas & Stats -->
+            <div class="flex-1 flex flex-col p-4 lg:p-6">
+                <!-- Stats Display -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                    <div class="info-card p-3 rounded-lg text-center">
+                        <p class="text-sm text-gray-400">Generation</p>
+                        <p id="generation" class="text-xl lg:text-2xl font-bold">0</p>
+                    </div>
+                    <div class="info-card p-3 rounded-lg text-center">
+                        <p class="text-sm text-gray-400">Cities</p>
+                        <p id="cityCount" class="text-xl lg:text-2xl font-bold">0</p>
+                    </div>
+                    <div class="info-card p-3 rounded-lg text-center col-span-2">
+                        <p class="text-sm text-gray-400">Shortest Distance</p>
+                        <p id="bestDistance" class="text-xl lg:text-2xl font-bold text-cyan-400">N/A</p>
+                    </div>
+                </div>
+                
+                <!-- Best Route List -->
+                <div id="bestRoutePanel" class="info-card p-3 rounded-lg mb-4 hidden">
+                    <h3 class="text-sm font-semibold text-gray-300 mb-2">Best Route Found:</h3>
+                    <ol id="bestRouteList" class="text-sm text-cyan-300 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-1 list-inside"></ol>
+                </div>
+
+                <!-- Canvas -->
+                <div class="flex-1 bg-gray-800 rounded-lg border-2 border-gray-700 overflow-hidden">
+                    <canvas id="simulationCanvas"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Flowchart Content -->
+        <div id="flowchartContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto text-center">
+                <h1>Algorithm Flowchart</h1>
+                <p>This flowchart shows the main loop of the genetic algorithm. Click on any stage to see a detailed illustration of that concept.</p>
+                <div class="illustration-box">
+                    <svg id="flowchart" viewBox="0 0 300 520" class="w-full max-w-lg mx-auto">
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                                <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7280" />
+                            </marker>
+                        </defs>
+                        <!-- Nodes -->
+                        <g class="flowchart-box" id="flowchart-initialization">
+                            <rect x="50" y="20" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="40" font-size="12" fill="#d1d5db" text-anchor="middle">Initialization</text>
+                        </g>
+                        <g class="flowchart-box" id="flowchart-fitness">
+                            <rect x="50" y="90" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="110" font-size="12" fill="#d1d5db" text-anchor="middle">Evaluation (Fitness)</text>
+                        </g>
+                        <g class="flowchart-box" id="flowchart-selection">
+                            <rect x="50" y="160" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="180" font-size="12" fill="#d1d5db" text-anchor="middle">Selection</text>
+                        </g>
+                         <g class="flowchart-box" id="flowchart-elitism">
+                            <rect x="50" y="230" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="250" font-size="12" fill="#d1d5db" text-anchor="middle">Elitism</text>
+                        </g>
+                        <g class="flowchart-box" id="flowchart-crossover">
+                            <rect x="50" y="300" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="320" font-size="12" fill="#d1d5db" text-anchor="middle">Crossover</text>
+                        </g>
+                        <g class="flowchart-box" id="flowchart-mutation">
+                            <rect x="50" y="370" width="200" height="40" rx="5" fill="#374151" stroke="#6b7280" stroke-width="2"/>
+                            <text x="150" y="390" font-size="12" fill="#d1d5db" text-anchor="middle">Mutation</text>
+                        </g>
+                        <g>
+                            <rect x="50" y="440" width="200" height="40" rx="5" fill="#1f2937" stroke="#06b6d4" stroke-width="2"/>
+                            <text x="150" y="460" font-size="12" fill="#06b6d4" text-anchor="middle">Create New Generation</text>
+                        </g>
+                        <!-- Arrows -->
+                        <path d="M 150 60 L 150 90" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 150 130 L 150 160" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 150 200 L 150 230" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 150 270 L 150 300" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 150 340 L 150 370" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 150 410 L 150 440" stroke="#6b7280" stroke-width="2" marker-end="url(#arrow)"/>
+                        <path d="M 50 460 Q 20 460 20 420 L 20 130 Q 20 90 50 90" stroke="#6b7280" stroke-width="2" fill="none" marker-end="url(#arrow)" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Initialization Content -->
+        <div id="initializationContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Initialization</h1>
+                <p>Initialization is the very first step. A population of potential solutions (chromosomes) is created randomly to provide the initial gene pool for the algorithm to work with.</p>
+                <div class="illustration-box space-y-4">
+                    <h4 class="text-lg font-semibold text-white">Creating a Random Population</h4>
+                    <p>Given a set of cities, the algorithm creates a large number of completely random routes. The size of this population is set by the "Population Size" parameter in the simulation.</p>
+                    <ul class="font-mono text-sm">
+                        <li class="p-2"><strong>Route 1:</strong> [ London, Paris, Rome, Berlin, Madrid, ... ]</li>
+                        <li class="p-2"><strong>Route 2:</strong> [ Madrid, Rome, London, Berlin, Paris, ... ]</li>
+                        <li class="p-2"><strong>Route 3:</strong> [ Berlin, London, Madrid, Paris, Rome, ... ]</li>
+                        <li class="text-gray-500 p-2">... and 497 more random routes ...</li>
+                    </ul>
+                     <p class="mt-4 text-cyan-300">This random collection of routes, most of which are very inefficient, serves as Generation 0. From here, the process of selection and evolution begins.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fitness Content -->
+        <div id="fitnessContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Fitness Function</h1>
+                <p>The fitness function evaluates how "good" each solution is. For the Traveling Salesperson, a shorter total distance equals a higher fitness.</p>
+                <div class="illustration-box">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h4 class="text-lg font-bold text-white mb-2">Route A (Less Fit)</h4>
+                            <svg viewBox="0 0 100 60" class="w-full bg-gray-900 rounded">
+                                <!-- Cities -->
+                                <circle cx="10" cy="10" r="3" fill="#f1f5f9"/><text x="10" y="10" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">A</text>
+                                <circle cx="90" cy="10" r="3" fill="#f1f5f9"/><text x="90" y="10" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">B</text>
+                                <circle cx="90" cy="50" r="3" fill="#f1f5f9"/><text x="90" y="50" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">C</text>
+                                <circle cx="10" cy="50" r="3" fill="#f1f5f9"/><text x="10" y="50" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">D</text>
+                                <!-- Route -->
+                                <path d="M 10 10 L 90 50 L 90 10 L 10 50 Z" stroke="#f87171" stroke-width="1" fill="none" stroke-dasharray="2,1"/>
+                                <!-- Distances -->
+                                <text x="50" y="34" font-size="3" fill="#fca5a5">89</text>
+                                <text x="92" y="30" font-size="3" fill="#fca5a5" text-anchor="start">40</text>
+                                <text x="50" y="26" font-size="3" fill="#fca5a5">89</text>
+                                <text x="8" y="30" font-size="3" fill="#fca5a5" text-anchor="end">40</text>
+                            </svg>
+                            <p class="text-center mt-2 font-semibold">Total Distance: <span class="text-red-400">~258</span></p>
+                        </div>
+                        <div>
+                            <h4 class="text-lg font-bold text-white mb-2">Route B (More Fit)</h4>
+                            <svg viewBox="0 0 100 60" class="w-full bg-gray-900 rounded">
+                                 <!-- Cities -->
+                                <circle cx="10" cy="10" r="3" fill="#f1f5f9"/><text x="10" y="10" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">A</text>
+                                <circle cx="90" cy="10" r="3" fill="#f1f5f9"/><text x="90" y="10" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">B</text>
+                                <circle cx="90" cy="50" r="3" fill="#f1f5f9"/><text x="90" y="50" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">C</text>
+                                <circle cx="10" cy="50" r="3" fill="#f1f5f9"/><text x="10" y="50" font-size="3" fill="#111827" text-anchor="middle" dy=".3em">D</text>
+                                <!-- Route -->
+                                <path d="M 10 10 L 90 10 L 90 50 L 10 50 Z" stroke="#4ade80" stroke-width="1" fill="none"/>
+                                <!-- Distances -->
+                                <text x="50" y="8" font-size="3" fill="#86efac">80</text>
+                                <text x="92" y="30" font-size="3" fill="#86efac" text-anchor="start">40</text>
+                                <text x="50" y="52" font-size="3" fill="#86efac">80</text>
+                                <text x="8" y="30" font-size="3" fill="#86efac" text-anchor="end">40</text>
+                            </svg>
+                            <p class="text-center mt-2 font-semibold">Total Distance: <span class="text-green-400">240</span></p>
+                        </div>
+                    </div>
+                     <p class="text-center mt-6 text-cyan-300">The genetic algorithm aims to maximize fitness. Since a shorter route is better, fitness is calculated as <code class="bg-gray-700 text-pink-300">1 / Total Distance</code>. Therefore, Route B has a higher fitness: <code class="bg-gray-700 text-pink-300">1 / 240 ≈ 0.0041</code> vs. <code class="bg-gray-700 text-pink-300">1 / 258 ≈ 0.0038</code> for Route A.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Selection Content -->
+        <div id="selectionContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Selection</h1>
+                <p>Selection is the process of choosing which routes from the current generation will become parents for the next. This is based on the principle of "survival of the fittest"—routes with shorter distances (higher fitness) are more likely to be chosen.</p>
+                <div class="illustration-box space-y-4">
+                    <h4 class="text-lg font-semibold text-white">1. Population Ranked by Fitness</h4>
+                    <p>After calculating the distance for every route in the population, they are ranked from best to worst.</p>
+                    <ul class="font-mono text-sm">
+                        <li class="bg-green-600 bg-opacity-20 p-2 rounded">Route 1 (Distance: 1250) &rarr; <span class="font-bold text-green-400">Elite</span></li>
+                        <li class="bg-blue-600 bg-opacity-20 p-2 rounded">Route 2 (Distance: 1280) &rarr; <span class="font-bold text-blue-400">Selected for Mating Pool</span></li>
+                        <li class="bg-blue-600 bg-opacity-20 p-2 rounded">Route 3 (Distance: 1310) &rarr; <span class="font-bold text-blue-400">Selected for Mating Pool</span></li>
+                        <li class="p-2">Route 4 (Distance: 1450)</li>
+                        <li class="p-2">Route 5 (Distance: 1520)</li>
+                        <li class="text-gray-500 p-2">... many more routes ...</li>
+                    </ul>
+
+                    <h4 class="text-lg font-semibold text-white mt-6">2. Creating the Next Generation</h4>
+                    <p><strong>Elitism:</strong> The very best routes are copied directly. <a class="text-cyan-400 hover:underline" id="elitismLink">See the Elitism tab for details.</a></p>
+                    <p><strong>Mating Pool:</strong> Other high-fitness routes are selected to be in the "mating pool." Parents will be chosen randomly from this pool to create new child routes via Crossover.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elitism Content -->
+        <div id="elitismContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Elitism</h1>
+                <p>Elitism is a crucial part of the selection process. It guarantees that the best solution(s) from the current generation are not lost and are carried over to the next generation exactly as they are.</p>
+                <div class="illustration-box space-y-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-white">Current Generation (Ranked)</h4>
+                        <ul class="font-mono text-sm">
+                            <li class="bg-green-600 bg-opacity-30 p-2 rounded"><strong>Route 1 (Distance: 1250)</strong></li>
+                            <li class="bg-green-600 bg-opacity-20 p-2 rounded"><strong>Route 2 (Distance: 1280)</strong></li>
+                            <li class="p-2">Route 3 (Distance: 1310)</li>
+                            <li class="p-2">Route 4 (Distance: 1450)</li>
+                            <li class="text-gray-500 p-2">...</li>
+                        </ul>
+                    </div>
+
+                    <div class="text-center text-2xl font-bold text-gray-500">&darr;</div>
+
+                    <div>
+                        <h4 class="text-lg font-semibold text-white">Next Generation (Starting Population)</h4>
+                        <p>With an <strong>Elitism Rate of 10%</strong> on a population of 20, the top 2 routes are preserved.</p>
+                        <ul class="font-mono text-sm">
+                            <li class="bg-green-600 bg-opacity-30 p-2 rounded"><strong>Route 1 (Distance: 1250)</strong></li>
+                            <li class="bg-green-600 bg-opacity-20 p-2 rounded"><strong>Route 2 (Distance: 1280)</strong></li>
+                            <li class="text-gray-500 p-2">... (The other 18 slots will be filled by new children from crossover and mutation)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crossover Content -->
+        <div id="crossoverContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Crossover</h1>
+                <p>Crossover combines two parent routes to create a new child route, mixing their genetic information to potentially create an even better route.</p>
+
+                <div class="illustration-box space-y-6">
+                    <div>
+                        <h4 class="text-lg font-semibold text-blue-400">Parent 1</h4>
+                        <p class="font-mono bg-gray-900 p-2 rounded">[ London, <span class="code-highlight">Paris</span>, <span class="code-highlight">Rome</span>, <span class="code-highlight">Berlin</span>, Madrid, Stockholm ]</p>
+                    </div>
+                    <div>
+                        <h4 class="text-lg font-semibold text-yellow-400">Parent 2</h4>
+                        <p class="font-mono bg-gray-900 p-2 rounded">[ Madrid, <span class="text-gray-400">Stockholm</span>, <span class="text-gray-400">London</span>, Paris, Rome, Berlin ]</p>
+                    </div>
+                    
+                    <div class="text-center text-2xl font-bold text-gray-500">&darr;</div>
+                    
+                    <div>
+                        <h4 class="text-lg font-semibold text-white">Creating the Child</h4>
+                        <p>1. A random segment is taken from Parent 1. In this case, we'll take <span class="code-highlight">Paris, Rome, Berlin</span>.</p>
+                        <p class="font-mono bg-gray-900 p-2 rounded">[ _, <span class="code-highlight">Paris</span>, <span class="code-highlight">Rome</span>, <span class="code-highlight">Berlin</span>, _, _ ]</p>
+                        <p>2. The remaining slots are filled using the order from Parent 2, skipping any cities that are already in the child's route (Paris, Rome, Berlin).</p>
+                        <ul class="text-sm">
+                            <li>Parent 2's first city is <strong>Madrid</strong>. It's not in the child yet. Add it to the first empty spot.</li>
+                                <p class="font-mono bg-gray-900 p-2 rounded text-xs">[ <span class="text-green-400">Madrid</span>, <span class="code-highlight">Paris</span>, <span class="code-highlight">Rome</span>, <span class="code-highlight">Berlin</span>, _, _ ]</p>
+                            <li>Next is <strong>Stockholm</strong>. Add it.</li>
+                                <p class="font-mono bg-gray-900 p-2 rounded text-xs">[ <span class="text-green-400">Madrid</span>, <span class="code-highlight">Paris</span>, <span class="code-highlight">Rome</span>, <span class="code-highlight">Berlin</span>, <span class="text-green-400">Stockholm</span>, _ ]</p>
+                            <li>Next is <strong>London</strong>. Add it.</li>
+                                 <p class="font-mono bg-gray-900 p-2 rounded text-xs">[ <span class="text-green-400">Madrid</span>, <span class="code-highlight">Paris</span>, <span class="code-highlight">Rome</span>, <span class="code-highlight">Berlin</span>, <span class="text-green-400">Stockholm</span>, <span class="text-green-400">London</span> ]</p>
+                            <li>The rest (Paris, Rome, Berlin) are skipped as they're already present from Parent 1.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mutation Content -->
+        <div id="mutationContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Illustration: Mutation</h1>
+                <p>Mutation introduces small, random changes into a child's chromosome after crossover. This is crucial for maintaining genetic diversity in the population and preventing the algorithm from getting stuck on a sub-optimal solution.</p>
+
+                <div class="illustration-box space-y-6">
+                    <h4 class="text-lg font-semibold text-white">Mutation Example: A Random Swap</h4>
+                    <p>1. Take a child route that was just created.</p>
+                    <p class="font-mono bg-gray-900 p-2 rounded">[ Madrid, <span class="mutation-highlight">Stockholm</span>, Paris, Rome, <span class="mutation-highlight">Berlin</span>, London ]</p>
+                    
+                    <p>2. Randomly select two cities in the route and swap their positions.</p>
+                    <div class="text-center text-2xl font-bold text-gray-500">&darr;</div>
+
+                    <p>3. The new, mutated route is added to the next generation's population.</p>
+                    <p class="font-mono bg-gray-900 p-2 rounded">[ Madrid, <span class="mutation-highlight">Berlin</span>, Paris, Rome, <span class="mutation-highlight">Stockholm</span>, London ]</p>
+                    <p class="mt-4 text-cyan-300">This simple swap has created a brand new route that didn't exist before, introducing a new possibility for the algorithm to explore.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Examples Content -->
+        <div id="examplesContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+            <div class="prose mx-auto">
+                <h1>Real-World Applications</h1>
+                <p>Genetic algorithms are used to solve complex optimization problems across many industries where finding the "best" solution from a vast number of possibilities is critical.</p>
+                
+                <div class="illustration-box">
+                    <h4>Engineering & Design</h4>
+                    <p>GAs are used to create optimal designs for physical objects. For example, designing an antenna shape to maximize signal reception, an airplane wing for the best lift-to-drag ratio, or a lightweight bridge that can still support a heavy load. Each design parameter (length, angle, material) is a "gene."</p>
+                </div>
+                <div class="illustration-box">
+                    <h4>Logistics & Scheduling</h4>
+                    <p>This is a classic application, very similar to our TSP simulation. GAs help companies optimize delivery routes to save fuel and time. They are also used for complex scheduling problems, like creating university timetables (assigning thousands of classes, professors, and rooms without conflicts) or scheduling nurses' shifts in a hospital.</p>
+                </div>
+                <div class="illustration-box">
+                    <h4>Financial Modeling</h4>
+                    <p>In finance, GAs can be used to develop optimal trading strategies or build investment portfolios. A "chromosome" might represent a portfolio with different allocations to various stocks and bonds. The fitness function would aim to maximize returns while minimizing risk.</p>
+                </div>
+                 <div class="illustration-box">
+                    <h4>Game Development & AI</h4>
+                    <p>GAs can evolve intelligent behavior in non-player characters (NPCs) in video games. An AI opponent in a strategy game could "learn" better tactics by running thousands of simulated games and selecting the strategies (chromosomes) that lead to the most wins (highest fitness).</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Python Code Content -->
+        <div id="pythonContent" class="hidden p-6 lg:p-10 overflow-y-auto">
+             <div class="prose mx-auto">
+                <h1>Python Implementation</h1>
+                <p>Here is a simple, command-line implementation of a genetic algorithm to solve the Traveling Salesperson Problem. This code mirrors the logic used in the interactive simulation.</p>
+                <div class="illustration-box">
+                <pre class="python-code text-sm"><code><span class="keyword">import</span> numpy <span class="keyword">as</span> np
+<span class="keyword">import</span> random
+<span class="keyword">import</span> operator
+
+<span class="comment"># --- Create City and Fitness Classes ---</span>
+<span class="keyword">class</span> <span class="function">City</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, x, y):
+        <span class="keyword">self</span>.x = x
+        <span class="keyword">self</span>.y = y
+    
+    <span class="keyword">def</span> <span class="function">distance</span>(<span class="keyword">self</span>, city):
+        xDis = <span class="function">abs</span>(<span class="keyword">self</span>.x - city.x)
+        yDis = <span class="function">abs</span>(<span class="keyword">self</span>.y - city.y)
+        distance = np.sqrt((xDis ** <span class="number">2</span>) + (yDis ** <span class="number">2</span>))
+        <span class="keyword">return</span> distance
+    
+    <span class="keyword">def</span> <span class="function">__repr__</span>(<span class="keyword">self</span>):
+        <span class="keyword">return</span> <span class="string">"("</span> + <span class="function">str</span>(<span class="keyword">self</span>.x) + <span class="string">","</span> + <span class="function">str</span>(<span class="keyword">self</span>.y) + <span class="string">")"</span>
+
+<span class="keyword">class</span> <span class="function">Fitness</span>:
+    <span class="keyword">def</span> <span class="function">__init__</span>(<span class="keyword">self</span>, route):
+        <span class="keyword">self</span>.route = route
+        <span class="keyword">self</span>.distance = <span class="number">0</span>
+        <span class="keyword">self</span>.fitness = <span class="number">0.0</span>
+    
+    <span class="keyword">def</span> <span class="function">routeDistance</span>(<span class="keyword">self</span>):
+        <span class="keyword">if</span> <span class="keyword">self</span>.distance ==<span class="number">0</span>:
+            pathDistance = <span class="number">0</span>
+            <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">0</span>, <span class="function">len</span>(<span class="keyword">self</span>.route)):
+                fromCity = <span class="keyword">self</span>.route[i]
+                toCity = <span class="keyword">None</span>
+                <span class="keyword">if</span> i + <span class="number">1</span> &lt; <span class="function">len</span>(<span class="keyword">self</span>.route):
+                    toCity = <span class="keyword">self</span>.route[i + <span class="number">1</span>]
+                <span class="keyword">else</span>:
+                    toCity = <span class="keyword">self</span>.route[<span class="number">0</span>]
+                pathDistance += fromCity.distance(toCity)
+            <span class="keyword">self</span>.distance = pathDistance
+        <span class="keyword">return</span> <span class="keyword">self</span>.distance
+    
+    <span class="keyword">def</span> <span class="function">routeFitness</span>(<span class="keyword">self</span>):
+        <span class="keyword">if</span> <span class="keyword">self</span>.fitness == <span class="number">0.0</span>:
+            <span class="keyword">self</span>.fitness = <span class="number">1</span> / <span class="function">float</span>(<span class="keyword">self</span>.routeDistance())
+        <span class="keyword">return</span> <span class="keyword">self</span>.fitness
+
+<span class="comment"># --- GA Functions ---</span>
+<span class="keyword">def</span> <span class="function">createRoute</span>(cityList):
+    route = random.sample(cityList, <span class="function">len</span>(cityList))
+    <span class="keyword">return</span> route
+
+<span class="keyword">def</span> <span class="function">initialPopulation</span>(popSize, cityList):
+    population = []
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">0</span>, popSize):
+        population.append(createRoute(cityList))
+    <span class="keyword">return</span> population
+
+<span class="keyword">def</span> <span class="function">rankRoutes</span>(population):
+    fitnessResults = {}
+    <span class="keyword">for</span> i <span class="keyword">in</span> <span class="function">range</span>(<span class="number">0</span>, <span class="function">len</span>(population)):
+        fitnessResults[i] = Fitness(population[i]).routeFitness()
+    <span class="keyword">return</span> <span class="function">sorted</span>(fitnessResults.items(), key = operator.itemgetter(<span class="number">1</span>), reverse = <span class="keyword">True</span>)
+
+<span class="comment"># ... (selection, crossover, mutation, etc. would follow) ...</span>
+</code></pre>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal for Alerts -->
+    <div id="alertModal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+        <div class="bg-gray-800 border border-gray-600 text-white p-6 rounded-lg shadow-xl text-center w-11/12 max-w-sm">
+            <p id="modalText" class="mb-4">This is an alert message.</p>
+            <button id="modalCloseBtn" class="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-2 px-4 rounded-md transition-colors duration-200 w-full">OK</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const canvas = document.getElementById('simulationCanvas');
+            const ctx = canvas.getContext('2d');
+            const runPauseBtn = document.getElementById('runPauseBtn');
+            const stepBtn = document.getElementById('stepBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const populationSizeSlider = document.getElementById('populationSize');
+            const mutationRateSlider = document.getElementById('mutationRate');
+            const elitismRateSlider = document.getElementById('elitismRate');
+            const terminationGenerationsSlider = document.getElementById('terminationGenerations');
+            const populationSizeLabel = document.getElementById('populationSizeLabel');
+            const mutationRateLabel = document.getElementById('mutationRateLabel');
+            const elitismRateLabel = document.getElementById('elitismRateLabel');
+            const terminationGenerationsLabel = document.getElementById('terminationGenerationsLabel');
+            const generationEl = document.getElementById('generation');
+            const cityCountEl = document.getElementById('cityCount');
+            const bestDistanceEl = document.getElementById('bestDistance');
+            const explanationText = document.getElementById('explanationText');
+            const alertModal = document.getElementById('alertModal');
+            const modalText = document.getElementById('modalText');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            const bestRoutePanel = document.getElementById('bestRoutePanel');
+            const bestRouteList = document.getElementById('bestRouteList');
+            const crossoverPanel = document.getElementById('crossoverPanel');
+            const parent1RouteEl = document.getElementById('parent1Route');
+            const parent2RouteEl = document.getElementById('parent2Route');
+            const childRouteEl = document.getElementById('childRoute');
+            
+            const tabs = Array.from(document.querySelectorAll('[data-content-id]'));
+            const contents = tabs.map(tab => document.getElementById(tab.dataset.contentId));
+
+
+            // --- Simulation State & Parameters ---
+            let cities = [];
+            let population = [];
+            let bestRoute = null;
+            let bestDistance = Infinity;
+            let generation = 0;
+            let isRunning = false;
+            let isEvolving = false;
+            let animationFrameId;
+            let generationsWithoutImprovement = 0;
+
+            // --- Configuration ---
+            let POPULATION_SIZE = 500;
+            let MUTATION_RATE = 0.05;
+            let ELITISM_RATE = 0.1;
+            let TERMINATION_GENERATIONS = 50;
+            const VISUALIZATION_DELAY = 400; // ms
+
+            const europeanCitiesData = [
+                { name: "London", lat: 51.5072, lon: -0.1276 }, { name: "Paris", lat: 48.8566, lon: 2.3522 },
+                { name: "Rome", lat: 41.9028, lon: 12.4964 }, { name: "Berlin", lat: 52.5200, lon: 13.4050 },
+                { name: "Madrid", lat: 40.4168, lon: -3.7038 }, { name: "Kyiv", lat: 50.4501, lon: 30.5234 },
+                { name: "Stockholm", lat: 59.3293, lon: 18.0686 }, { name: "Athens", lat: 37.9838, lon: 23.7275 },
+                { name: "Lisbon", lat: 38.7223, lon: -9.1393 }
+            ];
+
+            // --- Utility Functions ---
+            const distance = (city1, city2) => Math.sqrt(Math.pow(city1.x - city2.x, 2) + Math.pow(city1.y - city2.y, 2));
+            const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            };
+            const delay = (ms) => new Promise(res => setTimeout(res, ms));
+
+            function showAlert(message) {
+                modalText.textContent = message;
+                alertModal.classList.remove('hidden');
+            }
+            modalCloseBtn.addEventListener('click', () => alertModal.classList.add('hidden'));
+
+            function resizeCanvas() {
+                const parent = canvas.parentElement;
+                if (!parent) return;
+                canvas.width = parent.clientWidth;
+                canvas.height = parent.clientHeight;
+                draw();
+            }
+            window.addEventListener('resize', resizeCanvas);
+            
+            // --- Tab Switching Logic ---
+            const switchTab = (targetTab) => {
+                const contentId = targetTab.dataset.contentId;
+                
+                tabs.forEach(t => {
+                    t.classList.remove('tab-active');
+                    t.classList.add('tab-inactive', 'text-gray-400', 'hover:text-white');
+                });
+                
+                targetTab.classList.add('tab-active');
+                targetTab.classList.remove('tab-inactive', 'text-gray-400', 'hover:text-white');
+
+                contents.forEach(c => {
+                    if (c) c.classList.add('hidden');
+                });
+                
+                const activeContent = document.getElementById(contentId);
+                if (activeContent) activeContent.classList.remove('hidden');
+
+                if (targetTab.id === 'simTab') {
+                    simulationContent.classList.add('flex');
+                    setTimeout(resizeCanvas, 10);
+                } else {
+                    simulationContent.classList.remove('flex');
+                }
+            };
+            
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab));
+            });
+
+            // Flowchart links
+            document.getElementById('flowchart-initialization').addEventListener('click', () => switchTab(document.getElementById('initializationTab')));
+            document.getElementById('flowchart-fitness').addEventListener('click', () => switchTab(document.getElementById('fitnessTab')));
+            document.getElementById('flowchart-selection').addEventListener('click', () => switchTab(document.getElementById('selectionTab')));
+            document.getElementById('flowchart-elitism').addEventListener('click', () => switchTab(document.getElementById('elitismTab')));
+            document.getElementById('flowchart-crossover').addEventListener('click', () => switchTab(document.getElementById('crossoverTab')));
+            document.getElementById('flowchart-mutation').addEventListener('click', () => switchTab(document.getElementById('mutationTab')));
+            document.getElementById('elitismLink').addEventListener('click', (e) => {
+                e.preventDefault();
+                switchTab(document.getElementById('elitismTab'));
+            });
+
+
+            function calculateRouteDistance(route) {
+                let totalDistance = 0;
+                for (let i = 0; i < route.length - 1; i++) totalDistance += distance(cities[route[i]], cities[route[i + 1]]);
+                totalDistance += distance(cities[route[route.length - 1]], cities[route[0]]);
+                return totalDistance;
+            }
+
+            function crossover(parent1, parent2) {
+                const start = Math.floor(Math.random() * parent1.length);
+                const end = Math.floor(Math.random() * (parent1.length - start)) + start;
+                const child = Array(parent1.length).fill(null);
+                const segment = parent1.slice(start, end + 1);
+                child.splice(start, segment.length, ...segment);
+                let parent2Index = 0;
+                for (let i = 0; i < child.length; i++) {
+                    if (child[i] === null) {
+                        while (segment.includes(parent2[parent2Index])) parent2Index++;
+                        child[i] = parent2[parent2Index];
+                        parent2Index++;
+                    }
+                }
+                return { child, start, end };
+            }
+
+            function mutate(route) {
+                for (let i = 0; i < route.length; i++) {
+                    if (Math.random() < MUTATION_RATE) {
+                        const indexA = Math.floor(Math.random() * route.length);
+                        let indexB = Math.floor(Math.random() * route.length);
+                        while (indexB === indexA) indexB = Math.floor(Math.random() * route.length);
+                        [route[indexA], route[indexB]] = [route[indexB], route[indexA]];
+                    }
+                }
+                return route;
+            }
+
+            function updateCrossoverPanel(parent1, parent2, child, start, end) {
+                crossoverPanel.classList.remove('hidden');
+                
+                const formatRoute = (route, highlight = false) => {
+                    let html = '[ ';
+                    for(let i=0; i < route.length; i++) {
+                        const cityName = cities[route[i]].name;
+                        const isHighlighted = highlight && i >= start && i <= end;
+                        if(isHighlighted) html += `<span class="code-highlight">${cityName}</span>`;
+                        else html += cityName;
+                        if (i < route.length - 1) html += ', ';
+                    }
+                    html += ' ]';
+                    return html;
+                };
+
+                parent1RouteEl.innerHTML = formatRoute(parent1, true);
+                parent2RouteEl.innerHTML = formatRoute(parent2);
+                childRouteEl.innerHTML = formatRoute(child, true);
+            }
+
+            async function evolve() {
+                if (isEvolving || cities.length < 3) return;
+                isEvolving = true;
+
+                crossoverPanel.classList.add('hidden'); // Hide panel at start of cycle
+                explanationText.innerHTML = `<strong>1. Evaluation:</strong> Calculating the length of all ${population.length} routes.`;
+                const fitnessScores = population.map(route => ({ route, fitness: 1 / calculateRouteDistance(route) }));
+                fitnessScores.sort((a, b) => b.fitness - a.fitness);
+                
+                const currentBestForGeneration = 1 / fitnessScores[0].fitness;
+                if (currentBestForGeneration < bestDistance) {
+                    bestDistance = currentBestForGeneration;
+                    bestRoute = fitnessScores[0].route;
+                    generationsWithoutImprovement = 0;
+                } else {
+                    generationsWithoutImprovement++;
+                }
+                draw();
+                if (isRunning) await delay(VISUALIZATION_DELAY);
+
+                if (generationsWithoutImprovement >= TERMINATION_GENERATIONS) {
+                    pause();
+                    showAlert(`Simulation stopped after ${TERMINATION_GENERATIONS} generations without improvement.`);
+                    explanationText.innerHTML = `<strong>Termination:</strong> No improvement in ${TERMINATION_GENERATIONS} generations.`;
+                    isEvolving = false;
+                    return;
+                }
+
+                const eliteCount = Math.floor(POPULATION_SIZE * ELITISM_RATE);
+                explanationText.innerHTML = `<strong>2. Selection:</strong> Protecting the best ${eliteCount} routes (Elitism).`;
+                const eliteRoutes = fitnessScores.slice(0, eliteCount).map(s => s.route);
+                draw({ stage: 'selection', eliteRoutes });
+                if (isRunning) await delay(VISUALIZATION_DELAY);
+
+                explanationText.innerHTML = `<strong>3. Crossover & Mutation:</strong> A segment from Parent 1 is combined with cities from Parent 2 to create the Child. See the legend on the canvas.`;
+                const matingPool = fitnessScores.slice(0, Math.floor(fitnessScores.length / 2)).map(s => s.route);
+                const newPopulation = [...eliteRoutes];
+
+                const parent1 = matingPool[Math.floor(Math.random() * matingPool.length)];
+                const parent2 = matingPool[Math.floor(Math.random() * matingPool.length)];
+                const { child, start, end } = crossover(parent1, parent2);
+                mutate(child);
+                
+                updateCrossoverPanel(parent1, parent2, child, start, end);
+                draw({ stage: 'crossover', parent1, parent2, child, start, end });
+
+                while (newPopulation.length < POPULATION_SIZE) {
+                    const p1 = matingPool[Math.floor(Math.random() * matingPool.length)];
+                    const p2 = matingPool[Math.floor(Math.random() * matingPool.length)];
+                    const { child: newChild } = crossover(p1, p2);
+                    newPopulation.push(mutate(newChild));
+                }
+
+                if (isRunning) await delay(VISUALIZATION_DELAY * 2);
+
+                population = newPopulation;
+                generation++;
+                explanationText.innerHTML = `<strong>New Generation Created.</strong> Ready for the next cycle.`;
+                draw();
+                updateUI();
+                isEvolving = false;
+            }
+
+            function drawDistancesOnRoute(route, textColor = '#a5f3fc') {
+                ctx.font = '14px Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                for (let i = 0; i < route.length; i++) {
+                    const city1 = cities[route[i]];
+                    const city2 = cities[route[(i + 1) % route.length]];
+                    if (city1 && city2) {
+                        const dist = distance(city1, city2);
+                        const midX = (city1.x + city2.x) / 2;
+                        const midY = (city1.y + city2.y) / 2;
+                        const text = dist.toFixed(0);
+                        const textWidth = ctx.measureText(text).width;
+                        ctx.fillStyle = 'rgba(31, 41, 55, 0.8)';
+                        ctx.fillRect(midX - textWidth / 2 - 4, midY - 10, textWidth + 8, 20);
+                        ctx.fillStyle = textColor;
+                        ctx.fillText(text, midX, midY);
+                    }
+                }
+            }
+
+            function drawCrossoverLegend() {
+                const legendX = 20;
+                const legendY = 20;
+                const itemHeight = 25;
+                const itemWidth = 160;
+                const colorBoxSize = 15;
+
+                const legendItems = [
+                    { label: 'Parent 1', color: '#3b82f6' },
+                    { label: 'Parent 2', color: '#eab308' },
+                    { label: 'Child', color: '#ffffff' },
+                    { label: 'Crossover Segment', color: '#f472b6' }
+                ];
+
+                ctx.font = '14px Inter';
+                ctx.textBaseline = 'middle';
+                ctx.textAlign = 'left';
+
+                legendItems.forEach((item, index) => {
+                    const yPos = legendY + (index * itemHeight);
+                    
+                    ctx.fillStyle = 'rgba(31, 41, 55, 0.8)';
+                    ctx.fillRect(legendX - 5, yPos - (itemHeight / 2), itemWidth, itemHeight - 2);
+
+                    ctx.fillStyle = item.color;
+                    ctx.fillRect(legendX, yPos - (colorBoxSize / 2), colorBoxSize, colorBoxSize);
+
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.fillText(item.label, legendX + colorBoxSize + 10, yPos);
+                });
+            }
+
+            function updateBestRouteList() {
+                if (!bestRoute || bestRoute.length === 0) {
+                    bestRoutePanel.classList.add('hidden');
+                    return;
+                }
+
+                bestRoutePanel.classList.remove('hidden');
+                bestRouteList.innerHTML = ''; // Clear previous list
+
+                const routeToDisplay = [...bestRoute, bestRoute[0]]; // Add start city to end for loop
+
+                routeToDisplay.forEach((cityIndex, index) => {
+                    const cityName = cities[cityIndex].name;
+                    const listItem = document.createElement('li');
+                    listItem.classList.add('whitespace-nowrap', 'overflow-hidden', 'text-ellipsis');
+                    listItem.textContent = `${index + 1}. ${cityName}`;
+                    bestRouteList.appendChild(listItem);
+                });
+            }
+
+            function draw(vizOptions = {}) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = '#1f2937';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                if (population.length > 0 && vizOptions.stage !== 'crossover') {
+                    population.forEach(route => {
+                        ctx.strokeStyle = 'rgba(200, 200, 200, 0.02)';
+                        ctx.lineWidth = 1;
+                        ctx.beginPath();
+                        if (route && route.length > 0 && cities[route[0]]) {
+                            ctx.moveTo(cities[route[0]].x, cities[route[0]].y);
+                            for (let i = 1; i < route.length; i++) if(cities[route[i]]) ctx.lineTo(cities[route[i]].x, cities[route[i]].y);
+                            ctx.closePath();
+                            ctx.stroke();
+                        }
+                    });
+                }
+
+                if (vizOptions.stage === 'selection' && vizOptions.eliteRoutes) {
+                    vizOptions.eliteRoutes.forEach(route => {
+                        ctx.strokeStyle = '#10b981';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(cities[route[0]].x, cities[route[0]].y);
+                        for (let i = 1; i < route.length; i++) ctx.lineTo(cities[route[i]].x, cities[route[i]].y);
+                        ctx.closePath();
+                        ctx.stroke();
+                        drawDistancesOnRoute(route, '#10b981');
+                    });
+                } else if (vizOptions.stage === 'crossover') {
+                    ['parent1', 'parent2', 'child'].forEach(type => {
+                        const route = vizOptions[type];
+                        if (!route) return;
+                        const colors = { parent1: '#3b82f6', parent2: '#eab308', child: '#ffffff' };
+                        const textColors = { parent1: '#60a5fa', parent2: '#fde047', child: '#ffffff' };
+                        const widths = { parent1: 2.5, parent2: 2.5, child: 3.5 };
+                        ctx.strokeStyle = colors[type];
+                        ctx.lineWidth = widths[type];
+                        ctx.beginPath();
+                        ctx.moveTo(cities[route[0]].x, cities[route[0]].y);
+                        for (let i = 1; i < route.length; i++) ctx.lineTo(cities[route[i]].x, cities[route[i]].y);
+                        ctx.closePath();
+                        ctx.stroke();
+                        drawDistancesOnRoute(route, textColors[type]);
+                    });
+
+                    const parent1Route = vizOptions.parent1;
+                    const childRoute = vizOptions.child;
+                    const start = vizOptions.start;
+                    const end = vizOptions.end;
+
+                    if (parent1Route && childRoute !== null && start !== undefined && end !== undefined) {
+                        ctx.strokeStyle = '#f472b6';
+                        ctx.lineWidth = 5;
+                        ctx.lineCap = 'round';
+
+                        ctx.beginPath();
+                        ctx.moveTo(cities[parent1Route[start]].x, cities[parent1Route[start]].y);
+                        for (let i = start + 1; i <= end; i++) {
+                            ctx.lineTo(cities[parent1Route[i]].x, cities[parent1Route[i]].y);
+                        }
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(cities[childRoute[start]].x, cities[childRoute[start]].y);
+                        for (let i = start + 1; i <= end; i++) {
+                            ctx.lineTo(cities[childRoute[i]].x, cities[childRoute[i]].y);
+                        }
+                        ctx.stroke();
+                    }
+                    drawCrossoverLegend();
+                }
+
+                if (bestRoute) {
+                    ctx.strokeStyle = '#22d3ee';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.beginPath();
+                    ctx.moveTo(cities[bestRoute[0]].x, cities[bestRoute[0]].y);
+                    for (let i = 1; i < bestRoute.length; i++) ctx.lineTo(cities[bestRoute[i]].x, cities[bestRoute[i]].y);
+                    ctx.closePath();
+                    ctx.stroke();
+                    drawDistancesOnRoute(bestRoute);
+                }
+
+                cities.forEach((city, index) => {
+                    ctx.beginPath();
+                    ctx.arc(city.x, city.y, 12, 0, 2 * Math.PI);
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.fill();
+                    ctx.fillStyle = '#111827';
+                    ctx.font = 'bold 12px Inter';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(index, city.x, city.y);
+                    ctx.fillStyle = '#f1f5f9';
+                    ctx.font = '12px Inter';
+                    ctx.fillText(city.name, city.x, city.y + 22);
+                });
+                
+                updateUI();
+                updateBestRouteList();
+            }
+            
+            function updateUI() {
+                generationEl.textContent = generation;
+                cityCountEl.textContent = cities.length;
+                bestDistanceEl.textContent = bestDistance === Infinity ? 'N/A' : bestDistance.toFixed(2);
+                populationSizeLabel.textContent = populationSizeSlider.value;
+                mutationRateLabel.textContent = parseFloat(mutationRateSlider.value).toFixed(2);
+                elitismRateLabel.textContent = parseFloat(elitismRateSlider.value).toFixed(2);
+                terminationGenerationsLabel.textContent = terminationGenerationsSlider.value;
+            }
+            
+            async function runSimulation() {
+                if (!isRunning) return;
+                await evolve();
+                if (isRunning) animationFrameId = requestAnimationFrame(runSimulation);
+            }
+
+            function start() {
+                if (cities.length < 3) {
+                    showAlert("Please add at least 3 cities before starting.");
+                    return;
+                }
+                if (isRunning) return;
+                isRunning = true;
+                runPauseBtn.textContent = 'Pause';
+                runPauseBtn.classList.replace('bg-green-600', 'bg-yellow-600');
+                runPauseBtn.classList.replace('hover:bg-green-700', 'hover:bg-yellow-700');
+                stepBtn.disabled = true;
+                runSimulation();
+            }
+
+            function pause() {
+                if (!isRunning) return;
+                isRunning = false;
+                runPauseBtn.textContent = 'Run Automatically';
+                runPauseBtn.classList.replace('bg-yellow-600', 'bg-green-600');
+                runPauseBtn.classList.replace('hover:bg-yellow-700', 'hover:bg-green-700');
+                stepBtn.disabled = false;
+                cancelAnimationFrame(animationFrameId);
+            }
+
+            function reset() {
+                pause();
+                crossoverPanel.classList.add('hidden');
+                cities = [];
+                const padding = 50;
+                const lats = europeanCitiesData.map(c => c.lat);
+                const lons = europeanCitiesData.map(c => c.lon);
+                const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+                const minLon = Math.min(...lons), maxLon = Math.max(...lons);
+                const canvasWidth = canvas.width - padding * 2;
+                const canvasHeight = canvas.height - padding * 2;
+                const latRange = maxLat - minLat, lonRange = maxLon - minLon;
+                const scale = Math.min(canvasWidth / lonRange, canvasHeight / latRange);
+                europeanCitiesData.forEach(city => {
+                    const x = padding + (city.lon - minLon) * scale;
+                    const y = padding + (maxLat - city.lat) * scale;
+                    cities.push({ x, y, name: city.name });
+                });
+                const currentMinX = Math.min(...cities.map(c => c.x));
+                const currentMaxX = Math.max(...cities.map(c => c.x));
+                const currentMinY = Math.min(...cities.map(c => c.y));
+                const currentMaxY = Math.max(...cities.map(c => c.y));
+                const centerXOffset = (canvas.width / 2) - ((currentMinX + currentMaxX) / 2);
+                const centerYOffset = (canvas.height / 2) - ((currentMinY + currentMaxY) / 2);
+                cities.forEach(city => { city.x += centerXOffset; city.y += centerYOffset; });
+                initializePopulation();
+                draw();
+            }
+
+            function initializePopulation() {
+                generation = 0;
+                bestRoute = null;
+                bestDistance = Infinity;
+                generationsWithoutImprovement = 0;
+                population = [];
+                const baseRoute = Array.from(Array(cities.length).keys());
+                for (let i = 0; i < POPULATION_SIZE; i++) population.push(shuffleArray([...baseRoute]));
+                explanationText.innerHTML = "Population initialized. Ready to begin.";
+                updateUI();
+            }
+
+            // --- Event Listeners ---
+            runPauseBtn.addEventListener('click', () => { isRunning ? pause() : start(); });
+            stepBtn.addEventListener('click', async () => { if (!isRunning) await evolve(); });
+            resetBtn.addEventListener('click', () => reset());
+            populationSizeSlider.addEventListener('input', (e) => {
+                POPULATION_SIZE = parseInt(e.target.value);
+                updateUI();
+                if (!isRunning && cities.length > 0) initializePopulation();
+            });
+            mutationRateSlider.addEventListener('input', (e) => { MUTATION_RATE = parseFloat(e.target.value); updateUI(); });
+            elitismRateSlider.addEventListener('input', (e) => { ELITISM_RATE = parseFloat(e.target.value); updateUI(); });
+            terminationGenerationsSlider.addEventListener('input', (e) => { TERMINATION_GENERATIONS = parseInt(e.target.value); updateUI(); });
+            
+            // --- Initial Setup ---
+            resizeCanvas();
+            reset();
+        });
+    </script>
+</body>
+</html>
+

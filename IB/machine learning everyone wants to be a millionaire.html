@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who Wants to Be an ML Whiz? (IB)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Google Font 'Inter' -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #020024;
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            color: #ffffff;
+            overflow: hidden; /* Prevent scrolling */
+        }
+        /* Custom "Millionaire" styles */
+        .main-container {
+            display: grid;
+            grid-template-areas:
+                "header header"
+                "game money";
+            grid-template-columns: 3fr 1fr;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            padding: 2rem;
+            gap: 2rem;
+        }
+        .header-area { grid-area: header; }
+        .game-area { 
+            grid-area: game;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .money-area { grid-area: money; }
+
+        .question-box, .answer-box, .lifeline-box {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1.5rem;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+        }
+
+        .answer-box {
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .answer-box:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.02);
+        }
+        .answer-box.selected {
+            background-color: #f59e0b; /* amber-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.correct {
+            background-color: #22c55e; /* green-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.incorrect {
+            background-color: #ef4444; /* red-500 */
+            border-color: #ffffff;
+            color: #020024;
+        }
+        .answer-box.disabled {
+            opacity: 0.3;
+            pointer-events: none;
+        }
+
+        .money-ladder {
+            list-style-type: decimal;
+            list-style-position: inside;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column-reverse; /* Puts 1,000,000 at the top */
+        }
+        .money-ladder li {
+            padding: 0.3rem 0.75rem; /* Adjusted padding for 15 levels */
+            margin: 0.15rem 0; /* Adjusted margin for 15 levels */
+            font-size: 1.1rem; /* Adjusted font size */
+            font-weight: 700;
+            border-radius: 0.75rem;
+            transition: all 0.2s ease;
+            text-align: right;
+            color: #f59e0b; /* amber-500 */
+        }
+        .money-ladder li.safe {
+            color: #ffffff;
+            font-weight: 900;
+        }
+        .money-ladder li.current {
+            background-color: #f59e0b; /* amber-500 */
+            color: #020024;
+            transform: scale(1.1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.85);
+        }
+        .modal-content {
+            background: radial-gradient(circle, #090979 0%, #020024 100%);
+            border: 3px solid #6366f1;
+        }
+
+        /* Audience Poll Bars */
+        .poll-bar-container {
+            width: 100%;
+            height: 20px;
+            background-color: #374151; /* gray-700 */
+            border-radius: 5px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+        .poll-bar {
+            height: 100%;
+            background-color: #22c55e; /* green-500 */
+            transition: width 0.5s ease-in-out;
+        }
+
+        /* Topic selection screen */
+        .topic-select-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+        .topic-button {
+            background-color: rgba(10, 10, 80, 0.8);
+            border: 3px solid #6366f1; /* indigo-500 */
+            border-radius: 1rem;
+            padding: 1rem 2rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .topic-button:hover {
+            background-color: rgba(30, 30, 120, 0.9);
+            transform: scale(1.05);
+        }
+
+        /* Responsive Layout */
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-areas:
+                    "header"
+                    "game"
+                    "money";
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+                height: auto;
+                min-height: 100vh;
+                padding: 1rem;
+                gap: 1rem;
+            }
+            .money-ladder li {
+                font-size: 1rem;
+                padding: 0.25rem 0.5rem;
+            }
+            .answer-box {
+                font-size: 1rem;
+                padding: 0.75rem;
+            }
+            .question-box {
+                font-size: 1.25rem;
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <!-- Main App Container -->
+    <div id="app">
+
+        <!-- Topic Selection Screen -->
+        <div id="topic-selection" class="topic-select-container">
+            <h1 class="text-4xl md:text-6xl font-black text-center mb-4">Who Wants to Be an ML Whiz?</h1>
+            <h2 class="text-2xl text-amber-400 font-semibold mb-8 text-center">First, pick your topic...</h2>
+            <div id="topic-buttons" class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-auto">
+                <!-- Topic buttons will be injected here -->
+            </div>
+        </div>
+
+        <!-- Main Game Screen (Hidden by default) -->
+        <div id="main-game" class="main-container hidden">
+            <!-- Header -->
+            <header class="header-area text-center">
+                <h1 class="text-2xl md:text-4xl font-black text-amber-400">Who Wants to Be an ML Whiz?</h1>
+                <p id="current-topic-title" class="text-lg md:text-2xl text-white font-semibold">Topic: Loading...</p>
+            </header>
+
+            <!-- Game Area (Questions & Lifelines) -->
+            <div class="game-area">
+                <!-- Lifelines -->
+                <div class="lifeline-box p-4 mb-4">
+                    <div class="flex justify-center gap-6">
+                        <button id="lifeline-5050" class="lifeline-btn text-4xl p-3 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="50:50">
+                            50:50
+                        </button>
+                        <button id="lifeline-audience" class="lifeline-btn text-4xl p-3 bg-indigo-700 rounded-full hover:bg-indigo-600 transition-colors disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Ask the Audience">
+                            👥
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question Box -->
+                <div class="question-box p-6 md:p-10 text-center flex-grow flex items-center justify-center mb-4">
+                    <h2 id="question-text" class="text-xl md:text-3xl font-semibold">Loading question...</h2>
+                </div>
+
+                <!-- Answer Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="answer-A" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="A"><span class="text-amber-400 font-bold mr-3">A:</span> <span id="answer-text-A">...</span></div>
+                    <div id="answer-B" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="B"><span class="text-amber-400 font-bold mr-3">B:</span> <span id="answer-text-B">...</span></div>
+                    <div id="answer-C" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="C"><span class="text-amber-400 font-bold mr-3">C:</span> <span id="answer-text-C">...</span></div>
+                    <div id="answer-D" class="answer-box p-4 text-lg font-semibold flex items-center" data-option="D"><span class="text-amber-400 font-bold mr-3">D:</span> <span id="answer-text-D">...</span></div>
+                </div>
+            </div>
+
+            <!-- Money Ladder -->
+            <aside class="money-area">
+                <div class="question-box p-4 h-full">
+                    <ol id="money-ladder" class="money-ladder">
+                        <!-- Money values will be injected here -->
+                    </ol>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+    <!-- Audience Poll Modal -->
+    <div id="audience-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-6">
+            <h2 class="text-2xl font-bold text-center mb-6">The Audience Thinks...</h2>
+            <div class="space-y-4">
+                <!-- Poll results go here -->
+                <div id="poll-A">
+                    <span class="font-bold">A:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-A" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-B">
+                    <span class="font-bold">B:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-B" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-C">
+                    <span class="font-bold">C:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-C" class="poll-bar"></div></div>
+                </div>
+                <div id="poll-D">
+                    <span class="font-bold">D:</span>
+                    <div class="poll-bar-container"><div id="poll-bar-D" class="poll-bar"></div></div>
+                </div>
+            </div>
+            <button id="close-audience-modal" class="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg">
+                Close
+            </button>
+        </div>
+    </div>
+
+    <!-- Final Score Modal -->
+    <div id="end-game-modal" class="modal-overlay fixed inset-0 w-full h-full flex items-center justify-center p-8 hidden z-50">
+        <div class="modal-content text-white rounded-lg shadow-2xl w-full max-w-lg p-8 text-center">
+            <h2 id="end-game-title" class="text-4xl font-black text-amber-400 mb-4">Game Over!</h2>
+            <p id="end-game-message" class="text-2xl mb-6">You won <span id="final-score" class="font-bold">0</span> points!</p>
+            <div class="flex gap-4">
+                <button id="play-again-btn" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Play Again
+                </button>
+                <button id="quit-game-btn" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                    Change Topic
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- IB MACHINE LEARNING QUESTION BANK ---
+            const questionBank = {
+                "ML Fundamentals": [
+                    // Difficulty 1
+                    { question: "This type of machine learning uses a *labeled dataset* to train a model.", answer: "Supervised Learning", difficulty: 1, topic: "ML Types" },
+                    { question: "This type of machine learning finds patterns in *unlabeled data*.", answer: "Unsupervised Learning", difficulty: 1, topic: "ML Types" },
+                    { question: "Spam filtering, where emails are labeled 'spam' or 'not spam', is an example of...", answer: "Supervised Learning", difficulty: 1, topic: "ML Examples" },
+                    // Difficulty 2
+                    { question: "This type of ML involves an 'agent' learning by receiving 'rewards' or 'penalties' in an 'environment'.", answer: "Reinforcement Learning", difficulty: 2, topic: "ML Types" },
+                    { question: "Grouping customers by purchasing habits, without any pre-existing labels, is an example of...", answer: "Unsupervised Learning", difficulty: 2, topic: "ML Examples" },
+                    // Difficulty 3
+                    { question: "Training a robot to play a game by rewarding it for winning is an example of...", answer: "Reinforcement Learning", difficulty: 3, topic: "ML Examples" },
+                    { question: "This technique involves reusing a model trained on one task for a second, related task.", answer: "Transfer Learning", difficulty: 3, topic: "ML Types" },
+                    // Difficulty 4
+                    { question: "Using a model pre-trained on ImageNet to help classify medical X-rays is an example of...", answer: "Transfer Learning", difficulty: 4, topic: "ML Examples" },
+                    { question: "Supervised learning is split into two main types: regression and... what?", answer: "Classification", difficulty: 4, topic: "Supervised" },
+                    // Difficulty 5
+                    { question: "Predicting a *continuous value*, like a house price, is what type of supervised learning?", answer: "Regression", difficulty: 5, topic: "Supervised" },
+                    { question: "Predicting a *discrete category*, like 'cat' or 'dog', is what type of supervised learning?", answer: "Classification", difficulty: 5, topic: "Supervised" },
+                    // Difficulty 6
+                    { question: "What is the key difference between supervised and unsupervised learning?", answer: "The use of labeled vs. unlabeled data", difficulty: 6, topic: "ML Types" },
+                    // Difficulty 7
+                    { question: "In reinforcement learning, what is the 'agent'?", answer: "The learner and decision-maker", difficulty: 7, topic: "Reinforcement" },
+                    // Difficulty 8
+                    { question: "What is a major *benefit* of using transfer learning?", answer: "It saves time/money and can work with limited data", difficulty: 8, topic: "Transfer" },
+                    // Difficulty 9
+                    { question: "In reinforcement learning, what is the agent's 'state'?", answer: "A snapshot of the agent's current situation in the environment", difficulty: 9, topic: "Reinforcement" },
+                    // Difficulty 10
+                    { question: "Why is transfer learning so important for Natural Language Processing (NLP)?", answer: "Training large language models from scratch is extremely computationally expensive", difficulty: 10, topic: "Transfer" },
+                ],
+                "Data Preprocessing (HL)": [
+                    // Difficulty 1
+                    { question: "The process of cleaning, transforming, and fixing errors in a dataset.", answer: "Data Preprocessing (or Data Cleaning)", difficulty: 1, topic: "Cleaning" },
+                    { question: "Data points that significantly deviate from the rest of the data.", answer: "Outliers", difficulty: 1, topic: "Cleaning" },
+                    // Difficulty 2
+                    { question: "The process of identifying and selecting the *most important features* (columns) for a model.", answer: "Feature Selection", difficulty: 2, topic: "Feature Selection" },
+                    { question: "The process of reducing the number of features (columns) in a dataset.", answer: "Dimensionality Reduction", difficulty: 2, topic: "Dim. Reduction" },
+                    // Difficulty 3
+                    { question: "What is the term for replacing missing data with a value like the mean or median?", answer: "Imputation", difficulty: 3, topic: "Cleaning" },
+                    { question: "Why is removing duplicate data important?", answer: "It prevents skewed analysis and unreliable statistics", difficulty: 3, topic: "Cleaning" },
+                    // Difficulty 4
+                    { question: "What is a major benefit of Feature Selection, where a model learns noise and performs poorly on new data?", answer: "It reduces overfitting", difficulty: 4, topic: "Feature Selection" },
+                    { question: "Using a box plot or Z-score are common methods for identifying what?", answer: "Outliers", difficulty: 4, topic: "Cleaning" },
+                    // Difficulty 5
+                    { question: "This feature selection method evaluates features *independently* of any ML model, using statistics like correlation.", answer: "Filter Method", difficulty: 5, topic: "Feature Selection Methods" },
+                    { question: "This process *transforms* original features into a new, smaller set of features (e.g., PCA).", answer: "Feature Extraction", difficulty: 5, topic: "Dim. Reduction" },
+                    // Difficulty 6
+                    { question: "This feature selection method trains a model on different *subsets* of features to see which performs best.", answer: "Wrapper Method", difficulty: 6, topic: "Feature Selection Methods" },
+                    { question: "What problem, often seen in high-dimensional data, does dimensionality reduction help solve?", answer: "The 'curse of dimensionality'", difficulty: 6, topic: "Dim. Reduction" },
+                    // Difficulty 7
+                    { question: "This feature selection method is *built into* the ML algorithm itself (e.g., L1 regularization).", answer: "Embedded Method", difficulty: 7, topic: "Feature Selection Methods" },
+                    { question: "What is the key difference between Feature Selection and Feature Extraction?", answer: "Selection *keeps* original features; Extraction *transforms* them into new ones", difficulty: 7, topic: "Dim. Reduction" },
+                    // Difficulty 8
+                    { question: "Using the Interquartile Range (IQR) method (Q1 - 1.5*IQR) is a robust way to handle what?", answer: "Outliers", difficulty: 8, topic: "Cleaning" },
+                    { question: "Recursive Feature Elimination (RFE) is an example of what type of selection method?", answer: "Wrapper Method", difficulty: 8, topic: "Feature Selection Methods" },
+                    // Difficulty 9
+                    { question: "A technique that learns a compressed representation of data using a neural network.", answer: "Autoencoders", difficulty: 9, topic: "Dim. Reduction" },
+                    // Difficulty 10
+                    { question: "What is 'Row Deletion (Listwise Deletion)' when handling missing data, and what is its main risk?", answer: "Deleting any row with a missing value; risks significant data loss", difficulty: 10, topic: "Cleaning" },
+                ],
+                "Hardware for ML": [
+                    // Difficulty 1
+                    { question: "For basic ML projects and learning, what hardware setup is generally sufficient?", answer: "A standard laptop", difficulty: 1, topic: "Hardware Types" },
+                    // Difficulty 2
+                    { question: "For developing moderately complex models on larger datasets, what is the step up from a laptop?", answer: "A workstation", difficulty: 2, topic: "Hardware Types" },
+                    // Difficulty 3
+                    { question: "What hardware component is *essential* for accelerating the training of deep learning models?", answer: "GPU (Graphics Processing Unit)", difficulty: 3, topic: "GPUs" },
+                    // Difficulty 4
+                    { question: "What Google-designed custom chip (ASIC) is optimized for TensorFlow and matrix operations?", answer: "TPU (Tensor Processing Unit)", difficulty: 4, topic: "TPUs" },
+                    // Difficulty 5
+                    { question: "Running ML models locally on a smartphone or IoT device, rather than in the cloud, is called...", answer: "Edge Computing", difficulty: 5, topic: "Edge" },
+                    // Difficulty 6
+                    { question: "What is a primary *benefit* of Edge Computing?", answer: "Low latency (or privacy/bandwidth conservation)", difficulty: 6, topic: "Edge" },
+                    { question: "What does 'HPC' stand for in the context of ML infrastructure?", answer: "High-Performance Computing", difficulty: 6, topic: "HPC" },
+                    // Difficulty 7
+                    { question: "Why is a fast SSD (or NVMe drive) important for ML workstations?", answer: "For rapid data access and loading datasets", difficulty: 7, topic: "Hardware Components" },
+                    { question: "What type of reconfigurable hardware can be customized for specific ML algorithms, often used in edge devices?", answer: "FPGA (Field-Programmable Gate Array)", difficulty: 7, topic: "Other Hardware" },
+                    // Difficulty 8
+                    { question: "Why are GPUs so much faster than CPUs for deep learning?", answer: "They have massive parallel processing capabilities (thousands of cores)", difficulty: 8, topic: "GPUs" },
+                    { question: "What is an ASIC, and how does it differ from a GPU?", answer: "Application-Specific Integrated Circuit; it's custom-built for one *specific* task (like a TPU)", difficulty: 8, topic: "Other Hardware" },
+                    // Difficulty 9
+                    { question: "In a 'Large Scale Deployment' scenario, what is the primary processing task?", answer: "Real-time inference (making predictions)", difficulty: 9, topic: "Scenarios" },
+                    // Difficulty 10
+                    { question: "In a 'Model Training and Deep Learning' scenario, what is the primary processing task?", answer: "Iterative calculations (forward/backward passes) using GPUs/TPUs", difficulty: 10, topic: "Scenarios" },
+                ],
+                "Supervised Models (HL)": [
+                    // Difficulty 1
+                    { question: "This type of supervised learning predicts a *continuous numerical value* (e.g., house price).", answer: "Regression", difficulty: 1, topic: "Regression" },
+                    // Difficulty 2
+                    { question: "This type of supervised learning predicts a *discrete category* (e.g., 'spam' or 'not spam').", answer: "Classification", difficulty: 2, topic: "Classification" },
+                    // Difficulty 3
+                    { question: "This algorithm finds the best-fit *straight line* to predict a continuous outcome.", answer: "Linear Regression", difficulty: 3, topic: "Regression" },
+                    // Difficulty 4
+                    { question: "This classification algorithm works like a flowchart, splitting data based on questions.", answer: "Decision Tree", difficulty: 4, topic: "Decision Trees" },
+                    // Difficulty 5
+                    { question: "This classification algorithm predicts a new point's class based on the 'votes' of its closest neighbors.", answer: "K-Nearest Neighbors (KNN)", difficulty: 5, topic: "KNN" },
+                    // Difficulty 6
+                    { question: "In a Decision Tree, what is the term for a final node that represents a decision (e.g., 'Go to beach')?", answer: "A leaf node", difficulty: 6, topic: "Decision Trees" },
+                    // Difficulty 7
+                    { question: "In a Decision Tree, what does a low 'Gini Impurity' score (close to 0) signify?", answer: "The group is 'pure' (mostly or all one class)", difficulty: 7, topic: "Decision Trees" },
+                    // Difficulty 8
+                    { question: "This metric measures the *proportion* of variance (from 0 to 1) that a regression model explains.", answer: "R-squared (R²)", difficulty: 8, topic: "Regression" },
+                    // Difficulty 9
+                    { question: "This metric measures the *average of the squared errors* of a regression model.", answer: "Mean Squared Error (MSE)", difficulty: 9, topic: "Regression" },
+                    // Difficulty 10
+                    { question: "Why is KNN often called a 'lazy' learning algorithm?", answer: "It doesn't 'build' a model; it stores the entire training set and calculates at prediction time.", difficulty: 10, topic: "KNN" },
+                ],
+                "Unsupervised & Other Models (HL)": [
+                    // Difficulty 1
+                    { question: "This is a popular *unsupervised* algorithm for grouping data into a pre-set number of clusters.", answer: "K-Means Clustering", difficulty: 1, topic: "K-Means" },
+                    // Difficulty 2
+                    { question: "In K-Means, what is the name for the center point of a cluster?", answer: "The centroid", difficulty: 2, topic: "K-Means" },
+                    // Difficulty 3
+                    { question: "Customer segmentation is a classic real-world application of what algorithm?", answer: "K-Means Clustering", difficulty: 3, topic: "K-Means" },
+                    // Difficulty 4
+                    { question: "This ML approach finds 'if-then' patterns, famously used in market basket analysis (e.g., {Diapers} -> {Beer}).", answer: "Association Rule Mining", difficulty: 4, topic: "Association Rules" },
+                    // Difficulty 5
+                    { question: "This optimization algorithm is inspired by 'survival of the fittest' and natural selection.", answer: "Genetic Algorithm", difficulty: 5, topic: "Genetic Algorithms" },
+                    // Difficulty 6
+                    { question: "In K-Means, what are the two iterative steps that the algorithm repeats?", answer: "1. Assign points to closest centroid. 2. Recalculate centroids.", difficulty: 6, topic: "K-Means" },
+                    // Difficulty 7
+                    { question: "In a Genetic Algorithm, what is a 'chromosome'?", answer: "A single, complete potential solution (e.g., one route in the Traveling Salesperson Problem)", difficulty: 7, topic: "Genetic Algorithms" },
+                    // Difficulty 8
+                    { question: "In Association Rules, what metric measures how *frequently* items A and B appear together?", answer: "Support", difficulty: 8, topic: "Association Rules" },
+                    // Difficulty 9
+                    { question: "In Association Rules, what metric measures 'when A is found, how often is B also found'?", answer: "Confidence", difficulty: 9, topic: "Association Rules" },
+                    // Difficulty 10
+                    { question: "In a Genetic Algorithm, what two processes create a new 'child' solution from two 'parent' solutions?", answer: "Crossover and Mutation", difficulty: 10, topic: "Genetic Algorithms" },
+                ],
+                "Neural Networks & Ethics (HL)": [
+                    // Difficulty 1
+                    { question: "A key ethical concern where an ML model produces unfair or discriminatory outcomes for certain groups.", answer: "Bias", difficulty: 1, topic: "Ethics" },
+                    // Difficulty 2
+                    { question: "This type of ML model is inspired by the structure of the human brain, using nodes and layers.", answer: "Artificial Neural Network (ANN)", difficulty: 2, topic: "ANN" },
+                    // Difficulty 3
+                    { question: "A key ethical concern regarding the collection and use of personal data for training models.", answer: "Privacy", difficulty: 3, topic: "Ethics" },
+                    // Difficulty 4
+                    { question: "An ANN is composed of an input layer, an output layer, and one or more...?", answer: "Hidden layers", difficulty: 4, topic: "ANN" },
+                    // Difficulty 5
+                    { question: "This *specific type* of deep neural network is designed to be highly effective for image recognition.", answer: "Convolutional Neural Network (CNN)", difficulty: 5, topic: "CNN" },
+                    // Difficulty 6
+                    { question: "What does 'ANN' stand for?", answer: "Artificial Neural Network", difficulty: 6, topic: "ANN" },
+                    { question: "What does 'CNN' stand for?", answer: "Convolutional Neural Network", difficulty: 6, topic: "CNN" },
+                    // Difficulty 7
+                    { question: "Why are ANNs (and multi-layer networks) so powerful?", answer: "They can model complex, non-linear relationships in data", difficulty: 7, topic: "ANN" },
+                    // Difficulty 8
+                    { question: "How are CNNs designed to 'see' images?", answer: "They adaptively learn spatial hierarchies of features (e.g., edges -> shapes -> objects)", difficulty: 8, topic: "CNN" },
+                    // Difficulty 9
+                    { question: "What is the 'black box' problem in AI ethics?", answer: "The inability for humans to understand *why* a complex model (like an ANN) made a specific decision", difficulty: 9, topic: "Ethics" },
+                    // Difficulty 10
+                    { question: "What is the importance of 'model selection and comparison'?", answer: "To evaluate and choose the best performing and most appropriate model for a task", difficulty: 10, topic: "Model Evaluation" },
+                ]
+            };
+
+            // --- DOM ELEMENTS ---
+            const topicSelectionScreen = document.getElementById('topic-selection');
+            const topicButtonsContainer = document.getElementById('topic-buttons');
+            const mainGameScreen = document.getElementById('main-game');
+            const currentTopicTitle = document.getElementById('current-topic-title');
+
+            const questionTextEl = document.getElementById('question-text');
+            const answerBoxes = document.querySelectorAll('.answer-box');
+            const answerTextEls = {
+                A: document.getElementById('answer-text-A'),
+                B: document.getElementById('answer-text-B'),
+                C: document.getElementById('answer-text-C'),
+                D: document.getElementById('answer-text-D'),
+            };
+
+            const moneyLadderEl = document.getElementById('money-ladder');
+            
+            const lifeline5050Btn = document.getElementById('lifeline-5050');
+            const lifelineAudienceBtn = document.getElementById('lifeline-audience');
+
+            const audienceModal = document.getElementById('audience-modal');
+            const closeAudienceModalBtn = document.getElementById('close-audience-modal');
+            const pollEls = {
+                A: { bar: document.getElementById('poll-bar-A'), container: document.getElementById('poll-A') },
+                B: { bar: document.getElementById('poll-bar-B'), container: document.getElementById('poll-B') },
+                C: { bar: document.getElementById('poll-bar-C'), container: document.getElementById('poll-C') },
+                D: { bar: document.getElementById('poll-bar-D'), container: document.getElementById('poll-D') },
+            };
+
+            const endGameModal = document.getElementById('end-game-modal');
+            const endGameTitle = document.getElementById('end-game-title');
+            const endGameMessage = document.getElementById('end-game-message');
+            const finalScoreEl = document.getElementById('final-score');
+            const playAgainBtn = document.getElementById('play-again-btn');
+            const quitGameBtn = document.getElementById('quit-game-btn');
+
+            // --- GAME STATE ---
+            let currentTopic = "";
+            let currentQuestionSet = [];
+            let currentQuestionIndex = 0;
+            let currentCorrectAnswer = "";
+            let score = 0;
+            let safeScore = 0;
+            let lifelines = {
+                "5050": true,
+                "audience": true
+            };
+
+            // --- 15-LEVEL MONEY LADDER ---
+            const moneyValues = [
+                100, 200, 300, 500, 1000, 
+                2000, 4000, 8000, 16000, 32000, 
+                64000, 125000, 250000, 500000, 1000000
+            ];
+            const safeLevels = [1000, 32000]; // Safe levels
+            const numQuestions = 15;
+
+            /**
+             * Initializes the topic selection screen
+             */
+            function initTopicSelection() {
+                topicButtonsContainer.innerHTML = '';
+                Object.keys(questionBank).forEach(topic => {
+                    const button = document.createElement('button');
+                    button.className = 'topic-button';
+                    button.textContent = topic;
+                    button.addEventListener('click', () => startGame(topic));
+                    topicButtonsContainer.appendChild(button);
+                });
+            }
+
+            /**
+             * Shuffles an array in place
+             */
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+
+            /**
+             * Starts the game with the selected topic
+             */
+            function startGame(topic) {
+                currentTopic = topic;
+                currentTopicTitle.textContent = `Topic: ${topic}`;
+                currentQuestionIndex = 0;
+                score = 0;
+                safeScore = 0;
+                lifelines = { "5050": true, "audience": true };
+                lifeline5050Btn.disabled = false;
+                lifelineAudienceBtn.disabled = false;
+
+                // --- Generate the 15-question set ---
+                currentQuestionSet = [];
+                const topicQuestions = [...questionBank[topic]]; // Copy questions
+                
+                // --- Logic for 15 questions ---
+                // Add 10 progressively harder questions
+                for (let i = 1; i <= 10; i++) {
+                    const questionsAtDifficulty = topicQuestions.filter(q => q.difficulty === i);
+                    let questionToAdd;
+                    if (questionsAtDifficulty.length > 0) {
+                        questionToAdd = questionsAtDifficulty[Math.floor(Math.random() * questionsAtDifficulty.length)];
+                    } else {
+                        // Fallback: get nearest difficulty
+                        const fallback = topicQuestions.find(q => q.difficulty >= i) || topicQuestions.find(q => q.difficulty < i);
+                        questionToAdd = fallback;
+                    }
+                    // Remove the question so it's not picked again
+                    if (questionToAdd) {
+                        topicQuestions.splice(topicQuestions.indexOf(questionToAdd), 1);
+                        currentQuestionSet.push(questionToAdd);
+                    }
+                }
+
+                // Add 5 very hard questions (from difficulty 9-10)
+                let hardQuestions = topicQuestions.filter(q => q.difficulty >= 9);
+                if (hardQuestions.length < 5) {
+                    // Not enough hard questions? Grab from 8+
+                    hardQuestions = topicQuestions.filter(q => q.difficulty >= 8);
+                }
+                
+                shuffleArray(hardQuestions);
+                // Ensure we only add 5 more questions
+                const needed = numQuestions - currentQuestionSet.length;
+                currentQuestionSet.push(...hardQuestions.slice(0, needed));
+
+                // If still not 15 (e.g. small topic bank), fill with remaining
+                if (currentQuestionSet.length < numQuestions) {
+                    shuffleArray(topicQuestions);
+                    currentQuestionSet.push(...topicQuestions.slice(0, numQuestions - currentQuestionSet.length));
+                }
+                // --- End logic ---
+
+
+                // Show game screen, hide topic screen
+                topicSelectionScreen.classList.add('hidden');
+                mainGameScreen.classList.remove('hidden');
+                endGameModal.classList.add('hidden');
+
+                buildMoneyLadder();
+                loadQuestion();
+            }
+            
+            /**
+             * Builds the money ladder display
+             */
+            function buildMoneyLadder() {
+                moneyLadderEl.innerHTML = '';
+                moneyValues.forEach((value, index) => {
+                    const li = document.createElement('li');
+                    li.id = `money-${index}`;
+                    li.textContent = `${index + 1}. ${value.toLocaleString()} Points`;
+                    if (safeLevels.includes(value)) {
+                        li.classList.add('safe');
+                    }
+                    moneyLadderEl.appendChild(li);
+                });
+            }
+
+            /**
+             * --- Smarter distractor generator ---
+             * Prioritizes answers from the same sub-topic
+             */
+            function generateDistractors(correctAnswer, difficulty, topic) {
+                let distractors = [];
+                const topicQuestions = questionBank[currentTopic];
+
+                // 1. Try to find answers from the *exact same sub-topic*
+                const sameTopicAnswers = topicQuestions
+                    .filter(q => q.topic === topic && q.answer !== correctAnswer)
+                    .map(q => q.answer);
+                
+                let uniqueDistractors = [...new Set(sameTopicAnswers)];
+                shuffleArray(uniqueDistractors);
+                distractors = uniqueDistractors.slice(0, 3);
+
+                // 2. If not enough, find from *similar difficulty*
+                if (distractors.length < 3) {
+                    const similarDifficultyAnswers = topicQuestions
+                        .filter(q => 
+                            q.answer !== correctAnswer &&
+                            !distractors.includes(q.answer) && // Don't re-add
+                            (q.difficulty === difficulty || q.difficulty === difficulty - 1 || q.difficulty === difficulty + 1)
+                        )
+                        .map(q => q.answer);
+                    
+                    let uniqueSimilar = [...new Set(similarDifficultyAnswers)];
+                    shuffleArray(uniqueSimilar);
+                    distractors.push(...uniqueSimilar.slice(0, 3 - distractors.length));
+                }
+
+                // 3. If *still* not enough, fill with any random answer from the category
+                if (distractors.length < 3) {
+                    const allOtherAnswers = topicQuestions
+                        .map(q => q.answer)
+                        .filter(a => a !== correctAnswer && !distractors.includes(a));
+                    
+                    shuffleArray(allOtherAnswers);
+                    distractors.push(...allOtherAnswers.slice(0, 3 - distractors.length));
+                }
+                
+                return distractors;
+            }
+
+            /**
+             * Loads the next question
+             */
+            function loadQuestion() {
+                resetAnswerStyles();
+                
+                if (currentQuestionIndex >= numQuestions) {
+                    endGame(true); // Won the game
+                    return;
+                }
+
+                updateMoneyLadder();
+
+                const questionData = currentQuestionSet[currentQuestionIndex];
+                
+                // Failsafe if question set is incomplete
+                if (!questionData) {
+                    console.error("Ran out of questions!");
+                    endGame(true); // End game as a win
+                    return;
+                }
+                
+                questionTextEl.textContent = questionData.question;
+                currentCorrectAnswer = questionData.answer;
+
+                // --- Generate SMART distractors ---
+                let distractors = generateDistractors(currentCorrectAnswer, questionData.difficulty, questionData.topic);
+
+                // --- Assign answers to A, B, C, D ---
+                let answers = shuffleArray([currentCorrectAnswer, ...distractors]);
+                const answerMap = {};
+                ['A', 'B', 'C', 'D'].forEach((option, index) => {
+                    answerMap[option] = answers[index];
+                    answerTextEls[option].textContent = answers[index];
+                });
+
+                // Store correct option
+                currentCorrectAnswer = Object.keys(answerMap).find(key => answerMap[key] === questionData.answer);
+            }
+
+            /**
+             * Resets answer box styles and enables them
+             */
+            function resetAnswerStyles() {
+                answerBoxes.forEach(box => {
+                    box.classList.remove('selected', 'correct', 'incorrect', 'disabled');
+                    box.style.display = 'flex';
+                });
+            }
+
+            /**
+             * Updates the money ladder highlight
+             */
+            function updateMoneyLadder() {
+                document.querySelectorAll('#money-ladder li').forEach((li, index) => {
+                    if (index === currentQuestionIndex) {
+                        li.classList.add('current');
+                    } else {
+                        li.classList.remove('current');
+                    }
+                });
+                score = currentQuestionIndex > 0 ? moneyValues[currentQuestionIndex - 1] : 0;
+                if (safeLevels.includes(score)) {
+                    safeScore = score;
+                }
+            }
+
+            /**
+             * Handles the user selecting an answer
+             */
+            function selectAnswer(e) {
+                const selectedOption = e.currentTarget.dataset.option;
+                const selectedBox = e.currentTarget;
+
+                // Disable all boxes to prevent re-clicks
+                answerBoxes.forEach(box => box.classList.add('disabled'));
+
+                selectedBox.classList.add('selected');
+
+                setTimeout(() => {
+                    if (selectedOption === currentCorrectAnswer) {
+                        // --- CORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('correct');
+                        setTimeout(() => {
+                            currentQuestionIndex++;
+                            loadQuestion();
+                        }, 1500);
+                    } else {
+                        // --- INCORRECT ---
+                        selectedBox.classList.remove('selected');
+                        selectedBox.classList.add('incorrect');
+                        // Show correct answer
+                        document.getElementById(`answer-${currentCorrectAnswer}`).classList.add('correct');
+                        setTimeout(() => {
+                            endGame(false);
+                        }, 2000);
+                    }
+                }, 1000);
+            }
+
+            /**
+             * Handles the 50:50 lifeline
+             */
+            function use5050() {
+                if (!lifelines["5050"]) return;
+                lifelines["5050"] = false;
+                lifeline5050Btn.disabled = true;
+
+                let wrongOptions = ['A', 'B', 'C', 'D'].filter(opt => opt !== currentCorrectAnswer);
+                wrongOptions = shuffleArray(wrongOptions);
+                
+                document.getElementById(`answer-${wrongOptions[0]}`).style.display = 'none';
+                document.getElementById(`answer-${wrongOptions[1]}`).style.display = 'none';
+            }
+
+            /**
+             * Handles the Ask the Audience lifeline
+             */
+            function useAudience() {
+                if (!lifelines["audience"]) return;
+                lifelines["audience"] = false;
+                lifelineAudienceBtn.disabled = true;
+
+                // Generate poll results
+                let percentages = [0, 0, 0, 0];
+                const options = ['A', 'B', 'C', 'D'];
+                const correctIndex = options.indexOf(currentCorrectAnswer);
+
+                // Give correct answer a big boost
+                percentages[correctIndex] = Math.floor(Math.random() * 40) + 40; // 40-79%
+                let remaining = 100 - percentages[correctIndex];
+                
+                // Distribute remaining %
+                for (let i = 0; i < 3; i++) {
+                    const index = (correctIndex + 1 + i) % 4;
+                    if (i === 2) {
+                        percentages[index] = remaining; // Assign leftover
+                    } else {
+                        const val = Math.floor(Math.random() * remaining);
+                        percentages[index] = val;
+                        remaining -= val;
+                    }
+                }
+                
+                // Re-assign to ensure correct answer has the high value,
+                // but this time shuffle the *indices* of the wrong answers
+                let wrongIndices = options.map((o,i) => i).filter(i => i !== correctIndex);
+                let wrongPercentages = percentages.filter((p,i) => i !== correctIndex);
+                shuffleArray(wrongPercentages);
+                
+                wrongIndices.forEach((wrongIndex, i) => {
+                    percentages[wrongIndex] = wrongPercentages[i];
+                });
+
+
+                // Apply to modal bars
+                options.forEach((opt, index) => {
+                    const el = pollEls[opt];
+                    if (document.getElementById(`answer-${opt}`).style.display !== 'none') { // Check if not hidden by 50:50
+                        el.bar.style.width = `${percentages[index]}%`;
+                        el.bar.textContent = `${percentages[index]}%`;
+                    } else {
+                        el.bar.style.width = '0%';
+                        el.bar.textContent = '';
+                    }
+                });
+
+                audienceModal.classList.remove('hidden');
+            }
+
+            /**
+             * Ends the game and shows the final score
+             */
+            function endGame(didWin) {
+                if (didWin) {
+                    score = 1000000;
+                    endGameTitle.textContent = "You're an ML Whiz!";
+                    endGameMessage.innerHTML = `You answered all 15 questions and won <span class="font-bold text-amber-400">${score.toLocaleString()}</span> points!`;
+                } else {
+                    score = safeScore;
+                    endGameTitle.textContent = "Game Over!";
+                    endGameMessage.innerHTML = `You walk away with your safe score of <span class="font-bold text-amber-4for">${score.toLocaleString()}</span> points.`;
+                }
+                finalScoreEl.textContent = score.toLocaleString();
+                endGameModal.classList.remove('hidden');
+            }
+
+            /**
+             * Resets the game to the topic selection screen
+             */
+            function resetGame() {
+                mainGameScreen.classList.add('hidden');
+                endGameModal.classList.add('hidden');
+                topicSelectionScreen.classList.remove('hidden');
+                initTopicSelection(); // Re-initialize topic buttons
+            }
+
+            // --- EVENT LISTENERS ---
+            answerBoxes.forEach(box => box.addEventListener('click', selectAnswer));
+            lifeline5050Btn.addEventListener('click', use5050);
+            lifelineAudienceBtn.addEventListener('click', useAudience);
+            closeAudienceModalBtn.addEventListener('click', () => audienceModal.classList.add('hidden'));
+
+            playAgainBtn.addEventListener('click', () => {
+                endGameModal.classList.add('hidden');
+                startGame(currentTopic); // Play same topic again
+            });
+            quitGameBtn.addEventListener('click', resetGame); // Go back to topic select
+
+            // --- INITIALIZE THE APP ---
+            initTopicSelection();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IB CS 2027 Syllabus Quiz - A1.2.1 & A1.2.2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-900">
+
+    <div id="app" class="max-w-3xl mx-auto px-4 py-8 md:py-12">
+        <!-- Header -->
+        <header class="text-center mb-10">
+            <div class="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-full mb-3 uppercase tracking-widest">Syllabus 2027</div>
+            <h1 class="text-3xl font-extrabold text-slate-900 mb-2">Representation & Storage</h1>
+            <p class="text-slate-500 font-medium text-sm">Comprehensive: A1.2.1 (Integers) & A1.2.2 (Strings, Images, Sound)</p>
+        </header>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 text-center">
+            <div class="mb-6">
+                <div class="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold mb-2">Full A1.2.1–A1.2.2 Mastery</h2>
+                <p class="text-slate-600 mb-6 font-medium">This session covers number systems, character sets, bitmap images, and digital audio principles.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left text-sm">
+                        <strong class="text-blue-700 block mb-1">A1.2.1 Representation</strong>
+                        <ul class="text-slate-600 space-y-1">
+                            <li>• Binary/Hex Conversions</li>
+                            <li>• Hardware logic (Off/On)</li>
+                            <li>• Binary Arithmetic</li>
+                        </ul>
+                    </div>
+                    <div class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-left text-sm">
+                        <strong class="text-blue-700 block mb-1">A1.2.2 Storage Types</strong>
+                        <ul class="text-slate-600 space-y-1">
+                            <li>• ASCII vs Unicode</li>
+                            <li>• Image Resolution/Depth</li>
+                            <li>• Audio Sample Rates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <button onclick="quiz.start()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-2xl transition-all shadow-lg active:scale-95">
+                Start Random 20 Question Quiz
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="hidden bg-white p-6 md:p-10 rounded-3xl shadow-xl border border-slate-200">
+            <div class="flex justify-between items-center mb-8">
+                <div>
+                    <span id="progress-text" class="text-xs font-bold text-slate-400 uppercase tracking-tighter">Question 1/20</span>
+                    <div id="topic-tag" class="text-xs font-bold text-blue-600 mt-1 uppercase">Topic</div>
+                </div>
+                <div class="w-24 bg-slate-100 rounded-full h-2">
+                    <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-500" style="width: 5%"></div>
+                </div>
+            </div>
+
+            <h3 id="question-text" class="text-xl font-bold mb-8 leading-tight min-h-[3rem]">Loading...</h3>
+
+            <div id="options-container" class="space-y-3"></div>
+
+            <div class="mt-10 flex justify-between items-center">
+                <div id="feedback-msg" class="text-sm font-semibold invisible">Correct!</div>
+                <button id="next-btn" onclick="quiz.next()" disabled class="bg-slate-200 text-slate-400 font-bold py-3 px-10 rounded-2xl cursor-not-allowed transition-all">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden space-y-6">
+            <div class="bg-white p-10 rounded-3xl shadow-xl border border-slate-200 text-center">
+                <h2 class="text-2xl font-bold mb-2">Quiz Complete</h2>
+                <div class="text-7xl font-black text-blue-600 my-6" id="final-score">0/20</div>
+                <p id="grade-message" class="text-slate-500 mb-8 font-medium"></p>
+                <button onclick="location.reload()" class="bg-slate-900 text-white font-bold py-3 px-8 rounded-2xl hover:bg-slate-800 transition-all">Restart Session</button>
+            </div>
+
+            <div id="feedback-container" class="bg-white p-8 rounded-3xl shadow-xl border border-slate-200">
+                <h3 class="text-xl font-bold mb-4 flex items-center">
+                    <svg class="w-6 h-6 mr-2 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Topic-Specific Review
+                </h3>
+                <div id="feedback-list" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const questionPool = [
+            // A1.2.1 Integers (Binary/Hex/Arithmetic/Hardware) - 25 Questions
+            { q: "Why is binary the most suitable system for electronic computers?", o: ["It simplifies mathematical calculations for humans", "Digital hardware relies on two distinct voltage states", "It uses the least amount of electrical power", "It allows computers to understand natural language"], a: 1, t: "Binary Principles" },
+            { q: "What is the decimal equivalent of binary 101110?", o: ["46", "38", "52", "44"], a: 0, t: "Integer Conversion" },
+            { q: "Convert hexadecimal 'B5' to decimal.", o: ["181", "175", "191", "165"], a: 0, t: "Integer Conversion" },
+            { q: "Convert decimal 150 to hexadecimal.", o: ["96", "8C", "9A", "8F"], a: 0, t: "Integer Conversion" },
+            { q: "What is the result of binary addition 1101 + 1011?", o: ["11000", "10110", "11010", "10010"], a: 0, t: "Binary Arithmetic" },
+            { q: "How many unique values can be represented with 6 bits?", o: ["32", "64", "128", "256"], a: 1, t: "Binary Principles" },
+            { q: "In binary addition, what is 1 + 1 + 1?", o: ["10 (2 in decimal)", "11 (3 in decimal)", "100 (4 in decimal)", "01 (1 in decimal)"], a: 1, t: "Binary Arithmetic" },
+            { q: "What is hexadecimal 'F' in binary?", o: ["1110", "1010", "1111", "0111"], a: 2, t: "Integer Conversion" },
+            { q: "Converting binary to hexadecimal: 11011010 is equivalent to...", o: ["DA", "CB", "AD", "BD"], a: 0, t: "Integer Conversion" },
+            { q: "Which decimal value does the hexadecimal digit 'E' represent?", o: ["13", "14", "15", "11"], a: 1, t: "Integer Conversion" },
+            { q: "What is the decimal value of hexadecimal '100'?", o: ["100", "160", "256", "10"], a: 2, t: "Integer Conversion" },
+            { q: "An overflow error in binary addition occurs when...", o: ["The result is zero", "The result requires more bits than available in the register", "A bit is shifted to the left", "The numbers are too small to process"], a: 1, t: "Binary Arithmetic" },
+            { q: "What is 2 bytes in bits?", o: ["8 bits", "16 bits", "32 bits", "64 bits"], a: 1, t: "Binary Principles" },
+            { q: "Convert decimal 63 to binary.", o: ["00111111", "00111110", "01000000", "00011111"], a: 0, t: "Integer Conversion" },
+            { q: "Which system is primarily used by programmers as a 'shorthand' for long binary strings?", o: ["Decimal", "Octal", "Hexadecimal", "Roman Numerals"], a: 2, t: "Binary Principles" },
+            { q: "What is the value of the most significant bit (MSB) in an 8-bit unsigned integer?", o: ["1", "128", "255", "64"], a: 1, t: "Binary Principles" },
+            { q: "If we shift the binary number 0010 (2) one place to the left, what is the new value?", o: ["1", "3", "4", "8"], a: 2, t: "Binary Principles" },
+            { q: "Convert binary 00001010 to hexadecimal.", o: ["0A", "10", "A0", "0B"], a: 0, t: "Integer Conversion" },
+            { q: "Hexadecimal '2A' converted to binary is...", o: ["0010 1010", "0010 1011", "0001 1010", "1010 0010"], a: 0, t: "Integer Conversion" },
+            { q: "The term 'bit' is a portmanteau of which two words?", o: ["Binary Unit", "Basic Intel", "Binary Digit", "Brief Information"], a: 2, t: "Binary Principles" },
+            { q: "In binary, what is 1010 - 0001?", o: ["1011", "1001", "0111", "1000"], a: 1, t: "Binary Arithmetic" },
+            { q: "How many nibbles are in one byte?", o: ["1", "2", "4", "8"], a: 1, t: "Binary Principles" },
+            { q: "The base of the hexadecimal system is...", o: ["2", "8", "10", "16"], a: 3, t: "Binary Principles" },
+            { q: "Decimal 32 in hexadecimal is...", o: ["20", "30", "22", "16"], a: 0, t: "Integer Conversion" },
+            { q: "In binary addition, 0+1 results in...", o: ["0 carry 1", "1 carry 0", "1 carry 1", "0 carry 0"], a: 1, t: "Binary Arithmetic" },
+
+            // A1.2.2 Data Types (Strings, Images, Sound) - 25 Questions
+            { q: "Which character set is limited to 128 characters and uses 7 bits?", o: ["Unicode", "Extended ASCII", "Standard ASCII", "UTF-16"], a: 2, t: "Character Encoding" },
+            { q: "What is the main reason Unicode was developed to replace ASCII?", o: ["Unicode characters take up less space", "To support a wider range of global languages and symbols", "ASCII is incompatible with modern hardware", "Unicode is faster for the CPU to process"], a: 1, t: "Character Encoding" },
+            { q: "How many bits does UTF-8 use to represent a standard English character?", o: ["4 bits", "8 bits", "16 bits", "32 bits"], a: 1, t: "Character Encoding" },
+            { q: "What is a 'pixel' in a bitmap image?", o: ["A physical sensor on a camera", "The smallest addressable element in an image", "A type of file compression", "A coordinate on a map"], a: 1, t: "Image Representation" },
+            { q: "If an image has a 'color depth' of 4 bits, how many colors can each pixel display?", o: ["4", "8", "16", "32"], a: 2, t: "Image Representation" },
+            { q: "How is image resolution typically measured?", o: ["Kilobytes per pixel", "Pixels per inch (PPI) or total pixel count", "Hertz (Hz)", "Bits per second"], a: 1, t: "Image Representation" },
+            { q: "Calculate the total bits needed for a 100x100 pixel image with 24-bit color depth.", o: ["24,000", "10,000", "240,000", "1,000,000"], a: 2, t: "Image Representation" },
+            { q: "What is 'metadata' in the context of an image file?", o: ["The binary code for the pixels", "Information about the file (e.g. dimensions, date, GPS)", "The software used to view the image", "The physical weight of the storage device"], a: 1, t: "Image Representation" },
+            { q: "How is sound converted from analog to digital (ADC)?", o: ["By printing the sound wave", "By sampling the amplitude of the wave at regular intervals", "By storing only the frequency", "By increasing the voltage of the signal"], a: 1, t: "Audio Representation" },
+            { q: "What is 'Sample Rate' in digital audio?", o: ["The length of the recording", "The number of samples taken per second (Hertz)", "The volume of the sound", "The number of bits used per sample"], a: 1, t: "Audio Representation" },
+            { q: "If you double the 'Sample Rate' of an audio recording, what happens to the file size?", o: ["It stays the same", "It roughly doubles", "It quadruples", "It halves"], a: 1, t: "Audio Representation" },
+            { q: "What does 'Bit Depth' (or Resolution) refer to in audio?", o: ["The speed of playback", "The number of bits used to represent the amplitude of each sample", "The range of frequencies recorded", "The file format (e.g. MP3)"], a: 1, t: "Audio Representation" },
+            { q: "Standard CD quality audio uses a sample rate of...", o: ["8 kHz", "44.1 kHz", "192 kHz", "60 Hz"], a: 1, t: "Audio Representation" },
+            { q: "What is the disadvantage of increasing bit depth and sample rate in audio?", o: ["The sound quality becomes worse", "The file size increases significantly", "The sound becomes too quiet", "It cannot be played on modern speakers"], a: 1, t: "Audio Representation" },
+            { q: "In a bitmap image, 1-bit color depth allows for...", o: ["Black and White only", "256 shades of grey", "RGB colors", "No colors"], a: 0, t: "Image Representation" },
+            { q: "Which encoding allows for the 'Backwards Compatibility' with ASCII?", o: ["UTF-32", "UTF-8", "Morse Code", "Hexadecimal"], a: 1, t: "Character Encoding" },
+            { q: "What is the 'Nyquist Theorem' related to (conceptually)?", o: ["Image compression", "Minimum sampling rate needed to capture sound accurately", "Speed of light in fiber optics", "The number of pixels in a screen"], a: 1, t: "Audio Representation" },
+            { q: "Metadata for an audio file might include...", o: ["Artist name and track length", "The physical temperature of the microphone", "The exact voltage of every sample", "The color of the CD"], a: 0, t: "Audio Representation" },
+            { q: "An image with 'True Color' typically uses a bit depth of...", o: ["8-bit", "16-bit", "24-bit", "64-bit"], a: 2, t: "Image Representation" },
+            { q: "Why might a 'quantization error' occur in audio recording?", o: ["The sample rate is too high", "The bit depth is too low to accurately represent the amplitude", "The microphone is too far away", "The file is saved as a WAV"], a: 1, t: "Audio Representation" },
+            { q: "Calculate the storage for a 10-second sound clip sampled at 1000 Hz with 8-bit depth (mono).", o: ["8,000 bits", "80,000 bits", "10,000 bits", "1,000 bits"], a: 1, t: "Audio Representation" },
+            { q: "ASCII stands for...", o: ["American Standard Code for Information Interchange", "All Systems Computer Integration Interface", "Advanced Storage Code for International Instruction", "Analytical Standard for Computer Input"], a: 0, t: "Character Encoding" },
+            { q: "What determines the 'Dynamic Range' in digital audio?", o: ["Sample Rate", "Bit Depth", "Duration", "File Extension"], a: 1, t: "Audio Representation" },
+            { q: "Which of these is NOT a standard metadata field for images?", o: ["Camera Model", "Aperture/Shutter Speed", "User's current heart rate", "Resolution"], a: 2, t: "Image Representation" },
+            { q: "How many bits are in a Kilobyte (KB) using the standard SI definition (1000)?", o: ["1000", "1024", "8000", "8192"], a: 2, t: "Binary Principles" }
+        ];
+
+        const quiz = {
+            currentQuestions: [],
+            currentIndex: 0,
+            score: 0,
+            wrongTopics: {},
+
+            start() {
+                // Pick 20 unique random questions
+                this.currentQuestions = questionPool
+                    .sort(() => Math.random() - 0.5)
+                    .slice(0, 20);
+                
+                this.currentIndex = 0;
+                this.score = 0;
+                this.wrongTopics = {};
+
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('results-screen').classList.add('hidden');
+                document.getElementById('quiz-screen').classList.remove('hidden');
+                this.showQuestion();
+            },
+
+            showQuestion() {
+                const q = this.currentQuestions[this.currentIndex];
+                document.getElementById('progress-text').innerText = `Question ${this.currentIndex + 1}/20`;
+                document.getElementById('progress-bar').style.width = `${((this.currentIndex + 1) / 20) * 100}%`;
+                document.getElementById('question-text').innerText = q.q;
+                document.getElementById('topic-tag').innerText = q.t;
+
+                const container = document.getElementById('options-container');
+                container.innerHTML = '';
+                
+                q.o.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-100 hover:border-blue-200 hover:bg-blue-50 transition-all flex items-center group font-medium";
+                    btn.innerHTML = `
+                        <span class="w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-lg bg-slate-100 group-hover:bg-blue-600 group-hover:text-white mr-4 font-bold text-slate-500 transition-colors">${String.fromCharCode(65 + i)}</span>
+                        <span class="flex-1">${opt}</span>
+                    `;
+                    btn.onclick = () => this.selectOption(i, btn);
+                    container.appendChild(btn);
+                });
+
+                document.getElementById('feedback-msg').classList.add('invisible');
+                const nextBtn = document.getElementById('next-btn');
+                nextBtn.disabled = true;
+                nextBtn.className = "bg-slate-200 text-slate-400 font-bold py-3 px-10 rounded-2xl cursor-not-allowed";
+                nextBtn.innerText = this.currentIndex === 19 ? "View Results" : "Next";
+            },
+
+            selectOption(index, element) {
+                const q = this.currentQuestions[this.currentIndex];
+                const options = document.getElementById('options-container').children;
+                
+                for (let opt of options) opt.onclick = null;
+
+                const feedback = document.getElementById('feedback-msg');
+                feedback.classList.remove('invisible');
+
+                if (index === q.a) {
+                    element.classList.add('border-emerald-500', 'bg-emerald-50');
+                    element.querySelector('span').classList.add('bg-emerald-500', 'text-white');
+                    feedback.innerText = "Correct!";
+                    feedback.className = "text-sm font-bold text-emerald-600";
+                    this.score++;
+                } else {
+                    element.classList.add('border-rose-500', 'bg-rose-50');
+                    element.querySelector('span').classList.add('bg-rose-500', 'text-white');
+                    options[q.a].classList.add('border-emerald-500', 'bg-emerald-50');
+                    feedback.innerText = "Incorrect";
+                    feedback.className = "text-sm font-bold text-rose-600";
+                    this.wrongTopics[q.t] = (this.wrongTopics[q.t] || 0) + 1;
+                }
+
+                const nextBtn = document.getElementById('next-btn');
+                nextBtn.disabled = false;
+                nextBtn.className = "bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-10 rounded-2xl cursor-pointer shadow-lg";
+            },
+
+            next() {
+                this.currentIndex++;
+                if (this.currentIndex < 20) this.showQuestion();
+                else this.showResults();
+            },
+
+            showResults() {
+                document.getElementById('quiz-screen').classList.add('hidden');
+                document.getElementById('results-screen').classList.remove('hidden');
+                document.getElementById('final-score').innerText = `${this.score}/20`;
+                
+                const percentage = (this.score / 20) * 100;
+                let msg = percentage >= 85 ? "Excellent! You have mastered the fundamentals of data representation." : 
+                          percentage >= 65 ? "Good job! You have a solid understanding but some areas need review." : 
+                          "Keep practicing. Data representation is the foundation of computer science.";
+                document.getElementById('grade-message').innerText = msg;
+
+                const feedbackList = document.getElementById('feedback-list');
+                feedbackList.innerHTML = '';
+
+                const topics = Object.entries(this.wrongTopics);
+                if (topics.length === 0) {
+                    feedbackList.innerHTML = '<div class="p-4 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100 font-medium text-center text-sm">Perfect Performance! You have a complete grasp of A1.2.1 and A1.2.2.</div>';
+                } else {
+                    topics.sort((a,b) => b[1] - a[1]).forEach(([topic, count]) => {
+                        const div = document.createElement('div');
+                        div.className = "p-4 bg-slate-50 border border-slate-100 rounded-2xl";
+                        div.innerHTML = `
+                            <div class="flex justify-between items-center mb-1">
+                                <strong class="text-blue-700 text-sm uppercase tracking-wider">${topic}</strong>
+                                <span class="text-xs bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full font-bold">${count} Error(s)</span>
+                            </div>
+                            <p class="text-sm text-slate-600">${this.getTopicAdvice(topic)}</p>
+                        `;
+                        feedbackList.appendChild(div);
+                    });
+                }
+            },
+
+            getTopicAdvice(topic) {
+                const advice = {
+                    "Binary Principles": "Review the binary scale (1, 2, 4, 8, 16...) and understand how the number of bits ($n$) defines the range of values ($2^n$).",
+                    "Integer Conversion": "Practice 'grouping by 4' for Binary-to-Hex and the 'divide-by-16' method for Decimal-to-Hex.",
+                    "Binary Arithmetic": "Focus on the rules: $1+1 = 10$ and $1+1+1 = 11$. Review 'Overflow'—when the CPU can't store the carry bit.",
+                    "Character Encoding": "Understand that ASCII is for English/Western text (7/8 bits) while Unicode (UTF-8/16) is a universal standard for all languages.",
+                    "Image Representation": "Remember the formula: $Size = Width \times Height \times Color Depth$. Know that metadata is 'data about data'.",
+                    "Audio Representation": "Focus on 'Sampling Rate' (frequency of snapshots) and 'Bit Depth' (accuracy of each snapshot). Both increase fidelity but also file size."
+                };
+                return advice[topic] || "Review the relevant section in Topic A1.2 of the IB Computer Science guide.";
+            }
+        };
+    </script>
+</body>
+</html>

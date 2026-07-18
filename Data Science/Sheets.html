@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataSim - Data Science Module & Capstone</title>
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono&display=swap');
+        
+        body {
+            background-color: #f1f5f9;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains+Mono', monospace;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* Spreadsheet style specific */
+        .cell-active {
+            box-shadow: inset 0 0 0 2px #10b981;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- SVG Icon Components ---
+        const Icons = {
+            FunctionSquare: ({ size = 18 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M9 17c2 0 2.8-1 2.8-2.8V10c0-2 1-3.3 3.2-3"/><path d="M9 11.2h5.7"/></svg>
+            ),
+            Database: ({ className, size = 18 }) => (
+                <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19c0 1.66 4 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4 3 9 3s9-1.34 9-3"/></svg>
+            ),
+            Sigma: ({ size = 18 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 7V5H6l6 7-6 7h12v-2"/></svg>
+            ),
+            Zap: ({ className, size = 18 }) => (
+                <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            ),
+            LineChart: ({ size = 18 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+            ),
+            ChevronRight: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            Play: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            ),
+            RotateCcw: ({ size = 18 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            ),
+            Info: ({ size = 24 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            ),
+            CheckCircle2: ({ className, size = 16 }) => (
+                <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            ),
+            Eye: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+            ),
+            Code: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            ),
+            Search: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            ),
+            Copy: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+            ),
+            Award: ({ size = 32 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+            ),
+            TrendingUp: ({ size = 18 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            ),
+            Download: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            ),
+            AlertCircle: ({ size = 16 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            ),
+            ClipboardList: ({ size = 14 }) => (
+                <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
+            )
+        };
+
+        const SCENARIOS = [
+            {
+                id: 'clean',
+                title: 'Text Sanitization',
+                icon: <Icons.FunctionSquare />,
+                description: 'Learn how to clean raw text strings to prepare them for joining or categorical analysis.',
+                functions: ['TRIM', 'PROPER', 'SPLIT', 'SUBSTITUTE', 'UPPER', 'CONCATENATE'],
+                initialData: [
+                    ['ID', 'Raw_Input', 'Cleaned_Result', 'Status'],
+                    [' 101 ', 'data science', '', 'Pending'],
+                    ['102', 'GOOGLE sheets', '', 'Pending'],
+                    [' 103', 'rEact   jSx', '', 'Pending'],
+                    ['104 ', 'tailwind CSS', '', 'Pending']
+                ],
+                explanation: (func) => {
+                    const docs = {
+                        'TRIM': { syntax: '=TRIM(text)', desc: 'Removes all leading/trailing and extra spaces.' },
+                        'PROPER': { syntax: '=PROPER(text)', desc: 'Capitalizes the first letter of each word.' },
+                        'SPLIT': { syntax: '=SPLIT(text, delimiter)', desc: 'Divides text around a specified character into multiple columns.' },
+                        'SUBSTITUTE': { syntax: '=SUBSTITUTE(text, old, new)', desc: 'Replaces specific text strings with new ones.' },
+                        'UPPER': { syntax: '=UPPER(text)', desc: 'Converts text to all capital letters.' },
+                        'CONCATENATE': { syntax: '=CONCATENATE(a, b)', desc: 'Joins two or more strings into one.' },
+                    };
+                    const d = docs[func] || docs['TRIM'];
+                    return (
+                        <div className="space-y-1">
+                            <div><strong>Google Sheets Syntax:</strong> <code className="bg-yellow-200 px-1 rounded">{d.syntax}</code></div>
+                            <div className="text-blue-900 font-medium"><strong>Concept:</strong> {d.desc}</div>
+                        </div>
+                    );
+                }
+            },
+            {
+                id: 'lookup',
+                title: 'Relational Joins',
+                icon: <Icons.Database />,
+                description: 'Practice merging two datasets using common keys (Primary/Foreign keys).',
+                functions: ['VLOOKUP', 'XLOOKUP', 'INDEX+MATCH', 'IFERROR'],
+                initialData: [
+                    ['Key', 'Name', 'Result_A', 'Result_B'],
+                    ['A-01', 'Alpha', '', ''],
+                    ['B-02', 'Beta', '', ''],
+                    ['C-03', 'Gamma', '', ''],
+                    ['X-99', 'Error_Test', '', '']
+                ],
+                lookupTable: [
+                    ['Key', 'Category', 'Value'],
+                    ['A-01', 'Widget', '150'],
+                    ['B-02', 'Gadget', '200'],
+                    ['C-03', 'Device', '350']
+                ],
+                explanation: (func) => {
+                    const docs = {
+                        'VLOOKUP': { syntax: '=VLOOKUP(search_key, range, index, [is_sorted])', desc: 'Standard vertical lookup.' },
+                        'XLOOKUP': { syntax: '=XLOOKUP(key, lookup_range, result_range)', desc: 'Modern, resilient lookup that handles errors and horizontal search.' },
+                        'INDEX+MATCH': { syntax: '=INDEX(range, MATCH(key, range, 0))', desc: 'The gold standard for complex, non-breaking joins.' },
+                        'IFERROR': { syntax: '=IFERROR(value, value_if_error)', desc: 'Used to wrap lookups to handle missing data (#N/A) gracefully.' },
+                    };
+                    const d = docs[func] || docs['VLOOKUP'];
+                    return (
+                        <div className="space-y-1">
+                            <div><strong>Syntax:</strong> <code className="bg-yellow-200 px-1 rounded">{d.syntax}</code></div>
+                            <div className="text-blue-900 font-medium"><strong>Concept:</strong> {d.desc}</div>
+                        </div>
+                    );
+                }
+            },
+            {
+                id: 'stats',
+                title: 'Statistical Modeling',
+                icon: <Icons.Sigma />,
+                description: 'Use mathematical functions to understand the center and spread of your data.',
+                functions: ['STDEV', 'MEDIAN', 'QUARTILE', 'CORREL'],
+                initialData: [
+                    ['Obs', 'Var_X', 'Var_Y', 'Label'],
+                    ['1', '10', '105', 'Point A'],
+                    ['2', '20', '215', 'Point B'],
+                    ['3', '30', '290', 'Point C'],
+                    ['4', '40', '410', 'Point D'],
+                    ['5', '50', '520', 'Point E']
+                ],
+                explanation: (func) => (
+                    <div className="space-y-1">
+                        <div><strong>Google Sheets Syntax:</strong> <code className="bg-yellow-200 px-1 rounded">={func}(range)</code></div>
+                        <div className="text-blue-900 font-medium"><strong>Concept:</strong> Statistics allow you to quantify relationships and variability.</div>
+                    </div>
+                )
+            },
+            {
+                id: 'forecast',
+                title: 'Predictive Trends',
+                icon: <Icons.LineChart />,
+                description: 'Practice forecasting future values based on historical data points.',
+                functions: ['FORECAST.LINEAR', 'GROWTH', 'TREND'],
+                initialData: [
+                    ['X (Input)', 'Y (Target)', 'Prediction', 'Status'],
+                    ['1', '100', '', 'Actual'],
+                    ['2', '150', '', 'Actual'],
+                    ['3', '210', '', 'Actual'],
+                    ['4', '260', '', 'Actual'],
+                    ['5', '320', '', 'Actual']
+                ],
+                explanation: (func) => (
+                    <div className="space-y-1">
+                        <div><strong>Syntax:</strong> <code className="bg-yellow-200 px-1 rounded">={func}(...)</code></div>
+                        <div className="text-blue-900 font-medium"><strong>Concept:</strong> Linear regression logic used to estimate future values along a trendline.</div>
+                    </div>
+                )
+            }
+        ];
+
+        const PROJECT_DATA = {
+            title: "Project Eco-Flow: Revenue Optimization Audit",
+            csv: `Cust_ID,Order_Code,Actual_Rev,Market_Spend,Product_ID
+"  101  ",NORTH-01-PRIME,5200,1000,P-001
+"102 ",WEST-02-LITE,4800,800,P-002
+" 103",NORTH-03-PRIME,6100,1200,P-001
+"104",WEST-04-PRIME,9000,1500,P-003
+"105 ",EAST-05-LITE,3200,700,P-002
+" 106  ",SOUTH-06-PRIME,7500,1300,P-001
+"107",NORTH-07-LITE,4100,900,P-002
+"  108",WEST-08-PRIME,11000,1800,P-003
+"109 ",EAST-09-LITE,2900,600,P-002
+"110",SOUTH-10-PRIME,8200,1400,P-001
+"111",NORTH-11-PRIME,5900,1050,P-001
+" 112 ",WEST-12-LITE,3100,850,P-002
+"113",PROMO_99,1500,200,ERROR_CODE
+"114",EAST-14-PRIME,6700,1100,P-001
+" 115 ",NORTH-15-LITE,4200,950,P-002
+"116",WEST-16-PRIME,9800,1600,P-003
+"  117",SOUTH-17-LITE,3500,750,P-002
+"118",EAST-18-PRIME,7100,1250,P-001
+"119 ",NORTH-19-PRIME,6400,1150,P-001
+"120",WEST-20-LITE,2800,900,P-002
+" 121  ",SOUTH-21-PRIME,8900,1450,P-001
+"122",EAST-22-PRIME,5500,1000,P-001
+"  123",NORTH-23-LITE,3800,800,P-002
+"124",WEST-24-PRIME,10500,1750,P-003
+"125",SOUTH-25-LITE,3000,700,P-002`,
+            phases: [
+                {
+                    title: "Phase 1: Data Cleaning",
+                    tasks: [
+                        "Sanitize IDs: Remove extra spaces from 'Cust_ID' using TRIM.",
+                        "Region Extraction: Extract the Region (NORTH, WEST, etc.) from 'Order_Code' using SPLIT.",
+                        "Tier Extraction: Extract the Tier (PRIME or LITE) from the end of 'Order_Code' using RIGHT or SPLIT."
+                    ]
+                },
+                {
+                    title: "Phase 2: Enrichment (Merging)",
+                    tasks: [
+                        "Create a Reference Table for Tiers (PRIME/Premium, LITE/Standard).",
+                        "Use a lookup function (XLOOKUP or VLOOKUP) to pull Category into the main sheet.",
+                        "Handle Exceptions: Wrap your lookup in IFERROR to show 'Non-Tier' for PROMO_99 rows."
+                    ]
+                },
+                {
+                    title: "Phase 3: Core Analytics",
+                    tasks: [
+                        "Correlation: Calculate correlation (CORREL) between Market_Spend and Actual_Rev.",
+                        "Descriptive Stats: Find the MEDIAN revenue and the Standard Deviation (STDEV) of sales.",
+                        "Projection: Use FORECAST.LINEAR to predict revenue for a 26th customer."
+                    ]
+                },
+                {
+                    title: "Phase 4: Extension (Business Logic)",
+                    tasks: [
+                        "Efficiency Index: Create a new column 'Efficiency'. Logic: If Actual_Rev is > 6000 AND Market_Spend is < 1300, label it 'High Efficiency', else 'Standard'.",
+                        "ROI Calculation: Create a formula to show the 'Return on Spend' (Revenue / Spend).",
+                        "Outlier Flag: Use conditional formatting or an IF statement to highlight any customer where ROI is below 3.0."
+                    ]
+                }
+            ]
+        };
+
+        const App = () => {
+            const [activeScenario, setActiveScenario] = useState(0);
+            const [selectedFunc, setSelectedFunc] = useState(SCENARIOS[0].functions[0]);
+            const [gridData, setGridData] = useState(SCENARIOS[0].initialData);
+            const [formulas, setFormulas] = useState({});
+            const [showFormulas, setShowFormulas] = useState(false);
+            const [formulaBar, setFormulaBar] = useState('');
+            const [animationStep, setAnimationStep] = useState(0); 
+            const [queryResult, setQueryResult] = useState(null);
+            const [viewMode, setViewMode] = useState('practice'); // 'practice' or 'project'
+
+            const scenario = SCENARIOS[activeScenario];
+
+            useEffect(() => {
+                if (viewMode === 'practice') {
+                    setGridData(JSON.parse(JSON.stringify(scenario.initialData)));
+                    setAnimationStep(0);
+                    setFormulaBar('');
+                    setFormulas({});
+                    setShowFormulas(false);
+                    setQueryResult(null);
+                }
+            }, [activeScenario, selectedFunc, viewMode]);
+
+            const runSimulation = () => {
+                setAnimationStep(1);
+                let fBar = `=${selectedFunc}(...)`;
+                setFormulaBar(fBar);
+
+                setTimeout(() => {
+                    setAnimationStep(2);
+                    setTimeout(() => {
+                        const newData = JSON.parse(JSON.stringify(gridData));
+                        const newFormulas = {};
+
+                        if (scenario.id === 'clean') {
+                            for (let i = 1; i < newData.length; i++) {
+                                const raw = newData[i][1];
+                                let result = "";
+                                if (selectedFunc === 'TRIM') result = raw.trim().replace(/\s+/g, ' ');
+                                if (selectedFunc === 'PROPER') result = raw.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.substring(1)).join(' ');
+                                if (selectedFunc === 'SPLIT') result = raw.trim().split(' ')[0];
+                                if (selectedFunc === 'SUBSTITUTE') result = raw.replace(' ', '_');
+                                if (selectedFunc === 'UPPER') result = raw.toUpperCase().trim();
+                                if (selectedFunc === 'CONCATENATE') result = `${newData[i][0].trim()}${newData[i][1].trim()}`;
+                                newData[i][2] = result;
+                                newFormulas[`${i}-2`] = `=${selectedFunc}(B${i + 1})`;
+                            }
+                        } 
+                        else if (scenario.id === 'lookup') {
+                            const lookup = scenario.lookupTable;
+                            for (let i = 1; i < newData.length; i++) {
+                                const id = newData[i][0];
+                                const match = lookup.find(r => r[0] === id);
+                                newData[i][2] = match ? match[1] : (selectedFunc === 'IFERROR' ? "N/A" : "#N/A");
+                                newFormulas[`${i}-2`] = `=${selectedFunc}(...)`;
+                            }
+                        }
+                        else if (scenario.id === 'stats') {
+                            setQueryResult({
+                                headers: ['Metric', 'Calculated Value'],
+                                rows: [[selectedFunc, '0.985']],
+                                desc: `Result for range B2:B6`
+                            });
+                        }
+                        else if (scenario.id === 'forecast') {
+                            for(let i=1; i<newData.length; i++) {
+                                newData[i][2] = Math.round(50 + (i * 55));
+                                newFormulas[`${i}-2`] = `=${selectedFunc}(...)`;
+                            }
+                        }
+
+                        setGridData(newData);
+                        setFormulas(newFormulas);
+                        setAnimationStep(3);
+                    }, 1000);
+                }, 600);
+            };
+
+            const getCellClasses = (r, c) => {
+                let base = "border-r border-b px-2 py-1.5 text-sm min-h-[36px] flex items-center relative transition-all duration-300 ";
+                if (r === 0) base += "bg-slate-100 font-bold text-slate-600 justify-center sticky top-0 z-10 ";
+                else base += "bg-white ";
+
+                if (animationStep === 1 && c === 1) base += "bg-blue-50 ring-1 ring-inset ring-blue-300 ";
+                if (animationStep === 2 && c === 2) base += "bg-green-50 ring-2 ring-inset ring-green-400 animate-pulse ";
+                if (animationStep === 3 && formulas[`${r}-${c}`]) base += "text-emerald-700 font-medium ";
+                return base;
+            };
+
+            const copyProjectCSV = () => {
+                const csvContent = PROJECT_DATA.csv;
+                const el = document.createElement('textarea');
+                el.value = csvContent;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+            };
+
+            const downloadProjectCSV = () => {
+                const blob = new Blob([PROJECT_DATA.csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", "EcoFlow_Audit_Data.csv");
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            return (
+                <div className="flex h-screen bg-slate-200 font-sans text-slate-800 overflow-hidden">
+                    {/* Sidebar */}
+                    <aside className="w-72 bg-white border-r border-slate-300 flex flex-col shadow-lg z-20">
+                        <div className="p-6 bg-slate-800 text-white">
+                            <h1 className="text-xl font-bold flex items-center gap-2">
+                                <Icons.Zap className="fill-emerald-400 text-emerald-400" /> DataSim
+                            </h1>
+                            <p className="text-slate-400 text-[10px] mt-1 uppercase tracking-widest font-bold">Instructional Hub</p>
+                        </div>
+
+                        <nav className="flex-1 overflow-y-auto p-4 space-y-4">
+                            <div className="flex bg-slate-100 p-1 rounded-lg mb-6">
+                                <button 
+                                    onClick={() => setViewMode('practice')}
+                                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'practice' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}
+                                >
+                                    Practice
+                                </button>
+                                <button 
+                                    onClick={() => setViewMode('project')}
+                                    className={`flex-1 py-1.5 text-xs font-bold rounded-md transition-all ${viewMode === 'project' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'}`}
+                                >
+                                    Project
+                                </button>
+                            </div>
+
+                            {viewMode === 'practice' ? (
+                                SCENARIOS.map((sc, idx) => (
+                                    <div key={sc.id}>
+                                        <div className="flex items-center gap-2 px-2 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+                                            {sc.icon} {sc.title}
+                                        </div>
+                                        <div className="space-y-1">
+                                            {sc.functions.map(f => (
+                                                <button
+                                                    key={f}
+                                                    onClick={() => { setActiveScenario(idx); setSelectedFunc(f); }}
+                                                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-all flex items-center justify-between group ${
+                                                        activeScenario === idx && selectedFunc === f
+                                                            ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm'
+                                                            : 'text-slate-600 hover:bg-slate-50'
+                                                    }`}
+                                                >
+                                                    <span className="truncate">{f}</span>
+                                                    <Icons.ChevronRight />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="px-2 mb-2 text-[10px] font-black text-slate-400 uppercase tracking-tighter flex items-center gap-2 text-amber-600">
+                                        <Icons.ClipboardList /> Eco-Flow Audit
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="px-3 py-2 text-xs text-slate-500 leading-relaxed bg-slate-50 rounded-md border border-slate-100">
+                                            Use the raw dataset to complete the 4 phases of the audit.
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </nav>
+                    </aside>
+
+                    {/* Main Content Area */}
+                    <main className="flex-1 flex flex-col min-w-0 bg-slate-50">
+                        {viewMode === 'practice' ? (
+                            <>
+                                <header className="bg-white border-b border-slate-300 p-4 shadow-sm z-10">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <div>
+                                            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mb-0.5">
+                                                Practice Mode <Icons.ChevronRight /> {selectedFunc}
+                                            </div>
+                                            <h2 className="text-xl font-bold text-slate-800">{selectedFunc} Practice</h2>
+                                        </div>
+                                        
+                                        <div className="flex gap-2">
+                                            <button onClick={() => setShowFormulas(!showFormulas)} className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all shadow-sm ${showFormulas ? 'bg-emerald-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+                                                {showFormulas ? <Icons.Code /> : <Icons.Eye />}
+                                                {showFormulas ? 'Values' : 'Formulas'}
+                                            </button>
+                                            <button onClick={() => { setGridData(scenario.initialData); setAnimationStep(0); setQueryResult(null); }} className="p-2 bg-slate-100 text-slate-600 rounded-full hover:bg-slate-200 shadow-sm">
+                                                <Icons.RotateCcw />
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative flex items-center">
+                                        <span className="absolute left-3 text-emerald-600 font-black italic text-sm select-none">fx</span>
+                                        <input type="text" readOnly value={formulaBar} placeholder="Practice the function to see the logic..." className="w-full bg-slate-50 border border-slate-300 rounded-md py-2.5 pl-10 pr-24 font-mono text-sm focus:outline-none" />
+                                        <button onClick={runSimulation} disabled={animationStep > 0 && animationStep < 3} className={`absolute right-1 top-1 bottom-1 px-5 rounded font-bold text-xs uppercase tracking-widest flex items-center gap-2 transition-all ${animationStep > 0 && animationStep < 3 ? 'bg-slate-200 text-slate-400' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md active:scale-95'}`}>
+                                            <Icons.Play /> Run
+                                        </button>
+                                    </div>
+                                </header>
+
+                                <section className="flex-1 p-6 overflow-auto">
+                                    <div className="flex flex-col gap-6">
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm flex gap-4 max-w-4xl">
+                                            <div className="p-2 bg-blue-100 rounded-lg h-fit text-blue-600"><Icons.Info /></div>
+                                            <div className="text-sm text-blue-900 leading-relaxed">{scenario.explanation(selectedFunc)}</div>
+                                        </div>
+
+                                        <div className="flex gap-8 items-start">
+                                            <div className="bg-white border border-slate-300 rounded-md shadow-xl overflow-hidden min-w-[600px] flex-1">
+                                                <div className="bg-slate-50 border-b border-slate-300 px-4 py-1.5 flex justify-between items-center text-[10px] font-black text-emerald-600 uppercase tracking-widest">Simulation Worksheet</div>
+                                                <div className="grid grid-cols-[40px_1fr_1fr_1fr_0.5fr]">
+                                                    <div className="bg-slate-100 border-r border-b border-slate-300"></div>
+                                                    {['A', 'B', 'C', 'D'].map(l => (
+                                                        <div key={l} className="bg-slate-100 border-r border-b border-slate-300 text-center py-1 text-[11px] font-bold text-slate-500 uppercase">{l}</div>
+                                                    ))}
+                                                    {gridData.map((row, rIdx) => (
+                                                        <React.Fragment key={rIdx}>
+                                                            <div className="bg-slate-100 border-r border-b border-slate-300 text-center py-2 text-[10px] font-bold text-slate-400">{rIdx + 1}</div>
+                                                            {row.map((cell, cIdx) => (
+                                                                <div key={cIdx} className={getCellClasses(rIdx, cIdx)}>{showFormulas && formulas[`${rIdx}-${cIdx}`] ? formulas[`${rIdx}-${cIdx}`] : cell}</div>
+                                                            ))}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            <div className="w-80 space-y-4">
+                                                {scenario.lookupTable && (
+                                                    <div className="bg-white border border-slate-300 rounded-md shadow-lg overflow-hidden">
+                                                        <div className="bg-purple-600 text-white px-4 py-2 text-xs font-bold flex items-center gap-2"><Icons.Search /> Ref Table</div>
+                                                        <table className="w-full text-[11px]">
+                                                            <thead><tr className="bg-slate-50 border-b border-slate-200">{scenario.lookupTable[0].map((h, i) => <th key={i} className="px-2 py-1 text-left text-slate-500 font-black">{h}</th>)}</tr></thead>
+                                                            <tbody>{scenario.lookupTable.slice(1).map((r, ri) => (<tr key={ri} className="border-b border-slate-100">{r.map((c, ci) => <td key={ci} className="px-2 py-1.5 text-slate-600">{c}</td>)}</tr>))}</tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                                {queryResult && animationStep === 3 && (
+                                                    <div className="bg-white border-2 border-emerald-500 rounded-md shadow-2xl overflow-hidden animate-in">
+                                                        <div className="bg-emerald-600 text-white px-4 py-2 text-xs font-bold">Results Console</div>
+                                                        <div className="p-4 text-xs font-medium text-slate-700">
+                                                            {queryResult.desc}
+                                                            <table className="w-full mt-2">
+                                                                <thead><tr className="text-left text-slate-400 border-b">{queryResult.headers.map((h, i) => <th key={i} className="pb-1">{h}</th>)}</tr></thead>
+                                                                <tbody>{queryResult.rows.map((row, i) => (<tr key={i} className="border-b border-slate-50 last:border-0">{row.map((c, ci) => <td key={ci} className="py-2 font-bold text-emerald-700">{c}</td>)}</tr>))}</tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+                            </>
+                        ) : (
+                            <section className="flex-1 p-8 overflow-auto bg-slate-50">
+                                <div className="max-w-4xl mx-auto space-y-8 animate-in">
+                                    <div className="flex items-center justify-between border-b pb-6 border-slate-200">
+                                        <div>
+                                            <h2 className="text-3xl font-black text-slate-800 uppercase tracking-tight">{PROJECT_DATA.title}</h2>
+                                            <p className="text-slate-500 mt-1 font-medium flex items-center gap-2">
+                                                <Icons.TrendingUp /> Advanced Case Study & Extension
+                                            </p>
+                                        </div>
+                                        <div className="p-3 bg-amber-100 rounded-xl text-amber-600 border border-amber-200">
+                                            <Icons.Award size={32} />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                        <div className="lg:col-span-2 space-y-6">
+                                            {PROJECT_DATA.phases.map((phase, idx) => (
+                                                <div key={idx} className={`bg-white p-6 rounded-2xl shadow-sm border ${idx === 3 ? 'border-emerald-300 ring-4 ring-emerald-50' : 'border-slate-200'}`}>
+                                                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
+                                                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] ${idx === 3 ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-white'}`}>
+                                                            {idx === 0 ? 'I' : idx === 1 ? 'II' : idx === 2 ? 'III' : 'IV'}
+                                                        </span>
+                                                        {phase.title}
+                                                        {idx === 3 && <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full uppercase ml-2 font-bold">Extension Task</span>}
+                                                    </h3>
+                                                    <ul className="space-y-3">
+                                                        {phase.tasks.map((task, tidx) => (
+                                                            <li key={tidx} className="flex items-start gap-3 text-sm text-slate-600">
+                                                                <Icons.CheckCircle2 className={`mt-0.5 shrink-0 ${idx === 3 ? 'text-emerald-600' : 'text-slate-400'}`} />
+                                                                {task}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="space-y-6">
+                                            <div className="bg-slate-800 text-white p-6 rounded-2xl shadow-xl border border-slate-700">
+                                                <h4 className="font-bold mb-4 flex items-center gap-2 text-sm uppercase tracking-widest">
+                                                    <Icons.Database className="text-emerald-400" /> Expanded Dataset
+                                                </h4>
+                                                <p className="text-[10px] text-slate-400 mb-4 leading-relaxed italic">
+                                                    This set includes 25 rows with missing entries designed to test your resilience.
+                                                </p>
+                                                <div className="bg-slate-900 rounded-lg p-3 font-mono text-[9px] text-emerald-500 overflow-x-auto max-h-64 mb-4 select-all">
+                                                    {PROJECT_DATA.csv}
+                                                </div>
+                                                
+                                                <div className="flex flex-col gap-2">
+                                                    <button 
+                                                        onClick={downloadProjectCSV}
+                                                        className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-lg font-bold text-xs hover:bg-emerald-500 transition-all shadow-lg active:scale-95"
+                                                    >
+                                                        <Icons.Download /> Download CSV File
+                                                    </button>
+                                                    <button 
+                                                        onClick={copyProjectCSV}
+                                                        className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white py-2.5 rounded-lg font-bold text-xs hover:bg-slate-600 transition-all shadow-lg active:scale-95"
+                                                    >
+                                                        <Icons.Copy /> Copy to Clipboard
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-amber-50 border border-amber-200 p-6 rounded-2xl shadow-sm">
+                                                <h4 className="font-bold text-amber-800 mb-3 text-sm flex items-center gap-2">
+                                                    <Icons.AlertCircle /> Submission Tip
+                                                </h4>
+                                                <p className="text-xs text-amber-700 leading-relaxed">
+                                                    For <strong>Phase 4</strong>, use nested logic. Example: <code>{"=IF(AND(A1>X, B1<Y), \"High\", \"Low\")"}</code>. Note: ensure your Region column is cleaned before merging.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        )}
+                        
+                        {/* Status Bar */}
+                        <footer className="bg-white border-t border-slate-300 py-2 px-6 flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <div className="flex items-center gap-4">
+                                <span className="flex items-center gap-1 text-emerald-500"><Icons.CheckCircle2 /> Live System</span>
+                                <span className="opacity-50">|</span>
+                                <span>View: {viewMode.toUpperCase()}</span>
+                            </div>
+                            <div>{viewMode === 'practice' ? "Skill practice active" : "Eco-Flow Independent Audit active"}</div>
+                        </footer>
+                    </main>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
