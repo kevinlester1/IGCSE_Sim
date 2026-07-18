@@ -3,14 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My GitHub Projects</title>
+    <title>Course File Explorer</title>
     <style>
-        /* Base styles for a clean, modern look */
+        :root {
+            --bg-1: #f7f8fc;
+            --bg-2: #eef2f9;
+            --text: #1a2333;
+            --muted: #5e6f88;
+            --panel: #ffffff;
+            --accent: #0064d8;
+            --accent-soft: #dfeeff;
+            --line: #d8e2f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f4f7f6;
             margin: 0;
             font-family: "Segoe UI", Tahoma, sans-serif;
             color: var(--text);
@@ -18,13 +28,74 @@
             min-height: 100vh;
         }
 
-        /* Header styling */
+        .shell {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 32px 18px 40px;
+        }
+
         header {
-            background-color: #24292e; /* GitHub dark color */
-            color: white;
-            text-align: center;
-            padding: 2rem 1rem;
-            margin-bottom: 2rem;
+            background: linear-gradient(135deg, #143f7d, #0064d8);
+            color: #fff;
+            border-radius: 16px;
+            padding: 28px 24px;
+            box-shadow: 0 10px 35px rgba(0, 60, 150, 0.22);
+        }
+
+        h1 {
+            margin: 0 0 8px;
+            font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+        }
+
+        .subtitle {
+            margin: 0;
+            opacity: 0.95;
+        }
+
+        .selector {
+            margin-top: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .course-btn {
+            border: 1px solid rgba(255, 255, 255, 0.45);
+            color: #fff;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 999px;
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .course-btn:hover,
+        .course-btn:focus-visible {
+            background: rgba(255, 255, 255, 0.2);
+            outline: none;
+        }
+
+        .course-btn.active {
+            background: #fff;
+            color: #0f3a78;
+            border-color: #fff;
+            font-weight: 600;
+        }
+
+        .content {
+            margin-top: 22px;
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(29, 40, 69, 0.06);
+            overflow: hidden;
         }
 
         .panel-head {
@@ -39,113 +110,371 @@
 
         .folder-list {
             margin: 0;
-            font-size: 2.5rem;
+            padding: 6px;
+            list-style: none;
+            max-height: 520px;
+            overflow: auto;
         }
 
-        header p {
-            margin: 0.5rem 0 0;
-            opacity: 0.8;
+        .folder-list button {
+            width: 100%;
+            text-align: left;
+            border: none;
+            background: transparent;
+            border-radius: 10px;
+            padding: 10px 12px;
+            cursor: pointer;
+            color: var(--text);
+            font-size: 0.93rem;
         }
 
-        /* Grid layout for the links */
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 20px;
+        .folder-list button:hover,
+        .folder-list button:focus-visible {
+            background: #edf4ff;
+            outline: none;
+        }
+
+        .folder-list button.active {
+            background: var(--accent-soft);
+            color: #063f88;
+            font-weight: 600;
+        }
+
+        .file-wrap {
+            padding: 8px 10px 12px;
+            max-height: 520px;
+            overflow: auto;
+        }
+
+        .file-item {
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #fff;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
+            gap: 10px;
         }
 
-        /* Individual project cards */
-        .card {
-            background: white;
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            border: 1px solid #e1e4e8;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
-            border-color: #0366d6;
-        }
-
-        .card h2 {
-            margin: 0 0 10px 0;
-            color: #0366d6; /* GitHub link blue */
-            font-size: 1.25rem;
-        }
-
-        .card p {
+        .file-name {
             margin: 0;
-            color: #586069;
             font-size: 0.95rem;
+            word-break: break-word;
+        }
+
+        .file-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .action {
+            border-radius: 8px;
+            padding: 8px 11px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+        }
+
+        .view-link {
+            color: #08489f;
+            background: #eef5ff;
+            border-color: #d7e7ff;
+        }
+
+        .download-link {
+            color: #065734;
+            background: #e9fff4;
+            border-color: #c9f0dc;
+        }
+
+        .meta {
+            margin: 0 0 12px;
+            color: var(--muted);
+            font-size: 0.92rem;
+        }
+
+        .empty-note {
+            padding: 16px;
+            margin: 10px;
+            border-radius: 10px;
+            background: #f8fbff;
+            color: var(--muted);
+            border: 1px dashed #cddaf0;
+            font-size: 0.93rem;
         }
 
         footer {
             margin-top: 16px;
             text-align: center;
-            margin-top: 3rem;
-            padding: 1rem;
-            color: #6a737d;
-            font-size: 0.9rem;
+            color: var(--muted);
+            font-size: 0.86rem;
         }
 
-        @media (min-width: 760px) {
-            .menu-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+        @media (max-width: 860px) {
+            .content {
+                grid-template-columns: 1fr;
             }
 
-            .actions,
-            .hint,
-            .list-panel {
-                grid-column: 1 / -1;
+            .folder-list,
+            .file-wrap {
+                max-height: none;
             }
         }
     </style>
 </head>
 <body>
+    <div class="shell">
+        <header>
+            <h1>Course File Explorer</h1>
+            <p class="subtitle">Choose a course, open a subfolder, then view or download any file.</p>
+            <div class="selector" id="courseSelector" aria-label="Course selector"></div>
+        </header>
 
-    <header>
-        <h1>My Projects Directory</h1>
-        <p>A collection of HTML pages hosted on GitHub</p>
-    </header>
+        <section class="content">
+            <aside class="panel">
+                <h2 class="panel-head">Subfolders</h2>
+                <ul class="folder-list" id="folderList"></ul>
+            </aside>
 
-    <div class="container">
-        <!-- Project Link 1 -->
-        <a href="1.1 Binary conversions.html" class="card">
-<<<<<<< HEAD
-            <h2>Binary Conversions</h2>
-=======
-            <h2>test One</h2>
->>>>>>> 6bc07b1760c52f5664cfcbedc0932333921a6a06
-            <p>Description of what this first HTML page is about. Click to view.</p>
-        </a>
+            <section class="panel">
+                <h2 class="panel-head">Files</h2>
+                <div class="file-wrap">
+                    <p class="meta" id="currentPath"></p>
+                    <div id="fileList"></div>
+                </div>
+            </section>
+        </section>
 
-        <!-- Project Link 2 -->
-        <a href="folder2/project2.html" class="card">
-            <h2>Project Two</h2>
-            <p>This links to an HTML file inside a subfolder.</p>
-        </a>
-
-        <!-- Project Link 3 -->
-        <a href="about.html" class="card">
-            <h2>About Me</h2>
-            <p>A simple about page explaining who I am.</p>
-        </a>
-        
-        <!-- Add more cards by copying the <a> block above -->
+        <footer>
+            Files must exist at the listed paths for download links to work.
+        </footer>
     </div>
 
-    <footer>
-        <p>Hosted with ♥ on GitHub Pages</p>
-    </footer>
+    <script>
+        const catalog = {
+            "Data Science": {
+                "Data Science": [
+                    "algorithms.html",
+                    "algos poster.html",
+                    "cospaces chllanges.html",
+                    "Data storyTelling.html",
+                    "data visualisation.html",
+                    "Data visualtisation Lesson 1.html",
+                    "Data visualtisation Lesson 1.txt",
+                    "Database normalisation.html",
+                    "database.html",
+                    "Decision Trees.html",
+                    "flowchrts.html",
+                    "ib poster.html",
+                    "IGCSE Computer Science poster.html",
+                    "normalisation.html",
+                    "pandas.html",
+                    "regression.html",
+                    "reinforced.html",
+                    "Sheets.html",
+                    "Sql intro.html"
+                ]
+            },
+            GCSE: {
+                "Unit 1": [
+                    "1.1 Binary conversions.html",
+                    "1.1 Binary Shifts.html",
+                    "1.2 Image_size.html",
+                    "1.2 RLE and Compression.html",
+                    "1.2 Sounds.html",
+                    "2s Compliment.html"
+                ],
+                "Unit 2": [
+                    "2.1 Data packets.html",
+                    "2.2 Data Transmission.html",
+                    "2.2 Error Detection.html",
+                    "2.3 Encription.html"
+                ],
+                "Unit 3": [
+                    "3 Assessment_task.html",
+                    "3.1 CPU architecture.html"
+                ],
+                "Unit 4": [],
+                "Unit 5": [
+                    "gap analysis how the internet works.html",
+                    "how the internet works.html",
+                    "Parts , Purposes and complexity Computer archecture .html"
+                ],
+                "Unit 6": [
+                    "autonomous_systems_simulator.html"
+                ],
+                "Unit 7": [],
+                "Unit 8": [
+                    "8 Common algos using arrays.html",
+                    "8 Common algos.html",
+                    "8 File handling.html",
+                    "8 Trace tables.html",
+                    "8. Bubbles Sort.html",
+                    "8. Computational Thinking.html",
+                    "8. Maintainable.html",
+                    "8. Test data.html",
+                    "8. Validation.html"
+                ],
+                "Unit 9": [
+                    "SQL queriers GCSE .html"
+                ],
+                "Unit 10": [
+                    "logic Gates.html"
+                ]
+            },
+            IB: {
+                IB: [
+                    "CNN.html",
+                    "command terms.html",
+                    "IB Notes.html",
+                    "knapsack.html",
+                    "machine learning everyone wants to be a millionaire.html"
+                ],
+                A1: [
+                    "A.1 Computer Fundamentals.html",
+                    "A1 Computer fundamentals .html",
+                    "A1.2 content.html",
+                    "A1.2 Logic gates.html",
+                    "A1.2 Quiz.html",
+                    "karnaugh Maps.html"
+                ],
+                A2: [],
+                A3: [
+                    "A3 Knowledge map.html"
+                ],
+                A4: [],
+                B1: [
+                    "perceptron.html"
+                ],
+                B2: [],
+                B3: [],
+                B4: []
+            },
+            MYP: {
+                MYP: [
+                    "biting monkeys.html",
+                    "Cospaces Challenges.html",
+                    "machine Learning Training and testing.html"
+                ]
+            }
+        };
 
+        const courseSelector = document.getElementById("courseSelector");
+        const folderList = document.getElementById("folderList");
+        const fileList = document.getElementById("fileList");
+        const currentPath = document.getElementById("currentPath");
+
+        let currentCourse = "Data Science";
+        let currentFolder = "Data Science";
+
+        function buildPath(course, folder, fileName) {
+            const rootFolders = {
+                "Data Science": "Data Science",
+                IB: "IB",
+                MYP: "MYP"
+            };
+
+            if (rootFolders[course] === folder) {
+                return course + "/" + fileName;
+            }
+
+            return course + "/" + folder + "/" + fileName;
+        }
+
+        function renderCourses() {
+            courseSelector.innerHTML = "";
+
+            Object.keys(catalog).forEach((course) => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "course-btn" + (course === currentCourse ? " active" : "");
+                button.textContent = course;
+
+                button.addEventListener("click", () => {
+                    currentCourse = course;
+                    currentFolder = Object.keys(catalog[currentCourse])[0];
+                    renderCourses();
+                    renderFolders();
+                    renderFiles();
+                });
+
+                courseSelector.appendChild(button);
+            });
+        }
+
+        function renderFolders() {
+            folderList.innerHTML = "";
+            const folders = Object.keys(catalog[currentCourse]);
+
+            folders.forEach((folder) => {
+                const item = document.createElement("li");
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = folder === currentFolder ? "active" : "";
+                button.textContent = folder + " (" + catalog[currentCourse][folder].length + ")";
+
+                button.addEventListener("click", () => {
+                    currentFolder = folder;
+                    renderFolders();
+                    renderFiles();
+                });
+
+                item.appendChild(button);
+                folderList.appendChild(item);
+            });
+        }
+
+        function renderFiles() {
+            fileList.innerHTML = "";
+            const files = catalog[currentCourse][currentFolder];
+            currentPath.textContent = "Current folder: " + currentCourse + "/" + currentFolder;
+
+            if (files.length === 0) {
+                const empty = document.createElement("div");
+                empty.className = "empty-note";
+                empty.textContent = "No files listed in this folder yet.";
+                fileList.appendChild(empty);
+                return;
+            }
+
+            files.forEach((fileName) => {
+                const path = buildPath(currentCourse, currentFolder, fileName);
+
+                const card = document.createElement("article");
+                card.className = "file-item";
+
+                const name = document.createElement("h3");
+                name.className = "file-name";
+                name.textContent = fileName;
+
+                const actions = document.createElement("div");
+                actions.className = "file-actions";
+
+                const openLink = document.createElement("a");
+                openLink.className = "action view-link";
+                openLink.href = encodeURI(path);
+                openLink.target = "_blank";
+                openLink.rel = "noopener noreferrer";
+                openLink.textContent = "Open";
+
+                const downloadLink = document.createElement("a");
+                downloadLink.className = "action download-link";
+                downloadLink.href = encodeURI(path);
+                downloadLink.download = fileName;
+                downloadLink.textContent = "Download";
+
+                actions.appendChild(openLink);
+                actions.appendChild(downloadLink);
+                card.appendChild(name);
+                card.appendChild(actions);
+                fileList.appendChild(card);
+            });
+        }
+
+        renderCourses();
+        renderFolders();
+        renderFiles();
+    </script>
 </body>
 </html>
