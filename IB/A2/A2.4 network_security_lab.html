@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetArch Lab: Network Security</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect ratio */
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+            color: #64748b; /* slate-500 */
+        }
+        .tab-btn:hover { color: #0284c7; } /* sky-600 */
+        .tab-btn.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0284c7; 
+            background-color: #f0f9ff; /* sky-50 */
+        }
+
+        /* Quiz answer styling */
+        .answer-btn {
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #334155; 
+            border: 1px solid #cbd5e1; 
+        }
+        .answer-btn:hover:not(:disabled) {
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .answer-btn.correct {
+            background-color: #d1fae5; /* emerald-100 */
+            color: #065f46; 
+            border-color: #10b981; 
+        }
+        .answer-btn.incorrect {
+            background-color: #ffe4e6; /* rose-100 */
+            color: #9f1239; 
+            border-color: #f43f5e; 
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .control-btn {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { 
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .control-btn.active { 
+            background-color: #0284c7; 
+            border-color: #0369a1; 
+            color: white; 
+        }
+
+        .pulse-text {
+            animation: pulse-op 2s infinite;
+        }
+        @keyframes pulse-op {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #10b981;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #10b981;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center h-auto md:h-16 py-3 md:py-0">
+                <div class="flex items-center mb-3 md:mb-0">
+                    <i class="fa-solid fa-shield-halved text-sky-500 text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-indigo-600 tracking-tight">Network Security</h1>
+                </div>
+                <nav class="flex space-x-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+                    <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="firewall">
+                        <i class="fa-solid fa-brick mr-2"></i>Firewalls & NAT
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="vuln">
+                        <i class="fa-solid fa-bug mr-2"></i>Vulnerabilities (HL)
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="counter">
+                        <i class="fa-solid fa-shield-virus mr-2"></i>Countermeasures (HL)
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="crypto">
+                        <i class="fa-solid fa-key mr-2"></i>Encryption
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- SECTION 1: Firewalls & NAT -->
+        <div id="firewall-view" class="view-section grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.4.1 Firewalls & NAT</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                        <strong>Firewalls</strong> inspect incoming and outgoing traffic based on predetermined rules. They act as a barrier between a trusted network (LAN) and an untrusted one (Internet).
+                    </p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-slate-50 p-3 rounded border-l-4 border-slate-400">
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">Rule Types</h4>
+                            <p class="text-xs text-slate-600 mb-1"><strong>Whitelist:</strong> Default DENY. Only specifically approved traffic is allowed.</p>
+                            <p class="text-xs text-slate-600"><strong>Blacklist:</strong> Default ALLOW. Specific known threats are blocked.</p>
+                        </div>
+                        <div class="bg-sky-50 p-3 rounded border-l-4 border-sky-500">
+                            <h4 class="font-bold text-sky-800 text-sm mb-1">NAT as Security</h4>
+                            <p class="text-xs text-sky-900/80">Network Address Translation hides internal Private IP addresses from the public Internet, meaning outside attackers cannot directly address internal devices.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Configure Firewall</h3>
+                        <div class="flex space-x-2 mb-3">
+                            <button id="btn-fw-allow" class="flex-1 control-btn active py-1 text-sm rounded">Default Allow</button>
+                            <button id="btn-fw-deny" class="flex-1 control-btn py-1 text-sm rounded">Default Deny</button>
+                        </div>
+                        <div class="text-xs text-slate-500 mb-2">Rule: Block Malicious IP (198.51.100.x)</div>
+                        <button id="btn-fw-toggle-rule" class="w-full bg-rose-500 hover:bg-rose-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm mb-2">
+                            Enable Blacklist Rule
+                        </button>
+                        <button id="btn-fw-send" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-cloud-arrow-down mr-1"></i> Generate Traffic
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative">
+                    <div class="absolute top-4 left-4 z-10 bg-white/90 p-2 rounded shadow text-xs border border-slate-200 font-mono">
+                        <div class="font-bold text-slate-700 border-b mb-1">Firewall Log</div>
+                        <div id="fw-log" class="h-16 overflow-y-auto space-y-1">
+                            <div class="text-slate-400">Waiting for traffic...</div>
+                        </div>
+                    </div>
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="firewall-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="firewall-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Vulnerabilities (HL) -->
+        <div id="vuln-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.4.2 Vulnerabilities (HL)</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Understanding how attackers exploit network infrastructure and software weaknesses.</p>
+                    
+                    <div class="space-y-2 mb-6">
+                        <button id="btn-vuln-ddos" class="control-btn active px-3 py-2 rounded text-left w-full text-sm flex items-center justify-between">
+                            <span><i class="fa-solid fa-server text-rose-500 w-6"></i> DDoS</span>
+                            <span class="text-[10px] bg-slate-100 px-1 rounded">Availability</span>
+                        </button>
+                        <button id="btn-vuln-mitm" class="control-btn px-3 py-2 rounded text-left w-full text-sm flex items-center justify-between">
+                            <span><i class="fa-solid fa-user-ninja text-fuchsia-500 w-6"></i> Man-in-the-Middle</span>
+                            <span class="text-[10px] bg-slate-100 px-1 rounded">Confidentiality</span>
+                        </button>
+                    </div>
+
+                    <div id="vuln-info" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700">
+                        <!-- Content injected via JS -->
+                    </div>
+                    
+                    <div class="mt-4">
+                        <button id="btn-vuln-start" class="w-full bg-rose-500 hover:bg-rose-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-play mr-1"></i> Simulate Attack
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="vuln-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="vuln-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Countermeasures (HL) -->
+        <div id="counter-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.4.3 Countermeasures (HL)</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Defensive mechanisms used to protect networks from vulnerabilities and active threats.</p>
+                    
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">VPN (Virtual Private Network)</h4>
+                                <p class="text-[10px] text-slate-500">Encrypts traffic tunnel, preventing MitM eavesdropping.</p>
+                            </div>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="toggle-vpn" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="toggle-vpn" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between border-t pt-3 border-slate-200">
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">IPS (Intrusion Prevention)</h4>
+                                <p class="text-[10px] text-slate-500">Actively drops malicious packets (e.g., malware, DDoS).</p>
+                            </div>
+                            <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                                <input type="checkbox" name="toggle" id="toggle-ips" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                                <label for="toggle-ips" class="toggle-label block overflow-hidden h-5 rounded-full bg-slate-300 cursor-pointer"></label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <button id="btn-counter-send" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> Send Traffic (Mixed)
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative">
+                     <div class="absolute top-4 right-4 z-10 bg-white/90 p-2 rounded shadow text-xs border border-slate-200 font-mono text-right">
+                        <div class="font-bold text-slate-700 border-b mb-1">Server Status</div>
+                        <div id="counter-status" class="text-emerald-600 font-bold">Secure</div>
+                    </div>
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="counter-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="counter-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Encryption & Certificates -->
+        <div id="crypto-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.4.4 Encryption & Certs</h2>
+                    
+                    <div class="flex space-x-2 mb-4">
+                        <button id="btn-crypto-sym" class="flex-1 control-btn active py-1 text-sm rounded">Symmetric</button>
+                        <button id="btn-crypto-asym" class="flex-1 control-btn py-1 text-sm rounded">Asymmetric</button>
+                    </div>
+
+                    <div id="crypto-info" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 mb-4 h-32 overflow-y-auto">
+                        <!-- Injected by JS -->
+                    </div>
+
+                    <div class="bg-indigo-50 border border-indigo-100 p-3 rounded mb-4">
+                        <div id="crypto-step-text" class="text-sm font-semibold text-indigo-800 text-center">Status: Idle. Click 'Start Process' to begin.</div>
+                    </div>
+
+                    <div class="flex space-x-2 mb-2">
+                        <button id="btn-crypto-reset" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-3 rounded text-sm transition-colors font-semibold border border-slate-300 shadow-sm">
+                            <i class="fa-solid fa-rotate-right mr-1"></i> Reset
+                        </button>
+                        <button id="btn-crypto-next" class="w-2/3 bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            Start Process <i class="fa-solid fa-play ml-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="crypto-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="crypto-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Core UI & Navigation ---
+        const views = document.querySelectorAll('.view-section');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        let currentTab = 'firewall';
+        let animFrameId = null;
+
+        function resizeCanvases() {
+            const containers = document.querySelectorAll('.canvas-container');
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach((canvas, index) => {
+                const rect = containers[index].getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                if (target === currentTab) return;
+
+                tabBtns.forEach(b => b.classList.remove('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10'));
+                btn.classList.add('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10');
+
+                views.forEach(v => v.classList.add('hidden'));
+                document.getElementById(`${target}-view`).classList.remove('hidden');
+                
+                currentTab = target;
+                resizeCanvases();
+                
+                // Re-initialize specific simulations
+                if (target === 'firewall') FirewallSim.init();
+                if (target === 'vuln') VulnSim.init(VulnSim.currentMode);
+                if (target === 'counter') CounterSim.init();
+                if (target === 'crypto') CryptoSim.init(CryptoSim.currentMode);
+            });
+        });
+
+        const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+        // --- Mastery Exercises Engine ---
+        const quizData = {
+            firewall: [
+                {
+                    q: "A network administrator configures a firewall to block all traffic by default, and only specifically allows traffic on port 80 and 443. What type of filtering methodology is this?",
+                    options: ["Blacklisting", "Whitelisting", "NAT Routing", "Stateful Injection"],
+                    answer: 1,
+                    explanation: "Whitelisting explicitly defines what is allowed and defaults to denying everything else (Default Deny). It is generally more secure than blacklisting (which allows everything by default except known bad items)."
+                },
+                {
+                    q: "How does Network Address Translation (NAT) enhance network security?",
+                    options: ["It encrypts all data leaving the router.", "It acts as an Intrusion Prevention System to drop malware.", "It hides internal private IP addresses from the public internet.", "It issues digital certificates for secure web browsing."],
+                    answer: 2,
+                    explanation: "NAT translates multiple private IP addresses to a single public IP. Because private IPs are not routable on the internet, outside attackers cannot directly initiate a connection to an internal device, creating a natural barrier."
+                }
+            ],
+            vuln: [
+                {
+                    q: "(HL) In a Man-in-the-Middle (MitM) attack, the attacker intercepts communication between two parties. Which fundamental security concept is primarily compromised if the traffic is unencrypted?",
+                    options: ["Availability", "Confidentiality", "Non-repudiation", "Scalability"],
+                    answer: 1,
+                    explanation: "Confidentiality ensures that data is kept secret from unauthorized parties. If an attacker intercepts unencrypted traffic (MitM), they can read the contents, breaking confidentiality."
+                },
+                {
+                    q: "(HL) Which vulnerability involves an attacker exploiting a software flaw that the software creator is unaware of and has not yet patched?",
+                    options: ["Zero-day exploit", "SQL injection", "Phishing attack", "Cross-site scripting (XSS)"],
+                    answer: 0,
+                    explanation: "A zero-day exploit takes advantage of a vulnerability on 'day zero'—meaning the developer has had zero days to create and distribute a patch for it, making it highly dangerous."
+                }
+            ],
+            counter: [
+                {
+                    q: "(HL) What is the primary difference between an Intrusion Detection System (IDS) and an Intrusion Prevention System (IPS)?",
+                    options: ["An IDS encrypts traffic; an IPS decrypts it.", "An IDS requires a VPN; an IPS does not.", "An IDS monitors and alerts on threats; an IPS actively blocks or drops the malicious traffic.", "An IDS is hardware-based; an IPS is software-based."],
+                    answer: 2,
+                    explanation: "IDS (Detection) is passive; it analyzes traffic and logs/alerts administrators if it sees a threat. IPS (Prevention) is active; it sits inline with traffic and will automatically drop packets that match known threat signatures."
+                },
+                {
+                    q: "(HL) To ensure that wireless network access is restricted only to company-owned laptops, which countermeasure is most appropriate?",
+                    options: ["MAC Address Filtering (Whitelisting)", "Deploying a Honeypot", "Updating Antivirus Software", "Implementing SQL Input Validation"],
+                    answer: 0,
+                    explanation: "A Media Access Control (MAC) address is a unique identifier assigned to a network interface controller. By whitelisting specific MAC addresses on the router/WAP, you can restrict access to known devices at the hardware level."
+                }
+            ],
+            crypto: [
+                {
+                    q: "In Asymmetric Encryption, if Alice wants to send a secure, confidential message to Bob, which key should she use to encrypt the message?",
+                    options: ["Alice's Private Key", "Alice's Public Key", "Bob's Public Key", "Bob's Private Key"],
+                    answer: 2,
+                    explanation: "To ensure only Bob can read the message, Alice must lock (encrypt) it with Bob's Public Key. Bob is the only one who possesses the matching Private Key required to unlock (decrypt) it."
+                },
+                {
+                    q: "What is the primary role of a Digital Certificate issued by a Certificate Authority (CA)?",
+                    options: ["To translate symmetric keys into asymmetric keys.", "To cryptographically bind a public key to the identity of its owner.", "To speed up the network transmission of encrypted data.", "To act as a firewall against DDoS attacks."],
+                    answer: 1,
+                    explanation: "A digital certificate acts like an electronic passport. A trusted third party (the CA) verifies the identity of an entity (like a website) and issues a certificate binding that identity to their public key, preventing impersonation (MitM)."
+                }
+            ]
+        };
+
+        function buildQuiz(topic, prefix) {
+            const container = document.getElementById(`${prefix}-quiz`);
+            container.innerHTML = ''; 
+            
+            quizData[topic].forEach((item, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
+                
+                const qTitle = document.createElement('h4');
+                qTitle.className = 'text-sm font-semibold text-slate-800 mb-3 leading-snug';
+                qTitle.innerText = `${qIndex + 1}. ${item.q}`;
+                qDiv.appendChild(qTitle);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2';
+
+                const explanationDiv = document.createElement('div');
+                explanationDiv.className = 'mt-3 text-sm hidden p-3 rounded bg-white border-l-4 border-slate-200 transition-all duration-300';
+
+                item.options.forEach((opt, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'answer-btn text-left p-3 rounded border text-sm';
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('click', function() {
+                        const allBtns = optionsGrid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.add('opacity-50', 'cursor-not-allowed');
+                        });
+                        
+                        this.classList.remove('opacity-50');
+                        if (oIndex === item.answer) {
+                            this.classList.add('correct');
+                            explanationDiv.classList.add('block', 'border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Correct!</strong> ${item.explanation}`;
+                        } else {
+                            this.classList.add('incorrect');
+                            allBtns[item.answer].classList.remove('opacity-50');
+                            allBtns[item.answer].classList.add('correct');
+                            
+                            explanationDiv.classList.add('block', 'border-rose-500', 'text-rose-700', 'bg-rose-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Incorrect.</strong> ${item.explanation}`;
+                        }
+                    });
+                    optionsGrid.appendChild(btn);
+                });
+
+                qDiv.appendChild(optionsGrid);
+                qDiv.appendChild(explanationDiv);
+                container.appendChild(qDiv);
+            });
+        }
+
+        // ==========================================
+        // 1. FIREWALL SIMULATION
+        // ==========================================
+        const FirewallSim = {
+            ctx: document.getElementById('firewall-canvas').getContext('2d'),
+            mode: 'allow', // 'allow' or 'deny'
+            ruleActive: false,
+            packets: [],
+            explosions: [],
+
+            init() {
+                this.packets = [];
+                this.explosions = [];
+                this.log("System initialized.", "slate-400");
+            },
+
+            log(msg, color="slate-700") {
+                const logEl = document.getElementById('fw-log');
+                const p = document.createElement('div');
+                p.className = `text-${color}`;
+                p.innerText = `> ${msg}`;
+                logEl.prepend(p);
+                if(logEl.children.length > 6) logEl.lastChild.remove();
+            },
+
+            sendTraffic() {
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                // Generate 3 packets (2 normal, 1 malicious)
+                this.packets.push({ x: 0, y: h*0.3, type: 'normal', ip: '192.0.2.45', speed: 2, status: 'moving' });
+                this.packets.push({ x: -40, y: h*0.5, type: 'malicious', ip: '198.51.100.99', speed: 2.2, status: 'moving' });
+                this.packets.push({ x: -80, y: h*0.7, type: 'normal', ip: '203.0.113.12', speed: 1.8, status: 'moving' });
+            },
+
+            update() {
+                const w = this.ctx.canvas.width;
+                const fwX = w * 0.5; // Firewall location
+
+                this.packets.forEach(p => {
+                    if (p.status !== 'moving') return;
+                    p.x += p.speed;
+
+                    // Hit the firewall
+                    if (Math.abs(p.x - fwX) < p.speed) {
+                        let allowed = false;
+                        
+                        if (this.mode === 'allow') {
+                            // Default Allow: Block only if rule is active AND type is malicious
+                            allowed = !(this.ruleActive && p.type === 'malicious');
+                        } else {
+                            // Default Deny: Allow only if rule is active AND type is normal (simulating whitelist)
+                            allowed = (this.ruleActive && p.type === 'normal');
+                        }
+
+                        if (allowed) {
+                            p.status = 'moving'; // passes through
+                            this.log(`Allowed IP: ${p.ip}`, 'emerald-600');
+                        } else {
+                            p.status = 'dropped';
+                            this.log(`Blocked IP: ${p.ip}`, 'rose-600');
+                            this.explosions.push({ x: p.x, y: p.y, radius: 0, alpha: 1 });
+                        }
+                    }
+                });
+
+                // Update explosions
+                this.explosions.forEach(e => {
+                    e.radius += 1;
+                    e.alpha -= 0.05;
+                });
+                this.explosions = this.explosions.filter(e => e.alpha > 0);
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw zones
+                ctx.fillStyle = '#fef2f2'; // red-50
+                ctx.fillRect(0, 0, w/2, h);
+                ctx.fillStyle = '#f0fdf4'; // green-50
+                ctx.fillRect(w/2, 0, w/2, h);
+                
+                ctx.fillStyle = '#94a3b8'; ctx.font = '12px sans-serif'; ctx.textAlign='center';
+                ctx.fillText("Untrusted (Internet)", w*0.25, 20);
+                ctx.fillText("Trusted (LAN)", w*0.75, 20);
+
+                // Draw Firewall
+                ctx.fillStyle = this.mode === 'allow' ? '#94a3b8' : '#334155'; // darker if default deny
+                ctx.fillRect(w/2 - 10, 40, 20, h-80);
+                ctx.fillStyle = '#ffffff'; ctx.font = '16px "Font Awesome 6 Free"'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                ctx.fillText('\uf132', w/2, h/2); // shield
+
+                // Draw Packets
+                this.packets.forEach(p => {
+                    if (p.status === 'dropped') return;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 8, 0, Math.PI*2);
+                    ctx.fillStyle = p.type === 'normal' ? '#3b82f6' : '#ef4444'; // blue or red
+                    ctx.fill();
+                    
+                    if(p.status === 'moving' && p.x > w) p.status = 'done'; // cleanup
+                });
+
+                // Draw Explosions
+                this.explosions.forEach(e => {
+                    ctx.beginPath();
+                    ctx.arc(e.x, e.y, e.radius, 0, Math.PI*2);
+                    ctx.strokeStyle = `rgba(239, 68, 68, ${e.alpha})`; // red
+                    ctx.lineWidth = 3;
+                    ctx.stroke();
+                });
+            }
+        };
+
+        document.getElementById('btn-fw-allow').addEventListener('click', (e) => {
+            e.target.classList.add('active');
+            document.getElementById('btn-fw-deny').classList.remove('active');
+            FirewallSim.mode = 'allow';
+            FirewallSim.log("Switched to Default ALLOW.", "sky-600");
+        });
+        document.getElementById('btn-fw-deny').addEventListener('click', (e) => {
+            e.target.classList.add('active');
+            document.getElementById('btn-fw-allow').classList.remove('active');
+            FirewallSim.mode = 'deny';
+            FirewallSim.log("Switched to Default DENY.", "sky-600");
+        });
+        const ruleBtn = document.getElementById('btn-fw-toggle-rule');
+        ruleBtn.addEventListener('click', () => {
+            FirewallSim.ruleActive = !FirewallSim.ruleActive;
+            if (FirewallSim.ruleActive) {
+                ruleBtn.classList.remove('bg-rose-500', 'hover:bg-rose-600');
+                ruleBtn.classList.add('bg-emerald-500', 'hover:bg-emerald-600');
+                ruleBtn.innerText = "Rule: ACTIVE";
+                FirewallSim.log("Rule Enforced.", "emerald-600");
+            } else {
+                ruleBtn.classList.add('bg-rose-500', 'hover:bg-rose-600');
+                ruleBtn.classList.remove('bg-emerald-500', 'hover:bg-emerald-600');
+                ruleBtn.innerText = "Enable Rule";
+                FirewallSim.log("Rule Disabled.", "slate-500");
+            }
+        });
+        document.getElementById('btn-fw-send').addEventListener('click', () => FirewallSim.sendTraffic());
+
+        // ==========================================
+        // 2. VULNERABILITIES SIMULATION
+        // ==========================================
+        const VulnSim = {
+            ctx: document.getElementById('vuln-canvas').getContext('2d'),
+            currentMode: 'ddos',
+            active: false,
+            particles: [],
+            serverHealth: 100,
+
+            init(mode) {
+                this.currentMode = mode;
+                this.active = false;
+                this.particles = [];
+                this.serverHealth = 100;
+                this.updateInfo();
+            },
+
+            updateInfo() {
+                const infoBox = document.getElementById('vuln-info');
+                if (this.currentMode === 'ddos') {
+                    infoBox.innerHTML = `<strong>DDoS (Distributed Denial of Service):</strong> Multiple compromised systems attack a single target, overwhelming its resources (CPU/Bandwidth) so legitimate users cannot access it.`;
+                } else {
+                    infoBox.innerHTML = `<strong>Man-in-the-Middle (MitM):</strong> An attacker secretly intercepts and alters communications between two parties who believe they are directly communicating with each other.`;
+                }
+            },
+
+            start() {
+                this.active = true;
+                this.serverHealth = 100;
+                this.particles = [];
+                if (this.currentMode === 'ddos') {
+                    // Spawn many particles from edges
+                    for(let i=0; i<50; i++) {
+                        this.spawnDDoSParticle();
+                    }
+                } else {
+                    // Spawn single data stream
+                    this.particles.push({ x: 40, y: this.ctx.canvas.height/2, progress: 0, state: 'normal' });
+                }
+            },
+
+            spawnDDoSParticle() {
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                const angle = Math.random() * Math.PI * 2;
+                const dist = w/2 + Math.random() * 100;
+                this.particles.push({
+                    x: w/2 + Math.cos(angle) * dist,
+                    y: h/2 + Math.sin(angle) * dist,
+                    speed: 1 + Math.random() * 2,
+                    active: true
+                });
+            },
+
+            update() {
+                if (!this.active) return;
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                const cx = w/2;
+                const cy = h/2;
+
+                if (this.currentMode === 'ddos') {
+                    this.particles.forEach(p => {
+                        if(!p.active) return;
+                        // Move towards center
+                        const angle = Math.atan2(cy - p.y, cx - p.x);
+                        p.x += Math.cos(angle) * p.speed;
+                        p.y += Math.sin(angle) * p.speed;
+
+                        // Hit server
+                        if (dist(p.x, p.y, cx, cy) < 20) {
+                            p.active = false;
+                            this.serverHealth -= 2; // Damage server
+                            setTimeout(() => { if(this.active) this.spawnDDoSParticle(); }, 500); // Respawn
+                        }
+                    });
+                    if (this.serverHealth <= 0) {
+                        this.serverHealth = 0;
+                        this.active = false; // Crash
+                    }
+                } else {
+                    // MitM
+                    this.particles.forEach(p => {
+                        p.progress += 0.01;
+                        if (p.progress > 1) {
+                            p.progress = 0; // Loop
+                            p.state = 'normal';
+                        }
+                        // Change state when passing middle
+                        if (p.progress > 0.5 && p.state === 'normal') {
+                            p.state = 'compromised';
+                        }
+                    });
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                const cx = w/2;
+                const cy = h/2;
+
+                if (this.currentMode === 'ddos') {
+                    // Draw server
+                    ctx.beginPath(); ctx.arc(cx, cy, 30, 0, Math.PI*2);
+                    ctx.fillStyle = this.serverHealth > 0 ? '#3b82f6' : '#ef4444'; // blue or red (crashed)
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff'; ctx.font = '24px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    ctx.fillText('\uf233', cx, cy);
+                    
+                    // Health bar
+                    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(cx - 30, cy + 40, 60, 6);
+                    ctx.fillStyle = this.serverHealth > 50 ? '#10b981' : '#ef4444';
+                    ctx.fillRect(cx - 30, cy + 40, (this.serverHealth/100)*60, 6);
+
+                    // Draw particles
+                    ctx.fillStyle = '#ef4444'; // red bots
+                    this.particles.forEach(p => {
+                        if(p.active) {
+                            ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+                        }
+                    });
+
+                    if (this.serverHealth <= 0) {
+                        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 20px sans-serif';
+                        ctx.fillText("CRASHED!", cx, cy - 50);
+                    }
+                } else {
+                    // MitM Nodes
+                    const ax = w*0.1; const bx = w*0.9;
+                    ctx.fillStyle = '#3b82f6'; ctx.font = '24px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    ctx.fillText('\uf108', ax, cy); // User
+                    ctx.fillText('\uf233', bx, cy); // Server
+                    
+                    ctx.fillStyle = '#ef4444'; 
+                    ctx.fillText('\uf21b', cx, cy - 30); // Hacker
+
+                    // Lines
+                    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(ax+20, cy); ctx.lineTo(cx, cy-30); ctx.lineTo(bx-20, cy); ctx.stroke();
+
+                    // Draw packet
+                    this.particles.forEach(p => {
+                        let px, py;
+                        if (p.progress < 0.5) {
+                            // User to Hacker
+                            let t = p.progress * 2;
+                            px = lerp(ax+20, cx, t);
+                            py = lerp(cy, cy-30, t);
+                        } else {
+                            // Hacker to Server
+                            let t = (p.progress - 0.5) * 2;
+                            px = lerp(cx, bx-20, t);
+                            py = lerp(cy-30, cy, t);
+                        }
+                        
+                        ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2);
+                        ctx.fillStyle = p.state === 'normal' ? '#10b981' : '#ef4444'; // Green turns Red
+                        ctx.fill();
+                    });
+                }
+            }
+        };
+
+        document.getElementById('btn-vuln-ddos').addEventListener('click', (e) => {
+            document.querySelectorAll('#vuln-view .control-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            VulnSim.init('ddos');
+        });
+        document.getElementById('btn-vuln-mitm').addEventListener('click', (e) => {
+            document.querySelectorAll('#vuln-view .control-btn').forEach(b => b.classList.remove('active'));
+            e.currentTarget.classList.add('active');
+            VulnSim.init('mitm');
+        });
+        document.getElementById('btn-vuln-start').addEventListener('click', () => VulnSim.start());
+
+        // ==========================================
+        // 3. COUNTERMEASURES SIMULATION
+        // ==========================================
+        const CounterSim = {
+            ctx: document.getElementById('counter-canvas').getContext('2d'),
+            vpnOn: false,
+            ipsOn: false,
+            packets: [],
+
+            init() {
+                this.packets = [];
+                this.vpnOn = document.getElementById('toggle-vpn').checked;
+                this.ipsOn = document.getElementById('toggle-ips').checked;
+            },
+
+            sendTraffic() {
+                const h = this.ctx.canvas.height;
+                // Send one good, one bad packet
+                this.packets.push({ x: 40, y: h*0.4, type: 'good', progress: 0, status: 'moving' });
+                setTimeout(() => {
+                    this.packets.push({ x: 40, y: h*0.6, type: 'bad', progress: 0, status: 'moving' });
+                }, 500);
+            },
+
+            update() {
+                this.vpnOn = document.getElementById('toggle-vpn').checked;
+                this.ipsOn = document.getElementById('toggle-ips').checked;
+                
+                const ipsZone = 0.7; // Progress point where IPS sits
+
+                let statusEl = document.getElementById('counter-status');
+                let secure = true;
+
+                this.packets.forEach(p => {
+                    if (p.status !== 'moving') return;
+                    p.progress += 0.01;
+
+                    // IPS logic
+                    if (this.ipsOn && p.type === 'bad' && p.progress >= ipsZone && p.progress < ipsZone + 0.02) {
+                        p.status = 'dropped'; // IPS blocks it
+                    }
+
+                    // Hit server
+                    if (p.progress >= 1) {
+                        p.status = 'done';
+                        if (p.type === 'bad') secure = false;
+                    }
+                });
+
+                if(!secure) {
+                    statusEl.innerText = "Compromised!";
+                    statusEl.className = "text-rose-600 font-bold pulse-text";
+                    setTimeout(()=> { statusEl.innerText = "Secure"; statusEl.className="text-emerald-600 font-bold";}, 2000);
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const startX = w*0.1;
+                const endX = w*0.9;
+                const midY = h/2;
+
+                // Draw VPN Tunnel
+                if (this.vpnOn) {
+                    ctx.fillStyle = '#e0f2fe'; // sky-100
+                    ctx.fillRect(startX, h*0.2, endX-startX, h*0.6);
+                    ctx.strokeStyle = '#38bdf8'; // sky-400
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(startX, h*0.2, endX-startX, h*0.6);
+                    ctx.setLineDash([]);
+                    ctx.fillStyle = '#0ea5e9'; ctx.font = '10px sans-serif'; ctx.fillText("Encrypted VPN Tunnel", w/2, h*0.2 + 15);
+                } else {
+                    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(startX, h*0.4); ctx.lineTo(endX, h*0.4); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(startX, h*0.6); ctx.lineTo(endX, h*0.6); ctx.stroke();
+                }
+
+                // Draw IPS
+                const ipsX = lerp(startX, endX, 0.7);
+                if (this.ipsOn) {
+                    ctx.fillStyle = '#8b5cf6'; // violet-500
+                    ctx.fillRect(ipsX - 10, h*0.3, 20, h*0.4);
+                    ctx.fillStyle = '#ffffff'; ctx.font = '12px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    ctx.fillText('\uf002', ipsX, h*0.5); // Search icon
+                    ctx.fillStyle = '#8b5cf6'; ctx.font = 'bold 10px sans-serif'; ctx.fillText("IPS", ipsX, h*0.3 - 10);
+                }
+
+                // Draw Nodes
+                ctx.fillStyle = '#64748b'; ctx.font = '24px "Font Awesome 6 Free"';
+                ctx.fillText('\uf108', startX - 20, midY); // PC
+                ctx.fillText('\uf233', endX + 20, midY); // Server
+
+                // Draw packets
+                this.packets.forEach(p => {
+                    if (p.status === 'done') return;
+                    
+                    let px = lerp(startX, endX, p.progress);
+                    
+                    if (p.status === 'dropped') {
+                        ctx.fillStyle = '#ef4444'; ctx.font='16px sans-serif'; ctx.fillText('❌', px, p.y);
+                        return;
+                    }
+
+                    ctx.beginPath(); ctx.arc(px, p.y, 8, 0, Math.PI*2);
+                    
+                    if (this.vpnOn) {
+                        ctx.fillStyle = '#10b981'; // green (secure)
+                    } else {
+                        ctx.fillStyle = p.type === 'good' ? '#3b82f6' : '#ef4444'; // blue or red
+                    }
+                    ctx.fill();
+                    
+                    if(this.vpnOn) {
+                        ctx.fillStyle = '#fff'; ctx.font = '8px "Font Awesome 6 Free"'; ctx.fillText('\uf023', px, p.y); // Lock
+                    }
+                });
+            }
+        };
+
+        document.getElementById('btn-counter-send').addEventListener('click', () => CounterSim.sendTraffic());
+
+
+        // ==========================================
+        // 4. ENCRYPTION SIMULATION
+        // ==========================================
+        const CryptoSim = {
+            ctx: document.getElementById('crypto-canvas').getContext('2d'),
+            currentMode: 'sym',
+            step: 0, // 0: Idle, 1: KeySetup, 2: Encrypting, 3: Transmitting, 4: Decrypting, 5: Done
+            animProgress: 0,
+            isAnimating: false,
+
+            init(mode) {
+                this.currentMode = mode;
+                this.step = 0;
+                this.animProgress = 0;
+                this.isAnimating = false;
+                this.updateInfo();
+                this.updateUI();
+            },
+
+            updateInfo() {
+                const infoBox = document.getElementById('crypto-info');
+                if (this.currentMode === 'sym') {
+                    infoBox.innerHTML = `<strong>Symmetric Encryption:</strong> The <em>same shared key</em> is used to both encrypt and decrypt the data. Fast and efficient, but requires securely sharing the key beforehand (Key Distribution Problem).`;
+                } else {
+                    infoBox.innerHTML = `<strong>Asymmetric Encryption:</strong> Uses a key pair. <br>1. Sender encrypts with receiver's <strong>Public Key</strong>. <br>2. Receiver decrypts with their own <strong>Private Key</strong>. <br>Solves distribution, but is slower.`;
+                }
+            },
+
+            updateUI() {
+                const btnNext = document.getElementById('btn-crypto-next');
+                const stepText = document.getElementById('crypto-step-text');
+                
+                if (this.isAnimating) {
+                    btnNext.disabled = true;
+                    btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    btnNext.disabled = false;
+                    btnNext.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+
+                if (this.step === 0) {
+                    stepText.innerText = "Status: Idle. Click 'Start' to begin.";
+                    btnNext.innerHTML = 'Start Process <i class="fa-solid fa-play ml-1"></i>';
+                } else if (this.step === 1) {
+                    stepText.innerText = this.currentMode === 'sym' ? "Step 1: Alice & Bob share a secret Symmetric Key." : "Step 1: Bob generates a key pair and shares his Public Key.";
+                    btnNext.innerHTML = 'Next: Encrypt <i class="fa-solid fa-lock ml-1"></i>';
+                } else if (this.step === 2) {
+                    stepText.innerText = this.currentMode === 'sym' ? "Step 2: Alice encrypts data using the Shared Key." : "Step 2: Alice encrypts data using Bob's Public Key.";
+                    btnNext.innerHTML = 'Next: Transmit <i class="fa-solid fa-paper-plane ml-1"></i>';
+                } else if (this.step === 3) {
+                    stepText.innerText = "Step 3: Ciphertext is transmitted securely.";
+                    btnNext.innerHTML = 'Next: Decrypt <i class="fa-solid fa-unlock ml-1"></i>';
+                } else if (this.step === 4) {
+                    stepText.innerText = this.currentMode === 'sym' ? "Step 4: Bob decrypts using the same Shared Key." : "Step 4: Bob decrypts using his Private Key.";
+                    btnNext.innerHTML = 'Finish <i class="fa-solid fa-check ml-1"></i>';
+                } else if (this.step === 5) {
+                    stepText.innerText = "Status: Secure communication successful!";
+                    btnNext.innerHTML = 'Done';
+                    btnNext.disabled = true;
+                    btnNext.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            },
+
+            nextStep() {
+                if (this.isAnimating || this.step >= 5) return;
+                this.step++;
+                this.isAnimating = true;
+                this.animProgress = 0;
+                this.updateUI();
+            },
+
+            update() {
+                if (this.isAnimating) {
+                    this.animProgress += 0.02; // Animation speed
+                    if (this.animProgress >= 1) {
+                        this.animProgress = 1;
+                        this.isAnimating = false;
+                        this.updateUI();
+                    }
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const ax = w * 0.15; 
+                const bx = w * 0.85; 
+                const cy = h / 2;
+
+                // Draw Network background
+                ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+                ctx.beginPath(); ctx.moveTo(ax, cy); ctx.lineTo(bx, cy); ctx.stroke(); ctx.setLineDash([]);
+                
+                // Draw Attacker icon in middle
+                ctx.fillStyle = '#94a3b8'; ctx.font = '24px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                ctx.fillText('\uf21b', w/2, cy + 40); // Hacker/Spy icon
+                ctx.font = '10px sans-serif'; ctx.fillText('Untrusted Network', w/2, cy + 65);
+
+                // Draw People
+                ctx.fillStyle = '#334155'; ctx.font = '24px "Font Awesome 6 Free"'; ctx.fontWeight='900';
+                ctx.fillText('\uf007', ax, cy); ctx.fillText('Alice', ax, cy+30);
+                ctx.fillText('\uf007', bx, cy); ctx.fillText('Bob', bx, cy+30);
+
+                // --- Draw Keys ---
+                ctx.font = '16px "Font Awesome 6 Free"';
+                let aliceHasKey = false, bobHasKey = false;
+                
+                if (this.step >= 1) {
+                    if (this.currentMode === 'sym') {
+                        // Symmetric: Both have yellow key
+                        if (this.step === 1 && this.isAnimating) {
+                            ctx.globalAlpha = this.animProgress;
+                        }
+                        ctx.fillStyle = '#eab308'; // Yellow shared key
+                        ctx.fillText('\uf084', ax + 30, cy - 20); // Alice's key
+                        ctx.fillText('\uf084', bx - 30, cy - 20); // Bob's key
+                        ctx.globalAlpha = 1;
+                        aliceHasKey = true; bobHasKey = true;
+                    } else {
+                        // Asymmetric: Bob has Red (Private), Alice gets Green (Public)
+                        ctx.fillStyle = '#ef4444'; // Red Private key (Bob always has it)
+                        ctx.fillText('\uf084', bx - 30, cy - 30);
+                        
+                        ctx.fillStyle = '#10b981'; // Green Public key
+                        if (this.step === 1 && this.isAnimating) {
+                            // Animate public key moving from Bob to Alice
+                            let kx = lerp(bx - 30, ax + 30, this.animProgress);
+                            ctx.fillText('\uf084', kx, cy - 10);
+                        } else {
+                            // After step 1, Alice has Bob's Public Key, Bob still has a copy
+                            ctx.fillText('\uf084', ax + 30, cy - 10); // Alice's copy
+                            ctx.fillText('\uf084', bx - 30, cy - 10); // Bob's copy
+                            aliceHasKey = true;
+                        }
+                        bobHasKey = true;
+                    }
+                }
+
+                // --- Draw Message/Envelope ---
+                if (this.step >= 2) {
+                    let envX = ax + 50;
+                    let isEncrypted = false;
+                    let lockAlpha = 0;
+
+                    if (this.step === 2) {
+                        // Encrypting at Alice
+                        envX = ax + 50;
+                        isEncrypted = true;
+                        lockAlpha = this.isAnimating ? this.animProgress : 1;
+                        
+                        // Draw key moving to document
+                        if (this.isAnimating) {
+                            ctx.fillStyle = this.currentMode === 'sym' ? '#eab308' : '#10b981';
+                            let kx = lerp(ax + 30, envX, this.animProgress);
+                            let ky = lerp(cy - 20, cy, this.animProgress);
+                            ctx.font = '16px "Font Awesome 6 Free"'; ctx.fillText('\uf084', kx, ky);
+                        }
+                    } else if (this.step === 3) {
+                        // Transmitting
+                        envX = this.isAnimating ? lerp(ax + 50, bx - 50, this.animProgress) : bx - 50;
+                        isEncrypted = true;
+                        lockAlpha = 1;
+
+                        if (this.isAnimating && this.animProgress > 0.4 && this.animProgress < 0.6) {
+                             ctx.fillStyle = '#ef4444'; ctx.font = '20px sans-serif'; ctx.fontWeight='bold';
+                             ctx.fillText('?', w/2, cy + 20); // Hacker sees gibberish
+                        }
+                    } else if (this.step === 4) {
+                        // Decrypting at Bob
+                        envX = bx - 50;
+                        isEncrypted = true;
+                        lockAlpha = this.isAnimating ? 1 - this.animProgress : 0; // Lock fades out
+                        
+                        // Draw key moving to document
+                        if (this.isAnimating) {
+                            ctx.fillStyle = this.currentMode === 'sym' ? '#eab308' : '#ef4444'; // Shared or Private
+                            let kx = lerp(bx - 30, envX, this.animProgress);
+                            let ky = lerp(cy - 20, cy, this.animProgress);
+                            ctx.font = '16px "Font Awesome 6 Free"'; ctx.fillText('\uf084', kx, ky);
+                        }
+                    } else if (this.step === 5) {
+                        // Done
+                        envX = bx - 50;
+                        isEncrypted = false;
+                        lockAlpha = 0;
+                    }
+
+                    // Base Document
+                    ctx.fillStyle = '#cbd5e1'; 
+                    ctx.fillRect(envX - 20, cy - 15, 40, 30);
+                    ctx.fillStyle = '#ffffff'; ctx.font = '16px "Font Awesome 6 Free"'; ctx.fillText('\uf15c', envX, cy); // File icon
+
+                    // Encrypted Overlay (Ciphertext)
+                    if (isEncrypted) {
+                        ctx.globalAlpha = lockAlpha;
+                        ctx.fillStyle = '#1e293b'; // Dark ciphertext color
+                        ctx.fillRect(envX - 20, cy - 15, 40, 30);
+                        
+                        // Lock Icon
+                        ctx.fillStyle = this.currentMode === 'sym' ? '#eab308' : '#10b981'; // Lock matches encrypting key color
+                        ctx.font = '14px "Font Awesome 6 Free"';
+                        ctx.fillText('\uf023', envX, cy);
+                        ctx.globalAlpha = 1;
+                    }
+                }
+            }
+        };
+
+        document.getElementById('btn-crypto-sym').addEventListener('click', (e) => {
+            document.getElementById('btn-crypto-asym').classList.remove('active');
+            e.target.classList.add('active');
+            CryptoSim.init('sym');
+        });
+        document.getElementById('btn-crypto-asym').addEventListener('click', (e) => {
+            document.getElementById('btn-crypto-sym').classList.remove('active');
+            e.target.classList.add('active');
+            CryptoSim.init('asym');
+        });
+        
+        // Remove the old 'btn-crypto-send' listener and add the new step controls
+        document.getElementById('btn-crypto-next').addEventListener('click', () => CryptoSim.nextStep());
+        document.getElementById('btn-crypto-reset').addEventListener('click', () => CryptoSim.init(CryptoSim.currentMode));
+
+        // --- Global Animation Loop ---
+        function globalLoop() {
+            if(currentTab === 'firewall') { FirewallSim.update(); FirewallSim.draw(); }
+            if(currentTab === 'vuln') { VulnSim.update(); VulnSim.draw(); }
+            if(currentTab === 'counter') { CounterSim.update(); CounterSim.draw(); }
+            if(currentTab === 'crypto') { CryptoSim.update(); CryptoSim.draw(); }
+            
+            animFrameId = requestAnimationFrame(globalLoop);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            buildQuiz('firewall', 'firewall');
+            buildQuiz('vuln', 'vuln');
+            buildQuiz('counter', 'counter');
+            buildQuiz('crypto', 'crypto');
+
+            resizeCanvases();
+            
+            // Init all to be safe on first render bounds
+            FirewallSim.init();
+            VulnSim.init('ddos');
+            CounterSim.init();
+            CryptoSim.init('sym');
+
+            globalLoop();
+        };
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetArch Lab: Data Transmissions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect ratio */
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+            color: #64748b; /* slate-500 */
+        }
+        .tab-btn:hover { color: #0284c7; } /* sky-600 */
+        .tab-btn.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0284c7; 
+            background-color: #f0f9ff; /* sky-50 */
+        }
+
+        /* Quiz answer styling */
+        .answer-btn {
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #334155; 
+            border: 1px solid #cbd5e1; 
+        }
+        .answer-btn:hover:not(:disabled) {
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .answer-btn.correct {
+            background-color: #d1fae5; /* emerald-100 */
+            color: #065f46; 
+            border-color: #10b981; 
+        }
+        .answer-btn.incorrect {
+            background-color: #ffe4e6; /* rose-100 */
+            color: #9f1239; 
+            border-color: #f43f5e; 
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .control-btn {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { 
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .control-btn.active { 
+            background-color: #0284c7; 
+            border-color: #0369a1; 
+            color: white; 
+        }
+        
+        /* Utility for glowing signals */
+        .pulse-text {
+            animation: pulse-op 2s infinite;
+        }
+        @keyframes pulse-op {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center h-auto md:h-16 py-3 md:py-0">
+                <div class="flex items-center mb-3 md:mb-0">
+                    <i class="fa-solid fa-satellite-dish text-sky-500 text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-indigo-600 tracking-tight">Data Transmissions</h1>
+                </div>
+                <nav class="flex space-x-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+                    <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="ip">
+                        <i class="fa-solid fa-address-card mr-2"></i>IP & NAT
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="media">
+                        <i class="fa-solid fa-bolt mr-2"></i>Media
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="packet">
+                        <i class="fa-solid fa-boxes-packing mr-2"></i>Packet Switching
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="routing">
+                        <i class="fa-solid fa-route mr-2"></i>Routing (HL)
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- SECTION 1: IP Addressing & NAT -->
+        <div id="ip-view" class="view-section grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.3.1 IP & NAT</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                        <strong>Network Address Translation (NAT)</strong> allows multiple devices on a private network to share a single Public IP address. This helps mitigate the exhaustion of IPv4 addresses and adds a layer of security.
+                    </p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-slate-50 p-3 rounded border-l-4 border-slate-400">
+                            <h4 class="font-bold text-slate-700 text-sm mb-1">IPv4 vs IPv6</h4>
+                            <p class="text-xs text-slate-600 mb-1"><strong>IPv4:</strong> 32-bit (e.g., 192.168.1.5). ~4.3 billion addresses.</p>
+                            <p class="text-xs text-slate-600"><strong>IPv6:</strong> 128-bit (e.g., 2001:0db8::ff00:42:8329). Practically infinite addresses.</p>
+                        </div>
+                        <div class="bg-sky-50 p-3 rounded border-l-4 border-sky-500">
+                            <h4 class="font-bold text-sky-800 text-sm mb-1">Private vs Public</h4>
+                            <p class="text-xs text-sky-900/80"><strong>Private:</strong> Used inside LANs (e.g., 192.168.x.x, 10.x.x.x). Not routable on the internet.</p>
+                            <p class="text-xs text-sky-900/80"><strong>Public:</strong> Globally unique, assigned by ISPs. Routable on the internet.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulate NAT</h3>
+                        <p class="text-xs text-slate-500 mb-3">Watch the Source IP change as the packet crosses the router.</p>
+                        <button id="btn-nat-send" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-paper-plane mr-1"></i> Send Request to Internet
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative">
+                    <!-- overlay UI for NAT -->
+                    <div class="absolute top-4 left-4 z-10 bg-white/90 p-2 rounded shadow text-xs border border-slate-200 font-mono">
+                        <div class="font-bold text-slate-700 border-b mb-1">Active Packet Header</div>
+                        <div>Src: <span id="nat-ui-src" class="text-blue-600">-</span></div>
+                        <div>Dst: <span id="nat-ui-dst" class="text-rose-600">-</span></div>
+                    </div>
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="nat-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="ip-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Transmission Media -->
+        <div id="media-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.3.2 Transmission Media</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Compare physical wired connections (Fibre Optic, Twisted Pair Copper) against Wireless transmission based on performance and security.</p>
+                    
+                    <div class="space-y-2 mb-6">
+                        <button id="btn-med-fibre" class="control-btn active px-3 py-2 rounded text-left w-full text-sm flex items-center justify-between">
+                            <span><i class="fa-solid fa-wave-square text-fuchsia-500 w-6"></i> Fibre Optic</span>
+                            <span class="text-[10px] bg-slate-100 px-1 rounded">Light pulses</span>
+                        </button>
+                        <button id="btn-med-copper" class="control-btn px-3 py-2 rounded text-left w-full text-sm flex items-center justify-between">
+                            <span><i class="fa-solid fa-plug text-orange-500 w-6"></i> Twisted Pair</span>
+                            <span class="text-[10px] bg-slate-100 px-1 rounded">Electrical</span>
+                        </button>
+                        <button id="btn-med-wifi" class="control-btn px-3 py-2 rounded text-left w-full text-sm flex items-center justify-between">
+                            <span><i class="fa-solid fa-wifi text-sky-500 w-6"></i> Wireless</span>
+                            <span class="text-[10px] bg-slate-100 px-1 rounded">Radio Waves</span>
+                        </button>
+                    </div>
+
+                    <div id="media-stats" class="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+                        <!-- Stats injected by JS -->
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="media-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="media-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Packet Switching -->
+        <div id="packet-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.3.3 Packet Switching</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Data is segmented into packets, each with a routing header. Packets travel independently through switches and routers and are reassembled at the destination.</p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-indigo-50 p-3 rounded border-l-4 border-indigo-500">
+                            <h4 class="font-bold text-indigo-700 text-sm mb-1">The Process</h4>
+                            <ol class="list-decimal list-inside text-xs text-indigo-900/80 space-y-1">
+                                <li>Data is divided into equal chunks (Segmentation).</li>
+                                <li>Header added (Src IP, Dst IP, Sequence Number).</li>
+                                <li>Routers independently determine best path per packet.</li>
+                                <li>Packets may arrive out of order.</li>
+                                <li>Receiver reassembles using Sequence Numbers.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulate Transmission</h3>
+                        <button id="btn-pkt-send" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm mb-2">
+                            <i class="fa-solid fa-envelope mr-1"></i> Send File (4 Packets)
+                        </button>
+                        <div class="flex justify-between text-xs text-slate-500 mt-2 border-t pt-2">
+                            <span>Status:</span>
+                            <span id="pkt-status" class="font-bold text-indigo-600">Idle</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="packet-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="packet-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Routing (HL) -->
+        <div id="routing-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.3.4 Routing (HL)</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Routers determine the path data takes. <strong>Static Routing</strong> is configured manually by an administrator. <strong>Dynamic Routing</strong> uses protocols to automatically discover and update routes (convergence).</p>
+                    
+                    <div class="flex bg-slate-100 rounded-lg p-1 mb-6">
+                        <button id="btn-rt-static" class="flex-1 control-btn active py-1 text-sm rounded shadow-sm mr-1">Static Routing</button>
+                        <button id="btn-rt-dynamic" class="flex-1 control-btn py-1 text-sm rounded ml-1">Dynamic Routing</button>
+                    </div>
+
+                    <div id="rt-info" class="space-y-4 mb-6">
+                        <!-- Content injected via JS based on toggle -->
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulate Link Failure</h3>
+                        <p class="text-xs text-slate-500 mb-3 text-left">Click the central router to simulate a hardware failure and observe network behavior.</p>
+                        <button id="btn-rt-break" class="w-full bg-rose-500 hover:bg-rose-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm mb-2">
+                            <i class="fa-solid fa-fire mr-1"></i> Toggle Core Router Failure
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full cursor-pointer">
+                        <canvas id="routing-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="routing-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Core UI & Navigation ---
+        const views = document.querySelectorAll('.view-section');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        let currentTab = 'ip';
+        let animFrameId = null;
+
+        // Resize handler for canvases
+        function resizeCanvases() {
+            const containers = document.querySelectorAll('.canvas-container');
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach((canvas, index) => {
+                const rect = containers[index].getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // Tab Switching Logic
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                if (target === currentTab) return;
+
+                tabBtns.forEach(b => b.classList.remove('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10'));
+                btn.classList.add('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10');
+
+                views.forEach(v => v.classList.add('hidden'));
+                document.getElementById(`${target}-view`).classList.remove('hidden');
+                
+                currentTab = target;
+                resizeCanvases();
+                
+                // Re-initialize specific simulations
+                if (target === 'ip') NatSim.init();
+                if (target === 'media') MediaSim.init(MediaSim.currentMode);
+                if (target === 'packet') PacketSim.init();
+                if (target === 'routing') RoutingSim.init(RoutingSim.currentMode);
+            });
+        });
+
+        // Utility Math functions
+        const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+        // --- Mastery Exercises Engine ---
+        const quizData = {
+            ip: [
+                {
+                    q: "What is the primary reason Network Address Translation (NAT) was developed?",
+                    options: ["To encrypt all data leaving a network.", "To prevent internal IP collisions with routers.", "To minimize the depletion of public IPv4 addresses.", "To automatically upgrade networks to IPv6."],
+                    answer: 2,
+                    explanation: "NAT allows thousands of devices on a private network to share a single, routable public IP address when accessing the internet, drastically slowing down IPv4 address exhaustion."
+                },
+                {
+                    q: "Which of the following is a characteristic of a Dynamic IP Address?",
+                    options: ["It is permanently assigned to a server.", "It is leased from a DHCP server and can change over time.", "It is only used for IPv6 configurations.", "It cannot be translated by NAT."],
+                    answer: 1,
+                    explanation: "Dynamic IP addresses are assigned temporarily by a DHCP server. When the lease expires or the device disconnects, the IP goes back to the pool to be reused."
+                }
+            ],
+            media: [
+                {
+                    q: "Which transmission medium offers the highest security and bandwidth but is the most difficult and expensive to install?",
+                    options: ["Twisted Pair Cable", "Coaxial Cable", "Fibre Optic Cable", "Wireless (Wi-Fi)"],
+                    answer: 2,
+                    explanation: "Fibre Optic cables transmit data as light pulses. They do not emit electromagnetic signals (making them highly secure from eavesdropping), have immense bandwidth, and suffer very low attenuation, but they are fragile and costly to splice/install."
+                },
+                {
+                    q: "A wireless network (Wi-Fi) is experiencing slow speeds due to physical objects and distance. What is the physical term for the signal weakening over distance?",
+                    options: ["Interference", "Attenuation", "Segmentation", "Convergence"],
+                    answer: 1,
+                    explanation: "Attenuation is the loss of signal strength as it travels through a medium or empty space. Wireless signals attenuate rapidly over distance and when passing through solid objects like walls."
+                }
+            ],
+            packet: [
+                {
+                    q: "In packet switching, why might packets belonging to the same file arrive at the destination out of order?",
+                    options: ["Because the sender purposefully scrambles them for security.", "Because routers dynamically calculate independent, differing paths for each packet.", "Because switches randomly drop packets to save memory.", "Because they are transmitted over different frequencies simultaneously."],
+                    answer: 1,
+                    explanation: "Unlike circuit switching (which establishes a single dedicated path), packet-switched networks treat each packet independently. Packets might take different routes depending on network congestion, leading to varying arrival times."
+                },
+                {
+                    q: "How does the receiving computer reassemble out-of-order packets back into the original file?",
+                    options: ["It asks the sender to send them in order again.", "It uses the routing table to guess the order.", "It uses the Sequence Numbers contained in the packet headers.", "It relies on NAT to sort them automatically."],
+                    answer: 2,
+                    explanation: "When data is segmented, the protocol (like TCP) adds a header to each packet containing a Sequence Number. The receiver uses these sequence numbers to buffer and reassemble the packets in the correct order."
+                }
+            ],
+            routing: [
+                {
+                    q: "(HL) A network administrator manually configures exact paths in a router. If a link on that path breaks, traffic stops completely. What type of routing is this?",
+                    options: ["Dynamic Routing", "Static Routing", "Adaptive Routing", "Heuristic Routing"],
+                    answer: 1,
+                    explanation: "Static routing relies on fixed paths manually entered by an admin. It uses very little router CPU and is highly predictable, but it lacks fault tolerance; if the link goes down, there is no automatic failover."
+                },
+                {
+                    q: "(HL) What is a major disadvantage of Dynamic Routing protocols compared to Static Routing?",
+                    options: ["They cannot find the shortest path.", "They require manual updates every time a new device is added.", "They consume router CPU/memory and network bandwidth to exchange routing tables.", "They only work on Local Area Networks (LANs)."],
+                    answer: 2,
+                    explanation: "Dynamic routing protocols (like OSPF or BGP) automatically discover paths and converge when topology changes. However, this automation requires routers to constantly exchange update messages, consuming processing power and bandwidth."
+                }
+            ]
+        };
+
+        function buildQuiz(topic, prefix) {
+            const container = document.getElementById(`${prefix}-quiz`);
+            container.innerHTML = ''; 
+            
+            quizData[topic].forEach((item, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
+                
+                const qTitle = document.createElement('h4');
+                qTitle.className = 'text-sm font-semibold text-slate-800 mb-3 leading-snug';
+                qTitle.innerText = `${qIndex + 1}. ${item.q}`;
+                qDiv.appendChild(qTitle);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2';
+
+                const explanationDiv = document.createElement('div');
+                explanationDiv.className = 'mt-3 text-sm hidden p-3 rounded bg-white border-l-4 border-slate-200 transition-all duration-300';
+
+                item.options.forEach((opt, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'answer-btn text-left p-3 rounded border text-sm';
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('click', function() {
+                        const allBtns = optionsGrid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.add('opacity-50', 'cursor-not-allowed');
+                        });
+                        
+                        this.classList.remove('opacity-50');
+                        if (oIndex === item.answer) {
+                            this.classList.add('correct');
+                            explanationDiv.classList.add('block', 'border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Correct!</strong> ${item.explanation}`;
+                        } else {
+                            this.classList.add('incorrect');
+                            allBtns[item.answer].classList.remove('opacity-50');
+                            allBtns[item.answer].classList.add('correct');
+                            
+                            explanationDiv.classList.add('block', 'border-rose-500', 'text-rose-700', 'bg-rose-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Incorrect.</strong> ${item.explanation}`;
+                        }
+                    });
+                    optionsGrid.appendChild(btn);
+                });
+
+                qDiv.appendChild(optionsGrid);
+                qDiv.appendChild(explanationDiv);
+                container.appendChild(qDiv);
+            });
+        }
+
+
+        // ==========================================
+        // 1. IP & NAT SIMULATION
+        // ==========================================
+        const NatSim = {
+            ctx: document.getElementById('nat-canvas').getContext('2d'),
+            active: false,
+            packet: null,
+            
+            nodes: {
+                pc: {x: 0, y: 0, ip: '192.168.1.100', name: 'Private PC'},
+                router: {x: 0, y: 0, ipIn: '192.168.1.1', ipOut: '203.0.113.45', name: 'NAT Router'},
+                server: {x: 0, y: 0, ip: '8.8.8.8', name: 'Web Server'}
+            },
+
+            init() {
+                this.active = false;
+                this.packet = null;
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                this.nodes.pc.x = w * 0.15; this.nodes.pc.y = h * 0.5;
+                this.nodes.router.x = w * 0.5; this.nodes.router.y = h * 0.5;
+                this.nodes.server.x = w * 0.85; this.nodes.server.y = h * 0.5;
+                
+                document.getElementById('nat-ui-src').innerText = '-';
+                document.getElementById('nat-ui-dst').innerText = '-';
+            },
+
+            send() {
+                if (this.active) return;
+                this.active = true;
+                // Stage 0: PC to Router (Request)
+                this.packet = {
+                    stage: 0, progress: 0,
+                    src: this.nodes.pc.ip, dst: this.nodes.server.ip,
+                    color: '#3b82f6', // blue
+                    msg: "Request"
+                };
+                this.updateUI();
+            },
+
+            updateUI() {
+                if(!this.packet) return;
+                document.getElementById('nat-ui-src').innerText = this.packet.src;
+                document.getElementById('nat-ui-dst').innerText = this.packet.dst;
+            },
+
+            update() {
+                if (!this.active || !this.packet) return;
+                
+                this.packet.progress += 0.015;
+                
+                if (this.packet.progress >= 1) {
+                    this.packet.progress = 0;
+                    this.packet.stage++;
+                    
+                    if (this.packet.stage === 1) {
+                        // At Router, NAT Translation outbound
+                        this.packet.src = this.nodes.router.ipOut;
+                        this.updateUI();
+                    } else if (this.packet.stage === 2) {
+                        // At Server, prepare reply
+                        this.packet.src = this.nodes.server.ip;
+                        this.packet.dst = this.nodes.router.ipOut;
+                        this.packet.color = '#10b981'; // green for reply
+                        this.packet.msg = "Reply";
+                        this.updateUI();
+                    } else if (this.packet.stage === 3) {
+                        // At Router, NAT Translation inbound
+                        this.packet.dst = this.nodes.pc.ip;
+                        this.updateUI();
+                    } else if (this.packet.stage === 4) {
+                        // Done
+                        this.active = false;
+                        this.packet = null;
+                        document.getElementById('nat-ui-src').innerText = 'Complete';
+                        document.getElementById('nat-ui-dst').innerText = 'Complete';
+                    }
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                
+                // Draw Network Zones
+                ctx.fillStyle = '#f1f5f9'; // slate-100
+                ctx.fillRect(0, 0, this.nodes.router.x, ctx.canvas.height);
+                ctx.fillStyle = '#f0fdfa'; // teal-50
+                ctx.fillRect(this.nodes.router.x, 0, ctx.canvas.width, ctx.canvas.height);
+                
+                // Zone Labels
+                ctx.fillStyle = '#64748b'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText("Private Network (LAN)", this.nodes.pc.x, 30);
+                ctx.fillText("Public Internet (WAN)", this.nodes.server.x, 30);
+
+                // Connections
+                ctx.beginPath(); ctx.moveTo(this.nodes.pc.x, this.nodes.pc.y); ctx.lineTo(this.nodes.server.x, this.nodes.server.y);
+                ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 4; ctx.stroke(); // slate-300
+
+                // Draw Nodes
+                const drawNode = (n, icon) => {
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 25, 0, Math.PI*2);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 2; ctx.stroke(); // blue-500
+                    
+                    ctx.fillStyle = '#3b82f6'; ctx.font = '20px "Font Awesome 6 Free"'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    ctx.fillText(icon, n.x, n.y);
+                    
+                    ctx.fillStyle = '#334155'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(n.name, n.x, n.y + 40);
+                    
+                    // IP badges
+                    if(n === this.nodes.router) {
+                        ctx.fillStyle = '#10b981'; ctx.font = '10px monospace'; // green
+                        ctx.fillText('LAN: ' + n.ipIn, n.x - 40, n.y - 35);
+                        ctx.fillStyle = '#f43f5e'; // rose
+                        ctx.fillText('WAN: ' + n.ipOut, n.x + 40, n.y - 35);
+                    } else {
+                        ctx.fillStyle = '#64748b'; ctx.font = '11px monospace';
+                        ctx.fillText(n.ip, n.x, n.y - 35);
+                    }
+                };
+
+                drawNode(this.nodes.pc, '\uf108'); // desktop
+                drawNode(this.nodes.router, '\uf021'); // router
+                drawNode(this.nodes.server, '\uf233'); // server
+
+                // Draw Packet
+                if (this.packet) {
+                    let from, to;
+                    if(this.packet.stage === 0) { from = this.nodes.pc; to = this.nodes.router; }
+                    if(this.packet.stage === 1) { from = this.nodes.router; to = this.nodes.server; }
+                    if(this.packet.stage === 2) { from = this.nodes.server; to = this.nodes.router; }
+                    if(this.packet.stage === 3) { from = this.nodes.router; to = this.nodes.pc; }
+
+                    if (from && to) {
+                        let px = lerp(from.x, to.x, this.packet.progress);
+                        let py = lerp(from.y, to.y, this.packet.progress);
+                        
+                        ctx.beginPath();
+                        ctx.roundRect(px - 15, py - 10, 30, 20, 4);
+                        ctx.fillStyle = this.packet.color;
+                        ctx.fill();
+                        
+                        // Envelope icon
+                        ctx.fillStyle = '#ffffff'; ctx.font = '10px "Font Awesome 6 Free"'; ctx.fontWeight='900';
+                        ctx.fillText('\uf0e0', px, py);
+                    }
+                }
+            }
+        };
+        document.getElementById('btn-nat-send').addEventListener('click', () => NatSim.send());
+
+        // ==========================================
+        // 2. TRANSMISSION MEDIA SIMULATION
+        // ==========================================
+        const MediaSim = {
+            ctx: document.getElementById('media-canvas').getContext('2d'),
+            currentMode: 'fibre',
+            pulsePos: 0,
+            stats: {
+                fibre: { bw: '10+ Gbps', range: 'Kilometers', sec: 'Very High', atten: 'Very Low', cost: 'High', color: '#d946ef' }, // fuchsia
+                copper: { bw: '1 Gbps', range: '100 meters', sec: 'Medium', atten: 'Medium', cost: 'Low', color: '#f97316' }, // orange
+                wifi: { bw: '300-800 Mbps', range: '30 meters', sec: 'Low (Radiates)', atten: 'High', cost: 'Variable', color: '#0ea5e9' } // sky
+            },
+
+            init(mode) {
+                this.currentMode = mode;
+                this.pulsePos = 0;
+                this.updateUI();
+            },
+
+            updateUI() {
+                const s = this.stats[this.currentMode];
+                const html = `
+                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500 text-xs font-bold">Bandwidth</span> <span class="font-mono text-sm text-slate-800">${s.bw}</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500 text-xs font-bold">Max Range</span> <span class="font-mono text-sm text-slate-800">${s.range}</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500 text-xs font-bold">Security</span> <span class="font-mono text-sm text-slate-800">${s.sec}</span></div>
+                    <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500 text-xs font-bold">Attenuation</span> <span class="font-mono text-sm text-slate-800">${s.atten}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500 text-xs font-bold">Installation Cost</span> <span class="font-mono text-sm text-slate-800">${s.cost}</span></div>
+                `;
+                document.getElementById('media-stats').innerHTML = html;
+            },
+
+            update() {
+                // Speed varies based on medium
+                let speed = 0.05;
+                if(this.currentMode === 'fibre') speed = 0.08;
+                if(this.currentMode === 'wifi') speed = 0.02;
+                
+                this.pulsePos += speed;
+                if (this.pulsePos > 1.2) this.pulsePos = -0.2; // loop
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+                
+                const y = h/2;
+                const startX = w * 0.1;
+                const endX = w * 0.9;
+                const color = this.stats[this.currentMode].color;
+
+                // Draw Nodes
+                ctx.fillStyle = '#64748b'; ctx.font = '24px "Font Awesome 6 Free"'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                ctx.fillText('\uf108', startX - 30, y); // PC
+                ctx.fillText('\uf233', endX + 30, y); // Server
+
+                if (this.currentMode === 'fibre') {
+                    // Glass core
+                    ctx.beginPath(); ctx.moveTo(startX, y); ctx.lineTo(endX, y);
+                    ctx.lineWidth = 10; ctx.strokeStyle = '#e2e8f0'; ctx.lineCap = 'round'; ctx.stroke();
+                    // Inner light beam
+                    let lx = lerp(startX, endX, this.pulsePos);
+                    if(lx > startX && lx < endX) {
+                        ctx.beginPath(); ctx.moveTo(Math.max(startX, lx - 50), y); ctx.lineTo(lx, y);
+                        ctx.lineWidth = 6; ctx.strokeStyle = color; ctx.stroke();
+                        ctx.shadowBlur = 15; ctx.shadowColor = color; ctx.stroke(); ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.fillStyle = color; ctx.font = '14px sans-serif'; ctx.textAlign='center';
+                    ctx.fillText("Total Internal Reflection (Light Pulses)", w/2, y - 30);
+
+                } else if (this.currentMode === 'copper') {
+                    // Twisted pair visualization
+                    ctx.beginPath();
+                    for(let i=startX; i<endX; i+=5) {
+                        ctx.lineTo(i, y + Math.sin(i*0.1)*8);
+                    }
+                    ctx.lineWidth = 3; ctx.strokeStyle = '#fb923c'; ctx.stroke();
+                    ctx.beginPath();
+                    for(let i=startX; i<endX; i+=5) {
+                        ctx.lineTo(i, y + Math.sin(i*0.1 + Math.PI)*8);
+                    }
+                    ctx.strokeStyle = '#64748b'; ctx.stroke();
+
+                    // Electrical pulse
+                    let cx = lerp(startX, endX, this.pulsePos);
+                    if(cx > startX && cx < endX) {
+                        ctx.beginPath(); ctx.arc(cx, y, 6, 0, Math.PI*2);
+                        ctx.fillStyle = color; ctx.fill();
+                        ctx.shadowBlur = 10; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
+                    }
+                    
+                    ctx.fillStyle = color; ctx.font = '14px sans-serif'; ctx.textAlign='center';
+                    ctx.fillText("Electrical Current (Subject to EMI)", w/2, y - 30);
+
+                } else if (this.currentMode === 'wifi') {
+                    // Router antennas
+                    ctx.fillStyle = '#64748b'; ctx.font = '16px "Font Awesome 6 Free"';
+                    ctx.fillText('\uf519', startX, y - 20); // broadcast
+                    
+                    // Expanding radio waves
+                    for(let i=0; i<3; i++) {
+                        let p = (this.pulsePos - (i * 0.2)) % 1;
+                        if (p > 0 && p < 1) {
+                            let radius = p * (endX - startX);
+                            ctx.beginPath();
+                            ctx.arc(startX, y, radius, -Math.PI/3, Math.PI/3);
+                            // Fade out over distance (Attenuation)
+                            ctx.strokeStyle = color + Math.floor((1-p)*255).toString(16).padStart(2, '0'); 
+                            ctx.lineWidth = 3;
+                            ctx.stroke();
+                        }
+                    }
+                    
+                    ctx.fillStyle = color; ctx.font = '14px sans-serif'; ctx.textAlign='center';
+                    ctx.fillText("Radio Waves (High Attenuation/Interference)", w/2, y - 60);
+                }
+            }
+        };
+
+        ['fibre', 'copper', 'wifi'].forEach(mode => {
+            document.getElementById(`btn-med-${mode}`).addEventListener('click', (e) => {
+                document.querySelectorAll('#media-view .control-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                MediaSim.init(mode);
+            });
+        });
+
+        // ==========================================
+        // 3. PACKET SWITCHING SIMULATION
+        // ==========================================
+        const PacketSim = {
+            ctx: document.getElementById('packet-canvas').getContext('2d'),
+            active: false,
+            packets: [],
+            nodes: [],
+            edges: [],
+            statusEl: document.getElementById('pkt-status'),
+            received: [],
+
+            init() {
+                this.active = false;
+                this.packets = [];
+                this.received = [];
+                this.statusEl.innerText = "Idle";
+                this.statusEl.className = "font-bold text-slate-500";
+                
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                // Define network mesh
+                this.nodes = [
+                    {id: 0, x: w*0.1, y: h/2, type: 'pc', name: 'Sender'},
+                    {id: 1, x: w*0.3, y: h*0.2, type: 'router'},
+                    {id: 2, x: w*0.3, y: h*0.8, type: 'router'},
+                    {id: 3, x: w*0.6, y: h*0.2, type: 'router'},
+                    {id: 4, x: w*0.6, y: h*0.8, type: 'router'},
+                    {id: 5, x: w*0.5, y: h*0.5, type: 'router'},
+                    {id: 6, x: w*0.9, y: h/2, type: 'pc', name: 'Receiver'}
+                ];
+
+                this.edges = [
+                    [0,1], [0,2], // sender to edge
+                    [1,3], [1,5], [2,5], [2,4], // internal mesh
+                    [3,4], [5,3], [5,4], // internal mesh
+                    [3,6], [4,6] // edge to receiver
+                ];
+            },
+
+            send() {
+                if(this.active) return;
+                this.init(); // reset
+                this.active = true;
+                this.statusEl.innerText = "Segmenting & Routing...";
+                this.statusEl.className = "font-bold text-sky-600 pulse-text";
+                
+                // Segment into 4 packets, give them different paths
+                const paths = [
+                    [0, 1, 3, 6],
+                    [0, 2, 4, 6],
+                    [0, 1, 5, 4, 6],
+                    [0, 2, 5, 3, 6]
+                ];
+
+                for(let i=0; i<4; i++) {
+                    // Randomize speeds to force out-of-order arrival
+                    let speed = 0.01 + Math.random() * 0.015; 
+                    this.packets.push({
+                        seq: i+1,
+                        route: paths[i],
+                        currentLeg: 0,
+                        progress: 0,
+                        speed: speed,
+                        color: ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'][i] // red, blue, green, yellow
+                    });
+                }
+            },
+
+            update() {
+                if(!this.active) return;
+
+                let allDone = true;
+                for(let i=this.packets.length-1; i>=0; i--) {
+                    let p = this.packets[i];
+                    if (p.currentLeg >= p.route.length - 1) continue; // arrived
+                    
+                    allDone = false;
+                    p.progress += p.speed;
+                    
+                    if (p.progress >= 1) {
+                        p.progress = 0;
+                        p.currentLeg++;
+                        
+                        // Add processing delay at router
+                        if(p.currentLeg < p.route.length - 1) {
+                            p.progress = -0.5; // Artificial delay before moving
+                        } else {
+                            // Arrived at destination
+                            this.received.push(p.seq);
+                        }
+                    }
+                }
+
+                if (allDone && this.received.length === 4) {
+                    this.active = false;
+                    this.statusEl.innerText = "Reassembled Successfully!";
+                    this.statusEl.className = "font-bold text-emerald-600";
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                // Draw Edges
+                ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 2; // slate-200
+                this.edges.forEach(e => {
+                    let n1 = this.nodes[e[0]];
+                    let n2 = this.nodes[e[1]];
+                    ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y); ctx.stroke();
+                });
+
+                // Draw Nodes
+                this.nodes.forEach(n => {
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    ctx.strokeStyle = n.type === 'pc' ? '#3b82f6' : '#94a3b8'; // blue vs slate
+                    ctx.lineWidth = 2; ctx.stroke();
+                    
+                    ctx.fillStyle = n.type === 'pc' ? '#3b82f6' : '#94a3b8';
+                    ctx.font = '12px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    ctx.fillText(n.type === 'pc' ? '\uf108' : '\uf021', n.x, n.y);
+                });
+
+                // Draw Receiver Buffer Array
+                let bx = this.nodes[6].x - 20;
+                let by = this.nodes[6].y + 25;
+                ctx.fillStyle = '#64748b'; ctx.font='10px sans-serif'; ctx.fillText("Buffer", bx, by-5);
+                for(let i=0; i<4; i++) {
+                    ctx.strokeStyle = '#cbd5e1'; ctx.strokeRect(bx + (i*15) - 30, by, 14, 14);
+                    // Check if we received this seq
+                    if(this.received.includes(i+1)) {
+                        ctx.fillStyle = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b'][i];
+                        ctx.fillRect(bx + (i*15) - 30 + 1, by + 1, 12, 12);
+                        ctx.fillStyle = '#fff'; ctx.fillText(i+1, bx + (i*15) - 30 + 7, by + 7);
+                    }
+                }
+
+                // Draw Packets in flight
+                this.packets.forEach(p => {
+                    if (p.currentLeg >= p.route.length - 1) return; // don't draw arrived
+                    
+                    // Don't draw if in router delay phase
+                    if (p.progress < 0) {
+                        let rNode = this.nodes[p.route[p.currentLeg]];
+                        // Draw small indicator above router
+                        ctx.beginPath(); ctx.arc(rNode.x, rNode.y - 20, 4, 0, Math.PI*2);
+                        ctx.fillStyle = p.color; ctx.fill();
+                        return;
+                    }
+
+                    let fromNode = this.nodes[p.route[p.currentLeg]];
+                    let toNode = this.nodes[p.route[p.currentLeg+1]];
+                    
+                    let px = lerp(fromNode.x, toNode.x, p.progress);
+                    let py = lerp(fromNode.y, toNode.y, p.progress);
+                    
+                    // Draw packet box
+                    ctx.fillStyle = '#ffffff'; ctx.fillRect(px-8, py-8, 16, 16);
+                    ctx.strokeStyle = p.color; ctx.lineWidth=2; ctx.strokeRect(px-8, py-8, 16, 16);
+                    ctx.fillStyle = p.color; ctx.font='10px sans-serif'; ctx.fontWeight='bold';
+                    ctx.fillText(p.seq, px, py);
+                });
+            }
+        };
+        document.getElementById('btn-pkt-send').addEventListener('click', () => PacketSim.send());
+
+        // ==========================================
+        // 4. ROUTING SIMULATION (HL)
+        // ==========================================
+        const RoutingSim = {
+            ctx: document.getElementById('routing-canvas').getContext('2d'),
+            currentMode: 'static',
+            coreBroken: false,
+            packets: [],
+            
+            nodes: [],
+            edges: [],
+
+            init(mode) {
+                this.currentMode = mode;
+                this.packets = [];
+                this.coreBroken = false;
+                
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                // Diamond topology: Sender(A) -> Core(B) or Backup(C) -> Receiver(D)
+                this.nodes = [
+                    {id: 0, x: w*0.15, y: h/2, name: 'A (Sender)', isEnd: true},
+                    {id: 1, x: w*0.5, y: h*0.25, name: 'B (Core)', isBroken: false},
+                    {id: 2, x: w*0.5, y: h*0.75, name: 'C (Backup)', isBroken: false},
+                    {id: 3, x: w*0.85, y: h/2, name: 'D (Receiver)', isEnd: true}
+                ];
+
+                this.edges = [ [0,1], [0,2], [1,3], [2,3] ];
+
+                this.updateInfoText();
+                
+                // Start sending stream
+                if(!this.spawner) {
+                    this.spawner = setInterval(() => this.spawnPacket(), 1500);
+                }
+            },
+
+            toggleBreak() {
+                this.coreBroken = !this.coreBroken;
+                this.nodes[1].isBroken = this.coreBroken;
+                // If dynamic and repaired, packets immediately re-route.
+                // If dynamic and broken, trigger convergence animation.
+                if (this.currentMode === 'dynamic' && this.coreBroken) {
+                    this.triggerConvergence();
+                }
+            },
+
+            triggerConvergence() {
+                // visual flash on nodes to simulate routing table updates
+                this.nodes.forEach(n => n.flashing = 10); // frames to flash
+            },
+
+            spawnPacket() {
+                // Routing logic
+                let route = [];
+                if (this.currentMode === 'static') {
+                    // Static: ALWAYS tries to go through B (id 1)
+                    route = [0, 1, 3]; 
+                } else {
+                    // Dynamic: Picks best path based on state
+                    if (!this.coreBroken) {
+                        route = [0, 1, 3]; // Preferred
+                    } else {
+                        route = [0, 2, 3]; // Backup converged
+                    }
+                }
+                this.packets.push({ route: route, currentLeg: 0, progress: 0, status: 'ok' });
+            },
+
+            updateInfoText() {
+                const infoBox = document.getElementById('rt-info');
+                if(this.currentMode === 'static') {
+                    infoBox.innerHTML = `
+                        <div class="bg-amber-50 p-3 rounded border-l-4 border-amber-500 text-xs text-amber-900/80">
+                            <strong>Static Routing active.</strong> Admin explicitly programmed path A &rarr; B &rarr; D. <br>
+                            <em>Pro:</em> Low CPU usage. <em>Con:</em> No automatic failover if Router B dies.
+                        </div>`;
+                } else {
+                    infoBox.innerHTML = `
+                        <div class="bg-emerald-50 p-3 rounded border-l-4 border-emerald-500 text-xs text-emerald-900/80">
+                            <strong>Dynamic Routing active (e.g. OSPF).</strong> Routers share state. <br>
+                            <em>Pro:</em> Automatically converges to backup path A &rarr; C &rarr; D if B fails. <em>Con:</em> Uses more CPU/bandwidth.
+                        </div>`;
+                }
+            },
+
+            update() {
+                for(let i=this.packets.length-1; i>=0; i--) {
+                    let p = this.packets[i];
+                    
+                    if (p.status === 'dropped') {
+                        p.progress -= 0.05; // fade out animation
+                        if(p.progress < -1) this.packets.splice(i, 1);
+                        continue;
+                    }
+
+                    p.progress += 0.02;
+                    
+                    if (p.progress >= 1) {
+                        p.progress = 0;
+                        let currentNodeId = p.route[p.currentLeg+1];
+                        
+                        // Check if hitting a broken node
+                        if (this.nodes[currentNodeId].isBroken) {
+                            p.status = 'dropped';
+                            continue;
+                        }
+
+                        p.currentLeg++;
+                        if (p.currentLeg >= p.route.length - 1) {
+                            this.packets.splice(i, 1); // Arrived
+                        }
+                    }
+                }
+
+                // Update convergence flashes
+                this.nodes.forEach(n => {
+                    if(n.flashing > 0) n.flashing--;
+                });
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+                // Draw Edges
+                ctx.lineWidth = 3;
+                this.edges.forEach(e => {
+                    let n1 = this.nodes[e[0]];
+                    let n2 = this.nodes[e[1]];
+                    ctx.beginPath(); ctx.moveTo(n1.x, n1.y); ctx.lineTo(n2.x, n2.y);
+                    
+                    // Highlight active path statically
+                    if(this.currentMode==='static' && (e.includes(1))) ctx.strokeStyle = '#93c5fd'; // blue-300
+                    else if (this.currentMode==='static') ctx.strokeStyle = '#e2e8f0'; // slate-200
+                    
+                    // Highlight active path dynamically
+                    if(this.currentMode==='dynamic') {
+                        if (!this.coreBroken && e.includes(1)) ctx.strokeStyle = '#6ee7b7'; // emerald-300
+                        else if (this.coreBroken && e.includes(2)) ctx.strokeStyle = '#6ee7b7'; // emerald-300
+                        else ctx.strokeStyle = '#e2e8f0'; // slate-200
+                    }
+                    
+                    if(n1.isBroken || n2.isBroken) ctx.strokeStyle = '#fca5a5'; // red-300
+                    ctx.stroke();
+                });
+
+                // Draw Packets
+                this.packets.forEach(p => {
+                    let fromNode = this.nodes[p.route[p.currentLeg]];
+                    let toNode = this.nodes[p.route[Math.min(p.currentLeg+1, p.route.length-1)]];
+                    
+                    let px = lerp(fromNode.x, toNode.x, p.progress > 0 ? p.progress : 0);
+                    let py = lerp(fromNode.y, toNode.y, p.progress > 0 ? p.progress : 0);
+                    
+                    ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI*2);
+                    if (p.status === 'dropped') {
+                        ctx.fillStyle = '#ef4444'; // red-500
+                        ctx.globalAlpha = Math.max(0, 1 + p.progress); // fade out
+                        
+                        // Draw "X"
+                        ctx.font='16px sans-serif'; ctx.fillText('❌', px, py);
+                    } else {
+                        ctx.fillStyle = '#0ea5e9'; // sky-500
+                    }
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                });
+
+                // Draw Nodes
+                this.nodes.forEach(n => {
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 20, 0, Math.PI*2);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    
+                    if (n.isBroken) {
+                        ctx.strokeStyle = '#ef4444'; // red-500
+                    } else if (n.flashing > 0) {
+                        ctx.strokeStyle = '#f59e0b'; // amber-500 (routing update)
+                        ctx.lineWidth = 5; ctx.stroke(); ctx.lineWidth = 2; // thick flash
+                    } else {
+                        ctx.strokeStyle = '#64748b'; // slate-500
+                    }
+                    
+                    ctx.lineWidth = 2; ctx.stroke();
+                    
+                    ctx.fillStyle = n.isBroken ? '#ef4444' : '#64748b';
+                    ctx.font = '16px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                    if (n.isEnd) ctx.fillText('\uf108', n.x, n.y); // pc
+                    else ctx.fillText('\uf021', n.x, n.y); // router
+
+                    ctx.fillStyle = '#334155'; ctx.font = '12px sans-serif'; ctx.fillText(n.name, n.x, n.y + 35);
+                    
+                    if(n.isBroken) {
+                        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 10px sans-serif'; ctx.fillText('OFFLINE', n.x, n.y - 30);
+                    }
+                });
+            }
+        };
+        
+        document.getElementById('btn-rt-static').addEventListener('click', (e) => {
+            document.getElementById('btn-rt-dynamic').classList.remove('active');
+            e.target.classList.add('active');
+            RoutingSim.init('static');
+        });
+        document.getElementById('btn-rt-dynamic').addEventListener('click', (e) => {
+            document.getElementById('btn-rt-static').classList.remove('active');
+            e.target.classList.add('active');
+            RoutingSim.init('dynamic');
+        });
+        document.getElementById('btn-rt-break').addEventListener('click', () => RoutingSim.toggleBreak());
+        // Allow canvas clicking to break router B
+        document.getElementById('routing-canvas').addEventListener('mousedown', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            if(dist(x, y, RoutingSim.nodes[1].x, RoutingSim.nodes[1].y) < 30) {
+                RoutingSim.toggleBreak();
+            }
+        });
+
+        // --- Global Animation Loop ---
+        function globalLoop() {
+            if(currentTab === 'ip') { NatSim.update(); NatSim.draw(); }
+            if(currentTab === 'media') { MediaSim.update(); MediaSim.draw(); }
+            if(currentTab === 'packet') { PacketSim.update(); PacketSim.draw(); }
+            if(currentTab === 'routing') { RoutingSim.update(); RoutingSim.draw(); }
+            
+            animFrameId = requestAnimationFrame(globalLoop);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            buildQuiz('ip', 'ip');
+            buildQuiz('media', 'media');
+            buildQuiz('packet', 'packet');
+            buildQuiz('routing', 'routing');
+
+            resizeCanvases();
+            
+            // Init all to be safe on first render bounds
+            NatSim.init();
+            MediaSim.init('fibre');
+            PacketSim.init();
+            RoutingSim.init('static');
+
+            globalLoop();
+        };
+
+    </script>
+</body>
+</html>

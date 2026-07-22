@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetArch Lab: Network Fundamentals</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect ratio */
+            background: #ffffff;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+            color: #64748b; /* slate-500 */
+        }
+        .tab-btn:hover { color: #0284c7; } /* sky-600 */
+        .tab-btn.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0284c7; 
+            background-color: #f0f9ff; /* sky-50 */
+        }
+
+        .answer-btn {
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #334155; 
+            border: 1px solid #cbd5e1; 
+        }
+        .answer-btn:hover:not(:disabled) {
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .answer-btn.correct {
+            background-color: #d1fae5; /* emerald-100 */
+            color: #065f46; 
+            border-color: #10b981; 
+        }
+        .answer-btn.incorrect {
+            background-color: #ffe4e6; /* rose-100 */
+            color: #9f1239; 
+            border-color: #f43f5e; 
+        }
+
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .control-btn {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { 
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .control-btn.active { 
+            background-color: #0284c7; 
+            border-color: #0369a1; 
+            color: white; 
+        }
+        
+        .pulse-highlight {
+            animation: pulse-ring 2s infinite;
+        }
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(14, 165, 233, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(14, 165, 233, 0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center h-auto md:h-16 py-3 md:py-0">
+                <div class="flex items-center mb-3 md:mb-0">
+                    <i class="fa-solid fa-network-wired text-sky-500 text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-indigo-600 tracking-tight">Network Fundamentals</h1>
+                </div>
+                <nav class="flex space-x-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+                    <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="types">
+                        <i class="fa-solid fa-globe mr-2"></i>Network Types
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="devices">
+                        <i class="fa-solid fa-server mr-2"></i>Devices & Hardware
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="protocols">
+                        <i class="fa-solid fa-handshake mr-2"></i>Protocols (TCP/UDP)
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="tcpip">
+                        <i class="fa-solid fa-layer-group mr-2"></i>TCP/IP Model (HL)
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <div id="types-view" class="view-section grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.1.1 & .2 Network Types</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                        Networks are classified by their geographic scope and purpose. Select a network type below to visualize its scale.
+                    </p>
+                    
+                    <div class="space-y-2 mb-6">
+                        <button id="btn-type-pan" class="control-btn active px-3 py-2 rounded text-left w-full text-sm font-semibold">
+                            <i class="fa-brands fa-bluetooth text-indigo-500 w-6"></i> PAN (Personal Area)
+                        </button>
+                        <button id="btn-type-lan" class="control-btn px-3 py-2 rounded text-left w-full text-sm font-semibold">
+                            <i class="fa-solid fa-building text-sky-500 w-6"></i> LAN (Local Area)
+                        </button>
+                        <button id="btn-type-wan" class="control-btn px-3 py-2 rounded text-left w-full text-sm font-semibold">
+                            <i class="fa-solid fa-earth-americas text-emerald-500 w-6"></i> WAN (Wide Area)
+                        </button>
+                        <button id="btn-type-vpn" class="control-btn px-3 py-2 rounded text-left w-full text-sm font-semibold">
+                            <i class="fa-solid fa-shield-halved text-rose-500 w-6"></i> VPN (Virtual Private)
+                        </button>
+                    </div>
+
+                    <div id="types-info" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 min-h-[120px]">
+                        <!-- Dynamic Info -->
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="types-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="types-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="devices-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.1.3 Network Devices</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Hardware components perform specific roles to map data across the TCP/IP layers.</p>
+                    
+                    <div class="bg-sky-50 p-3 rounded-lg border border-sky-200 text-sm text-sky-900 mb-4">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Click on any device in the diagram to view its specific function and TCP/IP layer mapping.
+                    </div>
+
+                    <div id="devices-info" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 mb-4 min-h-[140px] transition-all">
+                        <h4 class="font-bold text-slate-800 border-b pb-1 mb-2">Device Inspector</h4>
+                        <p class="text-slate-500 italic">Select a device...</p>
+                    </div>
+
+                    <button id="btn-dev-send" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                        <i class="fa-solid fa-paper-plane mr-1"></i> Send Packet to Internet
+                    </button>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="devices-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="devices-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="protocols-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.1.4 Protocols</h2>
+                    
+                    <div class="flex space-x-2 mb-4">
+                        <button id="btn-proto-tcp" class="flex-1 control-btn active py-2 text-sm font-semibold rounded shadow-sm">TCP (Reliable)</button>
+                        <button id="btn-proto-udp" class="flex-1 control-btn py-2 text-sm font-semibold rounded shadow-sm">UDP (Fast)</button>
+                    </div>
+
+                    <div id="proto-info" class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-sm text-slate-700 mb-4 h-[140px] overflow-y-auto">
+                        <!-- Dynamic Info -->
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Network Conditions</label>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-xs text-emerald-600 font-bold">Good</span>
+                            <input type="range" id="proto-loss" min="0" max="40" value="0" class="flex-grow h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                            <span class="text-xs text-rose-600 font-bold">Lossy</span>
+                        </div>
+                    </div>
+
+                    <button id="btn-proto-send" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                        Start Transmission
+                    </button>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm relative">
+                    <div class="absolute top-4 left-4 z-10 bg-white/90 p-2 rounded shadow text-xs border border-slate-200 font-mono">
+                        <div class="font-bold text-slate-700 border-b mb-1">Transmission Log</div>
+                        <div id="proto-log" class="h-24 overflow-y-auto space-y-1 w-48">
+                            <div class="text-slate-400">Idle...</div>
+                        </div>
+                    </div>
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="protocols-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="protocols-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tcpip-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.1.5 TCP/IP Model (HL)</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">
+                        Data is sent through an encapsulation process down the 4-layer TCP/IP stack, transmitted, and then decapsulated by the receiver.
+                    </p>
+
+                    <div class="bg-indigo-50 border border-indigo-100 p-3 rounded mb-4 shadow-inner">
+                        <div id="tcpip-step-desc" class="text-sm font-semibold text-indigo-800 text-center min-h-[40px] flex items-center justify-center">
+                            Ready to send data. Click Next to begin Encapsulation.
+                        </div>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <div class="w-full bg-slate-200 rounded-full h-1.5 mb-4">
+                        <div id="tcpip-progress" class="bg-indigo-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+
+                    <div class="flex space-x-2 mb-2">
+                        <button id="btn-tcpip-reset" class="w-1/3 bg-slate-100 hover:bg-slate-200 text-slate-700 py-2 px-3 rounded text-sm transition-colors font-semibold border border-slate-300 shadow-sm">
+                            <i class="fa-solid fa-rotate-right"></i> Reset
+                        </button>
+                        <button id="btn-tcpip-next" class="w-2/3 bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm flex items-center justify-center">
+                            Next Step <i class="fa-solid fa-arrow-right ml-2"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="tcpip-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-indigo-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="tcpip-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const views = document.querySelectorAll('.view-section');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        let currentTab = 'types';
+        let animFrameId = null;
+
+        function resizeCanvases() {
+            const containers = document.querySelectorAll('.canvas-container');
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach((canvas, index) => {
+                const rect = containers[index].getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                if (target === currentTab) return;
+
+                tabBtns.forEach(b => b.classList.remove('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10'));
+                btn.classList.add('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10');
+
+                views.forEach(v => v.classList.add('hidden'));
+                document.getElementById(`${target}-view`).classList.remove('hidden');
+                
+                currentTab = target;
+                resizeCanvases();
+                
+                if (target === 'types') TypesSim.init(TypesSim.currentMode);
+                if (target === 'devices') DevicesSim.init();
+                if (target === 'protocols') ProtoSim.init(ProtoSim.currentMode);
+                if (target === 'tcpip') TcpIpSim.init();
+            });
+        });
+
+        const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+        const quizData = {
+            types: [
+                {
+                    q: "Which type of network is most appropriate for a school campus encompassing several buildings within a few hundred meters of each other?",
+                    options: ["Personal Area Network (PAN)", "Local Area Network (LAN)", "Wide Area Network (WAN)", "Virtual Private Network (VPN)"],
+                    answer: 1,
+                    explanation: "A LAN connects computers and devices within a limited geographical area, such as a school, home, or office building, offering high speed and low cost."
+                },
+                {
+                    q: "What is the primary benefit of using a VPN (Virtual Private Network) over public internet infrastructure?",
+                    options: ["It increases the physical speed of the connection.", "It eliminates the need for an ISP.", "It provides a secure, encrypted tunnel for data transmission.", "It automatically blocks all malware."],
+                    answer: 2,
+                    explanation: "A VPN encrypts the data passing through it, creating a private, secure 'tunnel' over an otherwise untrusted public network (like the internet)."
+                }
+            ],
+            devices: [
+                {
+                    q: "Which network device operates primarily at the Internet/Network layer to direct packets between entirely different networks using IP addresses?",
+                    options: ["Switch", "Router", "Modem", "Network Interface Card (NIC)"],
+                    answer: 1,
+                    explanation: "Routers read the destination IP address in a packet and use routing tables to determine the best path to send the packet to the correct external network."
+                },
+                {
+                    q: "Unlike a basic hub, a Switch improves network efficiency by:",
+                    options: ["Converting digital signals to analog.", "Assigning dynamic IP addresses.", "Learning MAC addresses to forward frames only to the specific destination port.", "Acting as a firewall to block unauthorized traffic."],
+                    answer: 2,
+                    explanation: "Switches operate at the Network Interface layer (Data Link). They maintain a MAC address table so they can forward data specifically to the intended device, reducing collisions and broadcast traffic."
+                }
+            ],
+            protocols: [
+                {
+                    q: "Which protocol would be most appropriate for real-time video streaming where speed is prioritized over perfect accuracy?",
+                    options: ["TCP (Transmission Control Protocol)", "UDP (User Datagram Protocol)", "HTTP (Hypertext Transfer Protocol)", "DHCP (Dynamic Host Configuration Protocol)"],
+                    answer: 1,
+                    explanation: "UDP is connectionless and does not require acknowledgments or error recovery. This makes it faster and ideal for live video/audio where a dropped frame is better than a delayed frame."
+                },
+                {
+                    q: "What is the function of DHCP?",
+                    options: ["To translate domain names (like google.com) into IP addresses.", "To automatically assign IP addresses and network configurations to devices.", "To encrypt web traffic.", "To ensure reliable, ordered delivery of packets."],
+                    answer: 1,
+                    explanation: "Dynamic Host Configuration Protocol (DHCP) dynamically leases IP addresses to devices joining a network, removing the need for manual, static IP configuration."
+                }
+            ],
+            tcpip: [
+                {
+                    q: "(HL) During encapsulation, at which layer is the source and destination IP Address added to the header?",
+                    options: ["Application Layer", "Transport Layer", "Internet Layer", "Network Interface Layer"],
+                    answer: 2,
+                    explanation: "The Internet layer (equivalent to the OSI Network layer) is responsible for logical addressing (IP addresses) and routing the packet across networks."
+                },
+                {
+                    q: "(HL) Which of the following best describes the role of the Transport Layer in the TCP/IP model?",
+                    options: ["Converting data into electrical signals for the wire.", "Providing application-specific protocols like HTTP and SMTP.", "Establishing end-to-end communication, dividing data into segments, and adding port numbers.", "Translating private IP addresses to public IP addresses."],
+                    answer: 2,
+                    explanation: "The Transport layer takes data from the Application layer, breaks it into segments, adds port numbers (to identify the specific application), and handles reliability (if using TCP)."
+                }
+            ]
+        };
+
+        function buildQuiz(topic, prefix) {
+            const container = document.getElementById(`${prefix}-quiz`);
+            container.innerHTML = ''; 
+            
+            quizData[topic].forEach((item, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
+                
+                const qTitle = document.createElement('h4');
+                qTitle.className = 'text-sm font-semibold text-slate-800 mb-3 leading-snug';
+                qTitle.innerText = `${qIndex + 1}. ${item.q}`;
+                qDiv.appendChild(qTitle);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2';
+
+                const explanationDiv = document.createElement('div');
+                explanationDiv.className = 'mt-3 text-sm hidden p-3 rounded bg-white border-l-4 border-slate-200 transition-all duration-300';
+
+                item.options.forEach((opt, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'answer-btn text-left p-3 rounded border text-sm';
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('click', function() {
+                        const allBtns = optionsGrid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.add('opacity-50', 'cursor-not-allowed');
+                        });
+                        
+                        this.classList.remove('opacity-50');
+                        if (oIndex === item.answer) {
+                            this.classList.add('correct');
+                            explanationDiv.classList.add('block', 'border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Correct!</strong> ${item.explanation}`;
+                        } else {
+                            this.classList.add('incorrect');
+                            allBtns[item.answer].classList.remove('opacity-50');
+                            allBtns[item.answer].classList.add('correct');
+                            
+                            explanationDiv.classList.add('block', 'border-rose-500', 'text-rose-700', 'bg-rose-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Incorrect.</strong> ${item.explanation}`;
+                        }
+                    });
+                    optionsGrid.appendChild(btn);
+                });
+
+                qDiv.appendChild(optionsGrid);
+                qDiv.appendChild(explanationDiv);
+                container.appendChild(qDiv);
+            });
+        }
+
+        const TypesSim = {
+            ctx: document.getElementById('types-canvas').getContext('2d'),
+            currentMode: 'pan',
+            time: 0,
+
+            init(mode) {
+                this.currentMode = mode;
+                this.updateInfo();
+            },
+
+            updateInfo() {
+                const infoBox = document.getElementById('types-info');
+                const content = {
+                    pan: "<strong>PAN (Personal Area Network):</strong> Covers a very small area (few meters), usually for a single person. <em>Examples:</em> Bluetooth headphones connected to a smartphone, wireless mouse.",
+                    lan: "<strong>LAN (Local Area Network):</strong> Connects computers within a limited area like a home, school, or office building. Managed locally, offers high bandwidth and low latency.",
+                    wan: "<strong>WAN (Wide Area Network):</strong> Covers a large geographical area (cities, countries). The Internet is the largest WAN. Often utilizes leased telecommunication lines.",
+                    vpn: "<strong>VPN (Virtual Private Network):</strong> Creates a private, encrypted connection over a public network (like the Internet). Allows remote users to securely access a corporate LAN."
+                };
+                infoBox.innerHTML = content[this.currentMode];
+            },
+
+            update() {
+                this.time += 0.05;
+            },
+
+            drawIcon(ctx, icon, x, y, size, color) {
+                ctx.fillStyle = color;
+                ctx.font = `${size}px "Font Awesome 6 Free"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fontWeight = '900';
+                ctx.fillText(icon, x, y);
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const cx = w / 2;
+                const cy = h / 2;
+
+                if (this.currentMode === 'pan') {
+                    // Draw Person / Phone in center
+                    this.drawIcon(ctx, '\uf3ce', cx, cy, 40, '#334155'); // Mobile
+                    
+                    // Orbiting devices
+                    const r = 80;
+                    const d1x = cx + Math.cos(this.time) * r;
+                    const d1y = cy + Math.sin(this.time) * r;
+                    const d2x = cx + Math.cos(this.time + Math.PI) * r;
+                    const d2y = cy + Math.sin(this.time + Math.PI) * r;
+
+                    ctx.strokeStyle = '#6366f1'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(d1x, d1y); ctx.stroke();
+                    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(d2x, d2y); ctx.stroke();
+                    ctx.setLineDash([]);
+
+                    this.drawIcon(ctx, '\uf025', d1x, d1y, 24, '#6366f1'); // Headphones
+                    this.drawIcon(ctx, '\uf208', d2x, d2y, 24, '#6366f1'); // Smartwatch
+
+                    // Draw boundary
+                    ctx.beginPath(); ctx.arc(cx, cy, r + 40, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(99, 102, 241, 0.1)'; ctx.fill();
+                    ctx.strokeStyle = '#818cf8'; ctx.lineWidth=1; ctx.stroke();
+                } 
+                else if (this.currentMode === 'lan') {
+                    // Switch in center
+                    this.drawIcon(ctx, '\uf6ff', cx, cy, 30, '#0284c7'); // Network switch
+                    ctx.font='10px sans-serif'; ctx.fillText('Switch', cx, cy+20);
+                    
+                    // Connected PCs
+                    const pcs = 5;
+                    const r = 100;
+                    for(let i=0; i<pcs; i++) {
+                        let angle = (Math.PI*2 / pcs) * i;
+                        let px = cx + Math.cos(angle) * r;
+                        let py = cy + Math.sin(angle) * r;
+                        
+                        ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(px, py); ctx.stroke();
+                        
+                        // Animated packet
+                        let t = (this.time * 0.5 + i*0.2) % 1; // 0 to 1
+                        let pktX = lerp(cx, px, t);
+                        let pktY = lerp(cy, py, t);
+                        ctx.fillStyle = '#0ea5e9';
+                        ctx.beginPath(); ctx.arc(pktX, pktY, 4, 0, Math.PI*2); ctx.fill();
+
+                        this.drawIcon(ctx, '\uf108', px, py, 24, '#334155'); // PC
+                    }
+                    
+                    ctx.beginPath(); ctx.arc(cx, cy, r + 40, 0, Math.PI*2);
+                    ctx.fillStyle = 'rgba(14, 165, 233, 0.1)'; ctx.fill();
+                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth=1; ctx.stroke();
+                }
+                else if (this.currentMode === 'wan') {
+                    // Multiple LANs connected via cloud
+                    this.drawIcon(ctx, '\uf0c2', cx, cy, 80, '#94a3b8'); // Cloud (Internet)
+                    ctx.font='12px bold sans-serif'; ctx.fillStyle='#ffffff'; ctx.fillText('INTERNET', cx, cy);
+
+                    const lans = [
+                        {x: cx - 120, y: cy - 80, label: 'NY Office'},
+                        {x: cx + 120, y: cy - 60, label: 'London Office'},
+                        {x: cx, y: cy + 100, label: 'Tokyo Office'}
+                    ];
+
+                    lans.forEach((lan, i) => {
+                        ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3;
+                        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(lan.x, lan.y); ctx.stroke();
+                        
+                        // packets
+                        let t = (this.time * 0.3 + i*0.33) % 1;
+                        let dir = i%2===0 ? t : 1-t; // some in, some out
+                        let pktX = lerp(cx, lan.x, dir);
+                        let pktY = lerp(cy, lan.y, dir);
+                        ctx.fillStyle = '#10b981'; ctx.beginPath(); ctx.arc(pktX, pktY, 5, 0, Math.PI*2); ctx.fill();
+
+                        // LAN node
+                        ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(lan.x, lan.y, 30, 0, Math.PI*2); ctx.fill();
+                        ctx.strokeStyle = '#10b981'; ctx.lineWidth=2; ctx.stroke();
+                        this.drawIcon(ctx, '\uf1ad', lan.x, lan.y, 20, '#059669'); // Building
+                        ctx.fillStyle = '#334155'; ctx.font='10px sans-serif'; ctx.fillText(lan.label, lan.x, lan.y+40);
+                    });
+                }
+                else if (this.currentMode === 'vpn') {
+                    const homeX = cx - 150;
+                    const hqX = cx + 150;
+
+                    // Internet Cloud
+                    this.drawIcon(ctx, '\uf0c2', cx, cy, 100, '#e2e8f0');
+                    ctx.fillStyle = '#64748b'; ctx.font='12px sans-serif'; ctx.fillText('Public Internet', cx, cy);
+
+                    // Normal insecure line (hidden by tunnel)
+                    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(homeX, cy); ctx.lineTo(hqX, cy); ctx.stroke();
+
+                    // Encrypted VPN Tunnel
+                    ctx.fillStyle = 'rgba(244, 63, 94, 0.2)'; // rose-500 tint
+                    ctx.fillRect(homeX, cy - 15, hqX - homeX, 30);
+                    ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2; ctx.setLineDash([5, 5]);
+                    ctx.strokeRect(homeX, cy - 15, hqX - homeX, 30);
+                    ctx.setLineDash([]);
+                    
+                    // Moving encrypted packet
+                    let t = (this.time * 0.4) % 1;
+                    let px = lerp(homeX, hqX, t);
+                    ctx.fillStyle = '#e11d48'; ctx.fillRect(px - 10, cy - 8, 20, 16);
+                    this.drawIcon(ctx, '\uf023', px, cy, 10, '#ffffff'); // Lock
+
+                    // Nodes
+                    this.drawIcon(ctx, '\uf015', homeX, cy, 30, '#334155'); // Home
+                    ctx.font='10px sans-serif'; ctx.fillText('Remote User', homeX, cy+30);
+                    
+                    this.drawIcon(ctx, '\uf1ad', hqX, cy, 40, '#0ea5e9'); // HQ
+                    ctx.fillText('Corporate LAN', hqX, cy+30);
+                }
+            }
+        };
+
+        ['pan', 'lan', 'wan', 'vpn'].forEach(type => {
+            document.getElementById(`btn-type-${type}`).addEventListener('click', (e) => {
+                document.querySelectorAll('#types-view .control-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                TypesSim.init(type);
+            });
+        });
+
+        const DevicesSim = {
+            ctx: document.getElementById('devices-canvas').getContext('2d'),
+            devices: [],
+            packet: null,
+
+            init() {
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                const cy = h / 2;
+                const step = w / 6;
+
+                this.devices = [
+                    { id: 'pc', x: step*0.5, y: cy, icon: '\uf108', label: 'PC (NIC)', layer: 'Layer 1 & 2 (Network Interface)', desc: 'The Network Interface Card formats data into frames and physically transmits/receives them via MAC addresses.' },
+                    { id: 'switch', x: step*1.5, y: cy, icon: '\uf6ff', label: 'Switch', layer: 'Layer 2 (Network Interface)', desc: 'Connects devices on the same LAN. Uses MAC addresses to forward frames only to the correct destination port.' },
+                    { id: 'router', x: step*3, y: cy, icon: '\uf0e8', label: 'Router', layer: 'Layer 3 (Internet)', desc: 'Connects different networks together. Reads IP addresses and uses routing tables to find the best path.' },
+                    { id: 'firewall', x: step*4.2, y: cy, icon: '\uf132', label: 'HW Firewall', layer: 'Layer 3 & 4 (Internet/Transport)', desc: 'Inspects traffic against security rules to block or allow packets.' },
+                    { id: 'modem', x: step*5.5, y: cy, icon: '\uf7c0', label: 'Modem', layer: 'Layer 1 (Physical)', desc: 'Modulates digital signals from the router into analog signals for the ISP (e.g., cable, DSL, Fiber).' }
+                ];
+                this.packet = null;
+                
+                // Add click listener
+                this.ctx.canvas.addEventListener('mousedown', this.handleClick.bind(this));
+            },
+
+            handleClick(e) {
+                const rect = this.ctx.canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+
+                let clicked = false;
+                this.devices.forEach(d => {
+                    if (dist(mx, my, d.x, d.y) < 30) {
+                        this.showInfo(d);
+                        clicked = true;
+                    }
+                });
+                
+                if(!clicked) {
+                     document.getElementById('devices-info').innerHTML = `
+                        <h4 class="font-bold text-slate-800 border-b pb-1 mb-2">Device Inspector</h4>
+                        <p class="text-slate-500 italic">Select a device...</p>`;
+                }
+            },
+
+            showInfo(d) {
+                document.getElementById('devices-info').innerHTML = `
+                    <h4 class="font-bold text-sky-700 border-b pb-1 mb-2 border-sky-100 flex items-center">
+                        <i class="fa-solid ${this.getIconClass(d.icon)} mr-2"></i> ${d.label}
+                    </h4>
+                    <p class="text-xs font-semibold text-slate-500 mb-1">TCP/IP Mapping: <span class="text-indigo-600">${d.layer}</span></p>
+                    <p class="text-sm text-slate-700">${d.desc}</p>
+                `;
+            },
+            
+            getIconClass(unicode) {
+                const map = {'\uf108': 'fa-computer', '\uf6ff': 'fa-network-wired', '\uf0e8': 'fa-sitemap', '\uf132': 'fa-shield-halved', '\uf7c0': 'fa-router'};
+                return map[unicode] || 'fa-server';
+            },
+
+            sendPacket() {
+                if (this.packet) return;
+                this.packet = { targetIdx: 1, progress: 0 };
+            },
+
+            update() {
+                if (this.packet) {
+                    this.packet.progress += 0.02;
+                    if (this.packet.progress >= 1) {
+                        this.packet.progress = 0;
+                        this.packet.targetIdx++;
+                        if (this.packet.targetIdx >= this.devices.length) {
+                            this.packet = null; // Reached end
+                        }
+                    }
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                // Draw links
+                ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(this.devices[0].x, this.devices[0].y);
+                for(let i=1; i<this.devices.length; i++) {
+                    ctx.lineTo(this.devices[i].x, this.devices[i].y);
+                }
+                // Internet connection
+                ctx.lineTo(w, this.devices[0].y);
+                ctx.stroke();
+                
+                // Draw Internet Cloud at end
+                TypesSim.drawIcon(ctx, '\uf0c2', w-20, this.devices[0].y, 60, '#94a3b8');
+
+                // Draw Devices
+                this.devices.forEach(d => {
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath(); ctx.arc(d.x, d.y, 25, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#94a3b8'; ctx.lineWidth=2; ctx.stroke();
+                    TypesSim.drawIcon(ctx, d.icon, d.x, d.y, 24, '#0ea5e9');
+                    ctx.fillStyle = '#334155'; ctx.font='10px font-bold sans-serif'; ctx.fillText(d.label, d.x, d.y+40);
+                });
+
+                // Draw Packet
+                if (this.packet && this.packet.targetIdx < this.devices.length) {
+                    const startNode = this.devices[this.packet.targetIdx - 1];
+                    const endNode = this.devices[this.packet.targetIdx];
+                    const px = lerp(startNode.x, endNode.x, this.packet.progress);
+                    const py = lerp(startNode.y, endNode.y, this.packet.progress);
+
+                    ctx.fillStyle = '#f59e0b'; // amber
+                    ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI*2); ctx.fill();
+                    ctx.strokeStyle = '#b45309'; ctx.lineWidth=1; ctx.stroke();
+                }
+            }
+        };
+
+        document.getElementById('btn-dev-send').addEventListener('click', () => DevicesSim.sendPacket());
+
+
+        const ProtoSim = {
+            ctx: document.getElementById('protocols-canvas').getContext('2d'),
+            currentMode: 'tcp',
+            state: 'idle', // idle, handshake, sending, done
+            packets: [],
+            handshakeStep: 0,
+            timer: 0,
+
+            init(mode) {
+                this.currentMode = mode;
+                this.state = 'idle';
+                this.packets = [];
+                this.timer = 0;
+                this.updateInfo();
+                document.getElementById('proto-log').innerHTML = '';
+                this.log('Ready.');
+            },
+            
+            log(msg, color="slate-600") {
+                const logEl = document.getElementById('proto-log');
+                const p = document.createElement('div');
+                p.className = `text-${color} text-[10px] border-b border-slate-100 py-0.5`;
+                p.innerText = `> ${msg}`;
+                logEl.prepend(p);
+            },
+
+            updateInfo() {
+                const infoBox = document.getElementById('proto-info');
+                if (this.currentMode === 'tcp') {
+                    infoBox.innerHTML = `<strong>TCP (Transmission Control Protocol):</strong> <br>Connection-oriented. Requires a 3-way handshake (SYN, SYN-ACK, ACK) before sending. Guarantees delivery by requiring acknowledgments and retransmitting lost packets. Slower but reliable. (e.g., Web browsing, Email).`;
+                } else {
+                    infoBox.innerHTML = `<strong>UDP (User Datagram Protocol):</strong> <br>Connectionless. Just sends packets ("datagrams") without establishing a connection or checking if they arrived. Fast, less overhead, but unreliable. (e.g., Live Video, VoIP, Gaming).`;
+                }
+            },
+
+            start() {
+                if (this.state !== 'idle' && this.state !== 'done') return;
+                this.packets = [];
+                document.getElementById('proto-log').innerHTML = '';
+                
+                if (this.currentMode === 'tcp') {
+                    this.state = 'handshake';
+                    this.handshakeStep = 0;
+                    this.timer = 0;
+                    this.log('Starting TCP Handshake...', 'indigo-600');
+                } else {
+                    this.state = 'sending';
+                    this.timer = 0;
+                    this.log('UDP: Blasting packets...', 'emerald-600');
+                }
+            },
+
+            update() {
+                const lossChance = parseInt(document.getElementById('proto-loss').value) / 100;
+                const h = this.ctx.canvas.height;
+                const topY = h * 0.3; // Client
+                const botY = h * 0.7; // Server
+
+                if (this.state === 'handshake') {
+                    this.timer++;
+                    if (this.timer === 1) {
+                        this.packets.push({ type: 'SYN', y: topY, target: botY, dir: 1, progress: 0 });
+                        this.log('Sent SYN');
+                    }
+                    if (this.packets.length === 0 && this.timer > 10) {
+                        if (this.handshakeStep === 0) {
+                            this.packets.push({ type: 'SYN-ACK', y: botY, target: topY, dir: -1, progress: 0 });
+                            this.log('Received SYN, Sent SYN-ACK');
+                            this.handshakeStep = 1;
+                        } else if (this.handshakeStep === 1) {
+                            this.packets.push({ type: 'ACK', y: topY, target: botY, dir: 1, progress: 0 });
+                            this.log('Received SYN-ACK, Sent ACK');
+                            this.handshakeStep = 2;
+                        } else if (this.handshakeStep === 2) {
+                            this.state = 'sending';
+                            this.timer = 0;
+                            this.log('Connection Est. Sending Data.', 'emerald-600');
+                        }
+                    }
+                } else if (this.state === 'sending') {
+                    this.timer++;
+                    
+                    // Spawn packets
+                    if (this.currentMode === 'tcp' && this.timer % 40 === 0 && this.timer < 200) {
+                        this.packets.push({ type: 'DATA', id: this.timer/40, y: topY, target: botY, dir: 1, progress: 0, acked: false });
+                        this.log(`Sent Pkt ${this.timer/40}`);
+                    } else if (this.currentMode === 'udp' && this.timer % 15 === 0 && this.timer < 100) {
+                         this.packets.push({ type: 'DATA', id: this.timer/15, y: topY, target: botY, dir: 1, progress: 0 });
+                         this.log(`Sent Dgram ${this.timer/15}`);
+                    }
+
+                    if (this.timer > (this.currentMode==='tcp'?300:150) && this.packets.length === 0) {
+                        this.state = 'done';
+                        this.log('Transmission Complete.', 'indigo-600');
+                    }
+                }
+
+                // Move packets
+                for (let i = this.packets.length - 1; i >= 0; i--) {
+                    let p = this.packets[i];
+                    p.progress += 0.02;
+
+                    // Packet loss simulation (only data packets drop, not handshake for simplicity)
+                    if (p.progress > 0.4 && p.progress < 0.42 && p.type === 'DATA' && p.dir === 1 && !p.lostTested) {
+                        p.lostTested = true;
+                        if (Math.random() < lossChance) {
+                            p.lost = true;
+                            this.log(`LOST ${this.currentMode==='tcp'?'Pkt':'Dgram'} ${p.id}`, 'rose-500');
+                            
+                            // TCP Retransmission logic
+                            if (this.currentMode === 'tcp') {
+                                setTimeout(() => {
+                                    if(this.state === 'sending') {
+                                        this.log(`Retransmitting Pkt ${p.id}`, 'amber-600');
+                                        this.packets.push({ type: 'DATA', id: p.id, y: topY, target: botY, dir: 1, progress: 0, acked: false });
+                                    }
+                                }, 1000);
+                            }
+                        }
+                    }
+
+                    if (p.progress >= 1) {
+                        if (!p.lost) {
+                            if (p.type === 'DATA' && p.dir === 1 && this.currentMode === 'tcp') {
+                                // TCP sends ACK back
+                                this.packets.push({ type: 'D-ACK', id: p.id, y: botY, target: topY, dir: -1, progress: 0 });
+                                this.log(`Rcvd Pkt ${p.id}, Sent ACK`);
+                            } else if (p.type === 'D-ACK') {
+                                this.log(`Rcvd ACK ${p.id}`);
+                            }
+                        }
+                        this.packets.splice(i, 1);
+                    }
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const cx = w / 2;
+                const topY = h * 0.2;
+                const botY = h * 0.8;
+
+                // Draw Hosts
+                TypesSim.drawIcon(ctx, '\uf108', cx, topY, 40, '#334155'); // Client
+                ctx.fillText('Client', cx, topY-30);
+                TypesSim.drawIcon(ctx, '\uf233', cx, botY, 40, '#0ea5e9'); // Server
+                ctx.fillText('Server', cx, botY+30);
+
+                // Draw packets
+                this.packets.forEach(p => {
+                    if (p.lost && p.progress > 0.4) {
+                        // Draw explosion
+                        ctx.fillStyle = '#ef4444'; ctx.font='20px sans-serif'; 
+                        let px = cx + (p.dir === 1 ? -20 : 20); // offset slightly
+                        let py = lerp(topY+25, botY-25, 0.4);
+                        ctx.fillText('💥', px, py);
+                        return;
+                    }
+
+                    let py = lerp(p.y, p.target, p.progress);
+                    
+                    ctx.fillStyle = p.type.includes('ACK') ? '#10b981' : (p.type === 'SYN' ? '#8b5cf6' : '#3b82f6');
+                    
+                    if (p.type === 'DATA') {
+                        ctx.fillRect(cx - 15, py - 10, 30, 20);
+                        ctx.fillStyle = '#fff'; ctx.font = '10px sans-serif'; ctx.fillText(p.id, cx, py);
+                    } else {
+                        // Control packets (SYN, ACK)
+                        ctx.beginPath(); ctx.arc(cx, py, 10, 0, Math.PI*2); ctx.fill();
+                        ctx.fillStyle = '#fff'; ctx.font = '8px sans-serif'; ctx.fillText(p.type, cx, py);
+                    }
+                });
+            }
+        };
+
+        document.getElementById('btn-proto-tcp').addEventListener('click', (e) => {
+            document.getElementById('btn-proto-udp').classList.remove('active');
+            e.target.classList.add('active');
+            ProtoSim.init('tcp');
+        });
+        document.getElementById('btn-proto-udp').addEventListener('click', (e) => {
+            document.getElementById('btn-proto-tcp').classList.remove('active');
+            e.target.classList.add('active');
+            ProtoSim.init('udp');
+        });
+        document.getElementById('btn-proto-send').addEventListener('click', () => ProtoSim.start());
+
+
+        const TcpIpSim = {
+            ctx: document.getElementById('tcpip-canvas').getContext('2d'),
+            step: 0, 
+            // Steps: 0: Idle, 1: App(Send), 2: Trans(Send), 3: Int(Send), 4: Net(Send), 5: Transit, 6: Net(Rcv), 7: Int(Rcv), 8: Trans(Rcv), 9: App(Rcv)
+            animProgress: 0,
+            isAnimating: false,
+
+            init() {
+                this.step = 0;
+                this.animProgress = 0;
+                this.isAnimating = false;
+                this.updateUI();
+            },
+
+            updateUI() {
+                const btnNext = document.getElementById('btn-tcpip-next');
+                const desc = document.getElementById('tcpip-step-desc');
+                const progBar = document.getElementById('tcpip-progress');
+                
+                if (this.isAnimating) {
+                    btnNext.disabled = true; btnNext.classList.add('opacity-50');
+                } else {
+                    btnNext.disabled = false; btnNext.classList.remove('opacity-50');
+                }
+
+                progBar.style.width = `${(this.step / 9) * 100}%`;
+
+                const descriptions = [
+                    "Ready to send. Application Layer (HTTP/SMTP) creates the payload Data.",
+                    "Application Layer: Raw Data generated.",
+                    "Transport Layer (TCP): Breaks data into segments, adds Source/Dest Ports (e.g., 80) for app routing.",
+                    "Internet Layer (IP): Adds Source/Dest IP Addresses for network routing.",
+                    "Network Interface Layer: Adds MAC Addresses and Frame Check Sequence for physical hardware delivery.",
+                    "Transmission: Encapsulated frame travels across physical medium (cable/wifi).",
+                    "Network Interface Layer (Receiver): Strips MAC header, checks integrity.",
+                    "Internet Layer (Receiver): Strips IP header, verifies correct IP destination.",
+                    "Transport Layer (Receiver): Strips TCP header, routes payload to correct port.",
+                    "Application Layer: Data received successfully by the application!"
+                ];
+
+                desc.innerText = descriptions[this.step];
+
+                if (this.step === 9) {
+                    btnNext.innerHTML = 'Complete <i class="fa-solid fa-check ml-2"></i>';
+                    btnNext.disabled = true; btnNext.classList.add('opacity-50');
+                } else {
+                    btnNext.innerHTML = 'Next Step <i class="fa-solid fa-arrow-right ml-2"></i>';
+                }
+            },
+
+            nextStep() {
+                if (this.isAnimating || this.step >= 9) return;
+                this.step++;
+                this.isAnimating = true;
+                this.animProgress = 0;
+                this.updateUI();
+            },
+
+            update() {
+                if (this.isAnimating) {
+                    this.animProgress += (this.step === 5 ? 0.015 : 0.05); // Transit is slower
+                    if (this.animProgress >= 1) {
+                        this.animProgress = 1;
+                        this.isAnimating = false;
+                        this.updateUI();
+                    }
+                }
+            },
+
+            draw() {
+                const ctx = this.ctx;
+                const w = ctx.canvas.width;
+                const h = ctx.canvas.height;
+                ctx.clearRect(0, 0, w, h);
+
+                const senderX = w * 0.2;
+                const receiverX = w * 0.8;
+                
+                // Draw Stack Backgrounds
+                const drawStack = (x, title) => {
+                    ctx.fillStyle = '#f1f5f9'; ctx.fillRect(x - 60, 40, 120, h - 80);
+                    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1; ctx.strokeRect(x - 60, 40, 120, h - 80);
+                    ctx.fillStyle = '#334155'; ctx.font = 'bold 12px sans-serif'; ctx.fillText(title, x, 25);
+                    
+                    const layers = ['Application', 'Transport', 'Internet', 'Network Access'];
+                    const layerH = (h-80)/4;
+                    layers.forEach((l, i) => {
+                        ctx.beginPath(); ctx.moveTo(x - 60, 40 + (i+1)*layerH); ctx.lineTo(x + 60, 40 + (i+1)*layerH); ctx.stroke();
+                        ctx.fillStyle = '#64748b'; ctx.font = '10px sans-serif'; ctx.fillText(l, x, 40 + i*layerH + layerH/2);
+                    });
+                };
+
+                drawStack(senderX, "Sender");
+                drawStack(receiverX, "Receiver");
+
+                // Draw Cable
+                ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.moveTo(senderX+60, h-40 - (h-80)/8); ctx.lineTo(receiverX-60, h-40 - (h-80)/8); ctx.stroke();
+
+                if (this.step > 0) {
+                    // Determine Packet Position and Components based on step
+                    let px, py;
+                    let showData = false, showTCP = false, showIP = false, showMAC = false;
+
+                    const layerH = (h-80)/4;
+                    const l1y = 40 + layerH/2;
+                    const l2y = 40 + layerH + layerH/2;
+                    const l3y = 40 + layerH*2 + layerH/2;
+                    const l4y = 40 + layerH*3 + layerH/2;
+
+                    // Logic to determine what to draw and where
+                    if (this.step === 1) { px = senderX; py = this.isAnimating ? lerp(20, l1y, this.animProgress) : l1y; showData = true; }
+                    else if (this.step === 2) { px = senderX; py = this.isAnimating ? lerp(l1y, l2y, this.animProgress) : l2y; showData = true; showTCP = true; }
+                    else if (this.step === 3) { px = senderX; py = this.isAnimating ? lerp(l2y, l3y, this.animProgress) : l3y; showData = true; showTCP = true; showIP = true; }
+                    else if (this.step === 4) { px = senderX; py = this.isAnimating ? lerp(l3y, l4y, this.animProgress) : l4y; showData=true; showTCP=true; showIP=true; showMAC=true; }
+                    else if (this.step === 5) { 
+                        py = l4y; px = this.isAnimating ? lerp(senderX, receiverX, this.animProgress) : receiverX; 
+                        showData=true; showTCP=true; showIP=true; showMAC=true;
+                    }
+                    else if (this.step === 6) { px = receiverX; py = l4y; showData=true; showTCP=true; showIP=true; showMAC = !this.isAnimating || (1-this.animProgress > 0.5); } // MAC disappears
+                    else if (this.step === 7) { px = receiverX; py = this.isAnimating ? lerp(l4y, l3y, this.animProgress) : l3y; showData=true; showTCP=true; showIP = !this.isAnimating || (1-this.animProgress > 0.5); }
+                    else if (this.step === 8) { px = receiverX; py = this.isAnimating ? lerp(l3y, l2y, this.animProgress) : l2y; showData=true; showTCP = !this.isAnimating || (1-this.animProgress > 0.5); }
+                    else if (this.step === 9) { px = receiverX; py = this.isAnimating ? lerp(l2y, l1y, this.animProgress) : l1y; showData=true; }
+
+                    // Drawing the complex packet
+                    const pWidth = 80;
+                    ctx.save();
+                    ctx.translate(px, py);
+                    
+                    let currentOffset = -pWidth/2;
+                    
+                    if (showMAC) {
+                        ctx.fillStyle = '#8b5cf6'; ctx.fillRect(currentOffset, -10, 15, 20); // Frame Header
+                        ctx.fillStyle = '#fff'; ctx.font='8px sans-serif'; ctx.fillText('MAC', currentOffset+7.5, 0);
+                        currentOffset += 15;
+                    }
+                    if (showIP) {
+                        ctx.fillStyle = '#0ea5e9'; ctx.fillRect(currentOffset, -10, 15, 20); // IP Header
+                        ctx.fillStyle = '#fff'; ctx.font='8px sans-serif'; ctx.fillText('IP', currentOffset+7.5, 0);
+                        currentOffset += 15;
+                    }
+                    if (showTCP) {
+                        ctx.fillStyle = '#10b981'; ctx.fillRect(currentOffset, -10, 15, 20); // TCP Header
+                        ctx.fillStyle = '#fff'; ctx.font='8px sans-serif'; ctx.fillText('TCP', currentOffset+7.5, 0);
+                        currentOffset += 15;
+                    }
+                    if (showData) {
+                        ctx.fillStyle = '#f59e0b'; ctx.fillRect(currentOffset, -10, 35, 20); // Payload
+                        ctx.fillStyle = '#fff'; ctx.font='10px bold sans-serif'; ctx.fillText('DATA', currentOffset+17.5, 0);
+                        currentOffset += 35;
+                    }
+                     if (showMAC) {
+                        ctx.fillStyle = '#8b5cf6'; ctx.fillRect(currentOffset, -10, 10, 20); // Frame Trailer
+                        ctx.fillStyle = '#fff'; ctx.font='8px sans-serif'; ctx.fillText('FCS', currentOffset+5, 0);
+                    }
+
+                    ctx.restore();
+                }
+            }
+        };
+
+        document.getElementById('btn-tcpip-next').addEventListener('click', () => TcpIpSim.nextStep());
+        document.getElementById('btn-tcpip-reset').addEventListener('click', () => TcpIpSim.init());
+
+
+        function globalLoop() {
+            if(currentTab === 'types') { TypesSim.update(); TypesSim.draw(); }
+            if(currentTab === 'devices') { DevicesSim.update(); DevicesSim.draw(); }
+            if(currentTab === 'protocols') { ProtoSim.update(); ProtoSim.draw(); }
+            if(currentTab === 'tcpip') { TcpIpSim.update(); TcpIpSim.draw(); }
+            
+            animFrameId = requestAnimationFrame(globalLoop);
+        }
+
+        window.onload = () => {
+            buildQuiz('types', 'types');
+            buildQuiz('devices', 'devices');
+            buildQuiz('protocols', 'protocols');
+            buildQuiz('tcpip', 'tcpip');
+
+            resizeCanvases();
+            
+            TypesSim.init('pan');
+            DevicesSim.init();
+            ProtoSim.init('tcp');
+            TcpIpSim.init();
+
+            globalLoop();
+        };
+
+    </script>
+</body>
+</html>

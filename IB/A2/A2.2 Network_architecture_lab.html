@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NetArch Lab: Network Architecture</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f8fafc; /* slate-50 */
+            color: #0f172a; /* slate-900 */
+            font-family: 'Inter', system-ui, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 Aspect ratio */
+            background: #ffffff; /* white */
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0; /* slate-200 */
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .tab-btn {
+            transition: all 0.2s ease-in-out;
+            border-bottom: 2px solid transparent;
+            color: #64748b; /* slate-500 */
+        }
+        .tab-btn:hover {
+             color: #0284c7; /* sky-600 */
+        }
+        .tab-btn.active {
+            border-bottom-color: #0ea5e9; /* sky-500 */
+            color: #0284c7; /* sky-600 */
+            background-color: #f0f9ff; /* sky-50 */
+        }
+
+        /* Quiz answer styling */
+        .answer-btn {
+            transition: all 0.2s;
+            background-color: #ffffff;
+            color: #334155; /* slate-700 */
+            border: 1px solid #cbd5e1; /* slate-300 */
+        }
+        .answer-btn:hover:not(:disabled) {
+            background-color: #f1f5f9; /* slate-100 */
+            border-color: #94a3b8;
+        }
+        .answer-btn.correct {
+            background-color: #d1fae5; /* emerald-100 */
+            color: #065f46; /* emerald-800 */
+            border-color: #10b981; /* emerald-500 */
+        }
+        .answer-btn.incorrect {
+            background-color: #ffe4e6; /* rose-100 */
+            color: #9f1239; /* rose-800 */
+            border-color: #f43f5e; /* rose-500 */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .control-btn {
+            background-color: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            transition: all 0.2s;
+        }
+        .control-btn:hover { 
+            background-color: #f1f5f9; 
+            border-color: #94a3b8;
+        }
+        .control-btn.active { 
+            background-color: #0284c7; /* sky-600 */
+            border-color: #0369a1; /* sky-700 */
+            color: white; 
+        }
+        
+        .control-btn.active .text-xs {
+             background-color: #0369a1; /* Darker badge on active */
+             color: white;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col md:flex-row justify-between items-center h-auto md:h-16 py-3 md:py-0">
+                <div class="flex items-center mb-3 md:mb-0">
+                    <i class="fa-solid fa-network-wired text-sky-500 text-2xl mr-3"></i>
+                    <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-500 to-blue-600 tracking-tight">NetArch Lab</h1>
+                </div>
+                <nav class="flex space-x-1 overflow-x-auto w-full md:w-auto pb-1 md:pb-0 scrollbar-hide">
+                    <button class="tab-btn active px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="topologies">
+                        <i class="fa-solid fa-diagram-project mr-2"></i>Topologies
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="servers">
+                        <i class="fa-solid fa-server mr-2"></i>Servers
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="models">
+                        <i class="fa-solid fa-users mr-2"></i>Models
+                    </button>
+                    <button class="tab-btn px-4 py-2 text-sm font-medium rounded-t-lg whitespace-nowrap" data-target="segmentation">
+                        <i class="fa-solid fa-layer-group mr-2"></i>Segmentation
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+        
+        <!-- SECTION 1: Topologies -->
+        <div id="topologies-view" class="view-section grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.2.1 Network Topologies</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Topologies define the physical or logical layout of a network. Compare them based on <strong>reliability</strong>, <strong>transmission speed</strong>, <strong>scalability</strong>, and <strong>cost</strong>.</p>
+                    
+                    <div class="space-y-2 mb-6 flex flex-col">
+                        <button id="btn-star" class="control-btn active px-4 py-2 rounded text-left flex justify-between items-center">
+                            <span><i class="fa-solid fa-star text-amber-500 mr-2"></i> Star Topology</span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 rounded">Home / Office</span>
+                        </button>
+                        <button id="btn-mesh" class="control-btn px-4 py-2 rounded text-left flex justify-between items-center">
+                            <span><i class="fa-solid fa-dharmachakra text-emerald-500 mr-2"></i> Mesh Topology</span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 rounded">Core Routers</span>
+                        </button>
+                        <button id="btn-hybrid" class="control-btn px-4 py-2 rounded text-left flex justify-between items-center">
+                            <span><i class="fa-solid fa-sitemap text-purple-500 mr-2"></i> Hybrid Topology</span>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 rounded">Campuses</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulation Controls</h3>
+                        <p class="text-xs text-slate-500 mb-3">Click on a node or link to break/repair it to test reliability and routing.</p>
+                        <div class="flex space-x-2">
+                            <button id="btn-sim-send" class="flex-1 bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                                <i class="fa-solid fa-paper-plane mr-1"></i> Send Data
+                            </button>
+                            <button id="btn-sim-repair" class="flex-1 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 py-2 px-3 rounded text-sm transition-colors shadow-sm">
+                                <i class="fa-solid fa-wrench mr-1"></i> Repair All
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-2 space-y-6 flex flex-col">
+                    <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="canvas-container w-full h-full cursor-crosshair">
+                            <canvas id="topo-canvas"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                        <h3 class="text-lg font-bold mb-4 text-emerald-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                        <div id="topo-quiz" class="space-y-4"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: Servers (HL) -->
+        <div id="servers-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.2.2 Server Functions</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Servers provide services to clients. Key factors include <strong>scalability</strong> (handling more requests), <strong>reliability</strong> (uptime), and <strong>security</strong>.</p>
+                    
+                    <div class="space-y-2 mb-4">
+                        <button id="btn-serv-dhcp" class="control-btn px-3 py-2 rounded text-left w-full text-sm">
+                            <i class="fa-solid fa-id-card text-blue-500 w-6"></i> <strong class="text-slate-800">DHCP:</strong> Assigns IP Addresses
+                        </button>
+                        <button id="btn-serv-dns" class="control-btn px-3 py-2 rounded text-left w-full text-sm">
+                            <i class="fa-solid fa-book-journal-whills text-emerald-500 w-6"></i> <strong class="text-slate-800">DNS:</strong> Resolves Domain to IP
+                        </button>
+                        <button id="btn-serv-web" class="control-btn px-3 py-2 rounded text-left w-full text-sm">
+                            <i class="fa-solid fa-globe text-orange-500 w-6"></i> <strong class="text-slate-800">Web Server:</strong> Hosts web pages
+                        </button>
+                        <button id="btn-serv-file" class="control-btn px-3 py-2 rounded text-left w-full text-sm">
+                            <i class="fa-solid fa-folder-open text-amber-500 w-6"></i> <strong class="text-slate-800">File Server:</strong> Stores shared data
+                        </button>
+                        <button id="btn-serv-proxy" class="control-btn px-3 py-2 rounded text-left w-full text-sm">
+                            <i class="fa-solid fa-shield-halved text-purple-500 w-6"></i> <strong class="text-slate-800">Proxy Server:</strong> Intermediary/Cache
+                        </button>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulate Web Request</h3>
+                        <button id="btn-serv-simulate" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-play mr-1"></i> Start Request Lifecycle
+                        </button>
+                        <p id="serv-status" class="text-xs text-emerald-600 mt-2 font-mono h-4"></p>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="serv-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-emerald-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="serv-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: Networking Models -->
+        <div id="models-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.2.3 Networking Models</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Compare how data and processing are distributed. Real-world applications vary based on the model's benefits and drawbacks.</p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
+                            <h4 class="font-bold text-blue-700 text-sm mb-1"><i class="fa-solid fa-server mr-1"></i> Client-Server</h4>
+                            <p class="text-xs text-blue-900/70">Centralized control, easier to secure and backup (e.g., Banking, Web Browsing). Prone to bottlenecks.</p>
+                        </div>
+                        <div class="bg-emerald-50 p-3 rounded border-l-4 border-emerald-500">
+                            <h4 class="font-bold text-emerald-700 text-sm mb-1"><i class="fa-solid fa-people-arrows mr-1"></i> Peer-to-Peer (P2P)</h4>
+                            <p class="text-xs text-emerald-900/70">Decentralized, highly scalable, no single point of failure (e.g., File Sharing, Blockchain, VoIP). Harder to secure.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3">Simulation: File Distribution</h3>
+                        <button id="btn-mod-start" class="w-full bg-sky-500 hover:bg-sky-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-download mr-1"></i> Start Download Test
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full">
+                        <canvas id="mod-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-emerald-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="mod-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 4: Network Segmentation -->
+        <div id="segmentation-view" class="view-section hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1 space-y-6">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h2 class="text-xl font-bold mb-3 text-sky-600 border-b border-slate-100 pb-2">A2.2.4 Segmentation</h2>
+                    <p class="text-sm text-slate-600 mb-4 leading-relaxed">Dividing a network into smaller segments (using Subnets or VLANs) isolates traffic, reducing congestion (fewer collisions) and improving security.</p>
+                    
+                    <div class="space-y-4 mb-6">
+                        <div class="flex items-center justify-between bg-slate-50 p-3 rounded border border-slate-200">
+                            <span class="text-sm font-medium text-slate-700">Network Architecture</span>
+                            <div class="flex space-x-2">
+                                <button id="btn-seg-flat" class="control-btn active px-3 py-1 rounded text-xs">Flat</button>
+                                <button id="btn-seg-vlan" class="control-btn px-3 py-1 rounded text-xs">VLANs</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
+                        <h3 class="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2">Simulate Traffic</h3>
+                        <p class="text-xs text-slate-500 mb-3 text-left">Generate a broadcast packet. Watch how far the traffic propagates across the network.</p>
+                        <button id="btn-seg-broadcast" class="w-full bg-rose-500 hover:bg-rose-600 text-white py-2 px-3 rounded text-sm transition-colors font-semibold shadow-sm">
+                            <i class="fa-solid fa-tower-broadcast mr-1"></i> Send Broadcast
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="lg:col-span-2 space-y-6 flex flex-col">
+                <div class="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="canvas-container w-full h-full cursor-crosshair">
+                        <canvas id="seg-canvas"></canvas>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex-grow">
+                    <h3 class="text-lg font-bold mb-4 text-emerald-600"><i class="fa-solid fa-clipboard-check mr-2"></i> Mastery Exercises</h3>
+                    <div id="seg-quiz" class="space-y-4"></div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Core UI & Navigation ---
+        const views = document.querySelectorAll('.view-section');
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        let currentTab = 'topologies';
+        let animFrameId = null;
+
+        // Resize handler for canvases
+        function resizeCanvases() {
+            const containers = document.querySelectorAll('.canvas-container');
+            const canvases = document.querySelectorAll('canvas');
+            canvases.forEach((canvas, index) => {
+                const rect = containers[index].getBoundingClientRect();
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+            });
+        }
+        window.addEventListener('resize', resizeCanvases);
+
+        // Tab Switching Logic
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = btn.getAttribute('data-target');
+                if (target === currentTab) return;
+
+                tabBtns.forEach(b => b.classList.remove('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10'));
+                btn.classList.add('active', 'border-b-cyan-500', 'text-cyan-400', 'bg-cyan-500/10');
+
+                views.forEach(v => v.classList.add('hidden'));
+                document.getElementById(`${target}-view`).classList.remove('hidden');
+                
+                currentTab = target;
+                resizeCanvases();
+                
+                // Re-initialize specific simulations
+                if (target === 'topologies') TopoSim.init(TopoSim.currentType);
+                if (target === 'servers') ServSim.init();
+                if (target === 'models') ModSim.init();
+                if (target === 'segmentation') SegSim.init();
+            });
+        });
+
+        // Utility Math functions
+        const dist = (x1, y1, x2, y2) => Math.sqrt((x2-x1)**2 + (y2-y1)**2);
+        const lerp = (start, end, amt) => (1-amt)*start + amt*end;
+
+        // --- Mastery Exercises Engine ---
+        const quizData = {
+            topologies: [
+                {
+                    q: "In a home or small office where installing many cables is costly, but a single central device failure is an acceptable risk, which topology is most common?",
+                    options: ["Mesh Topology", "Star Topology", "Bus Topology", "Ring Topology"],
+                    answer: 1,
+                    explanation: "Star topology is standard for homes/offices. Devices connect to a central switch/router. It's cost-effective (less cabling than mesh) but the central switch is a single point of failure."
+                },
+                {
+                    q: "Why are Mesh topologies often used for core internet routers and military networks despite their high cost?",
+                    options: ["They offer the highest transmission speed.", "They completely eliminate data collisions.", "They provide very high reliability and fault tolerance.", "They require the least amount of configuration."],
+                    answer: 2,
+                    explanation: "Mesh networks provide multiple paths between nodes. If one link fails, data can be rerouted, ensuring extreme reliability and fault tolerance."
+                }
+            ],
+            servers: [
+                {
+                    q: "When you type 'www.ibo.org' into your browser, which server translates that domain name into an IP address (e.g., 104.18.23.51)?",
+                    options: ["DHCP Server", "DNS Server", "Proxy Server", "File Server"],
+                    answer: 1,
+                    explanation: "The Domain Name System (DNS) server acts like a phonebook, resolving human-readable hostnames to machine-readable IP addresses."
+                },
+                {
+                    q: "Which server acts as an intermediary, caching web requests to improve speed and filtering traffic for security purposes?",
+                    options: ["Proxy Server", "DHCP Server", "Mail Server", "DNS Server"],
+                    answer: 0,
+                    explanation: "A Proxy server sits between clients and the internet. It can cache frequently accessed pages to improve transmission speed and filter content for security."
+                }
+            ],
+            models: [
+                {
+                    q: "Which networking model is highly scalable for distributing large files (like operating system updates) because every downloader also acts as an uploader?",
+                    options: ["Client-Server", "Peer-to-Peer (P2P)", "Hybrid Model", "Centralized Mainframe"],
+                    answer: 1,
+                    explanation: "In Peer-to-Peer (P2P) networks, nodes (peers) share resources amongst themselves. As more users join to download a file, the upload capacity of the network increases, making it highly scalable."
+                },
+                {
+                    q: "What is a major drawback of the Peer-to-Peer (P2P) model compared to Client-Server in a corporate environment?",
+                    options: ["It requires extremely expensive central servers.", "It cannot handle large file sizes.", "Data security and backups are difficult to manage centrally.", "It causes more data collisions on a switch."],
+                    answer: 2,
+                    explanation: "Because data is distributed across user devices (peers) rather than stored centrally, it is much harder for administrators to enforce security policies and ensure reliable backups in a P2P setup."
+                }
+            ],
+            segmentation: [
+                {
+                    q: "A large college campus network is experiencing severe congestion due to excessive broadcast traffic. What is the most effective logical technique to reduce this?",
+                    options: ["Add more hubs", "Implement Virtual Local Area Networks (VLANs)", "Switch to a Star topology", "Upgrade the File Server"],
+                    answer: 1,
+                    explanation: "VLANs segment a physical network into multiple logical networks. This breaks up the broadcast domain, containing broadcast traffic within specific segments and reducing overall congestion."
+                },
+                {
+                    q: "How does network segmentation improve security in a corporate environment?",
+                    options: ["By encrypting all data packets automatically.", "By preventing external hackers from finding the IP address.", "By isolating sensitive systems (e.g., HR data) from general user traffic.", "By increasing the transmission speed of security updates."],
+                    answer: 2,
+                    explanation: "Segmentation isolates different parts of the network. If a regular employee's computer is compromised, the segmentation (e.g., via subnets or VLANs) prevents the attacker from easily pivoting to access secure servers."
+                }
+            ]
+        };
+
+        function buildQuiz(topic, prefix) {
+            const container = document.getElementById(`${prefix}-quiz`);
+            container.innerHTML = ''; 
+            
+            quizData[topic].forEach((item, qIndex) => {
+                const qDiv = document.createElement('div');
+                qDiv.className = 'bg-slate-50 p-4 rounded-lg border border-slate-200';
+                
+                const qTitle = document.createElement('h4');
+                qTitle.className = 'text-sm font-semibold text-slate-800 mb-3 leading-snug';
+                qTitle.innerText = `${qIndex + 1}. ${item.q}`;
+                qDiv.appendChild(qTitle);
+
+                const optionsGrid = document.createElement('div');
+                optionsGrid.className = 'grid grid-cols-1 md:grid-cols-2 gap-2';
+
+                const explanationDiv = document.createElement('div');
+                explanationDiv.className = 'mt-3 text-sm hidden p-3 rounded bg-white border-l-4 border-slate-200 transition-all duration-300';
+
+                item.options.forEach((opt, oIndex) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'answer-btn text-left p-3 rounded border text-sm';
+                    btn.innerText = opt;
+                    
+                    btn.addEventListener('click', function() {
+                        const allBtns = optionsGrid.querySelectorAll('button');
+                        allBtns.forEach(b => {
+                            b.disabled = true;
+                            b.classList.add('opacity-50', 'cursor-not-allowed');
+                        });
+                        
+                        this.classList.remove('opacity-50');
+                        if (oIndex === item.answer) {
+                            this.classList.add('correct');
+                            explanationDiv.classList.add('block', 'border-emerald-500', 'text-emerald-700', 'bg-emerald-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Correct!</strong> ${item.explanation}`;
+                        } else {
+                            this.classList.add('incorrect');
+                            allBtns[item.answer].classList.remove('opacity-50');
+                            allBtns[item.answer].classList.add('correct');
+                            
+                            explanationDiv.classList.add('block', 'border-rose-500', 'text-rose-700', 'bg-rose-50');
+                            explanationDiv.classList.remove('hidden', 'bg-white');
+                            explanationDiv.innerHTML = `<strong>Incorrect.</strong> ${item.explanation}`;
+                        }
+                    });
+                    optionsGrid.appendChild(btn);
+                });
+
+                qDiv.appendChild(optionsGrid);
+                qDiv.appendChild(explanationDiv);
+                container.appendChild(qDiv);
+            });
+        }
+
+
+        // ==========================================
+        // 1. TOPOLOGIES SIMULATION
+        // ==========================================
+        const TopoSim = {
+            ctx: document.getElementById('topo-canvas').getContext('2d'),
+            currentType: 'star',
+            nodes: [],
+            edges: [],
+            packets: [],
+            
+            init(type) {
+                this.currentType = type;
+                this.nodes = [];
+                this.edges = [];
+                this.packets = [];
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                const cx = w/2;
+                const cy = h/2;
+
+                if (type === 'star') {
+                    // Central switch
+                    this.nodes.push({id: 0, x: cx, y: cy, type: 'switch', status: 'up'});
+                    // Clients
+                    for(let i=0; i<6; i++) {
+                        let angle = (Math.PI*2 / 6) * i;
+                        let r = Math.min(w,h) * 0.35;
+                        this.nodes.push({id: i+1, x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r, type: 'client', status: 'up'});
+                        this.edges.push({from: 0, to: i+1, status: 'up'});
+                    }
+                } else if (type === 'mesh') {
+                    // 5 nodes fully connected
+                    for(let i=0; i<5; i++) {
+                        let angle = (Math.PI*2 / 5) * i - Math.PI/2;
+                        let r = Math.min(w,h) * 0.35;
+                        this.nodes.push({id: i, x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r, type: 'router', status: 'up'});
+                    }
+                    for(let i=0; i<this.nodes.length; i++) {
+                        for(let j=i+1; j<this.nodes.length; j++) {
+                            this.edges.push({from: i, to: j, status: 'up'});
+                        }
+                    }
+                } else if (type === 'hybrid') {
+                    // Core ring/mesh of 3 routers, each with a star of 2 clients
+                    let routers = [];
+                    for(let i=0; i<3; i++) {
+                        let angle = (Math.PI*2 / 3) * i - Math.PI/2;
+                        let r = Math.min(w,h) * 0.15;
+                        let rNode = {id: i, x: cx + Math.cos(angle)*r, y: cy + Math.sin(angle)*r, type: 'router', status: 'up'};
+                        this.nodes.push(rNode);
+                        routers.push(rNode);
+                        
+                        // Add clients
+                        for(let j=0; j<2; j++) {
+                            let cAngle = angle + (j==0 ? -0.5 : 0.5);
+                            let cr = Math.min(w,h) * 0.35;
+                            let cId = this.nodes.length;
+                            this.nodes.push({id: cId, x: cx + Math.cos(cAngle)*cr, y: cy + Math.sin(cAngle)*cr, type: 'client', status: 'up'});
+                            this.edges.push({from: i, to: cId, status: 'up'});
+                        }
+                    }
+                    // Connect routers
+                    this.edges.push({from: 0, to: 1, status: 'up'});
+                    this.edges.push({from: 1, to: 2, status: 'up'});
+                    this.edges.push({from: 2, to: 0, status: 'up'});
+                }
+            },
+
+            sendData() {
+                // Pick random active client to send to another random active client
+                let clients = this.nodes.filter(n => n.type === 'client' && n.status === 'up');
+                if (this.currentType === 'mesh') clients = this.nodes.filter(n => n.status === 'up'); // Mesh uses routers as endpoints here
+                
+                if (clients.length < 2) return;
+                let src = clients[Math.floor(Math.random() * clients.length)];
+                let dst;
+                do { dst = clients[Math.floor(Math.random() * clients.length)]; } while (dst === src);
+
+                // Simple routing logic based on topology
+                let route = [];
+                if (this.currentType === 'star') {
+                    if (this.nodes[0].status === 'up' && this.getEdgeStatus(src.id, 0) && this.getEdgeStatus(0, dst.id)) {
+                        route = [src.id, 0, dst.id];
+                    }
+                } else if (this.currentType === 'mesh') {
+                    // Try direct
+                    if (this.getEdgeStatus(src.id, dst.id)) {
+                        route = [src.id, dst.id];
+                    } else {
+                        // Find 1 hop
+                        for(let n of this.nodes) {
+                            if(n.id !== src.id && n.id !== dst.id && n.status === 'up') {
+                                if(this.getEdgeStatus(src.id, n.id) && this.getEdgeStatus(n.id, dst.id)) {
+                                    route = [src.id, n.id, dst.id];
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } else if (this.currentType === 'hybrid') {
+                    // Very simplified routing for visualization: src -> its router -> dst's router -> dst
+                    let srcRouter = this.edges.find(e => (e.from === src.id || e.to === src.id) && this.nodes[e.from===src.id?e.to:e.from].type==='router');
+                    let dstRouter = this.edges.find(e => (e.from === dst.id || e.to === dst.id) && this.nodes[e.from===dst.id?e.to:e.from].type==='router');
+                    
+                    if (srcRouter && dstRouter) {
+                        let srId = srcRouter.from === src.id ? srcRouter.to : srcRouter.from;
+                        let drId = dstRouter.from === dst.id ? dstRouter.to : dstRouter.from;
+                        
+                        if(this.nodes[srId].status === 'up' && this.nodes[drId].status === 'up' && this.getEdgeStatus(src.id, srId) && this.getEdgeStatus(drId, dst.id)) {
+                             if (srId === drId) {
+                                route = [src.id, srId, dst.id];
+                             } else if (this.getEdgeStatus(srId, drId)) {
+                                route = [src.id, srId, drId, dst.id];
+                             }
+                        }
+                    }
+                }
+
+                if (route.length > 0) {
+                    this.packets.push({ route: route, progress: 0, currentLeg: 0 });
+                }
+            },
+
+            getEdgeStatus(n1, n2) {
+                let e = this.edges.find(e => (e.from===n1 && e.to===n2) || (e.from===n2 && e.to===n1));
+                return e && e.status === 'up';
+            },
+
+            update() {
+                // Move packets
+                for(let i=this.packets.length-1; i>=0; i--) {
+                    let p = this.packets[i];
+                    p.progress += 0.02; // Speed
+                    if (p.progress >= 1) {
+                        p.progress = 0;
+                        p.currentLeg++;
+                        if (p.currentLeg >= p.route.length - 1) {
+                            this.packets.splice(i, 1); // Arrived
+                        }
+                    }
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                // Draw Edges
+                ctx.lineWidth = 2;
+                this.edges.forEach(e => {
+                    let n1 = this.nodes.find(n => n.id === e.from);
+                    let n2 = this.nodes.find(n => n.id === e.to);
+                    ctx.beginPath();
+                    ctx.moveTo(n1.x, n1.y);
+                    ctx.lineTo(n2.x, n2.y);
+                    ctx.strokeStyle = e.status === 'up' ? '#cbd5e1' : '#f87171'; // slate-300 or red-400
+                    if (e.status === 'down') ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                });
+
+                // Draw Packets
+                this.packets.forEach(p => {
+                    let fromNode = this.nodes.find(n => n.id === p.route[p.currentLeg]);
+                    let toNode = this.nodes.find(n => n.id === p.route[p.currentLeg+1]);
+                    // Check if route broke while in transit
+                    if (fromNode.status==='down' || toNode.status==='down' || !this.getEdgeStatus(fromNode.id, toNode.id)) {
+                        p.currentLeg = 999; // force drop
+                        return;
+                    }
+
+                    let px = lerp(fromNode.x, toNode.x, p.progress);
+                    let py = lerp(fromNode.y, toNode.y, p.progress);
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, 5, 0, Math.PI*2);
+                    ctx.fillStyle = '#0ea5e9'; // sky-500
+                    ctx.fill();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#38bdf8'; // sky-400
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                });
+
+                // Draw Nodes
+                this.nodes.forEach(n => {
+                    ctx.beginPath();
+                    let radius = n.type === 'switch' || n.type === 'router' ? 20 : 12;
+                    ctx.arc(n.x, n.y, radius, 0, Math.PI*2);
+                    
+                    if (n.status === 'down') {
+                        ctx.fillStyle = '#fee2e2'; // red-100
+                        ctx.strokeStyle = '#ef4444'; // red-500
+                    } else if (n.type === 'switch') {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.strokeStyle = '#eab308'; // yellow-500
+                    } else if (n.type === 'router') {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.strokeStyle = '#10b981'; // emerald-500
+                    } else {
+                        ctx.fillStyle = '#f8fafc'; // slate-50
+                        ctx.strokeStyle = '#3b82f6'; // blue-500
+                    }
+                    
+                    ctx.lineWidth = 3;
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Icons
+                    ctx.fillStyle = n.status === 'down' ? '#ef4444' : '#64748b'; // red-500 or slate-500
+                    ctx.font = n.type === 'client' ? '12px "Font Awesome 6 Free"' : '16px "Font Awesome 6 Free"';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fontWeight = '900';
+                    if (n.type === 'switch') ctx.fillText('\uf0e8', n.x, n.y); // sitemap
+                    else if (n.type === 'router') ctx.fillText('\uf021', n.x, n.y); // sync
+                    else ctx.fillText('\uf109', n.x, n.y); // laptop
+                });
+            },
+
+            handleInteraction(x, y) {
+                // Check node click to toggle status
+                for(let n of this.nodes) {
+                    let radius = n.type === 'switch' || n.type === 'router' ? 20 : 12;
+                    if (dist(x, y, n.x, n.y) < radius + 5) {
+                        n.status = n.status === 'up' ? 'down' : 'up';
+                        return; // handled
+                    }
+                }
+                
+                // Check edge click
+                for(let e of this.edges) {
+                    let n1 = this.nodes.find(n => n.id === e.from);
+                    let n2 = this.nodes.find(n => n.id === e.to);
+                    // Point to line distance math
+                    let l2 = (n2.x - n1.x)**2 + (n2.y - n1.y)**2;
+                    if (l2 === 0) continue;
+                    let t = ((x - n1.x) * (n2.x - n1.x) + (y - n1.y) * (n2.y - n1.y)) / l2;
+                    t = Math.max(0, Math.min(1, t));
+                    let projX = n1.x + t * (n2.x - n1.x);
+                    let projY = n1.y + t * (n2.y - n1.y);
+                    if (dist(x, y, projX, projY) < 10) {
+                        e.status = e.status === 'up' ? 'down' : 'up';
+                        return;
+                    }
+                }
+            }
+        };
+
+        // Topo UI Controls
+        ['star', 'mesh', 'hybrid'].forEach(type => {
+            document.getElementById(`btn-${type}`).addEventListener('click', (e) => {
+                document.querySelectorAll('#topologies-view .control-btn').forEach(b => b.classList.remove('active'));
+                e.currentTarget.classList.add('active');
+                TopoSim.init(type);
+            });
+        });
+        document.getElementById('btn-sim-send').addEventListener('click', () => { TopoSim.sendData(); TopoSim.sendData(); });
+        document.getElementById('btn-sim-repair').addEventListener('click', () => {
+            TopoSim.nodes.forEach(n => n.status = 'up');
+            TopoSim.edges.forEach(e => e.status = 'up');
+        });
+        document.getElementById('topo-canvas').addEventListener('mousedown', (e) => {
+            const rect = e.target.getBoundingClientRect();
+            TopoSim.handleInteraction(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+
+        // ==========================================
+        // 2. SERVERS SIMULATION (Flow Diagram)
+        // ==========================================
+        const ServSim = {
+            ctx: document.getElementById('serv-canvas').getContext('2d'),
+            step: 0,
+            progress: 0,
+            active: false,
+            servers: [],
+            client: {x: 50, y: 0}, // set in init
+            msg: "",
+            statusEl: document.getElementById('serv-status'),
+
+            init() {
+                this.step = 0;
+                this.active = false;
+                this.progress = 0;
+                this.statusEl.innerText = "System idle. Awaiting request.";
+                
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                this.client = {x: w*0.1, y: h/2};
+                
+                // Position servers on right side
+                this.servers = {
+                    'DHCP': {x: w*0.8, y: h*0.15, color: '#60a5fa', icon: '\uf2c2'}, // id-card
+                    'DNS': {x: w*0.8, y: h*0.35, color: '#34d399', icon: '\uf02d'}, // book
+                    'Proxy': {x: w*0.5, y: h/2, color: '#c084fc', icon: '\uf3ed'}, // shield
+                    'Web': {x: w*0.8, y: h*0.65, color: '#fb923c', icon: '\uf0ac'}, // globe
+                    'File': {x: w*0.8, y: h*0.85, color: '#facc15', icon: '\uf07b'}  // folder
+                };
+            },
+
+            simulate() {
+                if (this.active) return;
+                this.active = true;
+                this.step = 1;
+                this.progress = 0;
+                this.nextStep();
+            },
+
+            nextStep() {
+                const msgs = [
+                    "",
+                    "1. Client broadcasting for IP (DHCP Request)...",
+                    "2. DHCP assigns IP address to Client.",
+                    "3. Client asks DNS for IP of 'website.com'...",
+                    "4. DNS returns IP: 192.168.1.50",
+                    "5. Client sends HTTP Request via Proxy...",
+                    "6. Proxy forwards request to Web Server...",
+                    "7. Web Server requests media from File Server...",
+                    "8. File Server returns media to Web Server...",
+                    "9. Web Server sends HTML+Media back to Proxy...",
+                    "10. Proxy delivers Website to Client. Done!"
+                ];
+                if(this.step < msgs.length) {
+                    this.statusEl.innerText = msgs[this.step];
+                    // Highlight corresponding button
+                    document.querySelectorAll('#servers-view .control-btn').forEach(b => b.classList.remove('ring-2', 'ring-cyan-500'));
+                    if (this.step === 1 || this.step === 2) document.getElementById('btn-serv-dhcp').classList.add('ring-2', 'ring-cyan-500');
+                    if (this.step === 3 || this.step === 4) document.getElementById('btn-serv-dns').classList.add('ring-2', 'ring-cyan-500');
+                    if (this.step === 5 || this.step === 6 || this.step === 9 || this.step === 10) document.getElementById('btn-serv-proxy').classList.add('ring-2', 'ring-cyan-500');
+                    if (this.step === 6 || this.step === 7 || this.step === 8 || this.step === 9) document.getElementById('btn-serv-web').classList.add('ring-2', 'ring-cyan-500');
+                    if (this.step === 7 || this.step === 8) document.getElementById('btn-serv-file').classList.add('ring-2', 'ring-cyan-500');
+                } else {
+                    this.active = false;
+                    document.querySelectorAll('#servers-view .control-btn').forEach(b => b.classList.remove('ring-2', 'ring-cyan-500'));
+                }
+            },
+
+            update() {
+                if(this.active) {
+                    this.progress += 0.015;
+                    if (this.progress >= 1) {
+                        this.progress = 0;
+                        this.step++;
+                        this.nextStep();
+                    }
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                // Draw Network Cloud background
+                ctx.beginPath();
+                ctx.setLineDash([5, 10]);
+                ctx.strokeStyle = '#cbd5e1'; // slate-300
+                ctx.moveTo(this.client.x + 40, 0); ctx.lineTo(this.client.x + 40, ctx.canvas.height);
+                ctx.moveTo(this.servers['Proxy'].x + 40, 0); ctx.lineTo(this.servers['Proxy'].x + 40, ctx.canvas.height);
+                ctx.stroke();
+                ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#94a3b8'; // slate-400
+                ctx.font = '12px sans-serif';
+                ctx.fillText("Local Network", this.client.x + 10, 20);
+                ctx.fillText("DMZ / Internet", this.servers['Proxy'].x + 10, 20);
+
+                // Draw Connections (faded)
+                ctx.strokeStyle = '#e2e8f0'; // slate-200
+                ctx.lineWidth = 1;
+                Object.values(this.servers).forEach(s => {
+                    ctx.beginPath();
+                    if (s === this.servers['Proxy'] || s === this.servers['DHCP'] || s === this.servers['DNS']) {
+                        ctx.moveTo(this.client.x, this.client.y);
+                        ctx.lineTo(s.x, s.y);
+                    } else if (s === this.servers['Web']) {
+                        ctx.moveTo(this.servers['Proxy'].x, this.servers['Proxy'].y);
+                        ctx.lineTo(s.x, s.y);
+                    } else if (s === this.servers['File']) {
+                        ctx.moveTo(this.servers['Web'].x, this.servers['Web'].y);
+                        ctx.lineTo(s.x, s.y);
+                    }
+                    ctx.stroke();
+                });
+
+                // Draw Client
+                ctx.beginPath(); ctx.arc(this.client.x, this.client.y, 20, 0, Math.PI*2);
+                ctx.fillStyle = '#ffffff'; ctx.fill();
+                ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2; ctx.stroke(); // slate-500
+                ctx.fillStyle = '#64748b'; ctx.font = '16px "Font Awesome 6 Free"'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fontWeight = '900';
+                ctx.fillText('\uf108', this.client.x, this.client.y); // desktop
+
+                // Draw Servers
+                for (const [name, s] of Object.entries(this.servers)) {
+                    ctx.beginPath();
+                    // Draw rack shape
+                    ctx.rect(s.x - 20, s.y - 15, 40, 30);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    ctx.strokeStyle = s.color; ctx.lineWidth = 2; ctx.stroke();
+                    
+                    ctx.fillStyle = s.color;
+                    ctx.font = '14px "Font Awesome 6 Free"'; ctx.fillText(s.icon, s.x, s.y);
+                    
+                    ctx.fillStyle = '#475569'; // slate-600
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(name, s.x, s.y + 25);
+                }
+
+                // Draw Animation Packet based on step
+                if (this.active && this.step > 0 && this.step <= 10) {
+                    let from, to;
+                    switch(this.step) {
+                        case 1: from = this.client; to = this.servers['DHCP']; break;
+                        case 2: from = this.servers['DHCP']; to = this.client; break;
+                        case 3: from = this.client; to = this.servers['DNS']; break;
+                        case 4: from = this.servers['DNS']; to = this.client; break;
+                        case 5: from = this.client; to = this.servers['Proxy']; break;
+                        case 6: from = this.servers['Proxy']; to = this.servers['Web']; break;
+                        case 7: from = this.servers['Web']; to = this.servers['File']; break;
+                        case 8: from = this.servers['File']; to = this.servers['Web']; break;
+                        case 9: from = this.servers['Web']; to = this.servers['Proxy']; break;
+                        case 10: from = this.servers['Proxy']; to = this.client; break;
+                    }
+                    
+                    let px = lerp(from.x, to.x, this.progress);
+                    let py = lerp(from.y, to.y, this.progress);
+                    
+                    ctx.beginPath();
+                    ctx.arc(px, py, 6, 0, Math.PI*2);
+                    ctx.fillStyle = '#0ea5e9'; // sky-500
+                    ctx.fill();
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#38bdf8';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+        };
+
+        document.getElementById('btn-serv-simulate').addEventListener('click', () => ServSim.simulate());
+
+        // ==========================================
+        // 3. NETWORKING MODELS (CS vs P2P)
+        // ==========================================
+        const ModSim = {
+            ctx: document.getElementById('mod-canvas').getContext('2d'),
+            active: false,
+            csNodes: [],
+            p2pNodes: [],
+            csPackets: [],
+            p2pPackets: [],
+            fileSize: 100, // 100 chunks
+            serverLoad: 0,
+
+            init() {
+                this.active = false;
+                this.csPackets = [];
+                this.p2pPackets = [];
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                
+                // CS Setup (Left half)
+                this.csNodes = [];
+                let cxCS = w * 0.25;
+                let cyCS = h * 0.5;
+                this.csNodes.push({id: 'S', x: cxCS, y: h*0.2, type: 'server', dl: this.fileSize, color: '#3b82f6'});
+                for(let i=0; i<4; i++) {
+                    let angle = Math.PI + (Math.PI / 3) * i;
+                    let r = h * 0.35;
+                    this.csNodes.push({id: i, x: cxCS + Math.cos(angle)*r, y: cyCS + Math.sin(angle)*r, type: 'client', dl: 0, color: '#94a3b8'});
+                }
+
+                // P2P Setup (Right half)
+                this.p2pNodes = [];
+                let cxP2P = w * 0.75;
+                let cyP2P = h * 0.5;
+                for(let i=0; i<5; i++) {
+                    let angle = (Math.PI*2 / 5) * i - Math.PI/2;
+                    let r = h * 0.35;
+                    // One node starts with the file (seed)
+                    this.p2pNodes.push({id: i, x: cxP2P + Math.cos(angle)*r, y: cyP2P + Math.sin(angle)*r, type: 'peer', dl: i===0 ? this.fileSize : 0, color: '#10b981'});
+                }
+            },
+
+            start() {
+                this.init();
+                this.active = true;
+            },
+
+            update() {
+                if(!this.active) return;
+
+                // --- Client-Server Logic ---
+                // Server can only process a limited number of requests at a time (bottleneck)
+                let clients = this.csNodes.filter(n => n.type === 'client' && n.dl < this.fileSize);
+                
+                // Spawn packets from Server to Clients (simulate bottleneck: max 2 packets at a time overall)
+                if (this.csPackets.length < 2 && clients.length > 0) {
+                    let target = clients[Math.floor(Math.random() * clients.length)];
+                    this.csPackets.push({from: this.csNodes[0], to: target, progress: 0});
+                }
+
+                // Move CS packets
+                for(let i=this.csPackets.length-1; i>=0; i--) {
+                    let p = this.csPackets[i];
+                    p.progress += 0.02; // slow due to load
+                    if(p.progress >= 1) {
+                        p.to.dl += 5; // Download chunks
+                        this.csPackets.splice(i, 1);
+                    }
+                }
+
+                // --- P2P Logic ---
+                let peersNeeding = this.p2pNodes.filter(n => n.dl < this.fileSize);
+                let peersHaving = this.p2pNodes.filter(n => n.dl > 0);
+
+                // Any peer with data can upload to any peer needing data (Highly scalable)
+                // Spawn packets (max 1 per having-peer to simulate bandwidth)
+                peersHaving.forEach(sender => {
+                    let sendingCount = this.p2pPackets.filter(p => p.from.id === sender.id).length;
+                    if (sendingCount < 1 && peersNeeding.length > 0) {
+                        // Pick random peer needing data that isn't itself
+                        let validTargets = peersNeeding.filter(n => n.id !== sender.id && n.dl < sender.dl);
+                        if (validTargets.length > 0) {
+                            let target = validTargets[Math.floor(Math.random() * validTargets.length)];
+                            this.p2pPackets.push({from: sender, to: target, progress: 0});
+                        }
+                    }
+                });
+
+                // Move P2P packets
+                for(let i=this.p2pPackets.length-1; i>=0; i--) {
+                    let p = this.p2pPackets[i];
+                    p.progress += 0.03; // faster generally because distributed
+                    if(p.progress >= 1) {
+                        p.to.dl += 5;
+                        this.p2pPackets.splice(i, 1);
+                    }
+                }
+
+                // Check finish
+                if (clients.every(c => c.dl >= this.fileSize) && peersNeeding.length === 0) {
+                    this.active = false;
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                // Draw Divider
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.strokeStyle = '#cbd5e1'; // slate-300
+                ctx.moveTo(ctx.canvas.width/2, 0); ctx.lineTo(ctx.canvas.width/2, ctx.canvas.height);
+                ctx.stroke(); ctx.setLineDash([]);
+                
+                ctx.fillStyle = '#64748b'; ctx.font = '14px sans-serif'; ctx.textAlign = 'center';
+                ctx.fillText("Client-Server (Bottleneck)", ctx.canvas.width*0.25, 20);
+                ctx.fillText("Peer-to-Peer (Scalable)", ctx.canvas.width*0.75, 20);
+
+                // Helper to draw nodes with progress bars
+                const drawNode = (n) => {
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    ctx.strokeStyle = n.color; ctx.lineWidth = 2; ctx.stroke();
+                    ctx.fillStyle = n.color; ctx.font = '12px "Font Awesome 6 Free"'; ctx.textBaseline = 'middle'; ctx.fontWeight = '900';
+                    ctx.fillText(n.type==='server' ? '\uf233' : '\uf108', n.x, n.y); // server / laptop
+
+                    // Progress bar
+                    if(n.type !== 'server') {
+                        let pWidth = 30;
+                        ctx.fillStyle = '#e2e8f0'; ctx.fillRect(n.x - pWidth/2, n.y + 20, pWidth, 4); // slate-200
+                        ctx.fillStyle = n.dl >= this.fileSize ? '#10b981' : n.color;
+                        ctx.fillRect(n.x - pWidth/2, n.y + 20, pWidth * (Math.min(n.dl, this.fileSize)/this.fileSize), 4);
+                    }
+                };
+
+                // Helper to draw packets
+                const drawPacket = (p, color) => {
+                    let px = lerp(p.from.x, p.to.x, p.progress);
+                    let py = lerp(p.from.y, p.to.y, p.progress);
+                    ctx.beginPath(); ctx.arc(px, py, 3, 0, Math.PI*2);
+                    ctx.fillStyle = color; ctx.fill();
+                    ctx.shadowBlur = 5; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
+                };
+
+                // Draw CS Links
+                ctx.strokeStyle = '#e2e8f0'; ctx.lineWidth = 1; // slate-200
+                this.csNodes.forEach(n => {
+                    if (n.type === 'client') {
+                        ctx.beginPath(); ctx.moveTo(this.csNodes[0].x, this.csNodes[0].y); ctx.lineTo(n.x, n.y); ctx.stroke();
+                    }
+                });
+
+                // Draw P2P Links
+                for(let i=0; i<this.p2pNodes.length; i++) {
+                    for(let j=i+1; j<this.p2pNodes.length; j++) {
+                        ctx.beginPath(); ctx.moveTo(this.p2pNodes[i].x, this.p2pNodes[i].y); ctx.lineTo(this.p2pNodes[j].x, this.p2pNodes[j].y); ctx.stroke();
+                    }
+                }
+
+                // Draw Packets & Nodes
+                this.csPackets.forEach(p => drawPacket(p, '#3b82f6'));
+                this.p2pPackets.forEach(p => drawPacket(p, '#10b981'));
+                this.csNodes.forEach(n => drawNode(n));
+                this.p2pNodes.forEach(n => drawNode(n));
+            }
+        };
+        document.getElementById('btn-mod-start').addEventListener('click', () => ModSim.start());
+
+
+        // ==========================================
+        // 4. SEGMENTATION SIMULATION
+        // ==========================================
+        const SegSim = {
+            ctx: document.getElementById('seg-canvas').getContext('2d'),
+            mode: 'flat', // flat or vlan
+            nodes: [],
+            switchNode: {x: 0, y: 0},
+            packets: [],
+
+            init() {
+                this.packets = [];
+                const w = this.ctx.canvas.width;
+                const h = this.ctx.canvas.height;
+                this.switchNode = {x: w/2, y: h/2};
+                
+                this.nodes = [];
+                // 8 computers in a circle
+                for(let i=0; i<8; i++) {
+                    let angle = (Math.PI*2 / 8) * i;
+                    let r = Math.min(w,h) * 0.35;
+                    // In VLAN mode, 0-3 are VLAN10 (Blue), 4-7 are VLAN20 (Green)
+                    let vlan = i < 4 ? 10 : 20;
+                    this.nodes.push({
+                        id: i, x: this.switchNode.x + Math.cos(angle)*r, y: this.switchNode.y + Math.sin(angle)*r,
+                        vlan: vlan,
+                        color: vlan === 10 ? '#3b82f6' : '#10b981'
+                    });
+                }
+            },
+
+            setMode(mode) {
+                this.mode = mode;
+                this.packets = []; // clear in-flight
+                document.querySelectorAll('#btn-seg-flat, #btn-seg-vlan').forEach(b => b.classList.remove('active'));
+                document.getElementById(`btn-seg-${mode}`).classList.add('active');
+            },
+
+            sendBroadcast() {
+                // Pick node 0 to send a broadcast
+                let sender = this.nodes[0];
+                
+                // Packet from sender to switch
+                this.packets.push({from: sender, to: this.switchNode, progress: 0, state: 'to_switch', senderVlan: sender.vlan});
+            },
+
+            update() {
+                for(let i=this.packets.length-1; i>=0; i--) {
+                    let p = this.packets[i];
+                    p.progress += 0.02;
+                    if(p.progress >= 1) {
+                        if (p.state === 'to_switch') {
+                            // Arrived at switch. Now broadcast to others based on mode.
+                            this.nodes.forEach(n => {
+                                if (n.id !== p.from.id) {
+                                    // Logic: If flat, send to ALL. If VLAN, send only to matching VLAN.
+                                    if (this.mode === 'flat' || (this.mode === 'vlan' && n.vlan === p.senderVlan)) {
+                                        this.packets.push({from: this.switchNode, to: n, progress: 0, state: 'to_client', color: p.from.color});
+                                    }
+                                }
+                            });
+                            this.packets.splice(i, 1); // remove original
+                        } else {
+                            // Arrived at client
+                            this.packets.splice(i, 1);
+                        }
+                    }
+                }
+            },
+
+            draw() {
+                let ctx = this.ctx;
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                // Background zones if VLAN
+                if (this.mode === 'vlan') {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(59, 130, 246, 0.1)'; // Blue tint right, slightly more opaque for light mode
+                    ctx.beginPath(); ctx.arc(this.switchNode.x, this.switchNode.y, Math.min(ctx.canvas.width, ctx.canvas.height)*0.45, -Math.PI/2, Math.PI/2); ctx.fill();
+                    ctx.fillStyle = 'rgba(16, 185, 129, 0.1)'; // Green tint left
+                    ctx.beginPath(); ctx.arc(this.switchNode.x, this.switchNode.y, Math.min(ctx.canvas.width, ctx.canvas.height)*0.45, Math.PI/2, -Math.PI/2); ctx.fill();
+                    ctx.restore();
+
+                    ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center'; // slate-600
+                    ctx.fillText("VLAN 10 (Sales)", ctx.canvas.width*0.8, 30);
+                    ctx.fillText("VLAN 20 (HR)", ctx.canvas.width*0.2, 30);
+                } else {
+                    ctx.fillStyle = '#475569'; ctx.font = '12px sans-serif'; ctx.textAlign = 'center';
+                    ctx.fillText("Flat Network (Single Broadcast Domain)", ctx.canvas.width/2, 30);
+                }
+
+                // Draw Cables
+                ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 2; // slate-300
+                this.nodes.forEach(n => {
+                    ctx.beginPath(); ctx.moveTo(this.switchNode.x, this.switchNode.y); ctx.lineTo(n.x, n.y); ctx.stroke();
+                });
+
+                // Draw Packets
+                this.packets.forEach(p => {
+                    let px = lerp(p.from.x, p.to.x, p.progress);
+                    let py = lerp(p.from.y, p.to.y, p.progress);
+                    let color = p.state === 'to_client' ? p.color : '#f43f5e'; // rose-500 for broadcast orig
+                    
+                    // Add ripple effect for broadcast simulation
+                    ctx.beginPath(); ctx.arc(px, py, 15 * p.progress, 0, Math.PI*2);
+                    ctx.strokeStyle = color + '80'; // transparent
+                    ctx.lineWidth = 1; ctx.stroke();
+
+                    ctx.beginPath(); ctx.arc(px, py, 5, 0, Math.PI*2);
+                    ctx.fillStyle = color; ctx.fill();
+                    ctx.shadowBlur = 8; ctx.shadowColor = color; ctx.fill(); ctx.shadowBlur = 0;
+                });
+
+                // Draw Switch
+                ctx.beginPath(); ctx.rect(this.switchNode.x-25, this.switchNode.y-15, 50, 30);
+                ctx.fillStyle = '#ffffff'; ctx.fill();
+                ctx.strokeStyle = '#eab308'; ctx.lineWidth = 2; ctx.stroke(); // yellow-500
+                ctx.fillStyle = '#eab308'; ctx.font = '14px "Font Awesome 6 Free"'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fontWeight='900';
+                ctx.fillText('\uf0e8', this.switchNode.x, this.switchNode.y);
+
+                // Draw Nodes
+                this.nodes.forEach(n => {
+                    ctx.beginPath(); ctx.arc(n.x, n.y, 15, 0, Math.PI*2);
+                    ctx.fillStyle = '#ffffff'; ctx.fill();
+                    
+                    let strokeColor = this.mode === 'vlan' ? n.color : '#64748b'; // slate-500
+                    ctx.strokeStyle = strokeColor; ctx.lineWidth = 2; ctx.stroke();
+                    
+                    ctx.fillStyle = strokeColor; ctx.font = '14px "Font Awesome 6 Free"'; ctx.fillText('\uf108', n.x, n.y);
+                });
+            }
+        };
+
+        document.getElementById('btn-seg-flat').addEventListener('click', () => SegSim.setMode('flat'));
+        document.getElementById('btn-seg-vlan').addEventListener('click', () => SegSim.setMode('vlan'));
+        document.getElementById('btn-seg-broadcast').addEventListener('click', () => SegSim.sendBroadcast());
+
+
+        // --- Global Animation Loop ---
+        function globalLoop() {
+            if(currentTab === 'topologies') { TopoSim.update(); TopoSim.draw(); }
+            if(currentTab === 'servers') { ServSim.update(); ServSim.draw(); }
+            if(currentTab === 'models') { ModSim.update(); ModSim.draw(); }
+            if(currentTab === 'segmentation') { SegSim.update(); SegSim.draw(); }
+            
+            animFrameId = requestAnimationFrame(globalLoop);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            buildQuiz('topologies', 'topo');
+            buildQuiz('servers', 'serv');
+            buildQuiz('models', 'mod');
+            buildQuiz('segmentation', 'seg');
+
+            resizeCanvases();
+            
+            // Init all to be safe on first render bounds
+            TopoSim.init('star');
+            ServSim.init();
+            ModSim.init();
+            SegSim.init();
+
+            globalLoop();
+        };
+
+    </script>
+</body>
+</html>
