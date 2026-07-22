@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A4.2 Data Preprocessing (HL)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        dark: '#f8fafc',
+                        card: '#ffffff'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #f8fafc; color: #334155; overflow-x: hidden; }
+        .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(148, 163, 184, 0.2); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+        .gradient-text { background: linear-gradient(to right, #2563eb, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="custom-scrollbar font-sans antialiased text-slate-700">
+
+    <nav class="fixed w-full z-50 glass-panel border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-database text-blue-600 text-xl"></i>
+                    <span class="font-bold text-xl tracking-tight text-slate-900">IB CS <span class="text-blue-600">HL</span></span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#significance" class="hover:bg-slate-100 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600">Significance</a>
+                        <a href="#cleaning" class="hover:bg-slate-100 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600">Cleaning Techniques</a>
+                        <a href="#scaling" class="hover:bg-slate-100 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors text-slate-600">Scaling</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center fade-in">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 mb-4">
+            A4.2 <span class="gradient-text">Data Preprocessing</span>
+        </h1>
+        <p class="text-lg md:text-xl text-slate-600 max-w-3xl mx-auto">
+            Interactive exploration of data cleaning significance, handling anomalies, and feature scaling for machine learning models.
+        </p>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-16">
+
+        <section id="significance" class="scroll-mt-24 fade-in">
+            <div class="glass-panel rounded-2xl p-6 md:p-8">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="bg-blue-100 p-3 rounded-lg text-blue-600">
+                        <i class="fa-solid fa-chart-line text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">1. The Impact of Data Quality</h2>
+                </div>
+                
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <div>
+                        <h3 class="text-xl font-semibold text-slate-900 mb-3">Garbage In, Garbage Out (GIGO)</h3>
+                        <p class="mb-4 text-slate-700 leading-relaxed">
+                            The performance of any machine learning model is fundamentally bottlenecked by the quality of the data it is trained on. <strong>Data cleaning</strong> is the process of fixing or removing incorrect, corrupted, incorrectly formatted, duplicate, or incomplete data within a dataset.
+                        </p>
+                        <ul class="space-y-2 mb-6 text-slate-700">
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-check text-green-600 mt-1"></i> <span>Improves model accuracy and efficiency.</span></li>
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-check text-green-600 mt-1"></i> <span>Prevents skewed or biased predictions.</span></li>
+                            <li class="flex items-start gap-2"><i class="fa-solid fa-check text-green-600 mt-1"></i> <span>Reduces computational overhead.</span></li>
+                        </ul>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
+                        <h4 class="text-center font-medium text-slate-800 mb-4">Interactive: Data Dirtiness vs Model Accuracy</h4>
+                        <div class="mb-6">
+                            <div class="flex justify-between mb-2 text-slate-600">
+                                <span class="text-sm font-medium">Clean Data</span>
+                                <span class="text-sm font-medium">Dirty Data</span>
+                            </div>
+                            <input type="range" id="dataDirtiness" min="0" max="100" value="50" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+                            <div class="text-center mt-2 text-sm text-slate-500">Dirtiness Level: <span id="dirtValue" class="text-slate-900 font-bold">50%</span></div>
+                        </div>
+                        
+                        <div class="relative pt-1">
+                            <div class="flex mb-2 items-center justify-between">
+                                <div><span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-blue-800 bg-blue-100">Model Accuracy</span></div>
+                                <div class="text-right"><span id="accuracyValue" class="text-xs font-bold inline-block text-slate-800">75%</span></div>
+                            </div>
+                            <div class="overflow-hidden h-4 mb-4 text-xs flex rounded bg-slate-100 border border-slate-200">
+                                <div id="accuracyBar" style="width: 75%" class="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-red-500 via-yellow-400 to-green-500 transition-all duration-300"></div>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 text-center mt-2 italic">As dirtiness increases (noise, missing values, outliers), the model struggles to find true patterns.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="cleaning" class="scroll-mt-24 fade-in">
+            <h2 class="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
+                <div class="bg-purple-100 p-3 rounded-lg text-purple-600">
+                    <i class="fa-solid fa-broom text-xl"></i>
+                </div>
+                2. Data Cleaning Techniques
+            </h2>
+
+            <div class="grid lg:grid-cols-2 gap-6 mb-6">
+                <!-- Missing Data -->
+                <div class="glass-panel rounded-2xl p-6 border-t-4 border-t-purple-500">
+                    <h3 class="text-xl font-semibold text-slate-900 mb-2">Handling Missing Data</h3>
+                    <p class="text-sm text-slate-600 mb-4">Missing values (Nulls/NaNs) crash models. Choose a strategy to handle them.</p>
+                    
+                    <div class="bg-slate-50 rounded-lg p-4 mb-4 overflow-x-auto border border-slate-200">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-slate-500 border-b border-slate-200">
+                                <tr><th class="pb-2">ID</th><th class="pb-2">Age</th><th class="pb-2">Income ($)</th></tr>
+                            </thead>
+                            <tbody id="missingDataTable" class="text-slate-800 divide-y divide-slate-100">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="handleMissing('reset')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-sm font-medium transition">Reset</button>
+                        <button onclick="handleMissing('delete')" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded text-sm font-medium transition" title="Listwise deletion">Delete Rows</button>
+                        <button onclick="handleMissing('mean')" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-sm font-medium transition">Mean Imputation</button>
+                        <button onclick="handleMissing('predictive')" class="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-sm font-medium transition" title="Predicting missing value based on other features">Predictive Imputation</button>
+                    </div>
+                    <p id="missingStatus" class="mt-3 text-xs text-slate-500 font-medium h-4">Dataset contains missing values.</p>
+                </div>
+
+                <!-- Duplicates & Formatting -->
+                <div class="glass-panel rounded-2xl p-6 border-t-4 border-t-emerald-500">
+                    <h3 class="text-xl font-semibold text-slate-900 mb-2">Duplicates & Formatting</h3>
+                    <p class="text-sm text-slate-600 mb-4">Inconsistent formats and duplicate records skew analysis.</p>
+                    
+                    <div class="bg-slate-50 rounded-lg p-4 mb-4 overflow-x-auto border border-slate-200">
+                        <table class="w-full text-left text-sm">
+                            <thead class="text-slate-500 border-b border-slate-200">
+                                <tr><th class="pb-2">Name</th><th class="pb-2">Date</th><th class="pb-2">Price</th></tr>
+                            </thead>
+                            <tbody id="formatTable" class="text-slate-800 divide-y divide-slate-100">
+                                <!-- Populated by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="handleFormat('reset')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-sm font-medium transition">Reset</button>
+                        <button onclick="handleFormat('dedupe')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-sm font-medium transition">Remove Duplicates</button>
+                        <button onclick="handleFormat('format')" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-200 rounded text-sm font-medium transition">Standardize Formats</button>
+                    </div>
+                    <p id="formatStatus" class="mt-3 text-xs text-slate-500 font-medium h-4">Dataset contains duplicates and inconsistent formatting.</p>
+                </div>
+            </div>
+            
+            <div class="glass-panel rounded-2xl p-6 border-t-4 border-t-rose-500">
+                <div class="flex flex-col md:flex-row gap-6">
+                    <div class="md:w-1/3">
+                        <h3 class="text-xl font-semibold text-slate-900 mb-2">Handling Outliers</h3>
+                        <p class="text-sm text-slate-600 mb-4">
+                            Outliers are data points that differ significantly from other observations. They heavily skew models (like linear regression or K-means).
+                        </p>
+                        <ul class="text-sm space-y-2 text-slate-700 mb-6">
+                            <li><strong>Deletion:</strong> Remove extreme values entirely.</li>
+                            <li><strong>Capping (Winsorizing):</strong> Limit extreme values to a specific percentile.</li>
+                        </ul>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="resetOutliers()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded text-sm font-medium transition text-left"><i class="fa-solid fa-rotate-left w-5"></i> Original Data</button>
+                            <button onclick="removeOutliers()" class="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded text-sm font-medium transition text-left"><i class="fa-solid fa-trash-can w-5"></i> Delete Outliers</button>
+                            <button onclick="capOutliers()" class="px-4 py-2 bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 rounded text-sm font-medium transition text-left"><i class="fa-solid fa-compress w-5"></i> Cap (Winsorize)</button>
+                        </div>
+                    </div>
+                    <div class="md:w-2/3 bg-white rounded-xl p-4 border border-slate-200 shadow-inner relative">
+                        <canvas id="outlierChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="scaling" class="scroll-mt-24 fade-in">
+            <div class="glass-panel rounded-2xl p-6 md:p-8 border-t-4 border-t-blue-500">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="bg-blue-100 p-3 rounded-lg text-blue-600">
+                        <i class="fa-solid fa-down-left-and-up-right-to-center text-xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-bold text-slate-900">3. Feature Scaling (Normalization & Standardization)</h2>
+                </div>
+                
+                <p class="text-slate-700 mb-6">
+                    Machine learning algorithms perform better when numerical input variables are scaled to a standard range. Without scaling, features with larger numeric ranges (e.g., Salary vs. Age) will artificially dominate the model.
+                </p>
+
+                <div class="grid md:grid-cols-2 gap-8 mb-8">
+                    <!-- Normalization -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-lg font-semibold text-blue-600 mb-2">Normalization (Min-Max Scaling)</h4>
+                        <p class="text-sm text-slate-600 mb-4">Rescales values to a fixed range, usually <strong>0 to 1</strong>. Good when the distribution is unknown or not Gaussian.</p>
+                        <div class="bg-blue-50 p-3 rounded font-mono text-xs text-center mb-4 text-blue-800 border border-blue-100">
+                            X' = (X - X_min) / (X_max - X_min)
+                        </div>
+                    </div>
+
+                    <!-- Standardization -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                        <h4 class="text-lg font-semibold text-purple-600 mb-2">Standardization (Z-Score)</h4>
+                        <p class="text-sm text-slate-600 mb-4">Centers the data around a mean of 0 with a standard deviation of 1. Better when data contains outliers.</p>
+                        <div class="bg-purple-50 p-3 rounded font-mono text-xs text-center mb-4 text-purple-800 border border-purple-100">
+                            Z = (X - μ) / σ
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Scaling Interactive Demo -->
+                <div class="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                    <h4 class="text-center font-semibold text-slate-800 mb-6">Interactive: Visualize Scaling Effects</h4>
+                    
+                    <div class="flex justify-center gap-4 mb-8">
+                        <button onclick="updateScaling('raw')" id="btn-raw" class="px-4 py-2 rounded text-sm font-medium transition scale-btn shadow-sm">Raw Data</button>
+                        <button onclick="updateScaling('norm')" id="btn-norm" class="px-4 py-2 rounded text-sm font-medium transition scale-btn shadow-sm">Apply Normalization</button>
+                        <button onclick="updateScaling('std')" id="btn-std" class="px-4 py-2 rounded text-sm font-medium transition scale-btn shadow-sm">Apply Standardization</button>
+                    </div>
+
+                    <div class="relative h-64 w-full bg-white rounded-lg p-2 border border-slate-200">
+                        <canvas id="scalingChart"></canvas>
+                    </div>
+                    <div id="scalingExplanation" class="text-center mt-4 text-sm text-slate-600 h-10">
+                        Raw data showing Age (small range) and Income (huge range). Notice how Income dominates the visual scale.
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- 1. Impact Slider Logic ---
+        const dirtSlider = document.getElementById('dataDirtiness');
+        const dirtValue = document.getElementById('dirtValue');
+        const accBar = document.getElementById('accuracyBar');
+        const accValue = document.getElementById('accuracyValue');
+
+        dirtSlider.addEventListener('input', (e) => {
+            const dirt = parseInt(e.target.value);
+            dirtValue.textContent = dirt + '%';
+            
+            // Simple inverted relationship with a curve: lower dirt = much higher acc
+            // Base acc = 95, min acc = 35
+            const accuracy = Math.max(35, 98 - (dirt * 0.65) - (Math.pow(dirt/10, 1.5)));
+            const accRounded = Math.round(accuracy);
+            
+            accValue.textContent = accRounded + '%';
+            accBar.style.width = accRounded + '%';
+            
+            // Change color based on accuracy
+            if(accRounded > 80) accBar.className = "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-green-500 transition-all duration-300";
+            else if (accRounded > 55) accBar.className = "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-yellow-400 transition-all duration-300";
+            else accBar.className = "shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-red-500 transition-all duration-300";
+        });
+        
+        // Trigger initial state
+        dirtSlider.dispatchEvent(new Event('input'));
+
+
+        // --- 2. Missing Data Logic ---
+        const initialMissingData = [
+            { id: 1, age: 25, income: 45000 },
+            { id: 2, age: 30, income: null }, // Missing
+            { id: 3, age: null, income: 52000 }, // Missing
+            { id: 4, age: 28, income: 48000 },
+            { id: 5, age: 35, income: 60000 }
+        ];
+        
+        let currentMissingData = JSON.parse(JSON.stringify(initialMissingData));
+
+        function renderMissingTable() {
+            const tbody = document.getElementById('missingDataTable');
+            tbody.innerHTML = '';
+            currentMissingData.forEach(row => {
+                const tr = document.createElement('tr');
+                // Highlight nulls
+                const ageCell = row.age === null ? `<td class="py-2 text-red-600 font-bold bg-red-50 border-y border-red-100">NaN</td>` : `<td class="py-2">${row.age}</td>`;
+                const incCell = row.income === null ? `<td class="py-2 text-red-600 font-bold bg-red-50 border-y border-red-100">NaN</td>` : `<td class="py-2">$${row.income.toLocaleString()}</td>`;
+                
+                tr.innerHTML = `<td class="py-2 font-medium text-slate-500">#${row.id}</td>${ageCell}${incCell}`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleMissing(action) {
+            const status = document.getElementById('missingStatus');
+            if (action === 'reset') {
+                currentMissingData = JSON.parse(JSON.stringify(initialMissingData));
+                status.textContent = "Dataset reset. Contains missing values (NaN).";
+                status.className = "mt-3 text-xs text-red-600 font-medium h-4";
+            } else if (action === 'delete') {
+                currentMissingData = currentMissingData.filter(r => r.age !== null && r.income !== null);
+                status.textContent = "Rows with missing values deleted (Data Loss!).";
+                status.className = "mt-3 text-xs text-orange-600 font-medium h-4";
+            } else if (action === 'mean') {
+                // Calculate means
+                let ageSum = 0, ageCount = 0, incSum = 0, incCount = 0;
+                initialMissingData.forEach(r => { 
+                    if(r.age) { ageSum+=r.age; ageCount++; }
+                    if(r.income) { incSum+=r.income; incCount++; }
+                });
+                const ageMean = Math.round(ageSum / ageCount);
+                const incMean = Math.round(incSum / incCount);
+                
+                currentMissingData = JSON.parse(JSON.stringify(initialMissingData)).map(r => {
+                    if(r.age === null) r.age = ageMean;
+                    if(r.income === null) r.income = incMean;
+                    return r;
+                });
+                status.textContent = `Imputed missing with Means (Age: ${ageMean}, Income: $${incMean}).`;
+                status.className = "mt-3 text-xs text-blue-600 font-medium h-4";
+            } else if (action === 'predictive') {
+                // Mock prediction: Income is roughly Age * 1700
+                currentMissingData = JSON.parse(JSON.stringify(initialMissingData)).map(r => {
+                    if(r.age === null && r.income !== null) r.age = Math.round(r.income / 1700);
+                    if(r.income === null && r.age !== null) r.income = r.age * 1700;
+                    return r;
+                });
+                status.textContent = "Imputed using predictive modeling (Linear relationship assumed).";
+                status.className = "mt-3 text-xs text-purple-600 font-medium h-4";
+            }
+            renderMissingTable();
+        }
+        renderMissingTable();
+
+
+        // --- 3. Duplicates & Formatting Logic ---
+        const initialFormatData = [
+            { name: "alice smith", date: "2023-01-15", price: "$1,200.00" },
+            { name: "Bob Jones ", date: "15-01-2023", price: "800" },
+            { name: "Alice Smith", date: "2023-01-15", price: "1200" }, // Duplicate roughly
+            { name: "CHARLIE", date: "Jan 16 23", price: "£950" }
+        ];
+        let currentFormatData = JSON.parse(JSON.stringify(initialFormatData));
+
+        function renderFormatTable() {
+            const tbody = document.getElementById('formatTable');
+            tbody.innerHTML = '';
+            currentFormatData.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td class="py-2">${row.name}</td><td class="py-2">${row.date}</td><td class="py-2">${row.price}</td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function handleFormat(action) {
+            const status = document.getElementById('formatStatus');
+            if (action === 'reset') {
+                currentFormatData = JSON.parse(JSON.stringify(initialFormatData));
+                status.textContent = "Dataset reset. Contains messy formats and duplicates.";
+                status.className = "mt-3 text-xs text-red-600 font-medium h-4";
+            } else if (action === 'dedupe') {
+                // Simple dedupe based on lowercase name
+                const seen = new Set();
+                currentFormatData = currentFormatData.filter(el => {
+                    const duplicate = seen.has(el.name.trim().toLowerCase());
+                    seen.add(el.name.trim().toLowerCase());
+                    return !duplicate;
+                });
+                status.textContent = "Duplicate records removed.";
+                status.className = "mt-3 text-xs text-emerald-600 font-medium h-4";
+            } else if (action === 'format') {
+                // Standardize
+                currentFormatData = currentFormatData.map(r => {
+                    // Name: Title Case
+                    let cleanName = r.name.trim().toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+                    // Date: standard YYYY-MM-DD
+                    let cleanDate = "2023-01-" + (r.date.includes("16") ? "16" : "15");
+                    // Price: Numeric
+                    let cleanPrice = r.price.replace(/[^0-9]/g, '');
+                    if(cleanPrice === "120000") cleanPrice = "1200"; // handle $1,200.00 strip anomaly
+                    return { name: cleanName, date: cleanDate, price: cleanPrice };
+                });
+                status.textContent = "Data types and formats standardized.";
+                status.className = "mt-3 text-xs text-amber-600 font-medium h-4";
+            }
+            renderFormatTable();
+        }
+        renderFormatTable();
+
+
+        // --- 4. Chart Configuration (Light Mode Updates) ---
+        Chart.defaults.color = '#64748b'; // slate-500
+        Chart.defaults.font.family = 'Inter';
+        
+        // --- 5. Outlier Chart Logic (Chart.js) ---
+        const outlierCtx = document.getElementById('outlierChart').getContext('2d');
+        const basePoints = Array.from({length: 40}, () => ({x: Math.random() * 20 + 10, y: Math.random() * 20 + 20}));
+        const outlierPoints = [{x: 45, y: 85}, {x: 50, y: 90}, {x: 5, y: 80}]; // Extreme values
+        
+        let outlierChart = new Chart(outlierCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Normal Data',
+                    data: JSON.parse(JSON.stringify(basePoints)),
+                    backgroundColor: 'rgba(59, 130, 246, 0.7)', // blue-500
+                    borderColor: '#2563eb',
+                    pointRadius: 5
+                },
+                {
+                    label: 'Outliers',
+                    data: JSON.parse(JSON.stringify(outlierPoints)),
+                    backgroundColor: 'rgba(244, 63, 94, 0.9)', // rose-500
+                    borderColor: '#e11d48',
+                    pointRadius: 7,
+                    pointStyle: 'triangle'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                        suggestedMin: 0, suggestedMax: 60,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    y: { 
+                        suggestedMin: 0, suggestedMax: 100,
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                },
+                plugins: {
+                    legend: { position: 'top' }
+                },
+                animation: { duration: 800, easing: 'easeOutQuart' }
+            }
+        });
+
+        function resetOutliers() {
+            outlierChart.data.datasets[1].data = JSON.parse(JSON.stringify(outlierPoints));
+            outlierChart.data.datasets[1].hidden = false;
+            outlierChart.update();
+        }
+
+        function removeOutliers() {
+            outlierChart.data.datasets[1].data = []; // Empty the outliers array
+            outlierChart.update();
+        }
+
+        function capOutliers() {
+            // Winsorize: move outliers to max accepted thresholds (e.g. x=30, y=40)
+            const capped = outlierPoints.map(p => {
+                return {
+                    x: Math.min(Math.max(p.x, 10), 30), 
+                    y: Math.min(Math.max(p.y, 20), 40)
+                };
+            });
+            outlierChart.data.datasets[1].data = capped;
+            outlierChart.update();
+        }
+
+
+        // --- 6. Scaling Chart Logic (Chart.js) ---
+        const scaleCtx = document.getElementById('scalingChart').getContext('2d');
+        
+        // Fictional dataset: 5 points. Feature 1: Age (20-60), Feature 2: Income (30000 - 120000)
+        const rawData = [
+            {age: 25, income: 40000},
+            {age: 30, income: 45000},
+            {age: 45, income: 80000},
+            {age: 50, income: 110000},
+            {age: 55, income: 120000}
+        ];
+
+        // Normalization (Min-Max)
+        const ageMin = 25, ageMax = 55;
+        const incMin = 40000, incMax = 120000;
+        const normData = rawData.map(d => ({
+            age: (d.age - ageMin) / (ageMax - ageMin),
+            income: (d.income - incMin) / (incMax - incMin)
+        }));
+
+        // Standardization (Z-Score)
+        // Mean age = 41, Std Dev ~ 12.2
+        // Mean inc = 79000, Std Dev ~ 34000
+        const ageMean = 41, ageStd = 12.24;
+        const incMean = 79000, incStd = 34351;
+        const stdData = rawData.map(d => ({
+            age: (d.age - ageMean) / ageStd,
+            income: (d.income - incMean) / incStd
+        }));
+
+        // Format for Chart.js Scatter (X=Feature Value, Y=Feature Type (1=Age, 2=Income))
+        function formatForChart(dataArr) {
+            const agePoints = dataArr.map(d => ({x: d.age, y: 1}));
+            const incPoints = dataArr.map(d => ({x: d.income, y: 2}));
+            return [agePoints, incPoints];
+        }
+
+        let currentScaleState = 'raw';
+        const [rawAge, rawInc] = formatForChart(rawData);
+        
+        let scalingChart = new Chart(scaleCtx, {
+            type: 'scatter',
+            data: {
+                datasets: [
+                    { label: 'Age', data: rawAge, backgroundColor: '#3b82f6', pointRadius: 8 },
+                    { label: 'Income', data: rawInc, backgroundColor: '#10b981', pointRadius: 8 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y', // Horizontal orientation feel
+                scales: {
+                    y: { 
+                        min: 0, max: 3, 
+                        ticks: {
+                            callback: function(value) {
+                                if (value === 1) return 'Age';
+                                if (value === 2) return 'Income';
+                                return '';
+                            }
+                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    },
+                    x: {
+                        type: 'linear', // Use log scale initially for raw? Linear is better to show the squashing
+                        title: { display: true, text: 'Feature Value' },
+                        grid: { color: 'rgba(0,0,0,0.05)' }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: function(ctx) {
+                                return `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(2)}`;
+                            }
+                        }
+                    }
+                },
+                animation: { duration: 1000, easing: 'easeInOutQuart' }
+            }
+        });
+
+        function updateScaling(mode) {
+            // Update UI buttons
+            document.querySelectorAll('.scale-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+            });
+            document.getElementById('btn-' + mode).classList.remove('bg-slate-200', 'text-slate-700', 'hover:bg-slate-300');
+            document.getElementById('btn-' + mode).classList.add('bg-blue-600', 'text-white');
+
+            const explanation = document.getElementById('scalingExplanation');
+            
+            let targetData = [];
+            let xMax, xMin;
+
+            if (mode === 'raw') {
+                targetData = formatForChart(rawData);
+                scalingChart.options.scales.x.type = 'logarithmic'; // Log scale to see Age vs Income in raw
+                scalingChart.options.scales.x.min = 10;
+                scalingChart.options.scales.x.max = 200000;
+                explanation.innerHTML = "<strong>Raw Data (Log Scale):</strong> Income values completely dwarf Age values numerically. A model calculating distance (like KNN) would only look at Income.";
+            } else if (mode === 'norm') {
+                targetData = formatForChart(normData);
+                scalingChart.options.scales.x.type = 'linear';
+                scalingChart.options.scales.x.min = -0.2;
+                scalingChart.options.scales.x.max = 1.2;
+                explanation.innerHTML = "<strong>Normalization:</strong> Both features are strictly squashed into a <code>[0, 1]</code> range. They now have equal weight numerically.";
+            } else if (mode === 'std') {
+                targetData = formatForChart(stdData);
+                scalingChart.options.scales.x.type = 'linear';
+                scalingChart.options.scales.x.min = -2.5;
+                scalingChart.options.scales.x.max = 2.5;
+                explanation.innerHTML = "<strong>Standardization:</strong> Data is centered around 0. Shows how many Standard Deviations a value is from the mean. Outliers are handled better.";
+            }
+
+            scalingChart.data.datasets[0].data = targetData[0];
+            scalingChart.data.datasets[1].data = targetData[1];
+            scalingChart.update();
+        }
+        
+        // Init raw scale properly
+        updateScaling('raw');
+
+    </script>
+</body>
+</html>

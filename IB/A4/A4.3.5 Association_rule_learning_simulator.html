@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crime Scene Association Simulator</title>
+    <title>Association Rule Learning Simulator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +17,16 @@
         }
         .step-card {
             transition: opacity 0.5s ease-in-out;
+        }
+        .transaction-item.highlight-both {
+            background-color: #34d399; /* Emerald 400 */
+            color: white;
+            border-color: #059669; /* Emerald 600 */
+        }
+        .transaction-item.highlight-antecedent {
+            background-color: #60a5fa; /* Blue 400 */
+            color: white;
+            border-color: #2563eb; /* Blue 600 */
         }
         .transaction-item.selected {
             outline: 2px solid #2563eb;
@@ -37,42 +47,55 @@
     <div class="container mx-auto p-4 md:p-8 max-w-4xl">
         <header class="text-center mb-8">
              <div class="flex justify-center items-center gap-4">
-                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Crime Scene Association Simulator 🕵️‍♂️</h1>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-900">Association Rule Learning Simulator 👩‍🔬</h1>
                 <button id="global-reset-btn" class="bg-slate-200 text-slate-700 font-bold py-2 px-4 rounded-lg hover:bg-slate-300 transition-all shadow-sm">Reset</button>
             </div>
-            <p class="mt-2 text-lg text-slate-600">Find a criminal's M.O. by linking evidence across different cases.</p>
+            <p class="mt-2 text-lg text-slate-600">Discover hidden patterns in data by calculating metrics for your own rules.</p>
+            
+            <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 text-blue-800 p-4 rounded-r-lg text-sm max-w-3xl mx-auto text-left shadow-sm">
+                <h3 class="font-bold mb-1 text-base">Syllabus Objective: A4.3.5</h3>
+                <p class="mb-2">Describe how learning techniques using the association rule are used to uncover relations between different attributes in large data sets.</p>
+                <p><strong>Scenario Interpretation:</strong> Mining techniques uncover hidden relationships that drive decision-making. For example, in <strong>predictive policing (Crime Analysis)</strong>, these techniques may reveal that areas with high rates of vandalism also often experience incidents of theft, assisting law enforcement in resource allocation.</p>
+            </div>
         </header>
 
-        <main id="simulation-container" class="space-y-6">
-            <!-- Step 1: Dataset & Rule Selection -->
-            <section id="step-1" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4">
-                <div class="flex items-center space-x-3">
-                    <div class="bg-blue-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">1</div>
-                    <h2 class="text-2xl font-bold">The Case Files & Your Hypothesis</h2>
-                </div>
-                <p>Below is the evidence list from 10 different crime scenes. Form a hypothesis in the format "If we find (Clue A), then we also find (Clue B)".</p>
+        <div class="flex justify-center gap-4 md:gap-8 border-b border-slate-300 mb-8">
+            <button id="tab-btn-sim" class="py-2 px-4 font-bold text-blue-600 border-b-4 border-blue-600 transition-all focus:outline-none hover:bg-slate-100 rounded-t-lg">Interactive Simulator</button>
+            <button id="tab-btn-concepts" class="py-2 px-4 font-bold text-slate-500 border-b-4 border-transparent hover:text-slate-800 transition-all focus:outline-none hover:bg-slate-100 rounded-t-lg">Key Ideas & Glossary</button>
+        </div>
 
-                <div class="bg-slate-100 p-4 rounded-lg">
-                    <h3 class="font-semibold mb-3 text-slate-700">Evidence from Crime Scenes:</h3>
+        <div id="tab-content-sim">
+            <main id="simulation-container" class="space-y-6">
+                <!-- Step 1: Dataset & Rule Selection -->
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <p id="scenario-desc" class="text-slate-700 flex-1 mr-4">Select a scenario to begin exploring association rules.</p>
+                    <select id="scenario-select" class="mt-3 sm:mt-0 p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 bg-white font-medium">
+                        <option value="crime">Crime Analysis (Predictive Policing)</option>
+                        <option value="retail">Retail (Coffee Shop Transactions)</option>
+                    </select>
+                </div>
+
+                <div class="bg-slate-100 p-4 rounded-lg mt-4">
+                    <h3 id="trans-list-title" class="font-semibold mb-3 text-slate-700">Dataset Records:</h3>
                     <div id="transaction-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <!-- Transactions will be injected here by JS -->
                     </div>
                 </div>
 
                 <div class="flex flex-col sm:flex-row items-center justify-center gap-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
-                    <span class="font-semibold text-lg">If we find...</span>
+                    <span id="label-if" class="font-semibold text-lg">If...</span>
                     <select id="antecedent-select" class="p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         <!-- Options injected by JS -->
                     </select>
-                    <span class="font-semibold text-lg">...then we also find...</span>
+                    <span id="label-then" class="font-semibold text-lg">...then...</span>
                     <select id="consequent-select" class="p-2 border border-slate-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
                         <!-- Options injected by JS -->
                     </select>
                 </div>
-                 <div id="rule-error" class="text-center text-red-500 font-medium hidden">The clues cannot be the same. Please choose different clues.</div>
+                 <div id="rule-error" class="text-center text-red-500 font-medium hidden">The 'If' and 'Then' items cannot be the same. Please choose different items.</div>
                 <div class="text-center">
                     <button id="start-calculation-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-all shadow-sm disabled:bg-slate-400 disabled:cursor-not-allowed">
-                        Start Investigation
+                        Start Calculation
                     </button>
                 </div>
             </section>
@@ -81,16 +104,16 @@
             <section id="step-2" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4 hidden">
                  <div class="flex items-center space-x-3">
                     <div class="bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">2</div>
-                    <h2 class="text-2xl font-bold">Calculate Support (M.O. Frequency)</h2>
+                    <h2 class="text-2xl font-bold">Calculate Support</h2>
                 </div>
-                <p><span class="font-semibold">Support</span> measures how frequently two clues appear <span class="font-semibold">together</span> across all crime scenes. A high support suggests a common M.O.</p>
+                <p><span class="font-semibold">Support</span> measures how frequently the items in your rule appear <span class="font-semibold">together</span> in all transactions. It tells us the popularity of the item combination.</p>
                 <div class="bg-emerald-50 p-4 border-l-4 border-emerald-400">
-                    <p class="font-mono text-center">Support(A → B) = (Cases with both A and B) / (Total Cases)</p>
+                    <p class="font-mono text-center">Support(A → B) = (Transactions with both A and B) / (Total Transactions)</p>
                 </div>
-                <p class="text-lg font-medium">Your task: Click on every case file that contains <strong id="support-item-A"></strong> AND <strong id="support-item-B"></strong>.</p>
+                <p class="text-lg font-medium">Your task: Click on every transaction that contains <strong id="support-item-A"></strong> AND <strong id="support-item-B"></strong>.</p>
                 
                 <div class="text-center">
-                     <button id="check-support-btn" class="bg-emerald-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-emerald-700 transition-all shadow-sm">Check Evidence</button>
+                     <button id="check-support-btn" class="bg-emerald-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-emerald-700 transition-all shadow-sm">Check My Answer</button>
                 </div>
                 <div id="support-feedback" class="text-center font-medium"></div>
                 <div id="support-result" class="hidden text-center p-4 bg-slate-100 rounded-lg space-y-2"></div>
@@ -100,16 +123,16 @@
             <section id="step-3" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4 hidden">
                 <div class="flex items-center space-x-3">
                     <div class="bg-indigo-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">3</div>
-                    <h2 class="text-2xl font-bold">Calculate Confidence (Clue Reliability)</h2>
+                    <h2 class="text-2xl font-bold">Calculate Confidence</h2>
                 </div>
-                <p><span class="font-semibold">Confidence</span> measures how reliable a clue is for predicting another. When we find the "if" clue, how often do we also find the "then" clue?</p>
+                <p><span class="font-semibold">Confidence</span> measures how often the rule is true. When the "if" condition occurs, how often does the "then" condition also occur?</p>
                 <div class="bg-indigo-50 p-4 border-l-4 border-indigo-400">
-                    <p class="font-mono text-center">Confidence(A → B) = (Cases with both A and B) / (Cases with A)</p>
+                    <p class="font-mono text-center">Confidence(A → B) = (Transactions with both A and B) / (Transactions with A)</p>
                 </div>
-                <p class="text-lg font-medium">Your task: Now, click on every case file that contains <strong id="confidence-item-A"></strong>.</p>
+                <p class="text-lg font-medium">Your task: Now, click on every transaction that contains <strong id="confidence-item-A"></strong> (we are only looking for the 'if' part).</p>
 
                 <div class="text-center">
-                     <button id="check-confidence-btn" class="bg-indigo-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-all shadow-sm">Check Evidence</button>
+                     <button id="check-confidence-btn" class="bg-indigo-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-indigo-700 transition-all shadow-sm">Check My Answer</button>
                 </div>
                 <div id="confidence-feedback" class="text-center font-medium"></div>
                 <div id="confidence-result" class="hidden text-center p-4 bg-slate-100 rounded-lg space-y-2"></div>
@@ -119,13 +142,13 @@
             <section id="step-4" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4 hidden">
                 <div class="flex items-center space-x-3">
                     <div class="bg-rose-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">4</div>
-                    <h2 class="text-2xl font-bold">Calculate Lift (Strength of Association)</h2>
+                    <h2 class="text-2xl font-bold">Calculate Lift</h2>
                 </div>
-                 <p><span class="font-semibold">Lift</span> tells us if there is a real connection. Does finding Clue A actually <span class="italic">increase</span> the chances of finding Clue B, or are they just common clues in general?</p>
+                 <p><span class="font-semibold">Lift</span> tells us if the rule is actually useful. It compares the confidence of the rule to how popular the "then" item is overall. Does the presence of A actually <span class="italic">increase</span> the chances of B?</p>
                 <div class="bg-rose-50 p-4 border-l-4 border-rose-400">
                     <p class="font-mono text-center">Lift(A → B) = Support(A, B) / (Support(A) × Support(B))</p>
                 </div>
-                <p class="text-lg font-medium">Let's put it all together. The values have been calculated for you.</p>
+                <p class="text-lg font-medium">Let's put it all together. The values have been calculated for you based on our previous steps.</p>
                 <div id="lift-result" class="text-center p-4 bg-slate-100 rounded-lg space-y-2"></div>
             </section>
 
@@ -133,19 +156,19 @@
             <section id="step-5" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4 hidden">
                 <div class="flex items-center space-x-3">
                     <div class="bg-slate-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">5</div>
-                    <h2 class="text-2xl font-bold">Detective's Report</h2>
+                    <h2 class="text-2xl font-bold">Manual Analysis Results</h2>
                 </div>
-                <p>Conclusion for the hypothesis: <strong id="summary-rule" class="text-xl"></strong></p>
+                <p>Congratulations! You've analyzed the association rule: <strong id="summary-rule" class="text-xl"></strong></p>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
                     <div class="bg-emerald-50 p-4 rounded-lg">
                         <h4 class="font-bold text-emerald-700">Support</h4>
                         <p id="summary-support" class="text-3xl font-bold"></p>
-                        <p class="text-sm text-slate-600">Frequency of the M.O.</p>
+                        <p class="text-sm text-slate-600">Popularity of the pair.</p>
                     </div>
                     <div class="bg-indigo-50 p-4 rounded-lg">
                         <h4 class="font-bold text-indigo-700">Confidence</h4>
                         <p id="summary-confidence" class="text-3xl font-bold"></p>
-                        <p class="text-sm text-slate-600">Reliability of the lead.</p>
+                        <p class="text-sm text-slate-600">Predictive power of the rule.</p>
                     </div>
                     <div class="bg-rose-50 p-4 rounded-lg">
                         <h4 class="font-bold text-rose-700">Lift</h4>
@@ -154,7 +177,7 @@
                     </div>
                 </div>
                 <div class="text-center pt-4">
-                     <button id="next-to-apriori" class="bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-all shadow-sm">Next: Automated Analysis</button>
+                     <button id="next-to-apriori" class="bg-slate-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-slate-700 transition-all shadow-sm">Next: Automated Mining</button>
                 </div>
             </section>
 
@@ -162,13 +185,13 @@
             <section id="step-6" class="step-card bg-white p-6 rounded-xl shadow-md space-y-4 hidden">
                 <div class="flex items-center space-x-3">
                     <div class="bg-purple-500 text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-lg">6</div>
-                    <h2 class="text-2xl font-bold">Automated Analysis: The Apriori Algorithm</h2>
+                    <h2 class="text-2xl font-bold">Automated Mining: The Apriori Algorithm</h2>
                 </div>
-                <p>Manual analysis is slow! The <span class="font-semibold">Apriori</span> algorithm helps detectives by automatically finding all "frequent clue sets" that meet a <strong class="text-purple-700">minimum support</strong> threshold.</p>
+                <p>Doing this manually is slow! Algorithms like <span class="font-semibold">Apriori</span> find the best rules automatically by first finding all "frequent itemsets" that meet a <strong class="text-purple-700">minimum support</strong> threshold.</p>
                 
                 <div class="bg-purple-50 p-4 border-l-4 border-purple-400 space-y-2">
                     <h4 class="font-semibold text-purple-800">The Apriori Principle</h4>
-                    <p class="text-sm">"If a set of clues is rare (e.g., {'Vandalism', 'Insider Job'}), then any larger set containing it (e.g., {'Vandalism', 'Insider Job', 'Fingerprints'}) must also be rare."</p>
+                    <p class="text-sm">"If an itemset is infrequent (e.g., very few people report {Assault, Burglary}), then any larger set containing it (e.g., {Assault, Burglary, Vandalism}) must also be infrequent. This lets the algorithm work much faster."</p>
                 </div>
 
                 <div class="text-center space-y-2 pt-2">
@@ -176,47 +199,168 @@
                     <input type="range" id="min-support-slider" min="10" max="50" value="30" step="10" class="w-full max-w-sm">
                 </div>
                  <div class="text-center">
-                    <button id="run-apriori-btn" class="bg-purple-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-purple-700 transition-all shadow-sm">Find Frequent Clue Sets</button>
+                    <button id="run-apriori-btn" class="bg-purple-600 text-white font-bold py-2 px-5 rounded-lg hover:bg-purple-700 transition-all shadow-sm">Find Frequent Itemsets</button>
                 </div>
 
                 <div id="apriori-results" class="hidden pt-4 space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <h4 class="font-semibold text-center mb-2">Level 1: Frequent Clues</h4>
+                            <h4 class="font-semibold text-center mb-2">Level 1: Frequent Items</h4>
                             <div id="frequent-items-1" class="bg-slate-100 p-3 rounded-md min-h-[100px]"></div>
                         </div>
                          <div>
-                            <h4 class="font-semibold text-center mb-2">Level 2: Frequent Clue Pairs</h4>
+                            <h4 class="font-semibold text-center mb-2">Level 2: Frequent Pairs</h4>
                             <div id="frequent-items-2" class="bg-slate-100 p-3 rounded-md min-h-[100px]"></div>
                         </div>
                     </div>
                     <div>
-                        <h4 class="font-semibold text-center mb-2">Strong Leads Found (Confidence > 50%)</h4>
+                        <h4 class="font-semibold text-center mb-2">Strong Rules Found (Confidence > 50%)</h4>
                         <div id="strong-rules" class="bg-emerald-50 p-3 rounded-md min-h-[100px]"></div>
                     </div>
                 </div>
                  <div class="text-center pt-4">
-                     <button id="restart-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-all shadow-sm">Start a New Investigation</button>
+                     <button id="restart-btn" class="bg-blue-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-blue-700 transition-all shadow-sm">Start Over & Try Another Rule</button>
                 </div>
             </section>
         </main>
     </div>
 
+    <div id="tab-content-concepts" class="hidden space-y-6 pb-12">
+            
+            <section class="bg-white p-6 rounded-xl shadow-md border-l-4 border-slate-600 space-y-3">
+                <h2 class="text-2xl font-bold text-slate-800">What is Association Rule Learning?</h2>
+                <p class="text-slate-700 leading-relaxed">Association Rule Learning is an <span class="font-semibold">unsupervised machine learning method</span> used to discover hidden patterns, correlations, or associations between variables in large databases. Unlike predictive modeling, its goal is not to predict a target variable, but rather to uncover rules that describe how items frequently group together.</p>
+                <div class="bg-slate-50 p-4 rounded-lg mt-2">
+                    <h3 class="font-bold text-slate-700 mb-2">Anatomy of a Rule: {A} &rarr; {B}</h3>
+                    <ul class="list-disc pl-5 text-slate-600 space-y-1">
+                        <li><strong class="text-slate-800">Antecedent (If):</strong> The item or itemset found in the data (e.g., Vandalism).</li>
+                        <li><strong class="text-slate-800">Consequent (Then):</strong> The item or itemset found in combination with the antecedent (e.g., Theft).</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-2xl font-bold text-slate-800 text-center mt-8 mb-4">The 3 Core Evaluation Metrics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    
+                    <!-- Support Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-emerald-500 flex flex-col h-full">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <div class="bg-emerald-100 text-emerald-700 p-2 rounded-lg"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg></div>
+                            <h3 class="text-xl font-bold text-emerald-700">Support</h3>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4 flex-grow">Measures how popular an itemset is, as measured by the proportion of transactions in which an itemset appears.</p>
+                        <div class="bg-emerald-50 p-3 rounded text-sm text-center font-mono text-emerald-800">
+                            Support(A) = Freq(A) / Total<br>
+                            Support(A&rarr;B) = Freq(A,B) / Total
+                        </div>
+                    </div>
+
+                    <!-- Confidence Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-indigo-500 flex flex-col h-full">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <div class="bg-indigo-100 text-indigo-700 p-2 rounded-lg"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></div>
+                            <h3 class="text-xl font-bold text-indigo-700">Confidence</h3>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4 flex-grow">Measures how likely item B is purchased when item A is purchased. It represents the conditional probability of the rule.</p>
+                        <div class="bg-indigo-50 p-3 rounded text-sm text-center font-mono text-indigo-800">
+                            Conf(A&rarr;B) = Support(A,B) / Support(A)
+                        </div>
+                    </div>
+
+                    <!-- Lift Card -->
+                    <div class="bg-white p-6 rounded-xl shadow-md border-t-4 border-rose-500 flex flex-col h-full">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <div class="bg-rose-100 text-rose-700 p-2 rounded-lg"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg></div>
+                            <h3 class="text-xl font-bold text-rose-700">Lift</h3>
+                        </div>
+                        <p class="text-sm text-slate-600 mb-4 flex-grow">Measures the strength of an association over random chance. It accounts for the base popularity of the items.</p>
+                        <div class="bg-rose-50 p-3 rounded text-sm text-center font-mono text-rose-800">
+                            Lift = Supp(A,B) / (Supp(A) * Supp(B))
+                        </div>
+                    </div>
+
+                </div>
+                
+                <!-- Lift Interpretation -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 text-sm flex flex-col sm:flex-row justify-around items-center gap-4 text-center">
+                    <div><span class="font-bold text-rose-600 text-lg">Lift > 1</span><br><span class="text-slate-600">Positive correlation (A makes B more likely)</span></div>
+                    <div class="hidden sm:block text-slate-300 w-px h-10 bg-slate-200"></div>
+                    <div><span class="font-bold text-slate-500 text-lg">Lift = 1</span><br><span class="text-slate-600">Independent (No actual correlation)</span></div>
+                    <div class="hidden sm:block text-slate-300 w-px h-10 bg-slate-200"></div>
+                    <div><span class="font-bold text-blue-600 text-lg">Lift < 1</span><br><span class="text-slate-600">Negative correlation (A makes B less likely)</span></div>
+                </div>
+            </section>
+
+            <section class="bg-white p-6 rounded-xl shadow-md border-l-4 border-purple-500 space-y-3">
+                <div class="flex items-center space-x-2 mb-2">
+                    <h2 class="text-2xl font-bold text-slate-800">The Apriori Algorithm</h2>
+                </div>
+                <p class="text-slate-700">Checking every possible combination of items in a large database takes too much time (exponential time complexity). The Apriori algorithm speeds this up using a simple pruning strategy.</p>
+                <div class="bg-purple-50 p-4 border border-purple-200 rounded-lg shadow-inner">
+                    <h4 class="font-bold text-purple-800 mb-1">The Apriori Principle (Anti-Monotonicity)</h4>
+                    <p class="text-purple-900 font-medium">"If an itemset is infrequent, all of its supersets must also be infrequent."</p>
+                    <p class="text-sm text-purple-700 mt-2">Example: If {Milk, Bread} only appears 2 times (and fails the minimum support threshold), then {Milk, Bread, Eggs} cannot possibly appear more than 2 times. The algorithm instantly ignores evaluating {Milk, Bread, Eggs}, saving massive amounts of computation.</p>
+                </div>
+            </section>
+
+             <section class="bg-white p-6 rounded-xl shadow-md border-l-4 border-amber-500 space-y-3">
+                <h2 class="text-2xl font-bold text-slate-800">Real-World Applications</h2>
+                <ul class="list-disc pl-5 text-slate-700 space-y-2">
+                    <li><strong>Predictive Policing (Criminology):</strong> Identifying geographical zones where specific combinations of crimes occur together to better deploy patrols.</li>
+                    <li><strong>Market Basket Analysis (Retail):</strong> Discovering that people who buy diapers on Friday evenings often buy beer, allowing stores to place them next to each other.</li>
+                    <li><strong>Healthcare:</strong> Mining patient records to find co-occurring symptoms, which can aid in earlier diagnosis of complex diseases.</li>
+                    <li><strong>Web Usage Mining:</strong> Understanding clickstreams. "If a user visits page A and page B, they are likely to click on link C."</li>
+                </ul>
+            </section>
+        </div>
+
+    </div>
+
     <script>
-        const transactions = [
-            ['Forced Entry', 'Stolen Valuables', 'Fingerprints'],
-            ['Security Disabled', 'No Forced Entry'],
-            ['Forced Entry', 'Stolen Valuables', 'Witness Report'],
-            ['Insider Job', 'Security Disabled'],
-            ['Forced Entry', 'Vandalism'],
-            ['Security Disabled', 'No Forced Entry', 'Insider Job'],
-            ['Fingerprints', 'Witness Report'],
-            ['Forced Entry', 'Stolen Valuables', 'Security Disabled'],
-            ['Vandalism', 'Witness Report'],
-            ['No Forced Entry', 'Insider Job']
-        ];
-        const totalTransactions = transactions.length;
-        const allItems = [...new Set(transactions.flat())].sort();
+        const allScenarios = {
+            crime: {
+                desc: 'Below are 10 incident reports from different city zones. Create a rule to uncover relations between crime types.',
+                labelIf: 'If an area reports...',
+                labelThen: '...it also experiences...',
+                transName: 'Zone Incident Reports:',
+                transactions: [
+                    ['Vandalism', 'Theft', 'Trespassing'],
+                    ['Vandalism', 'Assault'],
+                    ['Theft', 'Burglary', 'Trespassing'],
+                    ['Vandalism', 'Theft'],
+                    ['Trespassing', 'Burglary'],
+                    ['Vandalism', 'Theft', 'Assault'],
+                    ['Vandalism', 'Trespassing'],
+                    ['Theft', 'Assault'],
+                    ['Vandalism', 'Theft', 'Burglary'],
+                    ['Theft', 'Trespassing']
+                ]
+            },
+            retail: {
+                desc: 'Below are 10 transactions from a local coffee shop. Create a rule to uncover buying patterns.',
+                labelIf: 'If a customer buys...',
+                labelThen: '...they also buy...',
+                transName: 'Coffee Shop Transactions:',
+                transactions: [
+                    ['Coffee', 'Muffin', 'Cookie'],
+                    ['Coffee', 'Scone'],
+                    ['Tea', 'Scone', 'Cookie'],
+                    ['Coffee', 'Muffin'],
+                    ['Tea', 'Croissant'],
+                    ['Coffee', 'Muffin', 'Scone'],
+                    ['Coffee', 'Cookie'],
+                    ['Tea', 'Scone'],
+                    ['Coffee', 'Muffin', 'Croissant'],
+                    ['Muffin', 'Cookie']
+                ]
+            }
+        };
+
+        let currentScenarioKey = 'crime';
+        let transactions = [];
+        let totalTransactions = 0;
+        let allItems = [];
         
         // State variables
         let antecedent, consequent;
@@ -230,6 +374,11 @@
         const startBtn = document.getElementById('start-calculation-btn');
         const ruleError = document.getElementById('rule-error');
         
+        const tabBtnSim = document.getElementById('tab-btn-sim');
+        const tabBtnConcepts = document.getElementById('tab-btn-concepts');
+        const tabContentSim = document.getElementById('tab-content-sim');
+        const tabContentConcepts = document.getElementById('tab-content-concepts');
+        
         // Section references
         const stepSections = {
             step2: document.getElementById('step-2'),
@@ -240,20 +389,41 @@
         };
 
         function initialize() {
+            setupEventListeners();
+            loadScenario('crime');
+        }
+
+        function loadScenario(scenarioKey) {
+            currentScenarioKey = scenarioKey;
+            const data = allScenarios[scenarioKey];
+            transactions = data.transactions;
+            totalTransactions = transactions.length;
+            allItems = [...new Set(transactions.flat())].sort();
+
+            document.getElementById('scenario-desc').textContent = data.desc;
+            document.getElementById('trans-list-title').textContent = data.transName;
+            document.getElementById('label-if').textContent = data.labelIf;
+            document.getElementById('label-then').textContent = data.labelThen;
+
             antecedentSelect.innerHTML = allItems.map(item => `<option value="${item}">${item}</option>`).join('');
             consequentSelect.innerHTML = allItems.map(item => `<option value="${item}">${item}</option>`).join('');
             
-            antecedentSelect.value = 'Forced Entry';
-            consequentSelect.value = 'Stolen Valuables';
+            if (scenarioKey === 'crime') {
+                antecedentSelect.value = 'Vandalism';
+                consequentSelect.value = 'Theft';
+            } else {
+                antecedentSelect.value = 'Coffee';
+                consequentSelect.value = 'Muffin';
+            }
 
+            resetSimulation();
             renderTransactions();
-            setupEventListeners();
         }
 
         function renderTransactions() {
             transactionListDiv.innerHTML = transactions.map((trans, index) => `
                 <div id="trans-${index}" class="transaction-item border-2 border-slate-200 p-3 rounded-md cursor-pointer transition-all" data-id="${index}">
-                    <span class="font-semibold text-slate-500 mr-2">Case #${index + 1}</span>
+                    <span class="font-semibold text-slate-500 mr-2">#${index + 1}</span>
                     <span class="font-medium">${trans.join(', ')}</span>
                 </div>
             `).join('');
@@ -272,6 +442,8 @@
             antecedentSelect.addEventListener('change', validateRule);
             consequentSelect.addEventListener('change', validateRule);
             
+            document.getElementById('scenario-select').addEventListener('change', (e) => loadScenario(e.target.value));
+
             startBtn.addEventListener('click', startSimulation);
             document.getElementById('check-support-btn').addEventListener('click', checkSupport);
             document.getElementById('check-confidence-btn').addEventListener('click', checkConfidence);
@@ -282,8 +454,31 @@
                 document.getElementById('min-support-value').textContent = `${e.target.value}%`;
             });
             document.getElementById('run-apriori-btn').addEventListener('click', runApriori);
+
+            tabBtnSim.addEventListener('click', () => switchTab('sim'));
+            tabBtnConcepts.addEventListener('click', () => switchTab('concepts'));
         }
         
+        function switchTab(tabName) {
+            if (tabName === 'sim') {
+                tabBtnSim.classList.remove('text-slate-500', 'border-transparent');
+                tabBtnSim.classList.add('text-blue-600', 'border-blue-600');
+                tabBtnConcepts.classList.remove('text-blue-600', 'border-blue-600');
+                tabBtnConcepts.classList.add('text-slate-500', 'border-transparent');
+                
+                tabContentSim.classList.remove('hidden');
+                tabContentConcepts.classList.add('hidden');
+            } else {
+                tabBtnConcepts.classList.remove('text-slate-500', 'border-transparent');
+                tabBtnConcepts.classList.add('text-blue-600', 'border-blue-600');
+                tabBtnSim.classList.remove('text-blue-600', 'border-blue-600');
+                tabBtnSim.classList.add('text-slate-500', 'border-transparent');
+                
+                tabContentConcepts.classList.remove('hidden');
+                tabContentSim.classList.add('hidden');
+            }
+        }
+
         function addTransactionClickListeners() {
              document.querySelectorAll('.transaction-item').forEach(item => {
                 const newEl = item.cloneNode(true);
@@ -299,6 +494,7 @@
             consequent = consequentSelect.value;
             if (antecedent === consequent) return;
             
+            // Reset selections and show the first calculation step
             clearSelectionsAndHighlights();
             addTransactionClickListeners();
 
@@ -311,7 +507,7 @@
         
         function clearSelectionsAndHighlights() {
             document.querySelectorAll('.transaction-item').forEach(el => {
-                el.classList.remove('selected', 'correct', 'incorrect');
+                el.classList.remove('selected', 'correct', 'incorrect', 'highlight-both', 'highlight-antecedent');
             });
         }
 
@@ -346,14 +542,14 @@
             });
 
             if (allCorrect) {
-                feedbackEl.textContent = 'Correct! You\'ve identified all matching cases.';
+                feedbackEl.textContent = 'Perfect! You found all the correct transactions.';
                 feedbackEl.className = 'text-center font-medium text-emerald-600';
                 
                 supportVal = supportCount / totalTransactions;
                 const resultEl = document.getElementById('support-result');
                 resultEl.innerHTML = `
                     <p class="text-xl">Support = ${supportCount} / ${totalTransactions} = <strong class="text-2xl">${supportVal.toFixed(2)}</strong></p>
-                    <p>${(supportVal * 100).toFixed(0)}% of all cases contain both ${antecedent} and ${consequent}.</p>
+                    <p>${(supportVal * 100).toFixed(0)}% of all transactions contain both ${antecedent} and ${consequent}.</p>
                     <button id="next-to-confidence" class="mt-2 bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-emerald-700">Next: Confidence</button>
                 `;
                 resultEl.classList.remove('hidden');
@@ -365,7 +561,7 @@
                     stepSections.step3.scrollIntoView();
                 });
             } else {
-                feedbackEl.textContent = 'Not quite. The correct cases are highlighted in green, incorrect in red. Re-examine the evidence.';
+                feedbackEl.textContent = 'Not quite. The correct items are highlighted in green, incorrect in red. Try to fix your selection and check again.';
                 feedbackEl.className = 'text-center font-medium text-rose-600';
                  setTimeout(() => {
                     document.querySelectorAll('.transaction-item.correct, .transaction-item.incorrect').forEach(item => {
@@ -406,21 +602,21 @@
             });
             
             if (allCorrect) {
-                feedbackEl.textContent = 'Excellent! You found all cases with the primary clue.';
+                feedbackEl.textContent = 'Excellent! You found all transactions containing the antecedent.';
                 feedbackEl.className = 'text-center font-medium text-indigo-600';
                 
                 confidenceVal = confidenceAntecedentCount > 0 ? supportCount / confidenceAntecedentCount : 0;
                 const resultEl = document.getElementById('confidence-result');
                 resultEl.innerHTML = `
                     <p class="text-xl">Confidence = ${supportCount} / ${confidenceAntecedentCount} = <strong class="text-2xl">${confidenceVal.toFixed(2)}</strong></p>
-                    <p>In cases with ${antecedent}, ${(confidenceVal * 100).toFixed(0)}% of them also had ${consequent}.</p>
+                    <p>Of the instances containing ${antecedent}, ${(confidenceVal * 100).toFixed(0)}% also contained ${consequent}.</p>
                     <button id="next-to-lift" class="mt-2 bg-indigo-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-700">Next: Lift</button>
                 `;
                 resultEl.classList.remove('hidden');
                 document.getElementById('next-to-lift').addEventListener('click', showLift);
 
             } else {
-                feedbackEl.textContent = 'Almost! The correct cases are highlighted in green, incorrect in red. Adjust your selection.';
+                feedbackEl.textContent = 'Almost! The correct items are highlighted in green, incorrect in red. Adjust your selection and try again.';
                 feedbackEl.className = 'text-center font-medium text-rose-600';
                  setTimeout(() => {
                     document.querySelectorAll('.transaction-item.correct, .transaction-item.incorrect').forEach(item => {
@@ -445,13 +641,13 @@
             const resultEl = document.getElementById('lift-result');
             resultEl.innerHTML = `
                 <div class="space-y-1">
-                     <p>Support({${antecedent}, ${consequent}}) = <strong>${supportVal.toFixed(2)}</strong></p>
-                     <p>Support({${antecedent}}) = ${confidenceAntecedentCount}/${totalTransactions} = <strong>${supportAntecedent.toFixed(2)}</strong></p>
-                     <p>Support({${consequent}}) = ${consequentCount}/${totalTransactions} = <strong>${supportConsequent.toFixed(2)}</strong></p>
+                     <p>Support(${antecedent}, ${consequent}) = <strong>${supportVal.toFixed(2)}</strong></p>
+                     <p>Support(${antecedent}) = ${confidenceAntecedentCount}/${totalTransactions} = <strong>${supportAntecedent.toFixed(2)}</strong></p>
+                     <p>Support(${consequent}) = ${consequentCount}/${totalTransactions} = <strong>${supportConsequent.toFixed(2)}</strong></p>
                 </div>
                 <hr class="my-3">
                 <p class="text-xl">Lift = ${supportVal.toFixed(2)} / (${supportAntecedent.toFixed(2)} × ${supportConsequent.toFixed(2)}) = <strong class="text-2xl">${liftVal.toFixed(2)}</strong></p>
-                <button id="next-to-summary" class="mt-2 bg-rose-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-700">Show Final Report</button>
+                <button id="next-to-summary" class="mt-2 bg-rose-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-rose-700">Show Summary</button>
             `;
             document.getElementById('next-to-summary').addEventListener('click', showSummary);
         }
@@ -466,12 +662,12 @@
             document.getElementById('summary-lift').textContent = liftVal.toFixed(2);
 
             let liftInterp = '';
-            if (liftVal > 1.01) {
-                liftInterp = `Strong link. Finding ${antecedent} makes it ${( (liftVal - 1) * 100 ).toFixed(0)}% more likely to find ${consequent}. This is a solid lead.`;
-            } else if (liftVal < 0.99) {
-                liftInterp = `Negative link. Finding ${antecedent} makes it less likely to find ${consequent}. They might be mutually exclusive.`;
+            if (liftVal > 1.01) { // Added tolerance for floating point
+                liftInterp = `Positive correlation. The presence of ${antecedent} increases the likelihood of ${consequent} by ${( (liftVal - 1) * 100 ).toFixed(0)}%.`;
+            } else if (liftVal < 0.99) { // Added tolerance
+                liftInterp = `Negative correlation. The presence of ${antecedent} makes ${consequent} less likely.`;
             } else {
-                liftInterp = `No correlation. The clues appear independently. This lead is a dead end.`;
+                liftInterp = `No correlation. The items appear independent of each other.`;
             }
             document.getElementById('summary-lift-interp').textContent = liftInterp;
         }
@@ -486,6 +682,7 @@
             const minSupportThreshold = parseInt(document.getElementById('min-support-slider').value) / 100;
             const minConfidenceThreshold = 0.5; // 50%
 
+            // Level 1: Find frequent individual items
             const itemCounts = {};
             transactions.flat().forEach(item => {
                 itemCounts[item] = (itemCounts[item] || 0) + 1;
@@ -499,8 +696,9 @@
                     <span>{${item}}</span>
                     <span class="font-mono text-sm bg-slate-200 px-2 py-1 rounded">${(itemCounts[item] / totalTransactions * 100).toFixed(0)}%</span>
                 </div>
-            `).join('') || `<p class="text-center text-slate-500 p-4">No frequent clues found.</p>`;
+            `).join('');
 
+            // Level 2: Find frequent pairs
             const pairCounts = {};
             for (let i = 0; i < frequentItemsL1.length; i++) {
                 for (let j = i + 1; j < frequentItemsL1.length; j++) {
@@ -530,16 +728,19 @@
                 `).join('');
             }
 
+            // Generate strong rules from frequent pairs
             const strongRules = [];
             frequentPairsL2.forEach(pairKey => {
                 const [itemA, itemB] = pairKey.split(',');
                 const pairSupportCount = pairCounts[pairKey];
 
+                // Test Rule A -> B
                 const confidenceAtoB = pairSupportCount / itemCounts[itemA];
                 if (confidenceAtoB >= minConfidenceThreshold) {
                     strongRules.push(`{${itemA}} → {${itemB}} <span class="font-mono text-sm text-emerald-800">(Conf: ${(confidenceAtoB*100).toFixed(0)}%)</span>`);
                 }
 
+                // Test Rule B -> A
                 const confidenceBtoA = pairSupportCount / itemCounts[itemB];
                 if (confidenceBtoA >= minConfidenceThreshold) {
                     strongRules.push(`{${itemB}} → {${itemA}} <span class="font-mono text-sm text-emerald-800">(Conf: ${(confidenceBtoA*100).toFixed(0)}%)</span>`);
@@ -548,7 +749,7 @@
 
             const strongRulesEl = document.getElementById('strong-rules');
             if (strongRules.length === 0) {
-                 strongRulesEl.innerHTML = `<p class="text-center text-slate-500 p-4">No strong leads found. Try lowering the support threshold.</p>`;
+                 strongRulesEl.innerHTML = `<p class="text-center text-slate-500 p-4">No strong rules found. Try lowering the support threshold.</p>`;
             } else {
                 strongRulesEl.innerHTML = strongRules.map(rule => `<div class="p-1">${rule}</div>`).join('');
             }
@@ -557,16 +758,27 @@
         function resetSimulation() {
             window.scrollTo(0, 0);
 
+            // Hide all calculation sections
             Object.values(stepSections).forEach(section => section.classList.add('hidden'));
+
+            // Clear selections
             clearSelectionsAndHighlights();
             
+            // Clear feedback and results
             document.getElementById('support-feedback').innerHTML = '';
-            document.getElementById('support-result').classList.add('hidden').innerHTML = '';
+            const supportResult = document.getElementById('support-result');
+            supportResult.classList.add('hidden');
+            supportResult.innerHTML = '';
+            
             document.getElementById('confidence-feedback').innerHTML = '';
-            document.getElementById('confidence-result').classList.add('hidden').innerHTML = '';
+            const confidenceResult = document.getElementById('confidence-result');
+            confidenceResult.classList.add('hidden');
+            confidenceResult.innerHTML = '';
+            
             document.getElementById('lift-result').innerHTML = '';
             document.getElementById('apriori-results').classList.add('hidden');
 
+            // Reset state variables
             antecedent = undefined; consequent = undefined;
             supportCount = 0; confidenceAntecedentCount = 0;
             supportVal = 0; confidenceVal = 0; liftVal = 0;

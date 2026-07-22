@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Syllabus A4.3.4: Unsupervised Clustering & Customer Segmentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+        }
+        .btn-action {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-action:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.2);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        canvas {
+            background-image: 
+                radial-gradient(rgba(0, 0, 0, 0.08) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        .tab-btn.active {
+            border-bottom: 3px solid #6366f1;
+            color: #4f46e5;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-slate-200 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-indigo-600 to-violet-500 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-semibold px-2.5 py-0.5 rounded-full border border-indigo-200">
+                            Syllabus Standard A4.3.4
+                        </span>
+                        <span class="text-xs text-slate-500">Unsupervised Machine Learning</span>
+                    </div>
+                    <h1 class="text-xl font-bold text-slate-900 tracking-tight">Feature Similarity & Customer Clustering</h1>
+                </div>
+            </div>
+
+            <!-- Tab Navigation Buttons -->
+            <nav class="flex gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200 text-sm">
+                <button id="tab-sim-btn" onclick="switchTab('simulation')" class="tab-btn active px-4 py-2 rounded-lg transition-all text-slate-600 hover:text-slate-900">
+                    🔬 Interactive Lab
+                </button>
+                <button id="tab-theory-btn" onclick="switchTab('theory')" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-500 hover:text-slate-900">
+                    📚 Theory & Formulas
+                </button>
+                <button id="tab-quiz-btn" onclick="switchTab('quiz')" class="tab-btn px-4 py-2 rounded-lg transition-all text-slate-500 hover:text-slate-900">
+                    📝 Exam Practice
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto w-full px-4 lg:px-8 py-6 flex-grow">
+
+        <!-- ========================================== -->
+        <!-- TAB 1: INTERACTIVE SIMULATION LAB         -->
+        <!-- ========================================== -->
+        <section id="tab-simulation" class="space-y-6">
+            <!-- Control Toolbar -->
+            <div class="glass-panel rounded-2xl p-4 md:p-6 shadow-xl flex flex-wrap items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-4 md:gap-6">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Clusters / Personas ($K$)</label>
+                        <div class="flex items-center gap-3">
+                            <input id="k-slider" type="range" min="2" max="6" value="4" class="w-28 md:w-36 accent-indigo-500">
+                            <span id="k-val" class="code-font text-indigo-700 font-bold bg-indigo-50 px-2.5 py-1 rounded border border-indigo-200">4</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Customer Count ($N$)</label>
+                        <div class="flex items-center gap-3">
+                            <input id="cust-slider" type="range" min="50" max="400" value="180" step="10" class="w-28 md:w-36 accent-indigo-500">
+                            <span id="cust-val" class="code-font text-indigo-700 font-bold bg-indigo-50 px-2.5 py-1 rounded border border-indigo-200">180</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Feature Axis $Y$</label>
+                        <select id="y-axis-select" class="bg-white text-xs font-medium text-slate-700 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="frequency">Purchase Frequency (Orders/Year)</option>
+                            <option value="recency">Recency (Days Since Last Order)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">Data Preset</label>
+                        <select id="preset-select" class="bg-white text-xs font-medium text-slate-700 border border-slate-300 rounded-lg p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <option value="natural">Natural Market Clusters</option>
+                            <option value="uniform">Uniform Distribution</option>
+                            <option value="overlapping">Overlapping Behaviors</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Simulation Buttons -->
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button id="btn-gen" onclick="generateNewData()" class="btn-action bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2.5 rounded-xl border border-slate-300 flex items-center gap-2 shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        New Data
+                    </button>
+                    <button id="btn-step" onclick="stepKMeans()" class="btn-action bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-sm">
+                        <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7"></path></svg>
+                        Step
+                    </button>
+                    <button id="btn-run" onclick="runKMeansAuto()" class="btn-action bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-semibold text-sm px-5 py-2.5 rounded-xl shadow-md shadow-emerald-500/30 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Auto Converge
+                    </button>
+                </div>
+            </div>
+
+            <!-- Visualization Canvas Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Main Feature Plot -->
+                <div class="lg:col-span-8 glass-panel rounded-2xl p-5 shadow-xl relative flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-3">
+                        <div>
+                            <h2 class="text-base font-semibold text-slate-900 flex items-center gap-2">
+                                📊 2D Feature Space Plot
+                                <span class="text-xs font-normal text-slate-500">(Click any customer point to calculate distance)</span>
+                            </h2>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span id="iter-badge" class="bg-slate-100 text-slate-600 text-xs code-font px-3 py-1 rounded-full border border-slate-200">Iteration: 0</span>
+                            <span id="status-badge" class="bg-indigo-50 text-indigo-700 text-xs code-font px-3 py-1 rounded-full border border-indigo-200">Ready</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Container -->
+                    <div class="relative w-full aspect-[4/3] max-h-[520px] bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
+                        <canvas id="feature-canvas" class="w-full h-full"></canvas>
+                        
+                        <!-- Axis Labels Overlay -->
+                        <span class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs font-semibold text-indigo-700 bg-white/90 border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                            Feature $x_1$: Annual Spend ($) ➔
+                        </span>
+                        <span id="y-axis-label" class="absolute top-1/2 left-3 -translate-y-1/2 -rotate-90 origin-left text-xs font-semibold text-indigo-700 bg-white/90 border border-slate-200 px-3 py-1 rounded-full shadow-sm">
+                            Feature $x_2$: Purchase Frequency ➔
+                        </span>
+                    </div>
+
+                    <!-- Legend & Controls Footer -->
+                    <div class="mt-4 flex flex-wrap items-center justify-between text-xs text-slate-500 gap-2 pt-2 border-t border-slate-200">
+                        <div class="flex items-center gap-4">
+                            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-300 inline-block"></span> Unassigned Point</span>
+                            <span class="flex items-center gap-1.5"><span class="w-3.5 h-3.5 rounded bg-emerald-400 border border-white inline-block shadow-sm"></span> Centroid ($\mu_k$)</span>
+                            <span class="flex items-center gap-1.5"><span class="w-4 h-0.5 bg-dashed border-t border-indigo-400 inline-block"></span> Spatial Cluster Polygon</span>
+                        </div>
+                        <div>
+                            <span>Tip: Drag sliders to adjust $K$ and dataset size dynamically.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sidebar Inspector & Personas -->
+                <div class="lg:col-span-4 space-y-6 flex flex-col">
+                    <!-- Real-time Mathematical Point Inspector -->
+                    <div class="glass-panel rounded-2xl p-5 border-indigo-200">
+                        <h3 class="text-sm font-bold text-indigo-700 uppercase tracking-wider mb-2 flex items-center gap-2">
+                            📐 Distance Metric Inspector
+                        </h3>
+                        <div id="inspector-content" class="text-xs text-slate-600 space-y-2.5">
+                            <p class="text-slate-500 italic">Click any customer data point on the plot to view its exact feature vector coordinates and calculated Euclidean distances to all $K$ centroids.</p>
+                        </div>
+                    </div>
+
+                    <!-- Dynamically Generated CRM Customer Segment Cards -->
+                    <div class="glass-panel rounded-2xl p-5 flex-grow flex flex-col">
+                        <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center justify-between">
+                            <span>🏷️ CRM Market Personas</span>
+                            <span class="text-xs font-normal text-slate-500">Auto-Discovered</span>
+                        </h3>
+                        <div id="personas-container" class="space-y-3 custom-scrollbar overflow-y-auto max-h-[380px] flex-grow pr-1">
+                            <div class="p-6 text-center text-slate-500 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                                Run the K-Means clustering algorithm to automatically partition customers and generate CRM personas.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 2: THEORY & SYLLABUS DOCUMENTATION    -->
+        <!-- ========================================== -->
+        <section id="tab-theory" class="hidden space-y-6">
+            <!-- Theory Banner -->
+            <div class="glass-panel rounded-2xl p-6 border-l-4 border-indigo-500">
+                <h2 class="text-2xl font-bold text-slate-900 mb-2">Syllabus Point A4.3.4: Unsupervised Clustering</h2>
+                <p class="text-slate-600 text-sm leading-relaxed">
+                    <strong>Assessment Standard:</strong> Describe how clustering techniques in unsupervised learning are used to group data based on similarities in features, specifically referencing applications such as customer base segmentation using purchasing logs.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Core Concept 1: Unsupervised Learning -->
+                <div class="glass-panel rounded-2xl p-6 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100">1</div>
+                    <h3 class="text-lg font-bold text-slate-900">Unsupervised Learning Fundamentals</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Unlike supervised learning (which relies on pre-labeled target outputs), <strong>unsupervised machine learning</strong> analyzes unlabeled datasets. The algorithm independently discovers natural patterns, structural groupings, or feature relationships without explicit human feedback or ground-truth answers.
+                    </p>
+                    <ul class="text-xs text-slate-500 space-y-1.5 list-disc pl-4">
+                        <li>Input: Dataset $X = \{x_1, x_2, \dots, x_N\}$ without labels $y$.</li>
+                        <li>Objective: Maximize intra-cluster similarity, maximize inter-cluster distance.</li>
+                        <li>Key Algorithms: $K$-Means, Hierarchical Clustering, DBSCAN.</li>
+                    </ul>
+                </div>
+
+                <!-- Core Concept 2: Feature Space & Vectors -->
+                <div class="glass-panel rounded-2xl p-6 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100">2</div>
+                    <h3 class="text-lg font-bold text-slate-900">Feature Space & Vectors</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Each data point is represented as an $n$-dimensional <strong>feature vector</strong> in a mathematical space. Features are measurable numerical attributes of the item.
+                    </p>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs code-font text-indigo-700">
+                        $$ \mathbf{x}_i = \begin{bmatrix} x_{i1} & x_{i2} & \dots & x_{in} \end{bmatrix}^T $$
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        In customer segmentation, features include: $x_1 = \text{Annual Spend (\$)}$, $x_2 = \text{Purchase Frequency}$, $x_3 = \text{Recency (Days)}$.
+                    </p>
+                </div>
+
+                <!-- Core Concept 3: Distance Metrics -->
+                <div class="glass-panel rounded-2xl p-6 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100">3</div>
+                    <h3 class="text-lg font-bold text-slate-900">Distance Metrics & Similarity</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        Proximity in the feature space represents behavioral or attribute similarity. The standard distance metric used in $K$-Means is <strong>Euclidean Distance</strong> (straight-line spatial distance):
+                    </p>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs code-font text-indigo-700">
+                        $$ d(\mathbf{p}, \mathbf{q}) = \sqrt{\sum_{i=1}^{n} (p_i - q_i)^2} $$
+                    </div>
+                    <p class="text-xs text-slate-500">
+                        Smaller distance $\rightarrow$ Higher feature similarity $\rightarrow$ Grouped into the same cluster.
+                    </p>
+                </div>
+
+                <!-- Core Concept 4: Practical CRM Workflow -->
+                <div class="glass-panel rounded-2xl p-6 space-y-3">
+                    <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-lg border border-indigo-100">4</div>
+                    <h3 class="text-lg font-bold text-slate-900">Real-World Marketing Workflow</h3>
+                    <p class="text-sm text-slate-600 leading-relaxed">
+                        In Customer Relationship Management (CRM), raw transaction logs are converted into feature vectors. $K$-Means then clusters customers into automated marketing personas:
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="p-2 bg-slate-50 rounded border border-slate-200">
+                            <span class="font-bold text-emerald-600">Loyal Champions</span>
+                            <p class="text-slate-500">High Spend, High Frequency. Strategy: Exclusive VIP perks & early access.</p>
+                        </div>
+                        <div class="p-2 bg-slate-50 rounded border border-slate-200">
+                            <span class="font-bold text-amber-600">High-Value Casuals</span>
+                            <p class="text-slate-500">High Spend, Low Frequency. Strategy: Targeted re-engagement triggers.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Distance Calculator Widget -->
+            <div class="glass-panel rounded-2xl p-6 border-slate-200">
+                <h3 class="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+                    🧮 Interactive Distance Metric Playground
+                </h3>
+                <p class="text-xs text-slate-600 mb-4">Adjust the coordinates of two customer feature vectors ($A$ and $B$) to see distance metrics update live:</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Customer A Inputs -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <span class="text-xs font-bold text-indigo-600 uppercase">Customer A Vector ($\mathbf{x}_A$)</span>
+                        <div>
+                            <label class="text-xs text-slate-500">Annual Spend ($x_1$): $<span id="calc-a1-val">600</span></label>
+                            <input id="calc-a1" type="range" min="0" max="1000" value="600" oninput="updateInteractiveCalc()" class="w-full accent-indigo-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500">Orders/Year ($x_2$): <span id="calc-a2-val">80</span></label>
+                            <input id="calc-a2" type="range" min="0" max="100" value="80" oninput="updateInteractiveCalc()" class="w-full accent-indigo-500">
+                        </div>
+                    </div>
+
+                    <!-- Customer B Inputs -->
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                        <span class="text-xs font-bold text-purple-600 uppercase">Customer B Vector ($\mathbf{x}_B$)</span>
+                        <div>
+                            <label class="text-xs text-slate-500">Annual Spend ($x_1$): $<span id="calc-b1-val">200</span></label>
+                            <input id="calc-b1" type="range" min="0" max="1000" value="200" oninput="updateInteractiveCalc()" class="w-full accent-purple-500">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500">Orders/Year ($x_2$): <span id="calc-b2-val">20</span></label>
+                            <input id="calc-b2" type="range" min="0" max="100" value="20" oninput="updateInteractiveCalc()" class="w-full accent-purple-500">
+                        </div>
+                    </div>
+
+                    <!-- Distance Results Output -->
+                    <div class="bg-indigo-50/50 p-4 rounded-xl border border-indigo-200 flex flex-col justify-between">
+                        <span class="text-xs font-bold text-emerald-600 uppercase">Calculated Metric Outputs</span>
+                        <div class="space-y-2 my-2">
+                            <div class="flex justify-between items-center text-xs border-b border-indigo-100 pb-1">
+                                <span class="text-slate-600">Euclidean Distance ($d_{L2}$):</span>
+                                <span id="calc-euc-res" class="code-font font-bold text-emerald-600">404.47</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs border-b border-indigo-100 pb-1">
+                                <span class="text-slate-600">Manhattan Distance ($d_{L1}$):</span>
+                                <span id="calc-man-res" class="code-font font-bold text-indigo-600">460.00</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] text-slate-500">Euclidean distance penalizes larger single-feature deviations due to squaring differences.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- TAB 3: EXAM PRACTICE QUIZ                 -->
+        <!-- ========================================== -->
+        <section id="tab-quiz" class="hidden space-y-6">
+            <div class="glass-panel rounded-2xl p-6 border-l-4 border-emerald-500">
+                <h2 class="text-xl font-bold text-slate-900">Syllabus A4.3.4 Self-Assessment Quiz</h2>
+                <p class="text-slate-600 text-sm">Test your comprehension of key concepts for assessment preparation. Select the best response for each question.</p>
+            </div>
+
+            <div id="quiz-container" class="space-y-6">
+                <!-- Quiz questions dynamically populated by JavaScript -->
+            </div>
+
+            <div class="glass-panel rounded-2xl p-4 flex justify-between items-center">
+                <button onclick="resetQuiz()" class="text-xs font-semibold text-slate-600 hover:text-slate-900 px-4 py-2 rounded-lg bg-white border border-slate-300 shadow-sm transition-colors hover:bg-slate-50">
+                    Reset Quiz
+                </button>
+                <div id="quiz-score-badge" class="text-sm font-bold text-indigo-700 bg-indigo-50 px-4 py-2 rounded-xl border border-indigo-200">
+                    Score: 0 / 4
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200 glass-panel mt-12 py-4 px-4 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-2">
+            <span>Aligned with IB Computer Science & AI Syllabus Point A4.3.4</span>
+            <span>Unsupervised Learning • Clustering & Feature Proximity Explorer</span>
+        </div>
+    </footer>
+
+    <script>
+        // State variables
+        let currentTab = 'simulation';
+        let customers = [];
+        let centroids = [];
+        let assignments = [];
+        let iterationCount = 0;
+        let isAutoRunning = false;
+        let selectedPointIndex = null;
+
+        // Constants & Color Palettes
+        const MAX_SPEND = 1000;
+        const MAX_Y = 100;
+        const CLUSTER_COLORS = [
+            '#3b82f6', // Indigo Blue
+            '#10b981', // Emerald Green
+            '#f97316', // Vibrant Orange
+            '#ef4444', // Red
+            '#a855f7', // Purple
+            '#ec4899'  // Pink
+        ];
+
+        // Canvas element setup
+        const canvas = document.getElementById('feature-canvas');
+        const ctx = canvas.getContext('2d');
+
+        window.addEventListener('load', () => {
+            setupCanvas();
+            generateNewData();
+            updateInteractiveCalc();
+            renderQuiz();
+            renderKaTeXMath();
+        });
+
+        window.addEventListener('resize', () => {
+            setupCanvas();
+            drawPlot();
+        });
+
+        function renderKaTeXMath() {
+            if (window.katex) {
+                document.querySelectorAll('.katex-render').forEach(el => {
+                    try {
+                        katex.render(el.textContent, el, { throwOnError: false });
+                    } catch (e) {}
+                });
+            }
+        }
+
+        function switchTab(tabName) {
+            currentTab = tabName;
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${tabName}-btn`).classList.add('active');
+
+            if (tabName === 'simulation') {
+                setTimeout(() => {
+                    setupCanvas();
+                    drawPlot();
+                }, 50);
+            }
+        }
+
+        function setupCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+
+        function generateNewData() {
+            const numCust = parseInt(document.getElementById('cust-slider').value);
+            const preset = document.getElementById('preset-select').value;
+            customers = [];
+            centroids = [];
+            assignments = [];
+            iterationCount = 0;
+            selectedPointIndex = null;
+            isAutoRunning = false;
+
+            document.getElementById('iter-badge').textContent = `Iteration: 0`;
+            document.getElementById('status-badge').textContent = `Data Generated`;
+            document.getElementById('inspector-content').innerHTML = `<p class="text-slate-500 italic">Click any customer data point on the plot to view its exact feature vector coordinates and calculated Euclidean distances to all $K$ centroids.</p>`;
+
+            if (preset === 'natural') {
+                const numCenters = Math.floor(Math.random() * 3) + 3;
+                const centers = [];
+                for (let i = 0; i < numCenters; i++) {
+                    centers.push({
+                        x: Math.random() * (MAX_SPEND * 0.7) + (MAX_SPEND * 0.15),
+                        y: Math.random() * (MAX_Y * 0.7) + (MAX_Y * 0.15)
+                    });
+                }
+                for (let i = 0; i < numCust; i++) {
+                    const c = centers[i % numCenters];
+                    customers.push({
+                        x: Math.max(10, Math.min(MAX_SPEND - 10, c.x + (Math.random() - 0.5) * (MAX_SPEND * 0.35))),
+                        y: Math.max(2, Math.min(MAX_Y - 2, c.y + (Math.random() - 0.5) * (MAX_Y * 0.35)))
+                    });
+                }
+            } else if (preset === 'uniform') {
+                for (let i = 0; i < numCust; i++) {
+                    customers.push({
+                        x: Math.random() * (MAX_SPEND - 20) + 10,
+                        y: Math.random() * (MAX_Y - 4) + 2
+                    });
+                }
+            } else if (preset === 'overlapping') {
+                for (let i = 0; i < numCust; i++) {
+                    const group = Math.random() > 0.5 ? 0.3 : 0.7;
+                    customers.push({
+                        x: Math.max(10, Math.min(MAX_SPEND - 10, (group * MAX_SPEND) + (Math.random() - 0.5) * (MAX_SPEND * 0.5))),
+                        y: Math.max(2, Math.min(MAX_Y - 2, (group * MAX_Y) + (Math.random() - 0.5) * (MAX_Y * 0.5)))
+                    });
+                }
+            }
+
+            assignments = new Array(customers.length).fill(-1);
+            initializeCentroids();
+            drawPlot();
+            renderPersonasPlaceholder();
+        }
+
+        function initializeCentroids() {
+            const k = parseInt(document.getElementById('k-slider').value);
+            centroids = [];
+            const usedIndices = new Set();
+
+            while (centroids.length < k && centroids.length < customers.length) {
+                const idx = Math.floor(Math.random() * customers.length);
+                if (!usedIndices.has(idx)) {
+                    centroids.push({ ...customers[idx] });
+                    usedIndices.add(idx);
+                }
+            }
+        }
+
+        function stepKMeans() {
+            if (customers.length === 0 || centroids.length === 0) return;
+
+            let changed = false;
+            // 1. Assign customers to nearest centroid
+            for (let i = 0; i < customers.length; i++) {
+                let minDist = Infinity;
+                let closest = -1;
+                for (let j = 0; j < centroids.length; j++) {
+                    const dist = Math.hypot(customers[i].x - centroids[j].x, customers[i].y - centroids[j].y);
+                    if (dist < minDist) {
+                        minDist = dist;
+                        closest = j;
+                    }
+                }
+                if (assignments[i] !== closest) {
+                    assignments[i] = closest;
+                    changed = true;
+                }
+            }
+
+            // 2. Update centroids positions
+            const k = centroids.length;
+            const newSums = Array(k).fill(0).map(() => ({ x: 0, y: 0, count: 0 }));
+            for (let i = 0; i < customers.length; i++) {
+                const a = assignments[i];
+                if (a !== -1) {
+                    newSums[a].x += customers[i].x;
+                    newSums[a].y += customers[i].y;
+                    newSums[a].count++;
+                }
+            }
+
+            for (let j = 0; j < k; j++) {
+                if (newSums[j].count > 0) {
+                    centroids[j].x = newSums[j].x / newSums[j].count;
+                    centroids[j].y = newSums[j].y / newSums[j].count;
+                }
+            }
+
+            iterationCount++;
+            document.getElementById('iter-badge').textContent = `Iteration: ${iterationCount}`;
+            document.getElementById('status-badge').textContent = changed ? "Clusters Refining" : "Converged!";
+
+            drawPlot();
+            updatePersonas();
+
+            if (selectedPointIndex !== null) {
+                inspectPoint(selectedPointIndex);
+            }
+
+            return changed;
+        }
+
+        async function runKMeansAuto() {
+            if (isAutoRunning) return;
+            isAutoRunning = true;
+            document.getElementById('btn-run').disabled = true;
+
+            let changed = true;
+            let maxIter = 25;
+            while (changed && maxIter > 0) {
+                changed = stepKMeans();
+                await new Promise(r => setTimeout(r, 180));
+                maxIter--;
+            }
+
+            isAutoRunning = false;
+            document.getElementById('btn-run').disabled = false;
+        }
+
+        function drawPlot() {
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw grid padding offsets
+            const padX = 30;
+            const padY = 30;
+            const plotW = w - padX * 2;
+            const plotH = h - padY * 2;
+
+            // Helper coordinate mapping
+            const mapX = (val) => padX + (val / MAX_SPEND) * plotW;
+            const mapY = (val) => h - padY - (val / MAX_Y) * plotH;
+
+            // Draw cluster connecting lines/hulls if assigned
+            if (centroids.length > 0 && iterationCount > 0) {
+                for (let i = 0; i < customers.length; i++) {
+                    const a = assignments[i];
+                    if (a !== -1 && centroids[a]) {
+                        ctx.beginPath();
+                        ctx.moveTo(mapX(customers[i].x), mapY(customers[i].y));
+                        ctx.lineTo(mapX(centroids[a].x), mapY(centroids[a].y));
+                        ctx.strokeStyle = CLUSTER_COLORS[a % CLUSTER_COLORS.length] + '25';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // Draw customers data points
+            for (let i = 0; i < customers.length; i++) {
+                const c = customers[i];
+                const cx = mapX(c.x);
+                const cy = mapY(c.y);
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, i === selectedPointIndex ? 8 : 4.5, 0, Math.PI * 2);
+                ctx.fillStyle = assignments[i] === -1 ? '#cbd5e1' : CLUSTER_COLORS[assignments[i] % CLUSTER_COLORS.length];
+                ctx.fill();
+
+                if (i === selectedPointIndex) {
+                    ctx.strokeStyle = '#1e293b';
+                    ctx.lineWidth = 2.5;
+                    ctx.stroke();
+                }
+            }
+
+            // Draw centroids (square targets with outline)
+            for (let j = 0; j < centroids.length; j++) {
+                const cent = centroids[j];
+                const cx = mapX(cent.x);
+                const cy = mapY(cent.y);
+
+                ctx.fillStyle = CLUSTER_COLORS[j % CLUSTER_COLORS.length];
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.rect(cx - 9, cy - 9, 18, 18);
+                ctx.fill();
+                ctx.stroke();
+
+                // Centroid Label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 10px Fira Code';
+                ctx.textAlign = 'center';
+                ctx.fillText(`μ${j+1}`, cx, cy - 13);
+            }
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            const w = canvas.parentElement.clientWidth;
+            const h = canvas.parentElement.clientHeight;
+            const padX = 30; const padY = 30;
+            const plotW = w - padX * 2; const plotH = h - padY * 2;
+
+            let closestIdx = -1;
+            let minClickDist = 18; // Max click radius threshold
+
+            for (let i = 0; i < customers.length; i++) {
+                const cx = padX + (customers[i].x / MAX_SPEND) * plotW;
+                const cy = h - padY - (customers[i].y / MAX_Y) * plotH;
+                const dist = Math.hypot(mouseX - cx, mouseY - cy);
+                if (dist < minClickDist) {
+                    minClickDist = dist;
+                    closestIdx = i;
+                }
+            }
+
+            if (closestIdx !== -1) {
+                selectedPointIndex = closestIdx;
+                inspectPoint(closestIdx);
+                drawPlot();
+            }
+        });
+
+        function inspectPoint(idx) {
+            const c = customers[idx];
+            const yLabel = document.getElementById('y-axis-select').value === 'frequency' ? 'Orders/Yr' : 'Recency (Days)';
+            let html = `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-bold text-indigo-700">Customer #${idx + 1} Vector:</span>
+                        <span class="code-font bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 text-indigo-700">($${c.x.toFixed(0)}, ${c.y.toFixed(0)})</span>
+                    </div>
+                    <div class="text-[11px] text-slate-500">
+                        Feature $x_1$ (Spend): $${c.x.toFixed(2)} | Feature $x_2$ (${yLabel}): ${c.y.toFixed(1)}
+                    </div>
+                    <div class="border-t border-slate-100 pt-2 text-[11px]">
+                        <span class="font-semibold text-slate-700 block mb-1">Euclidean Distance to Centroids $d(x, \mu_k)$:</span>
+            `;
+
+            centroids.forEach((cent, j) => {
+                const dist = Math.hypot(c.x - cent.x, c.y - cent.y).toFixed(2);
+                const isAssigned = assignments[idx] === j;
+                html += `
+                    <div class="flex justify-between items-center py-0.5 ${isAssigned ? 'font-bold text-emerald-600' : 'text-slate-500'}">
+                        <span>Centroid $\mu_${j+1}$ ($${cent.x.toFixed(0)}, ${cent.y.toFixed(0)}$):</span>
+                        <span class="code-font">${dist} ${isAssigned ? '✓ (Assigned)' : ''}</span>
+                    </div>
+                `;
+            });
+
+            html += `</div></div>`;
+            document.getElementById('inspector-content').innerHTML = html;
+        }
+
+        function renderPersonasPlaceholder() {
+            document.getElementById('personas-container').innerHTML = `
+                <div class="p-6 text-center text-slate-500 border border-dashed border-slate-300 rounded-xl bg-slate-50/50">
+                    Run the K-Means clustering algorithm to automatically partition customers and generate CRM personas.
+                </div>
+            `;
+        }
+
+        function updatePersonas() {
+            if (centroids.length === 0) return;
+
+            const counts = new Array(centroids.length).fill(0);
+            assignments.forEach(a => { if (a !== -1) counts[a]++; });
+
+            let html = '';
+            centroids.forEach((cent, j) => {
+                const pct = ((counts[j] / customers.length) * 100).toFixed(1);
+                const persona = getPersonaDetails(cent.x, cent.y);
+                const color = CLUSTER_COLORS[j % CLUSTER_COLORS.length];
+
+                html += `
+                    <div class="p-3 rounded-xl bg-white border border-slate-200 shadow-sm space-y-1.5" style="border-left: 4px solid ${color}">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-xs text-slate-800">${persona.title} ($\mu_${j+1}$)</span>
+                            <span class="code-font text-[10px] bg-slate-100 px-2 py-0.5 rounded text-indigo-700">${pct}% (${counts[j]})</span>
+                        </div>
+                        <p class="text-[11px] text-slate-600 leading-tight">${persona.desc}</p>
+                        <div class="text-[10px] text-indigo-700 font-medium bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
+                            🎯 Strategy: ${persona.strategy}
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('personas-container').innerHTML = html;
+        }
+
+        function getPersonaDetails(spend, yVal) {
+            const yType = document.getElementById('y-axis-select').value;
+            const normSpend = spend / MAX_SPEND;
+            const normY = yVal / MAX_Y;
+
+            if (yType === 'frequency') {
+                if (normSpend > 0.55 && normY > 0.55) {
+                    return { title: '🏆 Loyal Champions', desc: 'High annual spend & frequent order volume.', strategy: 'Reward with VIP loyalty perks & exclusive pre-launch access.' };
+                } else if (normSpend > 0.55 && normY <= 0.55) {
+                    return { title: '💎 High-Value Casuals', desc: 'Large transactions but infrequent visits.', strategy: 'Send automated product recommendations & re-engagement triggers.' };
+                } else if (normSpend <= 0.55 && normY > 0.55) {
+                    return { title: '🛍️ High-Frequency Deal Hunters', desc: 'Frequent buyers with small order sizes.', strategy: 'Promote bundle discounts and minimum order thresholds.' };
+                } else {
+                    return { title: '🌱 At-Risk / Dormant', desc: 'Low overall spending and low purchase frequency.', strategy: 'Target with win-back promotional coupons.' };
+                }
+            } else {
+                if (normSpend > 0.55 && normY < 0.45) {
+                    return { title: '🌟 Active High Spenders', desc: 'Recent purchase activity with high spend.', strategy: 'Nurture with priority customer support and premium rewards.' };
+                } else if (normSpend > 0.55 && normY >= 0.45) {
+                    return { title: '⚠️ Lapsed High Value', desc: 'High historical spend, long time since last order.', strategy: 'Urgent re-activation campaign with high-value incentives.' };
+                } else {
+                    return { title: '💤 Low Engagement Segment', desc: 'Low spend with high recency (days inactive).', strategy: 'Low-cost automated email survey marketing.' };
+                }
+            }
+        }
+
+        function updateInteractiveCalc() {
+            const a1 = parseFloat(document.getElementById('calc-a1').value);
+            const a2 = parseFloat(document.getElementById('calc-a2').value);
+            const b1 = parseFloat(document.getElementById('calc-b1').value);
+            const b2 = parseFloat(document.getElementById('calc-b2').value);
+
+            document.getElementById('calc-a1-val').textContent = a1;
+            document.getElementById('calc-a2-val').textContent = a2;
+            document.getElementById('calc-b1-val').textContent = b1;
+            document.getElementById('calc-b2-val').textContent = b2;
+
+            const euc = Math.sqrt(Math.pow(a1 - b1, 2) + Math.pow(a2 - b2, 2));
+            const man = Math.abs(a1 - b1) + Math.abs(a2 - b2);
+
+            document.getElementById('calc-euc-res').textContent = euc.toFixed(2);
+            document.getElementById('calc-man-res').textContent = man.toFixed(2);
+        }
+
+        document.getElementById('k-slider').addEventListener('input', (e) => {
+            document.getElementById('k-val').textContent = e.target.value;
+            generateNewData();
+        });
+
+        document.getElementById('cust-slider').addEventListener('input', (e) => {
+            document.getElementById('cust-val').textContent = e.target.value;
+            generateNewData();
+        });
+
+        document.getElementById('y-axis-select').addEventListener('change', (e) => {
+            const label = e.target.value === 'frequency' ? 'Feature $x_2$: Purchase Frequency ➔' : 'Feature $x_2$: Recency (Days Inactive) ➔';
+            document.getElementById('y-axis-label').innerHTML = label;
+            generateNewData();
+        });
+
+        document.getElementById('preset-select').addEventListener('change', generateNewData);
+
+        const quizData = [
+            {
+                q: "What distinguishes unsupervised clustering algorithms (like K-Means) from supervised learning models?",
+                options: [
+                    "Clustering requires pre-labeled target outputs during training.",
+                    "Clustering works on unlabeled datasets to discover intrinsic spatial patterns.",
+                    "Clustering cannot process continuous numerical feature vectors.",
+                    "Clustering relies strictly on decision trees and regression metrics."
+                ],
+                correct: 1,
+                explanation: "Unsupervised learning algorithms analyze unlabeled input data points without explicit ground-truth targets."
+            },
+            {
+                q: "How does K-Means determine whether two customer data points belong to the same cluster?",
+                options: [
+                    "By calculating feature similarity using distance metrics like Euclidean distance.",
+                    "By counting the number of letters in customer names.",
+                    "By enforcing a mandatory linear decision boundary.",
+                    "By comparing user password hashes."
+                ],
+                correct: 0,
+                explanation: "Distance metrics measure proximity in $n$-dimensional feature space; closer points share higher feature similarity."
+            },
+            {
+                q: "In customer base segmentation, what represents a customer's profile in mathematical space?",
+                options: [
+                    "A single scalar integer value.",
+                    "An $n$-dimensional numerical feature vector (e.g., spend, frequency, recency).",
+                    "A categorical Boolean flag.",
+                    "A random distribution curve."
+                ],
+                correct: 1,
+                explanation: "Customers are mapped as vectors where each dimension corresponds to a measurable behavior attribute."
+            },
+            {
+                q: "What happens during the 'Update Centroid' phase of the K-Means algorithm?",
+                options: [
+                    "New random data points are added to the dataset.",
+                    "Each centroid moves to the mean coordinate position of all points currently assigned to it.",
+                    "The slider value of K is automatically incremented by 1.",
+                    "All points are permanently converted into binary features."
+                ],
+                correct: 1,
+                explanation: "Centroids are updated by computing the arithmetic mean position ($\mu_k$) of their assigned cluster points."
+            }
+        ];
+
+        let quizUserAnswers = new Array(quizData.length).fill(-1);
+
+        function renderQuiz() {
+            const container = document.getElementById('quiz-container');
+            let html = '';
+
+            quizData.forEach((item, qIdx) => {
+                html += `
+                    <div class="glass-panel rounded-2xl p-5 space-y-3">
+                        <div class="flex items-start gap-2">
+                            <span class="bg-indigo-100 text-indigo-700 font-bold text-xs px-2.5 py-1 rounded border border-indigo-200">Q${qIdx + 1}</span>
+                            <h4 class="text-sm font-semibold text-slate-800">${item.q}</h4>
+                        </div>
+                        <div class="space-y-2 pl-7">
+                `;
+
+                item.options.forEach((opt, oIdx) => {
+                    const isSelected = quizUserAnswers[qIdx] === oIdx;
+                    html += `
+                        <button onclick="selectQuizOption(${qIdx}, ${oIdx})" class="w-full text-left text-xs p-3 rounded-xl border transition-all ${
+                            isSelected 
+                            ? 'bg-indigo-50 border-indigo-400 text-indigo-900 font-medium shadow-sm' 
+                            : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                        }">
+                            ${opt}
+                        </button>
+                    `;
+                });
+
+                if (quizUserAnswers[qIdx] !== -1) {
+                    const isCorrect = quizUserAnswers[qIdx] === item.correct;
+                    html += `
+                        <div class="mt-2 text-xs p-3 rounded-xl ${isCorrect ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'}">
+                            <strong>${isCorrect ? 'Correct!' : 'Incorrect.'}</strong> ${item.explanation}
+                        </div>
+                    `;
+                }
+
+                html += `</div></div>`;
+            });
+
+            container.innerHTML = html;
+            updateQuizScore();
+        }
+
+        function selectQuizOption(qIdx, oIdx) {
+            quizUserAnswers[qIdx] = oIdx;
+            renderQuiz();
+        }
+
+        function updateQuizScore() {
+            let score = 0;
+            quizUserAnswers.forEach((ans, idx) => {
+                if (ans === quizData[idx].correct) score++;
+            });
+            document.getElementById('quiz-score-badge').textContent = `Score: ${score} / ${quizData.length}`;
+        }
+
+        function resetQuiz() {
+            quizUserAnswers = new Array(quizData.length).fill(-1);
+            renderQuiz();
+        }
+    </script>
+</body>
+</html>

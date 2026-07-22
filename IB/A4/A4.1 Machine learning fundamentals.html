@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supervised vs Unsupervised Learning Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #334155;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tab-active {
+            border-bottom: 2px solid #3b82f6;
+            color: #2563eb;
+            font-weight: 600;
+        }
+        
+        .card {
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* D3.js visualization styles */
+        .node { stroke: #fff; stroke-width: 1.5px; }
+        .data-point { transition: all 0.5s ease; cursor: pointer; }
+        .data-point:hover { stroke: #000; stroke-width: 2px; }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-brain text-blue-600 text-2xl"></i>
+                <h1 class="text-xl font-bold text-slate-800">ML Demystified</h1>
+            </div>
+            <nav>
+                <ul class="flex space-x-4 overflow-x-auto">
+                    <li><button onclick="switchTab('intro')" id="tab-intro" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors tab-active">Fundamentals</button></li>
+                    <li><button onclick="switchTab('supervised')" id="tab-supervised" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Supervised</button></li>
+                    <li><button onclick="switchTab('unsupervised')" id="tab-unsupervised" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Unsupervised</button></li>
+                    <li><button onclick="switchTab('deep')" id="tab-deep" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Deep Learning</button></li>
+                    <li><button onclick="switchTab('reinforcement')" id="tab-reinforcement" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Reinforcement</button></li>
+                    <li><button onclick="switchTab('transfer')" id="tab-transfer" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Transfer Learning</button></li>
+                    <li><button onclick="switchTab('quiz')" id="tab-quiz" class="whitespace-nowrap pb-1 hover:text-blue-600 transition-colors">Knowledge Check</button></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        <div class="max-w-6xl mx-auto px-4 py-8">
+            
+            <section id="content-intro" class="fade-in block">
+                <div class="text-center mb-12">
+                    <h2 class="text-4xl font-bold text-slate-800 mb-4">Machine Learning Fundamentals</h2>
+                    <p class="text-lg text-slate-600 max-w-3xl mx-auto">Machine learning involves training algorithms to find patterns in data and make predictions or decisions without being explicitly programmed for every task. Explore the core approaches below.</p>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                    <!-- Supervised Overview Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 card border-t-4 border-blue-500 cursor-pointer h-full" onclick="switchTab('supervised')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3">
+                                <i class="fa-solid fa-person-chalkboard text-blue-600"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-slate-800">Supervised Learning</h3>
+                        </div>
+                        <p class="text-slate-600 mb-4 text-sm">Learning from <strong>labeled data</strong> (inputs matched with correct outputs) to predict outcomes for new data.</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-xs mt-auto">
+                            <span class="font-semibold text-blue-700">Apps:</span> Medical imaging diagnostics, Sentiment analysis.
+                        </div>
+                    </div>
+
+                    <!-- Unsupervised Overview Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 card border-t-4 border-emerald-500 cursor-pointer h-full" onclick="switchTab('unsupervised')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-emerald-100 p-2 rounded-full mr-3">
+                                <i class="fa-solid fa-magnifying-glass-chart text-emerald-600"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-slate-800">Unsupervised Learning</h3>
+                        </div>
+                        <p class="text-slate-600 mb-4 text-sm">Finding hidden structures in <strong>unlabeled data</strong> without pre-defined categories or answers.</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-xs mt-auto">
+                            <span class="font-semibold text-emerald-700">Apps:</span> Market basket analysis, Customer segmentation.
+                        </div>
+                    </div>
+
+                    <!-- Reinforcement Overview Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 card border-t-4 border-purple-500 cursor-pointer h-full" onclick="switchTab('reinforcement')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-purple-100 p-2 rounded-full mr-3">
+                                <i class="fa-solid fa-gamepad text-purple-600"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-slate-800">Reinforcement Learning</h3>
+                        </div>
+                        <p class="text-slate-600 mb-4 text-sm">Learning through trial and error by interacting with an environment to maximize <strong>rewards</strong>.</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-xs mt-auto">
+                            <span class="font-semibold text-purple-700">Apps:</span> Robotics navigation, Game playing (Chess/Go).
+                        </div>
+                    </div>
+
+                    <!-- Deep Learning Overview Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 card border-t-4 border-rose-500 cursor-pointer h-full" onclick="switchTab('deep')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-rose-100 p-2 rounded-full mr-3">
+                                <i class="fa-solid fa-network-wired text-rose-600"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-slate-800">Deep Learning</h3>
+                        </div>
+                        <p class="text-slate-600 mb-4 text-sm">Using complex <strong>artificial neural networks</strong> with multiple layers to model high-level abstractions.</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-xs mt-auto">
+                            <span class="font-semibold text-rose-700">Apps:</span> Natural language processing, Object detection.
+                        </div>
+                    </div>
+
+                     <!-- Transfer Learning Overview Card -->
+                    <div class="bg-white rounded-xl shadow-md p-6 card border-t-4 border-amber-500 cursor-pointer h-full" onclick="switchTab('transfer')">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-amber-100 p-2 rounded-full mr-3">
+                                <i class="fa-solid fa-people-carry-box text-amber-600"></i>
+                            </div>
+                            <h3 class="text-xl font-semibold text-slate-800">Transfer Learning</h3>
+                        </div>
+                        <p class="text-slate-600 mb-4 text-sm">Taking knowledge learned from one task and applying it to a different, but <strong>related task</strong>.</p>
+                        <div class="bg-slate-50 p-3 rounded-lg text-xs mt-auto">
+                            <span class="font-semibold text-amber-700">Apps:</span> Adapting a general image classifier to detect specific diseases.
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="content-supervised" class="fade-in hidden">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-blue-500 inline-block pb-1">Supervised Learning in Action</h2>
+                    <p class="text-slate-600 mt-4 max-w-3xl">Imagine teaching a child to recognize fruits. You show them an apple and say "This is an apple." You show a banana and say "Banana." Over time, they learn to identify them based on features like color and shape. This is supervised learning.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Interactive Demo: Classification</h3>
+                    <p class="text-center text-sm text-slate-500 mb-6">Click on the grid to add new data points. The model will predict if it's "Red/Round" (Apples) or "Yellow/Long" (Bananas) based on existing labeled data.</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-2/3 border rounded-lg bg-slate-50 overflow-hidden relative" id="supervised-viz" style="height: 400px;">
+                            <!-- D3 Canvas goes here -->
+                            <div class="absolute top-2 left-2 flex space-x-2 bg-white/80 p-2 rounded shadow-sm">
+                                <button id="btn-add-apple" class="px-3 py-1 bg-red-100 text-red-700 border border-red-300 rounded text-sm hover:bg-red-200" onclick="setLabelMode('apple')">Add Apple (Label)</button>
+                                <button id="btn-add-banana" class="px-3 py-1 bg-yellow-100 text-yellow-700 border border-yellow-300 rounded text-sm hover:bg-yellow-200" onclick="setLabelMode('banana')">Add Banana (Label)</button>
+                                <button id="btn-predict" class="px-3 py-1 bg-slate-800 text-white rounded text-sm hover:bg-slate-700" onclick="setLabelMode('predict')">Predict New Point</button>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full md:w-1/3 space-y-4">
+                            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                                <h4 class="font-semibold text-blue-800 mb-2">How it works (k-NN)</h4>
+                                <p class="text-sm text-blue-900">This demo uses a simple algorithm called <strong>k-Nearest Neighbors</strong>. When you ask it to predict a new point, it looks at the 'k' closest labeled points (here, k=3) and takes a majority vote.</p>
+                            </div>
+                            <div id="prediction-result" class="p-4 rounded-lg border hidden text-center">
+                                <!-- Result shown here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-tags text-blue-500 mr-2"></i>Classification</h4>
+                        <p class="text-sm text-slate-600 mb-4">The output variable is a category (discrete). You are predicting a label.</p>
+                        <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                            <li><strong>Spam Detection:</strong> (Spam / Not Spam)</li>
+                            <li><strong>Medical Imaging Diagnostics:</strong> Identifying tumors from healthy tissue in X-rays or MRIs.</li>
+                            <li><strong>Sentiment Analysis:</strong> Classifying customer reviews as positive, negative, or neutral.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-chart-line text-blue-500 mr-2"></i>Regression</h4>
+                        <p class="text-sm text-slate-600 mb-4">The output variable is a real value (continuous). You are predicting a quantity.</p>
+                        <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                            <li><strong>House Price Prediction:</strong> Based on size, location ($)</li>
+                            <li><strong>Stock Market Forecasting:</strong> Predicting future stock value</li>
+                            <li><strong>Weather Forecasting:</strong> Predicting temperature</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="content-unsupervised" class="fade-in hidden">
+                 <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-emerald-500 inline-block pb-1">Unsupervised Learning in Action</h2>
+                    <p class="text-slate-600 mt-4 max-w-3xl">Imagine giving a child a large bucket of mixed Lego blocks and asking them to sort them, but without telling them *how* to sort them. They might group them by color, by size, or by shape. They are discovering structure without explicit instructions. This is unsupervised learning.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-6 mb-10">
+                    <h3 class="text-xl font-semibold mb-4 text-center">Interactive Demo: Clustering</h3>
+                    <p class="text-center text-sm text-slate-500 mb-6">Here is a scatter of unlabeled customer data based on Spending Score and Income. Click "Run Clustering" to let the algorithm automatically group similar customers together.</p>
+                    
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                        <div class="w-full md:w-2/3 border rounded-lg bg-slate-50 overflow-hidden relative" id="unsupervised-viz" style="height: 400px;">
+                            <!-- D3 Canvas goes here -->
+                            <div class="absolute bottom-4 right-4 flex space-x-2">
+                                <button id="btn-reset-cluster" class="px-4 py-2 bg-slate-200 text-slate-700 rounded shadow hover:bg-slate-300 transition" onclick="resetClustering()">Reset Data</button>
+                                <button id="btn-run-cluster" class="px-4 py-2 bg-emerald-600 text-white rounded shadow hover:bg-emerald-700 transition" onclick="runKMeansStep()">Run Clustering Step</button>
+                            </div>
+                        </div>
+                        
+                        <div class="w-full md:w-1/3 space-y-4">
+                            <div class="bg-emerald-50 p-4 rounded-lg border border-emerald-100">
+                                <h4 class="font-semibold text-emerald-800 mb-2">How it works (K-Means)</h4>
+                                <p class="text-sm text-emerald-900 mb-2">This uses <strong>K-Means Clustering</strong>.</p>
+                                <ol class="text-xs text-emerald-900 list-decimal list-inside space-y-1 pl-1">
+                                    <li>Randomly places 'k' center points (centroids).</li>
+                                    <li>Assigns each data point to nearest centroid.</li>
+                                    <li>Moves centroid to center of its new group.</li>
+                                    <li>Repeats until groups stop changing.</li>
+                                </ol>
+                            </div>
+                             <div class="p-4 rounded-lg border bg-white text-sm">
+                                <p><strong>Clusters Found:</strong> <span id="cluster-count" class="font-bold">0</span></p>
+                                <p class="text-slate-500 text-xs mt-1">Algorithm helps identify customer segments for targeted marketing.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-object-group text-emerald-500 mr-2"></i>Clustering</h4>
+                        <p class="text-sm text-slate-600 mb-4">Grouping unlabeled data based on their similarities or differences.</p>
+                        <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                            <li><strong>Customer Segmentation:</strong> Grouping buyers by habits.</li>
+                            <li><strong>Market Basket Analysis:</strong> Discovering associations between products frequently bought together (e.g., if a customer buys bread, they are likely to buy butter).</li>
+                            <li><strong>Document Grouping:</strong> Organizing news articles by topic.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                        <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-compress text-emerald-500 mr-2"></i>Dimensionality Reduction</h4>
+                        <p class="text-sm text-slate-600 mb-4">Reducing the number of variables in data while preserving important information.</p>
+                        <ul class="text-sm text-slate-700 space-y-2 list-disc list-inside">
+                            <li><strong>Data Compression:</strong> Storing data more efficiently.</li>
+                            <li><strong>Feature Extraction:</strong> Removing noise from images to aid in other ML tasks.</li>
+                            <li><strong>Visualization:</strong> Reducing high-dimension data to 2D/3D to plot it.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section id="content-deep" class="fade-in hidden">
+                 <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-rose-500 inline-block pb-1">Deep Learning (DL)</h2>
+                    <p class="text-slate-600 mt-4 max-w-3xl">Deep Learning is a specialized subset of machine learning based on artificial neural networks with multiple layers (hence "deep"). These networks attempt to simulate the behavior of the human brain to learn from large amounts of data.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100">
+                    <div class="flex flex-col md:flex-row gap-8 items-center">
+                        <div class="w-full md:w-1/2">
+                            <h3 class="text-xl font-semibold mb-3 text-rose-800">Neural Network Structure</h3>
+                            <p class="text-slate-600 mb-4 text-sm">A deep neural network consists of an input layer, an output layer, and multiple hidden layers in between. Each node (neuron) processes information and passes it to the next layer.</p>
+                            
+                            <div class="bg-slate-50 p-4 rounded-lg text-sm border border-slate-200">
+                                <h4 class="font-bold text-slate-700 mb-2">Key Characteristics:</h4>
+                                <ul class="list-disc list-inside text-slate-600 space-y-1">
+                                    <li>Requires massive amounts of data.</li>
+                                    <li>Requires substantial computing power (GPUs).</li>
+                                    <li>Automatically discovers features (feature extraction) without human intervention.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="w-full md:w-1/2 flex justify-center">
+                            <!-- Simple SVG visualization of a neural network -->
+                            <svg width="300" height="200" viewBox="0 0 300 200" class="drop-shadow-md">
+                                <!-- Connections -->
+                                <g stroke="#cbd5e1" stroke-width="1.5" opacity="0.6">
+                                    <!-- Input to Hidden 1 -->
+                                    <line x1="40" y1="50" x2="110" y2="40"/><line x1="40" y1="50" x2="110" y2="100"/><line x1="40" y1="50" x2="110" y2="160"/>
+                                    <line x1="40" y1="100" x2="110" y2="40"/><line x1="40" y1="100" x2="110" y2="100"/><line x1="40" y1="100" x2="110" y2="160"/>
+                                    <line x1="40" y1="150" x2="110" y2="40"/><line x1="40" y1="150" x2="110" y2="100"/><line x1="40" y1="150" x2="110" y2="160"/>
+                                    
+                                    <!-- Hidden 1 to Hidden 2 -->
+                                    <line x1="110" y1="40" x2="190" y2="40"/><line x1="110" y1="40" x2="190" y2="100"/><line x1="110" y1="40" x2="190" y2="160"/>
+                                    <line x1="110" y1="100" x2="190" y2="40"/><line x1="110" y1="100" x2="190" y2="100"/><line x1="110" y1="100" x2="190" y2="160"/>
+                                    <line x1="110" y1="160" x2="190" y2="40"/><line x1="110" y1="160" x2="190" y2="100"/><line x1="110" y1="160" x2="190" y2="160"/>
+
+                                    <!-- Hidden 2 to Output -->
+                                    <line x1="190" y1="40" x2="260" y2="75"/><line x1="190" y1="40" x2="260" y2="125"/>
+                                    <line x1="190" y1="100" x2="260" y2="75"/><line x1="190" y1="100" x2="260" y2="125"/>
+                                    <line x1="190" y1="160" x2="260" y2="75"/><line x1="190" y1="160" x2="260" y2="125"/>
+                                </g>
+
+                                <!-- Nodes -->
+                                <!-- Input Layer -->
+                                <circle cx="40" cy="50" r="12" fill="#60a5fa" />
+                                <circle cx="40" cy="100" r="12" fill="#60a5fa" />
+                                <circle cx="40" cy="150" r="12" fill="#60a5fa" />
+                                
+                                <!-- Hidden Layer 1 -->
+                                <circle cx="110" cy="40" r="12" fill="#fb7185" />
+                                <circle cx="110" cy="100" r="12" fill="#fb7185" />
+                                <circle cx="110" cy="160" r="12" fill="#fb7185" />
+
+                                <!-- Hidden Layer 2 -->
+                                <circle cx="190" cy="40" r="12" fill="#fb7185" />
+                                <circle cx="190" cy="100" r="12" fill="#fb7185" />
+                                <circle cx="190" cy="160" r="12" fill="#fb7185" />
+
+                                <!-- Output Layer -->
+                                <circle cx="260" cy="75" r="12" fill="#34d399" />
+                                <circle cx="260" cy="125" r="12" fill="#34d399" />
+                                
+                                <!-- Labels -->
+                                <text x="40" y="185" font-size="10" text-anchor="middle" fill="#64748b">Input</text>
+                                <text x="150" y="185" font-size="10" text-anchor="middle" fill="#64748b">Hidden Layers</text>
+                                <text x="260" y="185" font-size="10" text-anchor="middle" fill="#64748b">Output</text>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-earth-americas text-rose-500 mr-2"></i>Real-World Applications</h4>
+                    <ul class="grid md:grid-cols-2 gap-4 text-sm text-slate-700">
+                        <li class="bg-rose-50 p-3 rounded border border-rose-100">
+                            <strong>Object Detection & Classification:</strong> Algorithms like CNNs (Convolutional Neural Networks) power self-driving car vision systems and facial recognition.
+                        </li>
+                        <li class="bg-rose-50 p-3 rounded border border-rose-100">
+                            <strong>Natural Language Processing (NLP):</strong> Models like Transformers understand and generate human text, powering translation tools and advanced chatbots (like LLMs).
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="content-reinforcement" class="fade-in hidden">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-purple-500 inline-block pb-1">Reinforcement Learning (RL)</h2>
+                    <p class="text-slate-600 mt-4 max-w-3xl">In Reinforcement Learning, an <strong>agent</strong> learns to make decisions by performing actions in an <strong>environment</strong> to maximize a cumulative <strong>reward</strong>. It's learning through trial and error, similar to training a dog with treats.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100">
+                     <div class="flex flex-col md:flex-row gap-8 items-center">
+                         <div class="w-full md:w-1/2 flex justify-center order-2 md:order-1">
+                            <!-- Visual representation of RL loop -->
+                            <div class="relative w-64 h-64">
+                                <div class="absolute top-0 left-1/2 transform -translate-x-1/2 bg-blue-100 p-3 rounded-lg border border-blue-300 font-semibold text-blue-800 z-10 shadow-sm">
+                                    Agent
+                                </div>
+                                <div class="absolute bottom-0 left-1/2 transform -translate-x-1/2 bg-green-100 p-3 rounded-lg border border-green-300 font-semibold text-green-800 z-10 shadow-sm">
+                                    Environment
+                                </div>
+                                
+                                <!-- Action Arrow -->
+                                <svg class="absolute top-1/2 left-0 transform -translate-y-1/2" width="100%" height="100%">
+                                    <path d="M 80 50 Q 30 120 80 200" fill="transparent" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrowhead)"/>
+                                </svg>
+                                <div class="absolute top-1/2 left-4 transform -translate-y-1/2 bg-white px-2 text-xs font-bold text-slate-500 rounded border">Action (At)</div>
+
+                                <!-- State/Reward Arrow -->
+                                <svg class="absolute top-1/2 right-0 transform -translate-y-1/2" width="100%" height="100%">
+                                    <path d="M 180 200 Q 230 120 180 50" fill="transparent" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrowhead)"/>
+                                    <!-- Arrow marker definition -->
+                                    <defs>
+                                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                        <polygon points="0 0, 10 3.5, 0 7" fill="#94a3b8" />
+                                        </marker>
+                                    </defs>
+                                </svg>
+                                <div class="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white px-2 text-xs font-bold text-slate-500 rounded border text-center">
+                                    State (St)<br/>+ Reward (Rt)
+                                </div>
+                            </div>
+                         </div>
+                         <div class="w-full md:w-1/2 order-1 md:order-2">
+                             <h3 class="text-xl font-semibold mb-3 text-purple-800">The RL Feedback Loop</h3>
+                             <p class="text-slate-600 mb-4 text-sm">The algorithm isn't told what actions to take. Instead, it must discover which actions yield the most reward by trying them.</p>
+                             
+                             <ul class="space-y-3 text-sm text-slate-700">
+                                 <li class="flex items-start"><i class="fa-solid fa-robot text-purple-500 mt-1 mr-2"></i> <strong>Agent:</strong> The learner or decision-maker.</li>
+                                 <li class="flex items-start"><i class="fa-solid fa-globe text-purple-500 mt-1 mr-2"></i> <strong>Environment:</strong> Everything the agent interacts with.</li>
+                                 <li class="flex items-start"><i class="fa-solid fa-bolt text-purple-500 mt-1 mr-2"></i> <strong>Action:</strong> What the agent can do.</li>
+                                 <li class="flex items-start"><i class="fa-solid fa-star text-purple-500 mt-1 mr-2"></i> <strong>Reward:</strong> The feedback signal (+ or -).</li>
+                             </ul>
+                         </div>
+                     </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-earth-americas text-purple-500 mr-2"></i>Real-World Applications</h4>
+                    <ul class="grid md:grid-cols-2 gap-4 text-sm text-slate-700">
+                        <li class="bg-purple-50 p-3 rounded border border-purple-100">
+                            <strong>Robotics Navigation:</strong> Training robots to walk, grasp objects, or navigate complex environments by rewarding successful movements and penalizing falls or collisions.
+                        </li>
+                        <li class="bg-purple-50 p-3 rounded border border-purple-100">
+                            <strong>Game Playing:</strong> Systems like AlphaGo learned to master complex board games by playing millions of matches against themselves and maximizing the reward of winning.
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section id="content-transfer" class="fade-in hidden">
+                <div class="mb-10">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-amber-500 inline-block pb-1">Transfer Learning (TL)</h2>
+                    <p class="text-slate-600 mt-4 max-w-3xl">Transfer Learning focuses on storing knowledge gained while solving one problem and applying it to a different but related problem. Instead of starting the learning process from scratch, the model leverages previous learning.</p>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100">
+                    <div class="text-center mb-8">
+                        <h3 class="text-xl font-semibold mb-2 text-amber-800">Why Restart When You Can Adapt?</h3>
+                        <p class="text-sm text-slate-600">Think of learning to ride a motorcycle. If you already know how to ride a bicycle, you transfer the knowledge of balance and steering, learning much faster than someone starting from zero.</p>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row items-center justify-center gap-4">
+                        <!-- Source Task -->
+                        <div class="bg-slate-50 border border-slate-200 p-4 rounded-lg w-full md:w-64 text-center shadow-sm">
+                            <h4 class="font-bold text-slate-700 mb-2 border-b pb-1">Source Task</h4>
+                            <p class="text-xs text-slate-500 mb-2">Pre-trained on massive dataset (e.g., millions of general images).</p>
+                            <div class="bg-blue-100 text-blue-800 p-2 rounded text-sm font-semibold">
+                                General Image Classifier<br/><span class="text-xs font-normal">(Cats, Dogs, Cars, Trees...)</span>
+                            </div>
+                        </div>
+
+                        <!-- Transfer Arrow -->
+                        <div class="text-amber-500 text-3xl my-2 md:my-0 md:mx-4 flex flex-col items-center">
+                            <span class="text-xs font-bold text-amber-600 mb-1">Transfers Knowledge</span>
+                            <i class="fa-solid fa-arrow-right-long hidden md:block"></i>
+                            <i class="fa-solid fa-arrow-down-long block md:hidden"></i>
+                            <span class="text-xs text-slate-500 mt-1">(Weights/Features)</span>
+                        </div>
+
+                        <!-- Target Task -->
+                        <div class="bg-amber-50 border border-amber-200 p-4 rounded-lg w-full md:w-64 text-center shadow-sm">
+                            <h4 class="font-bold text-amber-800 mb-2 border-b border-amber-200 pb-1">Target Task</h4>
+                            <p class="text-xs text-amber-700 mb-2">Fine-tuned on a smaller, specific dataset.</p>
+                            <div class="bg-amber-200 text-amber-900 p-2 rounded text-sm font-semibold">
+                                Medical Scan Classifier<br/><span class="text-xs font-normal">(Specific Tumors)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h4 class="text-lg font-semibold text-slate-800 mb-3"><i class="fa-solid fa-bolt text-amber-500 mr-2"></i>Benefits & Applications</h4>
+                    <p class="text-sm text-slate-600 mb-4">Transfer learning is a game-changer because training complex models (like Deep Learning networks) from scratch requires massive data and compute time.</p>
+                    <ul class="grid md:grid-cols-2 gap-4 text-sm text-slate-700">
+                        <li class="bg-amber-50 p-3 rounded border border-amber-100">
+                            <strong>Overcoming Data Scarcity:</strong> If you only have a few hundred medical images (Target Task), training a deep model from scratch will fail. Transfer learning uses a pre-trained model as a highly capable starting point.
+                        </li>
+                        <li class="bg-amber-50 p-3 rounded border border-amber-100">
+                            <strong>Rapid Deployment in NLP:</strong> Modern NLP heavily relies on TL. Models like BERT or GPT are pre-trained on the entire internet, then fine-tuned quickly for specific tasks like specialized <strong>sentiment analysis</strong> or legal document review.
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Quiz Section -->
+            <section id="content-quiz" class="fade-in hidden">
+                <div class="mb-10 text-center">
+                    <h2 class="text-3xl font-bold text-slate-800 mb-2 border-b-2 border-indigo-500 inline-block pb-1">Knowledge Check</h2>
+                    <p class="text-slate-600 mt-4 max-w-2xl mx-auto">Test your mastery of the machine learning concepts you've explored in this interactive guide.</p>
+                </div>
+
+                <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-8 mb-10 border border-slate-100" id="quiz-container">
+                    <!-- Progress Bar -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-xs font-semibold text-slate-500 mb-2">
+                            <span id="quiz-progress-text">Question 1 of 10</span>
+                            <span id="quiz-score-text">Score: 0</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-2">
+                            <div class="bg-indigo-600 h-2 rounded-full transition-all duration-300" id="quiz-progress-bar" style="width: 10%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Question Area -->
+                    <div id="quiz-question-area">
+                        <h3 class="text-xl font-bold text-slate-800 mb-6" id="quiz-question-text">Loading question...</h3>
+                        <div class="space-y-3" id="quiz-options">
+                            <!-- Options injected by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Feedback Area -->
+                    <div id="quiz-feedback" class="mt-6 p-4 rounded-lg hidden">
+                        <p id="quiz-feedback-text" class="font-bold text-lg mb-2"></p>
+                        <p id="quiz-feedback-explanation" class="text-sm"></p>
+                        <button id="quiz-next-btn" class="mt-4 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition" onclick="nextQuestion()">Next Question</button>
+                    </div>
+
+                    <!-- Results Area -->
+                    <div id="quiz-results" class="text-center hidden py-8">
+                        <i class="fa-solid fa-trophy text-5xl text-yellow-400 mb-4"></i>
+                        <h3 class="text-2xl font-bold text-slate-800 mb-2">Quiz Completed!</h3>
+                        <p class="text-lg text-slate-600 mb-6">You scored <span id="quiz-final-score" class="font-bold text-indigo-600">0</span> out of 10.</p>
+                        <button onclick="restartQuiz()" class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition shadow-md">Retake Quiz</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm">
+        <p>Interactive Machine Learning Resource &copy; 2024</p>
+    </footer>
+
+    <script>
+        // --- Navigation Logic ---
+        function switchTab(tabId) {
+            // Hide all contents
+            ['intro', 'supervised', 'unsupervised', 'deep', 'reinforcement', 'transfer', 'quiz'].forEach(id => {
+                document.getElementById(`content-${id}`).classList.add('hidden');
+                document.getElementById(`tab-${id}`).classList.remove('tab-active');
+            });
+            
+            // Show selected content
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('tab-active');
+
+            // Trigger specific initializations if needed when tab becomes visible
+            if(tabId === 'supervised' && !supervisedInitialized) initSupervised();
+            if(tabId === 'unsupervised' && !unsupervisedInitialized) initUnsupervised();
+            if(tabId === 'quiz' && !quizInitialized) initQuiz();
+        }
+
+        // --- Quiz Logic ---
+        let quizInitialized = false;
+        let currentQIndex = 0;
+        let currentScore = 0;
+        
+        const quizQuestions = [
+            {
+                question: "Which characteristic is the primary distinction of unsupervised learning compared to supervised learning?",
+                options: [
+                    "It uses labeled data to predict outcomes.",
+                    "It finds hidden structures in unlabeled data.",
+                    "It requires explicit rewards for every action.",
+                    "It transfers knowledge from a pre-trained model."
+                ],
+                correct: 1,
+                explanation: "Unsupervised learning explores unlabeled data to find hidden patterns, whereas supervised learning uses labeled data (inputs with known outputs)."
+            },
+            {
+                question: "A grocery store wants to analyze customer purchases to discover which products are frequently bought together. Which machine learning approach is best suited for this task?",
+                options: [
+                    "Supervised Learning",
+                    "Reinforcement Learning",
+                    "Unsupervised Learning",
+                    "Transfer Learning"
+                ],
+                correct: 2,
+                explanation: "This is a classic 'Market Basket Analysis' clustering/association problem, which is a type of Unsupervised Learning."
+            },
+            {
+                question: "In reinforcement learning, how does an agent determine the success of its actions within an environment?",
+                options: [
+                    "By maximizing a cumulative feedback reward.",
+                    "By processing massive amounts of labeled data.",
+                    "By finding clusters of similar actions.",
+                    "By minimizing the number of hidden layers."
+                ],
+                correct: 0,
+                explanation: "Reinforcement learning relies on a system of rewards (and penalties) to teach the agent which actions yield the best long-term outcome."
+            },
+            {
+                question: "What is a primary advantage of utilizing transfer learning for a new, specific image classification task?",
+                options: [
+                    "It groups unlabeled images into distinct clusters.",
+                    "It overcomes the problem of target data scarcity.",
+                    "It requires the model to learn entirely from scratch.",
+                    "It guarantees 100% accuracy on all future tasks."
+                ],
+                correct: 1,
+                explanation: "Transfer learning allows you to use a pre-trained model (trained on massive data) on a specific target task where you might only have a small dataset, overcoming data scarcity."
+            },
+            {
+                question: "Which of the following real-world applications represents a regression problem in supervised learning?",
+                options: [
+                    "Classifying customer reviews as positive or negative.",
+                    "Forecasting future continuous stock market values.",
+                    "Grouping buyers by their purchasing habits.",
+                    "Training a robot to walk without falling."
+                ],
+                correct: 1,
+                explanation: "Regression predicts a continuous real value (like a price or stock value), while classification predicts a category (like positive/negative)."
+            },
+            {
+                question: "Deep learning models are primarily characterized by their use of which architectural structure?",
+                options: [
+                    "Single decision trees.",
+                    "K-Means clustering centroids.",
+                    "Artificial neural networks with multiple hidden layers.",
+                    "Simple linear regression lines."
+                ],
+                correct: 2,
+                explanation: "Deep learning relies on Artificial Neural Networks with multiple (deep) hidden layers to extract high-level features from data."
+            },
+            {
+                question: "Modern Natural Language Processing (NLP) tools, such as advanced chatbots, heavily rely on which combination of machine learning techniques?",
+                options: [
+                    "Deep Learning and Transfer Learning.",
+                    "Simple Linear Regression and K-Means.",
+                    "Dimensionality Reduction and Decision Trees.",
+                    "Only basic Supervised Learning."
+                ],
+                correct: 0,
+                explanation: "Advanced NLP models (like Large Language Models) use Deep Learning architectures (Transformers) and are pre-trained on massive datasets before being fine-tuned using Transfer Learning."
+            },
+            {
+                question: "When utilizing the k-Nearest Neighbors (k-NN) algorithm to predict a new classification, how is the final label determined?",
+                options: [
+                    "By calculating the cumulative reward of the point.",
+                    "By extracting features using a neural network.",
+                    "By grouping it into the largest existing cluster globally.",
+                    "By taking a majority vote of the 'k' closest labeled points."
+                ],
+                correct: 3,
+                explanation: "The k-NN algorithm classifies a new data point by finding the 'k' labeled points nearest to it and assigning the most common label among them."
+            },
+            {
+                question: "What is the primary goal of dimensionality reduction in unsupervised learning?",
+                options: [
+                    "To reduce data variables while preserving important information.",
+                    "To increase the number of features for better accuracy.",
+                    "To predict a continuous target value.",
+                    "To map actions to explicit rewards."
+                ],
+                correct: 0,
+                explanation: "Dimensionality reduction simplifies data by reducing the number of input variables (dimensions) while trying to keep as much of the crucial information intact as possible."
+            },
+            {
+                question: "Training a robot to navigate a complex warehouse without colliding into walls is best achieved using which machine learning method?",
+                options: [
+                    "Supervised Learning",
+                    "Unsupervised Learning",
+                    "Reinforcement Learning",
+                    "Transfer Learning"
+                ],
+                correct: 2,
+                explanation: "Reinforcement Learning is ideal here. The robot (agent) learns to navigate the warehouse (environment) by receiving positive rewards for safe movement and negative rewards (penalties) for collisions."
+            }
+        ];
+
+        function initQuiz() {
+            quizInitialized = true;
+            restartQuiz();
+        }
+
+        function loadQuestion() {
+            const q = quizQuestions[currentQIndex];
+            document.getElementById('quiz-question-text').innerText = `${currentQIndex + 1}. ${q.question}`;
+            
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = '';
+            
+            q.options.forEach((opt, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-4 rounded-lg border border-slate-200 hover:border-indigo-400 hover:bg-indigo-50 transition-colors cursor-pointer';
+                btn.innerText = opt;
+                btn.onclick = () => selectAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+            
+            document.getElementById('quiz-progress-text').innerText = `Question ${currentQIndex + 1} of ${quizQuestions.length}`;
+            document.getElementById('quiz-score-text').innerText = `Score: ${currentScore}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQIndex) / quizQuestions.length) * 100}%`;
+            
+            document.getElementById('quiz-feedback').classList.add('hidden');
+        }
+
+        function selectAnswer(selectedIndex, btnElement) {
+            // Disable all buttons
+            const buttons = document.getElementById('quiz-options').querySelectorAll('button');
+            buttons.forEach(b => {
+                b.onclick = null;
+                b.classList.remove('hover:border-indigo-400', 'hover:bg-indigo-50', 'cursor-pointer');
+                b.classList.add('cursor-default', 'opacity-70');
+            });
+
+            const q = quizQuestions[currentQIndex];
+            const isCorrect = selectedIndex === q.correct;
+            const feedbackBox = document.getElementById('quiz-feedback');
+            const feedbackTitle = document.getElementById('quiz-feedback-text');
+            const feedbackDesc = document.getElementById('quiz-feedback-explanation');
+
+            feedbackBox.classList.remove('hidden', 'bg-red-50', 'text-red-800', 'bg-green-50', 'text-green-800');
+            
+            if (isCorrect) {
+                currentScore++;
+                btnElement.classList.add('bg-green-100', 'border-green-500', 'opacity-100');
+                feedbackBox.classList.add('bg-green-50', 'text-green-900');
+                feedbackTitle.innerHTML = '<i class="fa-solid fa-check-circle mr-2 text-green-600"></i>Correct!';
+            } else {
+                btnElement.classList.add('bg-red-100', 'border-red-500', 'opacity-100');
+                // Highlight correct answer
+                buttons[q.correct].classList.add('bg-green-100', 'border-green-500', 'opacity-100');
+                feedbackBox.classList.add('bg-red-50', 'text-red-900');
+                feedbackTitle.innerHTML = '<i class="fa-solid fa-times-circle mr-2 text-red-600"></i>Incorrect.';
+            }
+
+            feedbackDesc.innerText = q.explanation;
+            document.getElementById('quiz-score-text').innerText = `Score: ${currentScore}`;
+            document.getElementById('quiz-progress-bar').style.width = `${((currentQIndex + 1) / quizQuestions.length) * 100}%`;
+        }
+
+        function nextQuestion() {
+            currentQIndex++;
+            if (currentQIndex < quizQuestions.length) {
+                loadQuestion();
+            } else {
+                showQuizResults();
+            }
+        }
+
+        function showQuizResults() {
+            document.getElementById('quiz-question-area').classList.add('hidden');
+            document.getElementById('quiz-feedback').classList.add('hidden');
+            
+            const resultsArea = document.getElementById('quiz-results');
+            resultsArea.classList.remove('hidden');
+            document.getElementById('quiz-final-score').innerText = currentScore;
+        }
+
+        function restartQuiz() {
+            currentQIndex = 0;
+            currentScore = 0;
+            document.getElementById('quiz-question-area').classList.remove('hidden');
+            document.getElementById('quiz-results').classList.add('hidden');
+            loadQuestion();
+        }
+
+        // --- Supervised Learning Demo (KNN) ---
+        let supervisedInitialized = false;
+        let supervisedData = [];
+        let currentLabelMode = 'predict'; // 'apple', 'banana', 'predict'
+        const k = 3;
+
+        function setLabelMode(mode) {
+            currentLabelMode = mode;
+            // Update button styles
+            ['apple', 'banana', 'predict'].forEach(m => {
+                const btn = document.getElementById(`btn-${m === 'predict' ? 'predict' : 'add-'+m}`);
+                if (m === mode) {
+                    btn.classList.add('ring-2', 'ring-offset-1', 'ring-blue-500');
+                } else {
+                    btn.classList.remove('ring-2', 'ring-offset-1', 'ring-blue-500');
+                }
+            });
+        }
+
+        function initSupervised() {
+            supervisedInitialized = true;
+            const container = document.getElementById('supervised-viz');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            const svg = d3.select("#supervised-viz")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%")
+                .style("cursor", "crosshair");
+
+            // Background grid for visual reference
+            svg.append("g")
+                .attr("class", "grid")
+                .selectAll("line")
+                .data(d3.range(0, width, 40))
+                .enter().append("line")
+                .attr("x1", d => d).attr("y1", 0)
+                .attr("x2", d => d).attr("y2", height)
+                .style("stroke", "#e2e8f0").style("stroke-width", 0.5);
+
+            svg.append("g")
+                .attr("class", "grid")
+                .selectAll("line")
+                .data(d3.range(0, height, 40))
+                .enter().append("line")
+                .attr("x1", 0).attr("y1", d => d)
+                .attr("x2", width).attr("y2", d => d)
+                .style("stroke", "#e2e8f0").style("stroke-width", 0.5);
+
+            // Add some initial labeled data
+            for(let i=0; i<8; i++) {
+                supervisedData.push({x: Math.random() * width * 0.4 + 20, y: Math.random() * height * 0.5 + 20, label: 'apple'});
+                supervisedData.push({x: Math.random() * width * 0.4 + width*0.5, y: Math.random() * height * 0.5 + height*0.4, label: 'banana'});
+            }
+
+            const dataGroup = svg.append("g").attr("id", "data-points");
+
+            function drawPoints() {
+                const points = dataGroup.selectAll("circle").data(supervisedData);
+                
+                points.enter()
+                    .append("circle")
+                    .attr("class", "data-point")
+                    .attr("r", 0)
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("fill", d => d.label === 'apple' ? '#ef4444' : '#eab308')
+                    .merge(points)
+                    .transition().duration(500)
+                    .attr("r", 6);
+            }
+            
+            drawPoints();
+            setLabelMode('predict');
+
+            // Interaction
+            svg.on("click", function(event) {
+                const coords = d3.pointer(event);
+                const x = coords[0];
+                const y = coords[1];
+
+                if (currentLabelMode === 'predict') {
+                    if(supervisedData.length === 0) return;
+                    
+                    // Simple KNN
+                    const distances = supervisedData.map(point => ({
+                        dist: Math.sqrt(Math.pow(point.x - x, 2) + Math.pow(point.y - y, 2)),
+                        label: point.label
+                    }));
+                    
+                    distances.sort((a, b) => a.dist - b.dist);
+                    const nearest = distances.slice(0, k);
+                    
+                    let appleCount = 0; let bananaCount = 0;
+                    nearest.forEach(n => {
+                        if(n.label === 'apple') appleCount++;
+                        else bananaCount++;
+                    });
+                    
+                    const prediction = appleCount > bananaCount ? 'apple' : 'banana';
+                    
+                    // Add prediction point visually
+                    svg.append("circle")
+                        .attr("cx", x)
+                        .attr("cy", y)
+                        .attr("r", 0)
+                        .attr("fill", "transparent")
+                        .attr("stroke", prediction === 'apple' ? '#ef4444' : '#eab308')
+                        .attr("stroke-width", 3)
+                        .attr("stroke-dasharray", "4,4")
+                        .transition().duration(500)
+                        .attr("r", 15)
+                        .transition().duration(1500)
+                        .style("opacity", 0)
+                        .remove();
+
+                    const resBox = document.getElementById('prediction-result');
+                    resBox.classList.remove('hidden', 'bg-red-50', 'border-red-200', 'bg-yellow-50', 'border-yellow-200');
+                    if(prediction === 'apple') {
+                        resBox.innerHTML = '<span class="text-red-700 font-bold">Predicted: Apple (Red/Round)</span>';
+                        resBox.classList.add('bg-red-50', 'border-red-200');
+                    } else {
+                        resBox.innerHTML = '<span class="text-yellow-700 font-bold">Predicted: Banana (Yellow/Long)</span>';
+                        resBox.classList.add('bg-yellow-50', 'border-yellow-200');
+                    }
+
+                } else {
+                    // Add labeled data
+                    supervisedData.push({x, y, label: currentLabelMode});
+                    drawPoints();
+                }
+            });
+        }
+
+
+        // --- Unsupervised Learning Demo (K-Means) ---
+        let unsupervisedInitialized = false;
+        let unData = [];
+        let centroids = [];
+        let unSvg, unWidth, unHeight;
+        const numClusters = 3;
+
+        function initUnsupervised() {
+            unsupervisedInitialized = true;
+            const container = document.getElementById('unsupervised-viz');
+            unWidth = container.clientWidth;
+            unHeight = container.clientHeight;
+
+            unSvg = d3.select("#unsupervised-viz")
+                .append("svg")
+                .attr("width", "100%")
+                .attr("height", "100%");
+
+            generateUnsupervisedData();
+            drawUnsupervised();
+        }
+
+        function generateUnsupervisedData() {
+            unData = [];
+            centroids = [];
+            // Generate 3 random clusters conceptually
+            const centers = [
+                {x: unWidth * 0.2, y: unHeight * 0.3},
+                {x: unWidth * 0.7, y: unHeight * 0.2},
+                {x: unWidth * 0.5, y: unHeight * 0.7}
+            ];
+
+            centers.forEach(c => {
+                for(let i=0; i<30; i++) {
+                    unData.push({
+                        x: c.x + (Math.random() - 0.5) * 150,
+                        y: c.y + (Math.random() - 0.5) * 150,
+                        cluster: null // Unlabeled initially
+                    });
+                }
+            });
+            document.getElementById('cluster-count').innerText = "0";
+            document.getElementById('btn-run-cluster').innerText = "Start Clustering";
+        }
+
+        function drawUnsupervised() {
+            const colors = ['#94a3b8', '#10b981', '#3b82f6', '#f59e0b']; // 0 is unassigned
+
+            // Draw points
+            let points = unSvg.selectAll(".u-point").data(unData);
+            
+            points.enter()
+                .append("circle")
+                .attr("class", "u-point")
+                .attr("r", 5)
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("fill", d => d.cluster !== null ? colors[d.cluster + 1] : colors[0])
+                .style("opacity", 0.7)
+                .merge(points)
+                .transition().duration(500)
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("fill", d => d.cluster !== null ? colors[d.cluster + 1] : colors[0]);
+                
+            points.exit().remove();
+
+            // Draw centroids
+            let centers = unSvg.selectAll(".centroid").data(centroids);
+            
+            centers.enter()
+                .append("path")
+                .attr("class", "centroid")
+                .attr("d", d3.symbol().type(d3.symbolCross).size(150))
+                .attr("transform", d => `translate(${d.x},${d.y})`)
+                .attr("fill", (d, i) => colors[i + 1])
+                .attr("stroke", "black")
+                .attr("stroke-width", 2)
+                .merge(centers)
+                .transition().duration(1000)
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+                
+            centers.exit().remove();
+        }
+
+        function resetClustering() {
+            generateUnsupervisedData();
+            drawUnsupervised();
+        }
+
+        let kMeansStep = 0; // 0: init centroids, 1: assign, 2: move
+        
+        function runKMeansStep() {
+            if (centroids.length === 0) {
+                // Init
+                for(let i=0; i<numClusters; i++) {
+                    const randomPoint = unData[Math.floor(Math.random() * unData.length)];
+                    centroids.push({x: randomPoint.x, y: randomPoint.y});
+                }
+                document.getElementById('btn-run-cluster').innerText = "Assign Points";
+                document.getElementById('cluster-count').innerText = numClusters;
+                kMeansStep = 1;
+            } else if (kMeansStep === 1) {
+                // Assign to nearest centroid
+                unData.forEach(p => {
+                    let minDist = Infinity;
+                    let bestCluster = -1;
+                    centroids.forEach((c, i) => {
+                        const dist = Math.sqrt(Math.pow(p.x - c.x, 2) + Math.pow(p.y - c.y, 2));
+                        if(dist < minDist) {
+                            minDist = dist;
+                            bestCluster = i;
+                        }
+                    });
+                    p.cluster = bestCluster;
+                });
+                document.getElementById('btn-run-cluster').innerText = "Update Centers";
+                kMeansStep = 2;
+            } else if (kMeansStep === 2) {
+                // Move centroids to mean
+                let sums = Array(numClusters).fill(0).map(() => ({x: 0, y: 0, count: 0}));
+                unData.forEach(p => {
+                    if(p.cluster !== null) {
+                        sums[p.cluster].x += p.x;
+                        sums[p.cluster].y += p.y;
+                        sums[p.cluster].count++;
+                    }
+                });
+                
+                centroids.forEach((c, i) => {
+                    if(sums[i].count > 0) {
+                        c.x = sums[i].x / sums[i].count;
+                        c.y = sums[i].y / sums[i].count;
+                    }
+                });
+                document.getElementById('btn-run-cluster').innerText = "Re-assign Points";
+                kMeansStep = 1; // loop back
+            }
+            drawUnsupervised();
+        }
+
+        // Initialize on load to ensure fonts/CSS are ready
+        window.onload = () => {
+            // First tab is already visible in HTML
+        };
+
+        // Handle window resize for D3 canvases
+        window.addEventListener('resize', () => {
+            if(supervisedInitialized) {
+                 const container = document.getElementById('supervised-viz');
+                 d3.select("#supervised-viz svg").attr("width", container.clientWidth).attr("height", container.clientHeight);
+                 // In a real robust app, we'd reposition data relative to size, but for demo keeping simple
+            }
+            if(unsupervisedInitialized) {
+                const container = document.getElementById('unsupervised-viz');
+                d3.select("#unsupervised-viz svg").attr("width", container.clientWidth).attr("height", container.clientHeight);
+                unWidth = container.clientWidth;
+                unHeight = container.clientHeight;
+            }
+        });
+    </script>
+</body>
+</html>

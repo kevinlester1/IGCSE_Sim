@@ -35,7 +35,7 @@
             <div class="flex justify-between h-16 items-center">
                 <div class="flex items-center gap-2">
                     <div class="bg-indigo-600 p-1.5 rounded-lg">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></nav>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
                     </div>
                     <span class="font-bold text-lg tracking-tight">ML Selection Guide</span>
                 </div>
@@ -55,9 +55,24 @@
             <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight">
                 Comprehensive <span class="gradient-text">Machine Learning</span><br/>Model Selection Guide
             </h1>
-            <p class="text-lg text-slate-600 max-w-2xl mx-auto">
+            <p class="text-lg text-slate-600 max-w-2xl mx-auto mb-6">
                 A technical side-by-side comparison of major architectures to help you choose the right tool based on data characteristics, performance requirements, and computational constraints.
             </p>
+            
+            <!-- No Free Lunch Theorem Callout -->
+            <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 max-w-3xl mx-auto flex items-start gap-4 text-left shadow-sm">
+                <div class="bg-indigo-100 p-2 rounded-full shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="font-semibold text-indigo-900 text-sm mb-1">The "No Free Lunch" Theorem</h4>
+                    <p class="text-xs text-indigo-800/80 leading-relaxed">
+                        Remember that there is no universally best model. If a model performs perfectly on one problem, it will likely perform poorly on another. Selection is always an exercise in balancing trade-offs specific to your dataset and objective.
+                    </p>
+                </div>
+            </div>
         </header>
 
         <!-- Model Comparison Matrix -->
@@ -149,40 +164,50 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <!-- Data Impacts -->
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <!-- Data Impacts & Metrics -->
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
                     <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     </div>
-                    <h3 class="text-xl font-bold mb-4">A. Data Characteristics</h3>
+                    <h3 class="text-xl font-bold mb-4">A. Data & Desired Outcomes</h3>
                     <ul class="space-y-4 text-sm text-slate-600">
-                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Feature Scaling</strong> Models like KNN and Neural Networks fail if features aren't on the same scale (Age vs Income). Random Forests are scale-invariant.</li>
-                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Linearity</strong> If data forms circular distributions, Linear models result in <span class="text-rose-600 font-semibold">High Bias</span>. Non-linear kernels are required.</li>
-                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Imbalance</strong> When targets are rare, Accuracy is misleading. Prioritize Recall or F1-Score.</li>
+                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Feature Scaling</strong> Models relying on distance (KNN, Neural Nets) fail if features aren't scaled. Tree-based models (Random Forest) are scale-invariant.</li>
+                        <li><strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Linearity</strong> If data forms non-linear relationships, simple Linear models result in <span class="text-rose-600 font-semibold">High Bias</span>. Non-linear models or kernels are required.</li>
+                        <li>
+                            <strong class="text-slate-900 block mb-1 underline decoration-indigo-300">Imbalance & Metric Choice</strong> 
+                            When targets are rare (e.g., fraud), Accuracy is misleading. 
+                            <br/><span class="mt-1 block"><span class="font-semibold text-slate-700">Precision:</span> Prioritize when False Positives are costly (e.g., spam filters blocking real emails).</span>
+                            <span class="mt-1 block"><span class="font-semibold text-slate-700">Recall:</span> Prioritize when False Negatives are dangerous (e.g., missing a medical diagnosis).</span>
+                        </li>
                     </ul>
                 </div>
 
                 <!-- Interpretability -->
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
                     <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-xl flex items-center justify-center mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                     </div>
                     <h3 class="text-xl font-bold mb-4">B. Interpretability Trade-off</h3>
-                    <p class="text-sm text-slate-600 mb-6 leading-relaxed">As model complexity increases, transparency usually decreases. This is known as the "Black Box" problem.</p>
-                    <div class="space-y-3">
+                    <p class="text-sm text-slate-600 mb-6 leading-relaxed">Traditionally, as model complexity increases, transparency decreases (the "Black Box" problem).</p>
+                    <div class="space-y-3 mb-4">
                         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                             <span class="text-xs font-bold bg-emerald-500 text-white px-1.5 py-0.5 rounded">HIGH</span>
                             <span class="text-xs font-medium">Linear Reg, Decision Trees</span>
                         </div>
                         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
                             <span class="text-xs font-bold bg-rose-500 text-white px-1.5 py-0.5 rounded">LOW</span>
-                            <span class="text-xs font-medium">Deep Learning, Random Forest</span>
+                            <span class="text-xs font-medium">Deep Learning, Ensembles</span>
                         </div>
+                    </div>
+                    
+                    <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-lg mt-4">
+                        <span class="text-xs font-bold text-emerald-700 block mb-1">Bridging the Gap: XAI</span>
+                        <p class="text-xs text-emerald-800/80">Modern Explainable AI (XAI) techniques, such as <strong>SHAP</strong> (SHapley Additive exPlanations) and <strong>LIME</strong>, can extract feature importance and interpretability even from complex models like Random Forests or Neural Networks.</p>
                     </div>
                 </div>
 
                 <!-- Computation -->
-                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
                     <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-xl flex items-center justify-center mb-6">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                     </div>
@@ -190,12 +215,12 @@
                     <div class="space-y-6">
                         <div>
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">"Lazy" Learners (KNN)</span>
-                            <p class="text-sm text-slate-600 italic">Zero training time; extremely slow inference as every query searches the whole DB.</p>
+                            <p class="text-sm text-slate-600 italic">Zero training time; extremely slow inference as every query searches the whole DB. Poor for real-time applications with large datasets.</p>
                         </div>
                         <div class="h-px bg-slate-100"></div>
                         <div>
                             <span class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">"Eager" Learners (Deep Learning)</span>
-                            <p class="text-sm text-slate-600 italic">Days or weeks to train; once converged, provides millisecond inference.</p>
+                            <p class="text-sm text-slate-600 italic">High initial cost: days or weeks to train on GPUs. However, once converged, provides millisecond inference suitable for production.</p>
                         </div>
                     </div>
                 </div>
@@ -212,22 +237,22 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-slate-900 text-white p-6 rounded-2xl flex flex-col justify-between">
                     <div>
-                        <div class="text-indigo-400 font-bold text-xs uppercase mb-2">Q1: Unstructured?</div>
+                        <div class="text-indigo-400 font-bold text-xs uppercase mb-2">Q1: Unstructured Data?</div>
                         <p class="text-sm font-medium">Images, Audio, or Natural Language?</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-slate-800 font-bold text-emerald-400">→ Deep Learning</div>
                 </div>
                 <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col justify-between">
                     <div>
-                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q2: Interpretability?</div>
-                        <p class="text-sm font-medium">Do you need to explain 'Why' to stakeholders?</p>
+                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q2: Native Interpretability?</div>
+                        <p class="text-sm font-medium">Do you need to explain 'Why' without external XAI tools?</p>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Linear / Trees</div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Linear / Single Trees</div>
                 </div>
                 <div class="bg-white border border-slate-200 p-6 rounded-2xl flex flex-col justify-between">
                     <div>
-                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q3: Messy Tabular?</div>
-                        <p class="text-sm font-medium">Lots of categorical columns and missing values?</p>
+                        <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q3: Messy Tabular Data?</div>
+                        <p class="text-sm font-medium">Lots of categorical columns, missing values, non-linear patterns?</p>
                     </div>
                     <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Random Forest / XGBoost</div>
                 </div>
@@ -236,7 +261,7 @@
                         <div class="text-slate-400 font-bold text-xs uppercase mb-2">Q4: Tiny Dataset?</div>
                         <p class="text-sm font-medium">Less than 1,000 samples and high dimensionality?</p>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Naive Bayes / KNN</div>
+                    <div class="mt-4 pt-4 border-t border-slate-100 font-bold text-indigo-600">→ Naive Bayes / KNN / Linear</div>
                 </div>
             </div>
         </section>
@@ -244,8 +269,8 @@
 
     <footer class="bg-white border-t border-slate-200 py-12">
         <div class="max-w-7xl mx-auto px-4 text-center">
-            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">ML Architect Reference v2.5</p>
-            <p class="text-slate-500 text-sm max-w-md mx-auto">This guide is optimized for quick model selection based on standard industry benchmarks and theoretical constraints.</p>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest mb-4">ML Architect Reference v2.6</p>
+            <p class="text-slate-500 text-sm max-w-md mx-auto">This guide is optimized for quick model selection based on standard industry benchmarks, theoretical constraints, and the learning objective <strong>A4.3.10</strong>.</p>
         </div>
     </footer>
 

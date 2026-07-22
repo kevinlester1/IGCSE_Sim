@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feature Selection & Dimensionality Reduction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for interactivity -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in-out; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .interactive-card:hover { transform: translateY(-5px); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col" x-data="{ currentTab: 'intro', showModal: false, modalContent: {} }">
+
+    <!-- Header -->
+    <header class="bg-indigo-600 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold flex items-center gap-2">
+                <i class="fas fa-network-wired"></i> Data Preprocessing
+            </h1>
+            <nav class="hidden md:flex gap-4">
+                <button @click="currentTab = 'intro'" :class="{'bg-indigo-700': currentTab === 'intro'}" class="px-3 py-2 rounded-md hover:bg-indigo-500 transition">Overview</button>
+                <button @click="currentTab = 'a422'" :class="{'bg-indigo-700': currentTab === 'a422'}" class="px-3 py-2 rounded-md hover:bg-indigo-500 transition">Feature Selection (A4.2.2)</button>
+                <button @click="currentTab = 'a423'" :class="{'bg-indigo-700': currentTab === 'a423'}" class="px-3 py-2 rounded-md hover:bg-indigo-500 transition">Dimensionality Reduction (A4.2.3)</button>
+            </nav>
+            <!-- Mobile Menu Button (simplified for this demo) -->
+            <div class="md:hidden">
+                <select x-model="currentTab" class="bg-indigo-700 text-white p-2 rounded-md border-none focus:ring-2 focus:ring-white">
+                    <option value="intro">Overview</option>
+                    <option value="a422">Feature Selection</option>
+                    <option value="a423">Dimensionality Reduction</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- Introduction Section -->
+        <section x-show="currentTab === 'intro'" class="fade-in space-y-8">
+            <div class="bg-white rounded-xl shadow-sm p-8 border border-slate-100 text-center">
+                <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                    <i class="fas fa-filter"></i>
+                </div>
+                <h2 class="text-3xl font-bold mb-4 text-slate-800">Mastering Your Data</h2>
+                <p class="text-lg text-slate-600 max-w-3xl mx-auto">
+                    In machine learning, having more data isn't always better. Irrelevant or redundant features can confuse models, slow down training, and lead to poor performance. Learn how to refine your datasets using Feature Selection and Dimensionality Reduction.
+                </p>
+                <div class="mt-8 flex flex-col sm:flex-row justify-center gap-4">
+                    <button @click="currentTab = 'a422'" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-semibold shadow-md flex items-center justify-center gap-2">
+                        Explore Feature Selection <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button @click="currentTab = 'a423'" class="px-6 py-3 bg-white text-indigo-600 border border-indigo-200 rounded-lg hover:bg-indigo-50 transition font-semibold shadow-sm flex items-center justify-center gap-2">
+                        Explore Dimensionality Reduction <i class="fas fa-compress-arrows-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                 <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start gap-4">
+                    <div class="p-3 bg-blue-100 text-blue-600 rounded-lg text-xl"><i class="fas fa-check-double"></i></div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">Quality over Quantity</h3>
+                        <p class="text-slate-600 text-sm">Selecting the right features improves model accuracy by focusing on what truly matters.</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-start gap-4">
+                    <div class="p-3 bg-green-100 text-green-600 rounded-lg text-xl"><i class="fas fa-bolt"></i></div>
+                    <div>
+                        <h3 class="font-bold text-lg mb-2">Efficiency</h3>
+                        <p class="text-slate-600 text-sm">Reducing dimensions speeds up training times and lowers computational costs.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- A4.2.2 Feature Selection Section -->
+        <section x-show="currentTab === 'a422'" class="fade-in space-y-8" style="display: none;">
+            <div class="bg-white rounded-xl shadow-sm p-6 md:p-8 border border-slate-100">
+                <div class="flex items-center gap-4 mb-6 border-b border-slate-100 pb-4">
+                    <div class="p-3 bg-indigo-100 text-indigo-600 rounded-xl text-2xl">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">A4.2.2 Feature Selection</h2>
+                        <p class="text-slate-500">Identifying the most informative attributes.</p>
+                    </div>
+                </div>
+
+                <div class="prose max-w-none text-slate-700 mb-8">
+                    <p class="text-lg">
+                        <strong>Role:</strong> Feature selection is the process of choosing a subset of relevant features (variables, predictors) for use in model construction. Its main goal is to identify and retain the <strong>most informative attributes</strong> of the dataset while discarding redundant or irrelevant ones.
+                    </p>
+                </div>
+
+                <h3 class="text-xl font-bold mb-6 text-slate-800"><i class="fas fa-chess-knight text-indigo-500 mr-2"></i> Selection Strategies (Click cards to learn more)</h3>
+                
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Filter Methods -->
+                    <div @click="showModal = true; modalContent = {title: 'Filter Methods', icon: 'fa-filter', color: 'blue', desc: 'Evaluates features independently of any machine learning algorithm.', details: 'Filter methods use statistical techniques to evaluate the relationship between each input variable and the target variable. They score features based on statistical tests (e.g., Pearson correlation, Chi-Square, ANOVA) and select those with the highest scores.<br><br><strong>Pros:</strong> Fast, simple, independent of the model.<br><strong>Cons:</strong> Ignores feature interactions (a feature might be weak on its own but strong when combined with another).'}" 
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-blue-100 hover:border-blue-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-filter"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Filter Methods</h4>
+                        <p class="text-sm text-slate-600">Statistical scoring (e.g., Correlation, Chi-Square).</p>
+                        <span class="mt-4 text-xs font-semibold text-blue-500 bg-blue-50 px-2 py-1 rounded-full">Model Agnostic</span>
+                    </div>
+
+                    <!-- Wrapper Methods -->
+                    <div @click="showModal = true; modalContent = {title: 'Wrapper Methods', icon: 'fa-box-open', color: 'green', desc: 'Evaluates feature subsets using a specific machine learning algorithm.', details: 'Wrapper methods consider the selection of a set of features as a search problem. They prepare different combinations, evaluate them using a predictive model, and compare their performance (e.g., accuracy). Examples include Forward Selection, Backward Elimination, and Recursive Feature Elimination (RFE).<br><br><strong>Pros:</strong> Often provides the best performing feature set for a specific model; considers feature interactions.<br><strong>Cons:</strong> Computationally expensive (trains many models), higher risk of overfitting.'}"
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-green-100 hover:border-green-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-green-50 text-green-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-box-open"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Wrapper Methods</h4>
+                        <p class="text-sm text-slate-600">Search algorithms using a predictive model.</p>
+                        <span class="mt-4 text-xs font-semibold text-green-500 bg-green-50 px-2 py-1 rounded-full">Model Dependent</span>
+                    </div>
+
+                    <!-- Embedded Methods -->
+                    <div @click="showModal = true; modalContent = {title: 'Embedded Methods', icon: 'fa-puzzle-piece', color: 'purple', desc: 'Feature selection happens naturally during the model training process.', details: 'Embedded methods integrate the feature selection process into the algorithm itself. The model learns which features contribute most to accuracy while it is being built. Common examples are decision trees (like Random Forest) which rank feature importance, and regularization techniques like Lasso (L1) regression which can shrink less important feature coefficients to zero.<br><br><strong>Pros:</strong> Balances speed (faster than wrappers) and accuracy; includes interaction effects.<br><strong>Cons:</strong> Specific to the chosen learning algorithm.'}"
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-purple-100 hover:border-purple-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-purple-50 text-purple-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-puzzle-piece"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Embedded Methods</h4>
+                        <p class="text-sm text-slate-600">Built into the algorithm (e.g., Lasso, Trees).</p>
+                        <span class="mt-4 text-xs font-semibold text-purple-500 bg-purple-50 px-2 py-1 rounded-full">Built-in Process</span>
+                    </div>
+                </div>
+
+                <!-- Interactive Demo: Feature Selection Simulations -->
+                <div class="mt-10 bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner" x-data="{ activeSim: 'filter' }">
+                    <h4 class="font-bold mb-4 text-xl"><i class="fas fa-laptop-code text-indigo-500 mr-2"></i> Interactive Simulations: Explore the Methods</h4>
+                    <p class="text-slate-600 mb-6">Experiment with how different feature selection strategies evaluate and choose data attributes for predicting <strong>Loan Defaults</strong>.</p>
+                    
+                    <!-- Simulation Tabs -->
+                    <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-2">
+                        <button @click="activeSim = 'filter'" :class="activeSim === 'filter' ? 'bg-blue-100 text-blue-800 border-blue-300 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'" class="px-5 py-2.5 rounded-t-lg border-t border-l border-r font-semibold transition flex items-center gap-2">
+                            <i class="fas fa-filter"></i> 1. Filter Method
+                        </button>
+                        <button @click="activeSim = 'wrapper'" :class="activeSim === 'wrapper' ? 'bg-green-100 text-green-800 border-green-300 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'" class="px-5 py-2.5 rounded-t-lg border-t border-l border-r font-semibold transition flex items-center gap-2">
+                            <i class="fas fa-box-open"></i> 2. Wrapper Method
+                        </button>
+                        <button @click="activeSim = 'embedded'" :class="activeSim === 'embedded' ? 'bg-purple-100 text-purple-800 border-purple-300 shadow-sm' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'" class="px-5 py-2.5 rounded-t-lg border-t border-l border-r font-semibold transition flex items-center gap-2">
+                            <i class="fas fa-puzzle-piece"></i> 3. Embedded Method
+                        </button>
+                    </div>
+
+                    <!-- 1. Filter Method Content -->
+                    <div x-show="activeSim === 'filter'" class="fade-in" x-data="{ selectedFeatures: [], allFeatures: ['Age', 'Income', 'Eye Color', 'Favorite Movie', 'Education Level', 'Shoe Size'] }">
+                        <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg mb-6 text-sm text-blue-800">
+                            <strong>The Filter Approach:</strong> You act as the statistical test. Select the features you logically believe have a high correlation to loan defaults, independently of any AI model.
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-3 mb-6">
+                            <template x-for="feature in allFeatures">
+                                <button 
+                                    @click="selectedFeatures.includes(feature) ? selectedFeatures = selectedFeatures.filter(f => f !== feature) : selectedFeatures.push(feature)"
+                                    :class="selectedFeatures.includes(feature) ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'"
+                                    class="px-4 py-2 rounded-full text-sm font-medium transition shadow-sm border"
+                                    x-text="feature">
+                                </button>
+                            </template>
+                        </div>
+
+                        <div class="p-4 bg-white rounded-lg shadow-sm border border-slate-100 text-sm" x-show="selectedFeatures.length > 0">
+                            <strong>Filtered subset:</strong> <span x-text="selectedFeatures.join(', ')" class="text-blue-600 font-semibold"></span>
+                            <p class="mt-2 text-slate-500 italic">Notice how you evaluated each feature on its own merit. If you dropped "Eye Color" and "Shoe Size", you successfully applied human-logic filtering to remove noise!</p>
+                        </div>
+                    </div>
+
+                    <!-- 2. Wrapper Method Content -->
+                    <div x-show="activeSim === 'wrapper'" class="fade-in" style="display: none;" 
+                         x-data="{ 
+                             baseAccuracy: 50,
+                             features: [
+                                 { id: 1, name: 'Credit Score', boost: 30, tested: false, added: false },
+                                 { id: 2, name: 'Income', boost: 12, tested: false, added: false },
+                                 { id: 3, name: 'Astrological Sign', boost: -5, tested: false, added: false }
+                             ],
+                             get currentAccuracy() { return this.baseAccuracy + this.features.filter(f => f.added).reduce((sum, f) => sum + f.boost, 0); },
+                             testFeature(f) { f.tested = true; if(f.boost > 0) { f.added = true; } },
+                             reset() { this.features.forEach(f => { f.tested = false; f.added = false; }); }
+                         }">
+                        <div class="bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg mb-6 text-sm text-green-800 flex justify-between items-start">
+                            <div>
+                                <strong>Forward Selection (Wrapper):</strong> We start with an empty model and iteratively test adding features. If a feature improves model accuracy, we keep it. 
+                            </div>
+                            <button @click="reset()" class="text-xs bg-green-200 text-green-800 px-2 py-1 rounded hover:bg-green-300">Reset</button>
+                        </div>
+
+                        <div class="mb-6 bg-slate-900 text-green-400 p-4 rounded-lg flex items-center justify-between font-mono">
+                            <span>Model Accuracy:</span>
+                            <span class="text-2xl font-bold" x-text="currentAccuracy + '%'"></span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <template x-for="f in features" :key="f.id">
+                                <div class="flex items-center justify-between bg-white p-3 rounded border border-slate-200 shadow-sm">
+                                    <span class="font-medium text-slate-700" x-text="f.name"></span>
+                                    <button x-show="!f.tested" @click="testFeature(f)" class="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm transition">
+                                        Test in Model
+                                    </button>
+                                    <span x-show="f.tested && f.added" class="text-green-600 font-bold text-sm"><i class="fas fa-check-circle"></i> Added (Accuracy Improved)</span>
+                                    <span x-show="f.tested && !f.added" class="text-red-500 font-bold text-sm"><i class="fas fa-times-circle"></i> Rejected (Accuracy Dropped)</span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <!-- 3. Embedded Method Content -->
+                    <div x-show="activeSim === 'embedded'" class="fade-in" style="display: none;"
+                         x-data="{ 
+                             penalty: 0,
+                             features: [
+                                 { name: 'Debt Ratio', baseWeight: 90 },
+                                 { name: 'Income', baseWeight: 60 },
+                                 { name: 'Age', baseWeight: 25 },
+                                 { name: 'Favorite Color', baseWeight: 5 }
+                             ],
+                             getWeight(base) { return Math.max(0, base - (this.penalty * 1.5)); }
+                         }">
+                        <div class="bg-purple-50 border-l-4 border-purple-500 p-4 rounded-r-lg mb-6 text-sm text-purple-800">
+                            <strong>Lasso Regularization (Embedded):</strong> The model learns feature weights during training. As we increase the "Penalty for Complexity", the algorithm automatically shrinks the weights of less important features to exactly zero, effectively selecting the best features for us.
+                        </div>
+
+                        <div class="mb-8 p-4 bg-white rounded-lg shadow-sm border border-slate-200">
+                            <label class="block text-sm font-bold text-slate-700 mb-2 flex justify-between">
+                                <span>Complexity Penalty (Regularization Strength)</span>
+                                <span class="text-purple-600" x-text="penalty"></span>
+                            </label>
+                            <input type="range" min="0" max="60" x-model="penalty" class="w-full accent-purple-600 h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        </div>
+
+                        <div class="space-y-4">
+                            <template x-for="f in features">
+                                <div>
+                                    <div class="flex justify-between text-sm mb-1">
+                                        <span :class="getWeight(f.baseWeight) === 0 ? 'text-slate-400 line-through' : 'text-slate-700 font-medium'" x-text="f.name"></span>
+                                        <span :class="getWeight(f.baseWeight) === 0 ? 'text-slate-400' : 'text-purple-600 font-bold'" x-text="getWeight(f.baseWeight).toFixed(0) + ' weight'"></span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 rounded-full h-2.5">
+                                        <div class="bg-purple-500 h-2.5 rounded-full transition-all duration-300" :style="`width: ${Math.min(100, getWeight(f.baseWeight))}%`"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <p class="mt-6 text-sm text-slate-500 italic text-center" x-show="penalty > 20">
+                            Notice how noise features drop to 0 weight first, while strong predictors survive the penalty!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- A4.2.3 Dimensionality Reduction Section -->
+        <section x-show="currentTab === 'a423'" class="fade-in space-y-8" style="display: none;">
+            <div class="bg-white rounded-xl shadow-sm p-6 md:p-8 border border-slate-100">
+                <div class="flex items-center gap-4 mb-6 border-b border-slate-100 pb-4">
+                    <div class="p-3 bg-teal-100 text-teal-600 rounded-xl text-2xl">
+                        <i class="fas fa-compress-arrows-alt"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">A4.2.3 Dimensionality Reduction</h2>
+                        <p class="text-slate-500">Transforming data to a lower-dimensional space.</p>
+                    </div>
+                </div>
+
+                 <div class="prose max-w-none text-slate-700 mb-8">
+                    <p class="text-lg">
+                        <strong>Goal:</strong> Reduce the number of random variables under consideration by obtaining a set of <em>principal variables</em>. Unlike feature selection (which just drops columns), dimensionality reduction creates <strong>new combinations</strong> of attributes, preserving the relevant aspects (variance/information) of the original data in a smaller space (e.g., PCA).
+                    </p>
+                </div>
+
+                <!-- The Curse of Dimensionality -->
+                <div class="bg-red-50 border-l-4 border-red-500 p-6 rounded-r-xl mb-8">
+                    <h3 class="text-xl font-bold text-red-800 flex items-center gap-2 mb-4">
+                        <i class="fas fa-skull-crossbones"></i> The Curse of Dimensionality
+                    </h3>
+                    <p class="text-red-700 mb-4 text-sm">As the number of features (dimensions) grows, the amount of data needed to generalize accurately grows exponentially. High dimensional spaces become sparse, making analysis difficult.</p>
+                    
+                    <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                        <!-- Considerations Cards -->
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="Models memorize noise in high dimensions instead of learning patterns.">
+                            <i class="fas fa-brain text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Overfitting</span>
+                        </div>
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="More columns = more math. Training becomes very slow.">
+                            <i class="fas fa-microchip text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Computational Complexity</span>
+                        </div>
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="Data points are far apart in high dimensions; spaces are mostly empty.">
+                            <i class="fas fa-braille text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Data Sparsity</span>
+                        </div>
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="In high dimensions, distances between all pairs of points look similar.">
+                            <i class="fas fa-ruler-combined text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Ineffective Distance Metrics</span>
+                        </div>
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="We can't plot or visualize more than 3 dimensions easily.">
+                            <i class="fas fa-eye-slash text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Poor Visualization</span>
+                        </div>
+                        <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="Need exponentially more rows of data to cover the higher-dimensional space.">
+                            <i class="fas fa-database text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">Sample Size Demands</span>
+                        </div>
+                         <div class="bg-white/80 p-3 rounded shadow-sm hover:bg-white transition cursor-help" title="Storing massive matrices requires significant RAM.">
+                            <i class="fas fa-memory text-red-500 mb-1"></i> <br><span class="font-semibold text-sm">High Memory Usage</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Visualization concept -->
+                <div class="bg-slate-900 text-white p-6 rounded-xl relative overflow-hidden" x-data="{ dimensions: 3 }">
+                    <!-- Background aesthetic -->
+                    <div class="absolute inset-0 opacity-20 pointer-events-none" style="background-image: radial-gradient(circle at 2px 2px, white 1px, transparent 0); background-size: 32px 32px;"></div>
+                    
+                    <h4 class="font-bold mb-2 relative z-10 text-teal-400">Visualization: Preserving Information</h4>
+                    <p class="text-sm text-slate-400 mb-6 relative z-10">Use the slider to 'reduce dimensions' while observing how data structure is conceptually preserved.</p>
+                    
+                    <div class="flex items-center gap-4 relative z-10 mb-8">
+                        <span class="text-sm">Low Dim (2D)</span>
+                        <input type="range" min="2" max="100" x-model="dimensions" class="flex-grow accent-teal-500 h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        <span class="text-sm">High Dim (100D)</span>
+                    </div>
+
+                    <div class="flex flex-col md:flex-row gap-8 relative z-10">
+                        <div class="flex-1 text-center">
+                            <div class="h-32 bg-slate-800 rounded-lg border border-slate-700 flex items-center justify-center mb-2 overflow-hidden relative">
+                                <!-- Abstract visual representation -->
+                                <template x-if="dimensions > 10">
+                                    <div class="text-xs text-slate-500 flex flex-wrap gap-1 p-2 opacity-50 justify-center">
+                                        <i class="fas fa-circle" style="transform: scale(0.5); margin: 2px;"></i>
+                                        <i class="fas fa-circle" style="transform: scale(0.3); margin: 5px;"></i>
+                                        <i class="fas fa-circle" style="transform: scale(0.8); margin: 1px;"></i>
+                                        <span class="block w-full mt-2">Data is sparse and hard to visualize. Distances are meaningless.</span>
+                                    </div>
+                                </template>
+                                <template x-if="dimensions <= 10 && dimensions > 3">
+                                    <div class="text-teal-500 text-3xl animate-pulse">
+                                        <i class="fas fa-cube"></i> <span class="text-sm ml-2 block text-slate-400">Still complex...</span>
+                                    </div>
+                                </template>
+                                <template x-if="dimensions <= 3">
+                                    <div class="flex gap-4">
+                                        <div class="w-8 h-8 rounded-full bg-teal-500 opacity-80" style="transform: translate(10px, 10px);"></div>
+                                        <div class="w-8 h-8 rounded-full bg-indigo-500 opacity-80" style="transform: translate(-10px, -10px);"></div>
+                                        <div class="w-8 h-8 rounded-full bg-pink-500 opacity-80" style="transform: translate(0px, 5px);"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="text-sm font-semibold">Current State: <span x-text="dimensions"></span> Dimensions</div>
+                        </div>
+                        
+                        <div class="flex-1 flex flex-col justify-center text-sm text-slate-300 bg-slate-800/50 p-4 rounded-lg">
+                            <p x-show="dimensions > 50" class="text-red-400"><i class="fas fa-exclamation-triangle"></i> High risk of Overfitting & Memory exhaustion.</p>
+                            <p x-show="dimensions <= 50 && dimensions > 10" class="text-yellow-400"><i class="fas fa-info-circle"></i> Computations are heavy. Distance metrics losing meaning.</p>
+                            <p x-show="dimensions <= 10 && dimensions > 3" class="text-green-400"><i class="fas fa-check"></i> Manageable, but visualization is difficult.</p>
+                            <p x-show="dimensions <= 3" class="text-teal-300 font-bold"><i class="fas fa-star"></i> Ideal for visualization. Major patterns preserved in minimal space!</p>
+                            
+                            <hr class="border-slate-700 my-2">
+                            <p class="text-xs">Example Technique: <strong>Principal Component Analysis (PCA)</strong> projects high-dimensional data onto lower-dimensional axes that maximize variance.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold mb-6 mt-12 text-slate-800"><i class="fas fa-globe-americas text-teal-500 mr-2"></i> Real-World Examples (Click to explore)</h3>
+                
+                <div class="grid md:grid-cols-3 gap-6">
+                    <!-- Image Processing -->
+                    <div @click="showModal = true; modalContent = {title: 'Image & Facial Recognition', icon: 'fa-portrait', color: 'teal', desc: 'Compressing millions of pixels into core facial features.', details: 'A single high-resolution image can contain millions of pixels, each acting as a separate dimension. Feeding all these pixels into a model is incredibly slow and inefficient.<br><br><strong>How it helps:</strong> Dimensionality reduction extracts only the essential combinations of pixels (e.g., the distance between eyes, the curve of a jawline). The model learns to recognize faces based on a few hundred core features instead of millions of raw pixels.'}"
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-teal-100 hover:border-teal-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-teal-50 text-teal-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-portrait"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Image Processing</h4>
+                        <p class="text-sm text-slate-600">Reducing pixel count to key visual features.</p>
+                        <span class="mt-4 text-xs font-semibold text-teal-500 bg-teal-50 px-2 py-1 rounded-full">Computer Vision</span>
+                    </div>
+
+                    <!-- Text Analysis -->
+                    <div @click="showModal = true; modalContent = {title: 'Text Analysis & NLP', icon: 'fa-book', color: 'indigo', desc: 'Grouping massive vocabularies into underlying topics.', details: 'In Natural Language Processing (NLP), a dataset of documents might have a vocabulary of 100,000 unique words. Treating every word as a separate dimension creates a massive, mostly empty (sparse) dataset because most documents only use a fraction of the dictionary.<br><br><strong>How it helps:</strong> Algorithms can group words that frequently appear together into broader categories or concepts (Topic Modeling). The model then processes 50 core topics instead of 100,000 individual words.'}"
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-indigo-100 hover:border-indigo-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-indigo-50 text-indigo-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Text Analysis</h4>
+                        <p class="text-sm text-slate-600">Condensing vocabularies into core topics.</p>
+                        <span class="mt-4 text-xs font-semibold text-indigo-500 bg-indigo-50 px-2 py-1 rounded-full">NLP</span>
+                    </div>
+
+                    <!-- Genetics -->
+                    <div @click="showModal = true; modalContent = {title: 'Bioinformatics & Genetics', icon: 'fa-dna', color: 'rose', desc: 'Finding key genetic markers among thousands of genes.', details: 'In healthcare research, a dataset might contain expression data for 20,000 different genes (dimensions), but only a few hundred patient samples (rows). This extreme case of the Curse of Dimensionality guarantees overfitting without intervention.<br><br><strong>How it helps:</strong> Dimensionality reduction helps scientists isolate the small clusters of genetic combinations that actually correlate with a disease, making analysis possible despite having vastly more features than actual data points.'}"
+                         class="interactive-card bg-white p-6 rounded-xl border-2 border-rose-100 hover:border-rose-400 cursor-pointer shadow-sm flex flex-col items-center text-center">
+                        <div class="w-16 h-16 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center text-2xl mb-4">
+                            <i class="fas fa-dna"></i>
+                        </div>
+                        <h4 class="font-bold text-lg mb-2">Bioinformatics</h4>
+                        <p class="text-sm text-slate-600">Managing thousands of gene sequences.</p>
+                        <span class="mt-4 text-xs font-semibold text-rose-500 bg-rose-50 px-2 py-1 rounded-full">Healthcare</span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 py-6 text-center text-sm mt-auto">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>IB Computer Science Interactive Resource &middot; Data Preprocessing</p>
+        </div>
+    </footer>
+
+    <!-- Details Modal -->
+    <div x-show="showModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm" style="display: none;" x-transition.opacity>
+        <div @click.away="showModal = false" class="bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden transform transition-all" x-show="showModal" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100">
+            
+            <div class="p-6 relative">
+                <!-- Close Button -->
+                <button @click="showModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+                
+                <div class="flex items-center gap-4 mb-4">
+                    <div :class="`w-12 h-12 rounded-full flex items-center justify-center text-xl bg-${modalContent.color}-100 text-${modalContent.color}-600`">
+                        <i :class="`fas ${modalContent.icon}`"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold text-slate-800" x-text="modalContent.title"></h3>
+                </div>
+                
+                <p class="font-medium text-slate-700 mb-4" x-text="modalContent.desc"></p>
+                <div class="text-slate-600 text-sm space-y-2 leading-relaxed" x-html="modalContent.details"></div>
+                
+                <div class="mt-6 pt-4 border-t border-slate-100 text-right">
+                    <button @click="showModal = false" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition font-medium">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

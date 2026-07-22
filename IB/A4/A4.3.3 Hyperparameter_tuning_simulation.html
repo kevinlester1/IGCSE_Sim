@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyperparameter Tuning & Evaluation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+        canvas {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+        .metric-card {
+            transition: all 0.2s ease;
+        }
+        .metric-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+            border-bottom: 1px dotted #64748b;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #1e293b;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -125px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            font-weight: normal;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex flex-col items-center">
+
+    <div class="max-w-6xl w-full bg-white rounded-xl shadow-xl overflow-hidden">
+        
+        <!-- Header -->
+        <div class="bg-blue-600 text-white p-6">
+            <h1 class="text-3xl font-bold mb-2"><i class="fas fa-sliders-h mr-3"></i>Hyperparameter Tuning Explorer</h1>
+            <p class="text-blue-100">Understand how model complexity impacts evaluation metrics, overfitting, and underfitting.</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row p-6 gap-8">
+            
+            <!-- Left Column: Controls & Info -->
+            <div class="w-full lg:w-1/3 flex flex-col gap-6">
+                
+                <!-- Controls Section -->
+                <div class="bg-slate-50 p-5 rounded-lg border border-slate-200">
+                    <h2 class="text-xl font-semibold mb-4 text-slate-800 border-b pb-2">Hyperparameter</h2>
+                    
+                    <div class="mb-6">
+                        <label for="complexitySlider" class="flex justify-between items-center mb-2 font-medium text-slate-700">
+                            <span>Model Complexity <i class="fas fa-info-circle text-slate-400 ml-1 tooltip"><span class="tooltiptext">Think of this as the degree of a polynomial or depth of a decision tree. Low = simple line, High = squiggly curve.</span></i></span>
+                            <span id="complexityValue" class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm font-bold">Medium (Optimal)</span>
+                        </label>
+                        <input type="range" id="complexitySlider" min="1" max="100" value="50" class="w-full">
+                        <div class="flex justify-between text-xs text-slate-500 mt-2">
+                            <span>Underfitting</span>
+                            <span>Optimal</span>
+                            <span>Overfitting</span>
+                        </div>
+                    </div>
+                    
+                    <button id="generateDataBtn" class="w-full bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 py-2 px-4 rounded font-medium transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-random"></i> Generate New Data
+                    </button>
+                </div>
+
+                <!-- Theory Section -->
+                <div class="bg-blue-50 p-5 rounded-lg border border-blue-100 text-sm text-blue-900">
+                    <h3 class="font-bold mb-2"><i class="fas fa-book-open mr-2"></i>Concepts</h3>
+                    <ul class="space-y-3">
+                        <li><strong>Hyperparameter Tuning:</strong> Adjusting settings (like 'complexity' here) *before* training to find the best model architecture.</li>
+                        <li><strong>Underfitting (Left):</strong> Model is too simple. It performs poorly on both training and unseen (validation) data. High bias.</li>
+                        <li><strong>Optimal Fit (Center):</strong> Model captures the true underlying pattern without learning the noise. Good performance on both.</li>
+                        <li><strong>Overfitting (Right):</strong> Model is too complex. It memorizes the training data perfectly (learning the noise) but fails on new validation data. High variance.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Right Column: Visualization & Metrics -->
+            <div class="w-full lg:w-2/3 flex flex-col gap-6">
+                
+                <!-- Visualization -->
+                <div class="relative w-full aspect-video md:aspect-auto md:h-96">
+                    <canvas id="vizCanvas" class="w-full h-full"></canvas>
+                    <div class="absolute top-4 left-4 bg-white/90 px-3 py-2 rounded shadow text-sm border border-slate-200">
+                        <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full bg-blue-500"></span> Class 0 (Blue)</div>
+                        <div class="flex items-center gap-2 mb-1"><span class="w-3 h-3 rounded-full bg-red-500"></span> Class 1 (Red)</div>
+                        <div class="flex items-center gap-2"><span class="w-4 h-0.5 bg-green-500"></span> Decision Boundary</div>
+                        <div class="mt-2 text-xs text-slate-500 italic">Solid dots = Training, Hollow rings = Validation</div>
+                    </div>
+                    
+                    <!-- State Indicator Overlay -->
+                    <div id="stateIndicator" class="absolute top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold shadow-sm border border-green-200 transition-colors duration-300">
+                        Optimal Fit
+                    </div>
+                </div>
+
+                <!-- Metrics Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    
+                    <!-- Accuracy -->
+                    <div class="metric-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                        <div class="text-sm font-semibold text-slate-500 mb-1 tooltip uppercase tracking-wider">
+                            Accuracy
+                            <span class="tooltiptext">Proportion of all predictions that were correct. (TP+TN)/(Total)</span>
+                        </div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs text-slate-400">Train</span>
+                            <span id="accTrain" class="text-lg font-bold text-slate-800">0%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-medium text-indigo-500">Val</span>
+                            <span id="accVal" class="text-xl font-bold text-indigo-600">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Precision -->
+                    <div class="metric-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                        <div class="text-sm font-semibold text-slate-500 mb-1 tooltip uppercase tracking-wider">
+                            Precision
+                            <span class="tooltiptext">Out of all predicted Positives (Red), how many were actually Positive? TP/(TP+FP)</span>
+                        </div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs text-slate-400">Train</span>
+                            <span id="precTrain" class="text-lg font-bold text-slate-800">0%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-medium text-indigo-500">Val</span>
+                            <span id="precVal" class="text-xl font-bold text-indigo-600">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- Recall -->
+                    <div class="metric-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                        <div class="text-sm font-semibold text-slate-500 mb-1 tooltip uppercase tracking-wider">
+                            Recall
+                            <span class="tooltiptext">Out of all actual Positives (Red), how many did we find? TP/(TP+FN)</span>
+                        </div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs text-slate-400">Train</span>
+                            <span id="recTrain" class="text-lg font-bold text-slate-800">0%</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-medium text-indigo-500">Val</span>
+                            <span id="recVal" class="text-xl font-bold text-indigo-600">0%</span>
+                        </div>
+                    </div>
+
+                    <!-- F1 Score -->
+                    <div class="metric-card bg-white p-4 rounded-lg border border-slate-200 shadow-sm text-center">
+                        <div class="text-sm font-semibold text-slate-500 mb-1 tooltip uppercase tracking-wider">
+                            F1 Score
+                            <span class="tooltiptext">Harmonic mean of Precision and Recall. Balances both metrics.</span>
+                        </div>
+                        <div class="flex justify-between items-end mb-1">
+                            <span class="text-xs text-slate-400">Train</span>
+                            <span id="f1Train" class="text-lg font-bold text-slate-800">0.00</span>
+                        </div>
+                        <div class="flex justify-between items-end">
+                            <span class="text-xs font-medium text-indigo-500">Val</span>
+                            <span id="f1Val" class="text-xl font-bold text-indigo-600">0.00</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="text-xs text-center text-slate-500 mt-2">
+                    Notice how in <strong>Overfitting</strong> (high complexity), Training metrics get perfect, but Validation metrics crash.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('vizCanvas');
+        const ctx = canvas.getContext('2d');
+        const slider = document.getElementById('complexitySlider');
+        const complexityLabel = document.getElementById('complexityValue');
+        const stateIndicator = document.getElementById('stateIndicator');
+
+        // Data containers
+        let trainingData = [];
+        let validationData = [];
+        
+        // Define the "true" boundary curve parameters
+        const trueCurve = { freq: 1.5, amp: 0.3, offset: 0.5 };
+        
+        // Settings
+        const numTrainPoints = 120;
+        const numValPoints = 80;
+        const noiseLevel = 0.15; // How messy the data is
+
+        // Resize canvas to match display size
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            draw();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Helper to generate a somewhat sine-wave like true boundary
+        function getTrueY(x) {
+            return trueCurve.offset + Math.sin(x * trueCurve.freq * Math.PI) * trueCurve.amp;
+        }
+
+        function generateData() {
+            trainingData = [];
+            validationData = [];
+
+            // Generate points
+            for (let i = 0; i < numTrainPoints + numValPoints; i++) {
+                // Random x between 0 and 1
+                let x = Math.random();
+                
+                // Determine true y boundary at this x
+                let boundaryY = getTrueY(x);
+                
+                // Add noise to y to create overlap
+                let y = (Math.random() - 0.5) * 1.2 + 0.5; // Random y roughly between -0.1 and 1.1
+                
+                // Determine class (0 = Blue/Below, 1 = Red/Above)
+                // We base it on the true boundary plus some noise to make it imperfectly separable
+                let isAboveBoundary = y > boundaryY + (Math.random() - 0.5) * noiseLevel;
+                let classLabel = isAboveBoundary ? 1 : 0;
+                
+                let point = { x: x, y: y, label: classLabel };
+
+                if (i < numTrainPoints) {
+                    trainingData.push(point);
+                } else {
+                    validationData.push(point);
+                }
+            }
+            draw();
+        }
+
+        // This function simulates a model predicting the boundary.
+        // Complexity 1: A flat line (underfit)
+        // Complexity 50: The true sine wave (optimal)
+        // Complexity 100: A jagged line that tries to connect all training dots (overfit)
+        function getPredictedBoundary(x, complexity) {
+            // Normalize complexity from 0 to 1
+            const c = complexity / 100;
+            
+            if (c < 0.3) {
+                // UNDERFITTING: Linear approximation (mostly flat)
+                // Just find average Y
+                let avgY = 0.5;
+                // Add slight slope based on complexity
+                let slope = (c * 2 - 0.3); // roughly -0.3 to +0.3
+                return avgY + (x - 0.5) * slope;
+            } 
+            else if (c < 0.7) {
+                // OPTIMAL FIT: Approximating the true curve
+                // Transition from linear to full curve
+                const blend = (c - 0.3) / 0.4; // 0 to 1
+                const linearY = 0.5 + (x - 0.5) * 0.2;
+                const trueY = getTrueY(x);
+                return linearY * (1 - blend) + trueY * blend;
+            } 
+            else {
+                // OVERFITTING: Jagged curve trying to fit noise
+                const overfitFactor = (c - 0.7) / 0.3; // 0 to 1
+                const baseCurve = getTrueY(x);
+                
+                // Simulate high-frequency 'wiggles' trying to fit noise
+                // The wiggles get more intense with higher complexity
+                let wiggle = 0;
+                for(let i=1; i<=5; i++) {
+                     wiggle += Math.sin(x * i * 15) * (0.02 * i * overfitFactor);
+                }
+                
+                // Also pull slightly towards nearest training points (simulating high variance)
+                let pull = 0;
+                if (overfitFactor > 0.5) {
+                    let nearestDist = Infinity;
+                    let nearestPoint = null;
+                    trainingData.forEach(p => {
+                        let dist = Math.abs(p.x - x);
+                        if (dist < nearestDist) {
+                            nearestDist = dist;
+                            nearestPoint = p;
+                        }
+                    });
+                    
+                    if (nearestPoint && nearestDist < 0.1) {
+                        // Influence boundary to correctly classify this point
+                        let targetY = nearestPoint.label === 1 ? nearestPoint.y - 0.05 : nearestPoint.y + 0.05;
+                        let influence = (0.1 - nearestDist) * 10 * overfitFactor; // Max influence 1
+                        pull = (targetY - baseCurve) * influence * 0.5;
+                    }
+                }
+                
+                return baseCurve + wiggle + pull;
+            }
+        }
+
+        function calculateMetrics(data, complexity) {
+            let TP = 0, FP = 0, TN = 0, FN = 0;
+
+            data.forEach(p => {
+                let predictedBoundaryY = getPredictedBoundary(p.x, complexity);
+                let predictedClass = p.y > predictedBoundaryY ? 1 : 0;
+                let actualClass = p.label;
+
+                if (predictedClass === 1 && actualClass === 1) TP++;
+                if (predictedClass === 1 && actualClass === 0) FP++;
+                if (predictedClass === 0 && actualClass === 0) TN++;
+                if (predictedClass === 0 && actualClass === 1) FN++;
+            });
+
+            let total = TP + TN + FP + FN;
+            let accuracy = total > 0 ? (TP + TN) / total : 0;
+            let precision = (TP + FP) > 0 ? TP / (TP + FP) : 0;
+            let recall = (TP + FN) > 0 ? TP / (TP + FN) : 0;
+            let f1 = (precision + recall) > 0 ? 2 * (precision * recall) / (precision + recall) : 0;
+
+            return { accuracy, precision, recall, f1 };
+        }
+
+        function updateUI(complexity) {
+            // Update labels
+            if (complexity < 30) {
+                complexityLabel.textContent = "Low (Underfitting)";
+                complexityLabel.className = "bg-orange-100 text-orange-800 px-2 py-1 rounded text-sm font-bold";
+                stateIndicator.textContent = "Underfitting (High Bias)";
+                stateIndicator.className = "absolute top-4 right-4 bg-orange-100 text-orange-800 px-4 py-2 rounded-full font-bold shadow-sm border border-orange-200 transition-colors duration-300";
+            } else if (complexity > 70) {
+                complexityLabel.textContent = "High (Overfitting)";
+                complexityLabel.className = "bg-red-100 text-red-800 px-2 py-1 rounded text-sm font-bold";
+                stateIndicator.textContent = "Overfitting (High Variance)";
+                stateIndicator.className = "absolute top-4 right-4 bg-red-100 text-red-800 px-4 py-2 rounded-full font-bold shadow-sm border border-red-200 transition-colors duration-300";
+            } else {
+                complexityLabel.textContent = "Medium (Optimal)";
+                complexityLabel.className = "bg-green-100 text-green-800 px-2 py-1 rounded text-sm font-bold";
+                stateIndicator.textContent = "Optimal Fit";
+                stateIndicator.className = "absolute top-4 right-4 bg-green-100 text-green-800 px-4 py-2 rounded-full font-bold shadow-sm border border-green-200 transition-colors duration-300";
+            }
+
+            // Calculate Metrics
+            let trainMetrics = calculateMetrics(trainingData, complexity);
+            let valMetrics = calculateMetrics(validationData, complexity);
+
+            // Update DOM
+            const formatPct = (val) => (val * 100).toFixed(1) + '%';
+            const formatF1 = (val) => val.toFixed(2);
+
+            document.getElementById('accTrain').textContent = formatPct(trainMetrics.accuracy);
+            document.getElementById('accVal').textContent = formatPct(valMetrics.accuracy);
+            
+            document.getElementById('precTrain').textContent = formatPct(trainMetrics.precision);
+            document.getElementById('precVal').textContent = formatPct(valMetrics.precision);
+            
+            document.getElementById('recTrain').textContent = formatPct(trainMetrics.recall);
+            document.getElementById('recVal').textContent = formatPct(valMetrics.recall);
+            
+            document.getElementById('f1Train').textContent = formatF1(trainMetrics.f1);
+            document.getElementById('f1Val').textContent = formatF1(valMetrics.f1);
+
+            // Highlight differences visually (if validation drops significantly below train = overfitting)
+            const isOverfitting = trainMetrics.accuracy - valMetrics.accuracy > 0.05 && complexity > 70;
+            const valElements = [document.getElementById('accVal'), document.getElementById('precVal'), document.getElementById('recVal'), document.getElementById('f1Val')];
+            
+            valElements.forEach(el => {
+                if (isOverfitting) {
+                    el.classList.add('text-red-600');
+                    el.classList.remove('text-indigo-600');
+                } else {
+                    el.classList.remove('text-red-600');
+                    el.classList.add('text-indigo-600');
+                }
+            });
+        }
+
+        function draw() {
+            const w = canvas.width;
+            const h = canvas.height;
+            const complexity = parseInt(slider.value);
+
+            ctx.clearRect(0, 0, w, h);
+
+            // Draw background regions based on prediction boundary
+            // We draw a faint background showing the decision areas
+            ctx.fillStyle = "rgba(59, 130, 246, 0.05)"; // Blue region (class 0)
+            ctx.fillRect(0, 0, w, h);
+            
+            ctx.beginPath();
+            ctx.moveTo(0, h);
+            for (let px = 0; px <= w; px += 2) {
+                let normX = px / w;
+                let normY = getPredictedBoundary(normX, complexity);
+                // Invert Y for canvas drawing (0 is top)
+                let py = h - (normY * h);
+                ctx.lineTo(px, py);
+            }
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.fillStyle = "rgba(239, 68, 68, 0.05)"; // Red region (class 1, above boundary)
+            ctx.fill();
+
+            // Draw Decision Boundary Line
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "rgba(34, 197, 94, 0.8)"; // Green boundary
+            for (let px = 0; px <= w; px += 2) {
+                let normX = px / w;
+                let normY = getPredictedBoundary(normX, complexity);
+                let py = h - (normY * h);
+                if (px === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Draw Data Points
+            const drawPoint = (p, isVal) => {
+                let px = p.x * w;
+                let py = h - (p.y * h); // Invert Y
+                
+                ctx.beginPath();
+                ctx.arc(px, py, isVal ? 5 : 4, 0, Math.PI * 2);
+                
+                if (p.label === 1) { // Red Class
+                    if (isVal) {
+                        ctx.strokeStyle = "#ef4444";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = "#ef4444";
+                        ctx.fill();
+                    }
+                } else { // Blue Class
+                    if (isVal) {
+                        ctx.strokeStyle = "#3b82f6";
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    } else {
+                        ctx.fillStyle = "#3b82f6";
+                        ctx.fill();
+                    }
+                }
+            };
+
+            // Draw validation first (hollow rings) so solid train dots render on top if they overlap
+            validationData.forEach(p => drawPoint(p, true));
+            trainingData.forEach(p => drawPoint(p, false));
+
+            // Update Metrics UI
+            updateUI(complexity);
+        }
+
+        slider.addEventListener('input', draw);
+        document.getElementById('generateDataBtn').addEventListener('click', generateData);
+
+        // Initialization
+        window.onload = function() {
+            resizeCanvas();
+            generateData();
+            // Start in middle
+            slider.value = 50;
+            draw();
+        };
+
+    </script>
+</body>
+</html>
